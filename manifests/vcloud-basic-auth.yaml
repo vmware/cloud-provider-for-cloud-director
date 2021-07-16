@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: vcloud-basic-auth
+  namespace: kube-system
+data:
+  username: b3JnYWRtaW51c2Vy
+  password: Y2EkaGMwdw==

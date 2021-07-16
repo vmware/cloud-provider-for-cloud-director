@@ -1,7 +1,7 @@
-Cloud Provider for Cloud Director
+Kubernetes External Cloud Provider for VMware Cloud Director
 Copyright 2021 VMware, Inc.
 
-The Apache 2.0 license (the "License") set forth below applies to all parts of the Cloud Provider for Cloud Director project. You may not use this file except in compliance with the License.
+The Apache 2.0 license (the "License") set forth below applies to all parts of the Kubernetes External Cloud Provider for VMware Cloud Director project. You may not use this file except in compliance with the License.
 
 Apache License 
  
@@ -177,5 +177,3 @@ asserted against, such Contributor by reason of your accepting any such
 warranty or additional liability.
 
 END OF TERMS AND CONDITIONS 
-
-
