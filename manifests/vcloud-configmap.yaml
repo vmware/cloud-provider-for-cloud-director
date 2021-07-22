@@ -10,7 +10,7 @@ data:
       org: "tenant1"
       vdc: "tenant1_ovdc"
       network: "tenant1_routed_ovdc_nw"
-      vipSubnet: VIP_SUBNET
+      vipSubnet: VIP_SUBNET_CIDR
     loadbalancer:
       oneArm:
         startIP: "192.168.8.2"
