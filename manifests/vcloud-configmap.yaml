@@ -6,11 +6,11 @@ metadata:
 data:
   vcloud-ccm-config.yaml: |+
     vcd:
-      host: "https://bos1-vcloud-static-177-114.eng.vmware.com"
+      host: VCD_HOST
       org: "tenant1"
       vdc: "tenant1_ovdc"
       network: "tenant1_routed_ovdc_nw"
-      vipSubnet: "10.150.191.253/19"
+      vipSubnet: VIP_SUBNET
     loadbalancer:
       oneArm:
         startIP: "192.168.8.2"

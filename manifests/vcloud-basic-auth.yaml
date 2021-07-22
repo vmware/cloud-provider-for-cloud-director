@@ -4,5 +4,5 @@ metadata:
   name: vcloud-basic-auth
   namespace: kube-system
 data:
-  username: b3JnYWRtaW51c2Vy
-  password: Y2EkaGMwdw==
+  username: BASE64_USERNAME
+  password: BASE64_PASSWORD
