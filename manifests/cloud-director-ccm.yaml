@@ -160,6 +160,8 @@ spec:
           volumeMounts:
             - name: vcloud-ccm-config-volume
               mountPath: /etc/kubernetes/vcloud
+            - name: vcloud-ccm-vcloud-basic-auth-volume
+              mountPath: /etc/kubernetes/vcloud/basic-auth
       tolerations:
         - key: node.cloudprovider.kubernetes.io/uninitialized
           value: "true"
@@ -179,4 +181,7 @@ spec:
         - name: vcloud-ccm-config-volume
           configMap:
             name: vcloud-ccm-configmap
+        - name: vcloud-ccm-vcloud-basic-auth-volume
+          secret:
+            secretName: vcloud-basic-auth
 ---

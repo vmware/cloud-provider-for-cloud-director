@@ -51,24 +51,30 @@ func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error
 			EndIPAddress:   cloudConfig.LB.OneArm.EndIP,
 		}
 	}
-	vcdClient, err := vcdclient.NewVCDClientFromSecrets(
-		cloudConfig.VCD.Host,
-		cloudConfig.VCD.Org,
-		cloudConfig.VCD.VDC,
-		cloudConfig.VCD.VDCNetwork,
-		cloudConfig.VCD.VIPSubnet,
-		cloudConfig.VCD.User,
-		cloudConfig.VCD.Secret,
-		true,
-		cloudConfig.ClusterID,
-		oneArm,
-		cloudConfig.LB.Ports.HTTP,
-		cloudConfig.LB.Ports.HTTPS,
-		cloudConfig.LB.CertificateAlias,
-		true,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("unable to initialize vcd client: [%v]", err)
+	var vcdClient *vcdclient.Client
+	for {
+		vcdClient, err = vcdclient.NewVCDClientFromSecrets(
+			cloudConfig.VCD.Host,
+			cloudConfig.VCD.Org,
+			cloudConfig.VCD.VDC,
+			cloudConfig.VCD.VDCNetwork,
+			cloudConfig.VCD.VIPSubnet,
+			cloudConfig.VCD.User,
+			cloudConfig.VCD.Secret,
+			true,
+			cloudConfig.ClusterID,
+			oneArm,
+			cloudConfig.LB.Ports.HTTP,
+			cloudConfig.LB.Ports.HTTPS,
+			cloudConfig.LB.CertificateAlias,
+			true,
+		)
+		if err == nil {
+			break
+		} else {
+			klog.Infof("Error initializing client from secrets: [%v]", err)
+			time.Sleep(10 * time.Second)
+		}
 	}
 
 	// setup LB only if the gateway is not NSX-T
