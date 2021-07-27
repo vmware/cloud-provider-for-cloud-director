@@ -9,7 +9,7 @@ data:
       host: VCD_HOST
       org: ORG
       vdc: OVDC
-      network: OVDC_NETWORK
+      network: NETWORK
       vipSubnet: VIP_SUBNET_CIDR
     loadbalancer:
       oneArm:
