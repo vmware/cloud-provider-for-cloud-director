@@ -38,21 +38,21 @@ func init() {
 }
 
 func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error) {
-
-	cloudConfig, err := config.ParseCloudConfig(configReader)
-	if err != nil {
-		return nil, fmt.Errorf("unable to parse config: [%v]", err)
-	}
-
+	var vcdClient *vcdclient.Client = nil
 	var oneArm *vcdclient.OneArm = nil
-	if cloudConfig.LB.OneArm != nil {
-		oneArm = &vcdclient.OneArm{
-			StartIPAddress: cloudConfig.LB.OneArm.StartIP,
-			EndIPAddress:   cloudConfig.LB.OneArm.EndIP,
-		}
-	}
-	var vcdClient *vcdclient.Client
+	var cloudConfig *config.CloudConfig = nil
 	for {
+		cloudConfig, err := config.ParseCloudConfig(configReader)
+		if err != nil {
+			return nil, fmt.Errorf("unable to parse config: [%v]", err)
+		}
+
+		if cloudConfig.LB.OneArm != nil {
+			oneArm = &vcdclient.OneArm{
+				StartIPAddress: cloudConfig.LB.OneArm.StartIP,
+				EndIPAddress:   cloudConfig.LB.OneArm.EndIP,
+			}
+		}
 		vcdClient, err = vcdclient.NewVCDClientFromSecrets(
 			cloudConfig.VCD.Host,
 			cloudConfig.VCD.Org,
