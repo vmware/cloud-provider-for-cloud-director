@@ -67,21 +67,24 @@ func ParseCloudConfig(configReader io.Reader) (*CloudConfig, error) {
 		return nil, fmt.Errorf("unable to decode yaml file: [%v]", err)
 	}
 
+	return config, nil
+}
+
+func SetAuthorization(config *CloudConfig) error {
 	username, err := ioutil.ReadFile("/etc/kubernetes/vcloud/basic-auth/username")
 	if err != nil {
-		return nil, fmt.Errorf("unable to get username: [%v]", err)
+		return fmt.Errorf("unable to get username: [%v]", err)
 	}
 	secret, err := ioutil.ReadFile("/etc/kubernetes/vcloud/basic-auth/password")
 	if err != nil {
-		return nil, fmt.Errorf("unable to get password: [%v]", err)
+		return fmt.Errorf("unable to get password: [%v]", err)
 	}
 	config.VCD.User = string(username)
 	config.VCD.Secret = string(secret)
-
-	return config, validateCloudConfig(config)
+	return nil
 }
 
-func validateCloudConfig(config *CloudConfig) error {
+func ValidateCloudConfig(config *CloudConfig) error {
 	// TODO: needs more validation
 	if config == nil {
 		return fmt.Errorf("nil config passed")

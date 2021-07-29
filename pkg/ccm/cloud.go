@@ -41,11 +41,25 @@ func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error
 	var vcdClient *vcdclient.Client = nil
 	var oneArm *vcdclient.OneArm = nil
 	var cloudConfig *config.CloudConfig = nil
+	cloudConfig, err := config.ParseCloudConfig(configReader)
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse config: [%v]", err)
+	}
 	for {
-		cloudConfig, err := config.ParseCloudConfig(configReader)
+		err = config.SetAuthorization(cloudConfig)
 		if err != nil {
-			return nil, fmt.Errorf("unable to parse config: [%v]", err)
+			klog.Infof("unable to set authorization in config: [%v]", err)
+			time.Sleep(10 * time.Second)
+			continue
 		}
+
+		err = config.ValidateCloudConfig(cloudConfig)
+		if err != nil {
+			klog.Infof("error validating config: [%v]", err)
+			time.Sleep(10 * time.Second)
+			continue
+		}
+
 
 		if cloudConfig.LB.OneArm != nil {
 			oneArm = &vcdclient.OneArm{
