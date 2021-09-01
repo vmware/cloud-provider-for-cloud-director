@@ -7,10 +7,9 @@ package config
 
 import (
 	"fmt"
-	"io"
-	"os"
-
 	yaml "gopkg.in/yaml.v2"
+	"io"
+	"io/ioutil"
 )
 
 // VCDConfig :
@@ -65,17 +64,27 @@ func ParseCloudConfig(configReader io.Reader) (*CloudConfig, error) {
 	decoder.SetStrict(true)
 
 	if err = decoder.Decode(&config); err != nil {
-		return nil, fmt.Errorf("Unable to decode yaml file: [%v]", err)
+		return nil, fmt.Errorf("unable to decode yaml file: [%v]", err)
 	}
 
-	config.VCD.User = os.Getenv("VCD_BASIC_AUTH_USERNAME")
-	config.VCD.Secret = os.Getenv("VCD_BASIC_AUTH_PASSWORD")
-	config.VCD.RefreshToken = os.Getenv("VCD_REFRESH_TOKEN")
-
-	return config, validateCloudConfig(config)
+	return config, nil
 }
 
-func validateCloudConfig(config *CloudConfig) error {
+func SetAuthorization(config *CloudConfig) error {
+	username, err := ioutil.ReadFile("/etc/kubernetes/vcloud/basic-auth/username")
+	if err != nil {
+		return fmt.Errorf("unable to get username: [%v]", err)
+	}
+	secret, err := ioutil.ReadFile("/etc/kubernetes/vcloud/basic-auth/password")
+	if err != nil {
+		return fmt.Errorf("unable to get password: [%v]", err)
+	}
+	config.VCD.User = string(username)
+	config.VCD.Secret = string(secret)
+	return nil
+}
+
+func ValidateCloudConfig(config *CloudConfig) error {
 	// TODO: needs more validation
 	if config == nil {
 		return fmt.Errorf("nil config passed")

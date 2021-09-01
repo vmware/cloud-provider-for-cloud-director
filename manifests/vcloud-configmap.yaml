@@ -7,9 +7,9 @@ data:
   vcloud-ccm-config.yaml: |+
     vcd:
       host: VCD_HOST
-      org: "tenant1"
-      vdc: "tenant1_ovdc"
-      network: "tenant1_routed_ovdc_nw"
+      org: ORG
+      vdc: OVDC
+      network: NETWORK
       vipSubnet: VIP_SUBNET_CIDR
     loadbalancer:
       oneArm:
@@ -19,5 +19,5 @@ data:
         http: 80
         https: 443
       certAlias: "test"
-    clusterid: "123456"
+    clusterid: CLUSTER_ID
 immutable: true
