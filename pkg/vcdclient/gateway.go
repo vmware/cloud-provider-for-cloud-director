@@ -794,6 +794,8 @@ func (client *Client) createVirtualService(ctx context.Context, virtualServiceNa
 			taskURL, err)
 	}
 
+	// update RDE with freeIp
+
 	vsSummary, err = client.getVirtualService(ctx, virtualServiceName)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get summary for freshly created LB VS [%s]: [%v]",
@@ -1048,4 +1050,8 @@ func (client *Client) IsNSXTBackedGateway() bool {
 			(client.networkBackingType == swaggerClient.NSXT_FLEXIBLE_SEGMENT_BackingNetworkType)
 
 	return isNSXTBackedGateway
+}
+
+func (client *Client) updateRDE() {
+
 }
