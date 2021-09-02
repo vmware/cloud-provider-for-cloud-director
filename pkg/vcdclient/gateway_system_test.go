@@ -211,6 +211,15 @@ func TestVirtualServiceHttpCRUDE(t *testing.T) {
 	return
 }
 
+func foundStringInSlice(find string, slice []string) bool {
+	for _, currElement := range slice {
+		if currElement == find {
+			return true
+		}
+	}
+	return  false
+}
+
 func TestVirtualServiceHttpsCRUDE(t *testing.T) {
 
 	vcdClient, err := getTestVCDClient(nil)
@@ -233,6 +242,16 @@ func TestVirtualServiceHttpsCRUDE(t *testing.T) {
 	require.NotNil(t, vsRef, "VirtualServiceRef should not be nil")
 	assert.Equal(t, virtualServiceName, vsRef.Name, "Virtual Service name should match")
 
+	vsRefObtained, err := vcdClient.getVirtualService(ctx, virtualServiceName)
+	assert.NoError(t, err, "Unable to get virtual service ref")
+	require.NotNil(t, vsRefObtained, "Virtual service reference should not be nil")
+	assert.Equal(t, vsRefObtained.Name, vsRef.Name, "Virtual service reference name should match")
+	assert.NotEmpty(t, vsRefObtained.Id, "Virtual service ID should not be empty")
+
+	rdeVips, err := vcdClient.GetRDEVirtualIps(ctx)
+	assert.NoError(t, err, "Unable to get RDE vips after virtual service creation")
+	assert.Equal(t, true, foundStringInSlice(vsRefObtained.VirtualIpAddress, rdeVips), "virtual service ip should be found in rde vips")
+
 	// repeated creation should not fail
 	vsRef, err = vcdClient.createVirtualService(ctx, virtualServiceName, lbPoolRef, segRef,
 		"2.3.4.5", "HTTPS", 443, "test")
@@ -240,14 +259,12 @@ func TestVirtualServiceHttpsCRUDE(t *testing.T) {
 	require.NotNil(t, vsRef, "VirtualServiceRef should not be nil")
 	assert.Equal(t, virtualServiceName, vsRef.Name, "Virtual Service name should match")
 
-	vsRefObtained, err := vcdClient.getVirtualService(ctx, virtualServiceName)
-	assert.NoError(t, err, "Unable to get virtual service ref")
-	require.NotNil(t, vsRefObtained, "Virtual service reference should not be nil")
-	assert.Equal(t, vsRefObtained.Name, vsRef.Name, "Virtual service reference name should match")
-	assert.NotEmpty(t, vsRefObtained.Id, "Virtual service ID should not be empty")
-
 	err = vcdClient.deleteVirtualService(ctx, virtualServiceName, true)
 	assert.NoError(t, err, "Unable to delete Virtual Service")
+
+	rdeVips, err = vcdClient.GetRDEVirtualIps(ctx)
+	assert.NoError(t, err, "Unable to get vips from RDE after virtual service deletion")
+	assert.Equal(t, false, foundStringInSlice(vsRefObtained.VirtualIpAddress, rdeVips), "virtual service ip should not be found in RDE vips")
 
 	err = vcdClient.deleteVirtualService(ctx, virtualServiceName, true)
 	assert.Error(t, err, "Should fail when deleting non-existing Virtual Service")

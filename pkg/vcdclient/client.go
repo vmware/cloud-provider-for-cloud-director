@@ -42,7 +42,6 @@ type Client struct {
 	HTTPSPort          int32
 	CertificateAlias   string
 	rwLock             sync.RWMutex
-	DefEntApiSvc	   *swaggerClient.DefinedEntityApiService
 }
 
 // RefreshToken will check if can authenticate and rebuild clients if needed

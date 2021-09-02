@@ -78,6 +78,7 @@ func (client *Client) CacheGatewayDetails(ctx context.Context) error {
 	klog.Infof("Obtained Gateway [%s] for Network Name [%s] of type [%v]\n",
 		client.gatewayRef.Name, client.networkName, client.networkBackingType)
 
+
 	return nil
 }
 
@@ -795,6 +796,10 @@ func (client *Client) createVirtualService(ctx context.Context, virtualServiceNa
 	}
 
 	// update RDE with freeIp
+	err = client.addVirtualIpToRDE(ctx, freeIP)
+	if err != nil {
+		klog.Errorf("error when adding virtual IP to RDE: [%v]", err)
+	}
 
 	vsSummary, err = client.getVirtualService(ctx, virtualServiceName)
 	if err != nil {
@@ -850,6 +855,12 @@ func (client *Client) deleteVirtualService(ctx context.Context, virtualServiceNa
 			taskURL, err)
 	}
 	klog.Infof("Deleted virtual service [%s]\n", virtualServiceName)
+
+	//remove virtual ip from RDE
+	err = client.removeVirtualIpFromRDE(ctx, vsSummary.VirtualIpAddress)
+	if err != nil {
+		return fmt.Errorf("error when removing vip from RDE: [%v]", err)
+	}
 
 	return nil
 }
@@ -1052,6 +1063,73 @@ func (client *Client) IsNSXTBackedGateway() bool {
 	return isNSXTBackedGateway
 }
 
-func (client *Client) updateRDE() {
+func (client *Client) GetRDEVirtualIps(ctx context.Context) ([]string, error) {
+	defEnt, _, err := client.apiClient.DefinedEntityApi.GetDefinedEntity(ctx, client.ClusterID)
+	if err != nil {
+		return nil, fmt.Errorf("error when getting defined entity: [%v]", err)
+	}
+	statusMap := defEnt.Entity["status"].(map[string]interface{})
+	virtualIpInterfaces := statusMap["virtual_IPs"]
+	if virtualIpInterfaces == nil {
+		return make([]string, 0), nil
+	} else {
+		virtualIpInterfacesSlice := virtualIpInterfaces.([]interface{})
+		virtualIpStrs := make([]string, len(virtualIpInterfacesSlice))
+		for ind, ipInterface := range virtualIpInterfacesSlice {
+			virtualIpStrs[ind] = ipInterface.(string)
+		}
+		return virtualIpStrs, nil
+	}
+}
 
+func (client *Client) updateRDEVirtualIps(ctx context.Context, updatedIps []string) error {
+	updateDefEnt, _, err := client.apiClient.DefinedEntityApi.GetDefinedEntity(ctx, client.ClusterID)
+	if err != nil {
+		return fmt.Errorf("error when getting defined entity: [%v]", err)
+	}
+	statusMap := updateDefEnt.Entity["status"].(map[string]interface{})
+	statusMap["virtual_IPs"] = updatedIps
+	_, _, err = client.apiClient.DefinedEntityApi.UpdateDefinedEntity(ctx, updateDefEnt, client.ClusterID)
+	if err != nil {
+		return fmt.Errorf("error when updating defined entity: [%v]", err)
+	}
+	return nil
+}
+
+func (client *Client) addVirtualIpToRDE(ctx context.Context, addIp string) error {
+	currIps, err := client.GetRDEVirtualIps(ctx)
+	if err != nil {
+		return fmt.Errorf("error for getting current vips: [%v]", err)
+	}
+	updatedIps := append(currIps, addIp)
+	err = client.updateRDEVirtualIps(ctx, updatedIps)
+	if err != nil {
+		return fmt.Errorf("error when adding virtual ip to RDE: [%v]", err)
+	}
+	return nil
+}
+
+func (client *Client) removeVirtualIpFromRDE(ctx context.Context, removeIp string) error {
+	currIps, err := client.GetRDEVirtualIps(ctx)
+	if err != nil {
+		return fmt.Errorf("error for getting current vips: [%v]", err)
+	}
+	// currIps is guaranteed not to be nil by GetRDEVirtualIps
+	if len(currIps) == 0 {
+		return fmt.Errorf("no RDE virtual ips to remove")
+	}
+	updatedIps := make([]string, len(currIps) - 1)
+	updatedInd := 0
+	for _, ip := range currIps {
+		if ip == removeIp {
+			continue
+		}
+		updatedIps[updatedInd] = ip
+		updatedInd += 1
+	}
+	err = client.updateRDEVirtualIps(ctx, updatedIps)
+	if err != nil {
+		return fmt.Errorf("error when adding virtual ip to RDE: [%v]", err)
+	}
+	return nil
 }
