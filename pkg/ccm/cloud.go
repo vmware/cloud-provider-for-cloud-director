@@ -85,10 +85,10 @@ func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error
 		)
 		if err == nil {
 			break
-		} else {
-			klog.Infof("Error initializing client from secrets: [%v]", err)
-			time.Sleep(10 * time.Second)
 		}
+
+		klog.Infof("Error initializing client from secrets: [%v]", err)
+		time.Sleep(10 * time.Second)
 	}
 
 	// setup LB only if the gateway is not NSX-T

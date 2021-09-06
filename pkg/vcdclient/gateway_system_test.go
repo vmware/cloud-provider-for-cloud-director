@@ -3,8 +3,6 @@
     SPDX-License-Identifier: Apache-2.0
 */
 
-// +build integration
-
 package vcdclient
 
 import (
@@ -157,7 +155,35 @@ func TestGetLoadBalancerSEG(t *testing.T) {
 	return
 }
 
-func TestVirtualServiceHttpCRUDE(t *testing.T) {
+func TestGetUnusedGatewayIP(t *testing.T) {
+
+	vcdClient, err := getTestVCDClient(map[string]interface{}{
+		"subnet": "",
+	})
+	assert.NoError(t, err, "Unable to get VCD client")
+	require.NotNil(t, vcdClient, "VCD Client should not be nil")
+
+	ctx := context.Background()
+
+	validSubnet := "10.150.191.253/19"
+	externalIP, err := vcdClient.getUnusedExternalIPAddress(ctx, validSubnet)
+	assert.NoError(t, err, "should not get an error for this range")
+	assert.NotEmpty(t, externalIP, "should get a valid IP address in the range [%s]", validSubnet)
+
+	invalidSubnet := "1.1.1.1/24"
+	externalIP, err = vcdClient.getUnusedExternalIPAddress(ctx, invalidSubnet)
+	assert.Error(t, err, "should get an error for this range")
+	assert.Empty(t, externalIP, "should not get a valid IP address in the range [%s]", invalidSubnet)
+
+	everythingAllowedSubnet := ""
+	externalIP, err = vcdClient.getUnusedExternalIPAddress(ctx, everythingAllowedSubnet)
+	assert.NoError(t, err, "should not get an error for this range")
+	assert.NotEmpty(t, externalIP, "should get a valid IP address in the empty range")
+
+	return
+}
+
+	func TestVirtualServiceHttpCRUDE(t *testing.T) {
 
 	vcdClient, err := getTestVCDClient(nil)
 	assert.NoError(t, err, "Unable to get VCD client")
