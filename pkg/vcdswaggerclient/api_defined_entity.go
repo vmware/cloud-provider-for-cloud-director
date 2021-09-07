@@ -13,12 +13,12 @@ package swagger
 
 import (
 	"context"
+	"fmt"
+	"github.com/antihax/optional"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
-	"fmt"
-	"github.com/antihax/optional"
 )
 
 // Linger please
@@ -510,7 +510,7 @@ Gets the defined entity with the unique identifier (URN)
 
 @return DefinedEntity
 */
-func (a *DefinedEntityApiService) GetDefinedEntity(ctx context.Context, id string) (DefinedEntity, *http.Response, error) {
+func (a *DefinedEntityApiService) GetDefinedEntity(ctx context.Context, id string) (DefinedEntity, *http.Response, string, error) {
 	var (
 		localVarHttpMethod = strings.ToUpper("Get")
 		localVarPostBody   interface{}
@@ -522,6 +522,7 @@ func (a *DefinedEntityApiService) GetDefinedEntity(ctx context.Context, id strin
 	// create path and map variables
 	localVarPath := a.client.cfg.BasePath + "/1.0.0/entities/{id}"
 	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", fmt.Sprintf("%v", id), -1)
+	etag := ""
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -559,24 +560,25 @@ func (a *DefinedEntityApiService) GetDefinedEntity(ctx context.Context, id strin
 	}
 	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFileName, localVarFileBytes)
 	if err != nil {
-		return localVarReturnValue, nil, err
+		return localVarReturnValue, nil, etag, err
 	}
 
 	localVarHttpResponse, err := a.client.callAPI(r)
 	if err != nil || localVarHttpResponse == nil {
-		return localVarReturnValue, localVarHttpResponse, err
+		return localVarReturnValue, localVarHttpResponse, etag, err
 	}
 
 	localVarBody, err := ioutil.ReadAll(localVarHttpResponse.Body)
 	localVarHttpResponse.Body.Close()
 	if err != nil {
-		return localVarReturnValue, localVarHttpResponse, err
+		return localVarReturnValue, localVarHttpResponse, etag, err
 	}
 
 	if localVarHttpResponse.StatusCode < 300 {
 		// If we succeed, return the data, otherwise pass on to decode error.
-		err = a.client.decode(&localVarReturnValue, localVarBody, localVarHttpResponse.Header.Get("Content-Type"));
-		return localVarReturnValue, localVarHttpResponse, err
+		err = a.client.decode(&localVarReturnValue, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+		etag = localVarHttpResponse.Header.Get("Etag")
+		return localVarReturnValue, localVarHttpResponse, etag, err
 	}
 
 	if localVarHttpResponse.StatusCode >= 300 {
@@ -585,21 +587,10 @@ func (a *DefinedEntityApiService) GetDefinedEntity(ctx context.Context, id strin
 			error: localVarHttpResponse.Status,
 		}
 
-		if localVarHttpResponse.StatusCode == 200 {
-			var v DefinedEntity
-			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"));
-			if err != nil {
-				newErr.error = err.Error()
-				return localVarReturnValue, localVarHttpResponse, newErr
-			}
-			newErr.model = v
-			return localVarReturnValue, localVarHttpResponse, newErr
-		}
-
-		return localVarReturnValue, localVarHttpResponse, newErr
+		return localVarReturnValue, localVarHttpResponse, etag, newErr
 	}
 
-	return localVarReturnValue, localVarHttpResponse, nil
+	return localVarReturnValue, localVarHttpResponse, etag, nil
 }
 
 /*
@@ -711,7 +702,7 @@ Update the defined entity with the unique identifier (URN)
 
 @return DefinedEntity
 */
-func (a *DefinedEntityApiService) UpdateDefinedEntity(ctx context.Context, entity DefinedEntity, id string) (DefinedEntity, *http.Response, error) {
+func (a *DefinedEntityApiService) UpdateDefinedEntity(ctx context.Context, entity DefinedEntity, etag string, id string) (DefinedEntity, *http.Response, error) {
 	var (
 		localVarHttpMethod = strings.ToUpper("Put")
 		localVarPostBody   interface{}
@@ -786,17 +777,6 @@ func (a *DefinedEntityApiService) UpdateDefinedEntity(ctx context.Context, entit
 		newErr := GenericSwaggerError{
 			body: localVarBody,
 			error: localVarHttpResponse.Status,
-		}
-
-		if localVarHttpResponse.StatusCode == 200 {
-			var v DefinedEntity
-			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"));
-			if err != nil {
-				newErr.error = err.Error()
-				return localVarReturnValue, localVarHttpResponse, newErr
-			}
-			newErr.model = v
-			return localVarReturnValue, localVarHttpResponse, newErr
 		}
 
 		if localVarHttpResponse.StatusCode == 400 {
