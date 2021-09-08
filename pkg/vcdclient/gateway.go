@@ -795,9 +795,11 @@ func (client *Client) createVirtualService(ctx context.Context, virtualServiceNa
 	}
 
 	// update RDE with freeIp
-	err = client.addVirtualIpToRDE(ctx, freeIP)
-	if err != nil {
-		klog.Errorf("error when adding virtual IP to RDE: [%v]", err)
+	if client.ClusterID != "" {
+		err = client.addVirtualIpToRDE(ctx, freeIP)
+		if err != nil {
+			klog.Errorf("error when adding virtual IP to RDE: [%v]", err)
+		}
 	}
 
 	vsSummary, err = client.getVirtualService(ctx, virtualServiceName)
@@ -855,10 +857,12 @@ func (client *Client) deleteVirtualService(ctx context.Context, virtualServiceNa
 	}
 	klog.Infof("Deleted virtual service [%s]\n", virtualServiceName)
 
-	//remove virtual ip from RDE
-	err = client.removeVirtualIpFromRDE(ctx, vsSummary.VirtualIpAddress)
-	if err != nil {
-		return fmt.Errorf("error when removing vip from RDE: [%v]", err)
+	// remove virtual ip from RDE
+	if client.ClusterID != "" {
+		err = client.removeVirtualIpFromRDE(ctx, vsSummary.VirtualIpAddress)
+		if err != nil {
+			return fmt.Errorf("error when removing vip from RDE: [%v]", err)
+		}
 	}
 
 	return nil
