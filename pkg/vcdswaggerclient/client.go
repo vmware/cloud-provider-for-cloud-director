@@ -64,6 +64,8 @@ type APIClient struct {
 
 	OrgVdcNetworksApi *OrgVdcNetworksApiService
 
+	DefinedEntityApi *DefinedEntityApiService
+
 }
 
 type service struct {
@@ -93,6 +95,7 @@ func NewAPIClient(cfg *Configuration) *APIClient {
 	c.LoadBalancerServiceEngineGroupAssignmentsApi = (*LoadBalancerServiceEngineGroupAssignmentsApiService)(&c.common)
 	c.OrgVdcNetworkApi = (*OrgVdcNetworkApiService)(&c.common)
 	c.OrgVdcNetworksApi = (*OrgVdcNetworksApiService)(&c.common)
+	c.DefinedEntityApi = (*DefinedEntityApiService) (&c.common)
 
 	return c
 }

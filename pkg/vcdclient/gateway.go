@@ -800,6 +800,14 @@ func (client *Client) createVirtualService(ctx context.Context, virtualServiceNa
 			taskURL, err)
 	}
 
+	// update RDE with freeIp
+	if client.ClusterID != "" {
+		err = client.addVirtualIpToRDE(ctx, freeIP)
+		if err != nil {
+			klog.Errorf("error when adding virtual IP to RDE: [%v]", err)
+		}
+	}
+
 	vsSummary, err = client.getVirtualService(ctx, virtualServiceName)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get summary for freshly created LB VS [%s]: [%v]",
@@ -854,6 +862,14 @@ func (client *Client) deleteVirtualService(ctx context.Context, virtualServiceNa
 			taskURL, err)
 	}
 	klog.Infof("Deleted virtual service [%s]\n", virtualServiceName)
+
+	// remove virtual ip from RDE
+	if client.ClusterID != "" {
+		err = client.removeVirtualIpFromRDE(ctx, vsSummary.VirtualIpAddress)
+		if err != nil {
+			return fmt.Errorf("error when removing vip from RDE: [%v]", err)
+		}
+	}
 
 	return nil
 }
@@ -1054,4 +1070,128 @@ func (client *Client) IsNSXTBackedGateway() bool {
 			(client.networkBackingType == swaggerClient.NSXT_FLEXIBLE_SEGMENT_BackingNetworkType)
 
 	return isNSXTBackedGateway
+}
+
+func (client *Client) GetRDEVirtualIps(ctx context.Context) ([]string, string, *swaggerClient.DefinedEntity, error) {
+	defEnt, _, etag, err := client.apiClient.DefinedEntityApi.GetDefinedEntity(ctx, client.ClusterID)
+	if err != nil {
+		return nil, "", nil, fmt.Errorf("error when getting defined entity: [%v]", err)
+	}
+	statusEntry, ok := defEnt.Entity["status"]
+	if !ok {
+		return nil, "", nil, fmt.Errorf("could not find 'status' entry in defined entity")
+	}
+	statusMap, ok := statusEntry.(map[string]interface{})
+	if !ok {
+		return nil, "", nil, fmt.Errorf("unable to convert [%T] to map", statusEntry)
+	}
+	virtualIpInterfaces := statusMap["virtual_IPs"]
+	if virtualIpInterfaces == nil {
+		return make([]string, 0), etag, &defEnt, nil
+	}
+
+	virtualIpInterfacesSlice, ok := virtualIpInterfaces.([]interface{})
+	if !ok {
+		return nil, "", nil, fmt.Errorf("unable to convert [%T] to slice of interface", virtualIpInterfaces)
+	}
+	virtualIpStrs := make([]string, len(virtualIpInterfacesSlice))
+	for ind, ipInterface := range virtualIpInterfacesSlice {
+		currIp, ok := ipInterface.(string)
+		if !ok {
+			return nil, "", nil, fmt.Errorf("unable to convert [%T] to string", ipInterface)
+		}
+		virtualIpStrs[ind] = currIp
+	}
+	return virtualIpStrs, etag, &defEnt, nil
+}
+
+// This function will modify the passed in defEnt
+func (client *Client) updateRDEVirtualIps(ctx context.Context, updatedIps []string, etag string,
+	defEnt *swaggerClient.DefinedEntity) (*http.Response, error) {
+	statusEntry, ok := defEnt.Entity["status"]
+	if !ok {
+		return nil, fmt.Errorf("could not find 'status' entry in defined entity")
+	}
+	statusMap, ok := statusEntry.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("unable to convert [%T] to map", statusEntry)
+	}
+
+	statusMap["virtual_IPs"] = updatedIps
+	_, httpResponse, err := client.apiClient.DefinedEntityApi.UpdateDefinedEntity(ctx, *defEnt, etag, client.ClusterID)
+	if err != nil {
+		return httpResponse, fmt.Errorf("error when updating defined entity: [%v]", err)
+	}
+	return nil, nil
+}
+
+func (client *Client) addVirtualIpToRDE(ctx context.Context, addIp string) error {
+	for {
+		currIps, etag, defEnt, err := client.GetRDEVirtualIps(ctx)
+		if err != nil {
+			return fmt.Errorf("error for getting current vips: [%v]", err)
+		}
+
+		// check if need to update RDE
+		foundAddIp := false
+		for _, ip := range currIps {
+			if ip == addIp {
+				foundAddIp = true
+				break
+			}
+		}
+		if foundAddIp {
+			return nil // no need to update RDE
+		}
+
+		updatedIps := append(currIps, addIp)
+		httpResponse, err := client.updateRDEVirtualIps(ctx, updatedIps, etag, defEnt)
+		if err != nil {
+			if httpResponse.StatusCode == http.StatusPreconditionFailed {
+				continue
+			}
+			return fmt.Errorf("error when adding virtual ip to RDE: [%v]", err)
+		}
+		break
+	}
+	return nil
+}
+
+func (client *Client) removeVirtualIpFromRDE(ctx context.Context, removeIp string) error {
+	for {
+		currIps, etag, defEnt, err := client.GetRDEVirtualIps(ctx)
+		if err != nil {
+			return fmt.Errorf("error for getting current vips: [%v]", err)
+		}
+		// currIps is guaranteed not to be nil by GetRDEVirtualIps
+		if len(currIps) == 0 {
+			return fmt.Errorf("no RDE virtual ips to remove")
+		}
+
+		// form updated virtual ip list
+		updatedIps := make([]string, len(currIps)-1)
+		updatedInd := 0
+		foundRemoveIp := false
+		for _, ip := range currIps {
+			if ip == removeIp {
+				foundRemoveIp = true
+				continue // for inner loop
+			}
+			updatedIps[updatedInd] = ip
+			updatedInd += 1
+		}
+		if !foundRemoveIp {
+			return nil // no need to update RDE
+		}
+
+		httpResponse, err := client.updateRDEVirtualIps(ctx, updatedIps, etag, defEnt)
+		if err != nil {
+			if httpResponse.StatusCode == http.StatusPreconditionFailed {
+				continue
+			}
+			return fmt.Errorf("error when adding virtual ip to RDE: [%v]", err)
+		}
+		break
+	}
+	return nil
 }
