@@ -152,18 +152,22 @@ func (client *Client) getUnusedExternalIPAddress(ctx context.Context, ipamSubnet
 			client.gatewayRef.Name, resp, err)
 	}
 
-	var ipRanges *swaggerClient.IpRanges = nil
+	ipRangesList := make([]*swaggerClient.IpRanges, 0)
 	for _, edgeGWUplink := range edgeGW.EdgeGatewayUplinks {
 		for _, subnet := range edgeGWUplink.Subnets.Values {
 			subnetMask := fmt.Sprintf("%s/%d", subnet.Gateway, subnet.PrefixLength)
-			if subnetMask == ipamSubnet {
-				ipRanges = subnet.IpRanges
+			// if there is no specified subnet, look at all ranges
+			if ipamSubnet == "" {
+				ipRangesList = append(ipRangesList, subnet.IpRanges)
+			} else if subnetMask == ipamSubnet {
+				ipRangesList = append(ipRangesList, subnet.IpRanges)
 				break
 			}
 		}
 	}
-	if ipRanges == nil {
-		return "", fmt.Errorf("unable to get ipRange corresponding to IPAM subnet mask [%s]",
+	if len(ipRangesList) == 0 {
+		return "", fmt.Errorf(
+			"unable to get appropriate ipRange corresponding to IPAM subnet mask [%s]",
 			ipamSubnet)
 	}
 
@@ -190,11 +194,13 @@ func (client *Client) getUnusedExternalIPAddress(ctx context.Context, ipamSubnet
 
 	// Now get a free IP that is not used.
 	freeIP := ""
-	for _, ipRange := range ipRanges.Values {
-		freeIP = getUnusedIPAddressInRange(ipRange.StartAddress,
-			ipRange.EndAddress, usedIPs)
-		if freeIP != "" {
-			break
+	for _, ipRanges := range ipRangesList {
+		for _, ipRange := range ipRanges.Values {
+			freeIP = getUnusedIPAddressInRange(ipRange.StartAddress,
+				ipRange.EndAddress, usedIPs)
+			if freeIP != "" {
+				break
+			}
 		}
 	}
 	if freeIP == "" {
