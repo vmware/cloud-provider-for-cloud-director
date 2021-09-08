@@ -1125,10 +1125,23 @@ func (client *Client) addVirtualIpToRDE(ctx context.Context, addIp string) error
 		if err != nil {
 			return fmt.Errorf("error for getting current vips: [%v]", err)
 		}
+
+		// check if need to update RDE
+		foundAddIp := false
+		for _, ip := range currIps {
+			if ip == addIp {
+				foundAddIp = true
+				break
+			}
+		}
+		if foundAddIp {
+			return nil // no need to update RDE
+		}
+
 		updatedIps := append(currIps, addIp)
 		httpResponse, err := client.updateRDEVirtualIps(ctx, updatedIps, etag, defEnt)
 		if err != nil {
-			if httpResponse.StatusCode == 412 {
+			if httpResponse.StatusCode == http.StatusPreconditionFailed {
 				continue
 			}
 			return fmt.Errorf("error when adding virtual ip to RDE: [%v]", err)
@@ -1152,17 +1165,22 @@ func (client *Client) removeVirtualIpFromRDE(ctx context.Context, removeIp strin
 		// form updated virtual ip list
 		updatedIps := make([]string, len(currIps)-1)
 		updatedInd := 0
+		foundRemoveIp := false
 		for _, ip := range currIps {
 			if ip == removeIp {
+				foundRemoveIp = true
 				continue // for inner loop
 			}
 			updatedIps[updatedInd] = ip
 			updatedInd += 1
 		}
+		if !foundRemoveIp {
+			return nil // no need to update RDE
+		}
 
 		httpResponse, err := client.updateRDEVirtualIps(ctx, updatedIps, etag, defEnt)
 		if err != nil {
-			if httpResponse.StatusCode == 412 {
+			if httpResponse.StatusCode == http.StatusPreconditionFailed {
 				continue
 			}
 			return fmt.Errorf("error when adding virtual ip to RDE: [%v]", err)
