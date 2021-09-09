@@ -710,6 +710,9 @@ func (a *DefinedEntityApiService) UpdateDefinedEntity(ctx context.Context, entit
 		localVarFileBytes  []byte
 		localVarReturnValue DefinedEntity
 	)
+	if etag == "" {
+		return localVarReturnValue, nil, fmt.Errorf("etag is empty when updating defined entity")
+	}
 
 	// create path and map variables
 	localVarPath := a.client.cfg.BasePath + "/1.0.0/entities/{id}"
@@ -718,6 +721,7 @@ func (a *DefinedEntityApiService) UpdateDefinedEntity(ctx context.Context, entit
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
+	localVarHeaderParams["If-Match"] = etag
 
 	// to determine the Content-Type header
 	localVarHttpContentTypes := []string{"application/json"}
