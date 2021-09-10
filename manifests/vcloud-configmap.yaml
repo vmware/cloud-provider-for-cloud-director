@@ -18,6 +18,6 @@ data:
       ports:
         http: 80
         https: 443
-      certAlias: CLUSTER_ID-test
+      certAlias: CLUSTER_ID-cert
     clusterid: CLUSTER_ID
 immutable: true
