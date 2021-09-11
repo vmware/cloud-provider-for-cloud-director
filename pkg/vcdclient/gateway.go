@@ -375,6 +375,10 @@ func (client *Client) getNATRuleRef(ctx context.Context,
 	return natRuleRef, nil
 }
 
+func createDNATRuleName(virtualServiceName string) string {
+	return fmt.Sprintf("dnat-%s", virtualServiceName)
+}
+
 // TODO: get and return if it already exists
 func (client *Client) createDNATRule(ctx context.Context, dnatRuleName string,
 	externalIP string, internalIP string, port int32) error {
@@ -685,7 +689,7 @@ func (client *Client) getVirtualService(ctx context.Context,
 
 func (client *Client) createVirtualService(ctx context.Context, virtualServiceName string,
 	lbPoolRef *swaggerClient.EntityReference, segRef *swaggerClient.EntityReference,
-	freeIP string, vsType string, externalPort int32,
+	freeIP string, externalIP string, vsType string, externalPort int32,
 	certificateAlias string) (*swaggerClient.EntityReference, error) {
 
 	if client.gatewayRef == nil {
@@ -802,7 +806,7 @@ func (client *Client) createVirtualService(ctx context.Context, virtualServiceNa
 
 	// update RDE with freeIp
 	if client.ClusterID != "" {
-		err = client.addVirtualIpToRDE(ctx, freeIP)
+		err = client.addVirtualIpToRDE(ctx, externalIP)
 		if err != nil {
 			klog.Errorf("error when adding virtual IP to RDE: [%v]", err)
 		}
@@ -828,7 +832,7 @@ func (client *Client) createVirtualService(ctx context.Context, virtualServiceNa
 }
 
 func (client *Client) deleteVirtualService(ctx context.Context, virtualServiceName string,
-	failIfAbsent bool) error {
+	failIfAbsent bool, externalIP string) error {
 
 	if client.gatewayRef == nil {
 		return fmt.Errorf("gateway reference should not be nil")
@@ -865,7 +869,7 @@ func (client *Client) deleteVirtualService(ctx context.Context, virtualServiceNa
 
 	// remove virtual ip from RDE
 	if client.ClusterID != "" {
-		err = client.removeVirtualIpFromRDE(ctx, vsSummary.VirtualIpAddress)
+		err = client.removeVirtualIpFromRDE(ctx, externalIP)
 		if err != nil {
 			return fmt.Errorf("error when removing vip from RDE: [%v]", err)
 		}
@@ -953,7 +957,7 @@ func (client *Client) CreateLoadBalancer(ctx context.Context, virtualServiceName
 				return "", fmt.Errorf("unable to get internal IP address for one-arm mode: [%v]", err)
 			}
 
-			dnatRuleName := fmt.Sprintf("dnat-%s", virtualServiceName)
+			dnatRuleName := createDNATRuleName(virtualServiceName)
 			if err = client.createDNATRule(ctx, dnatRuleName, externalIP, internalIP, portDetail.externalPort); err != nil {
 				return "", fmt.Errorf("unable to create dnat rule [%s] => [%s]: [%v]",
 					externalIP, internalIP, err)
@@ -974,7 +978,7 @@ func (client *Client) CreateLoadBalancer(ctx context.Context, virtualServiceName
 		}
 
 		virtualServiceRef, err := client.createVirtualService(ctx, virtualServiceName, lbPoolRef, segRef,
-			virtualServiceIP, portDetail.serviceType, portDetail.externalPort, portDetail.certificateAlias)
+			virtualServiceIP, externalIP, portDetail.serviceType, portDetail.externalPort, portDetail.certificateAlias)
 		if err != nil {
 			return "", fmt.Errorf("unable to create virtual service [%s] with address [%s:%d]: [%v]",
 				virtualServiceName, virtualServiceIP, portDetail.externalPort, err)
@@ -1008,14 +1012,21 @@ func (client *Client) DeleteLoadBalancer(ctx context.Context, virtualServiceName
 	defer client.rwLock.Unlock()
 
 	// TODO: try to continue in case of errors
-	var err error
 
 	for _, suffix := range []string{"http", "https"} {
 
 		virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, suffix)
 		lbPoolName := fmt.Sprintf("%s-%s", lbPoolNamePrefix, suffix)
 
-		err = client.deleteVirtualService(ctx, virtualServiceName, false)
+		// get external IP
+		dnatRuleName := createDNATRuleName(virtualServiceName)
+		dnatRuleRef, err := client.getNATRuleRef(ctx, dnatRuleName)
+		if err != nil {
+			fmt.Errorf("unable to get dnat rule ref for nat rule [%s]: [%v]", dnatRuleName, err)
+		}
+		externalIP := dnatRuleRef.ExternalIP
+
+		err = client.deleteVirtualService(ctx, virtualServiceName, false, externalIP)
 		if err != nil {
 			return fmt.Errorf("unable to delete virtual service [%s]: [%v]", virtualServiceName, err)
 		}
@@ -1026,7 +1037,6 @@ func (client *Client) DeleteLoadBalancer(ctx context.Context, virtualServiceName
 		}
 
 		if client.OneArm != nil {
-			dnatRuleName := fmt.Sprintf("dnat-%s", virtualServiceName)
 			err = client.deleteDNATRule(ctx, dnatRuleName, false)
 			if err != nil {
 				return fmt.Errorf("unable to delete dnat rule [%s]: [%v]", dnatRuleName, err)
@@ -1051,7 +1061,7 @@ func (client *Client) GetLoadBalancer(ctx context.Context, virtualServiceName st
 
 	vip := vsSummary.VirtualIpAddress
 	if client.OneArm != nil {
-		dnatRuleName := fmt.Sprintf("dnat-%s", virtualServiceName)
+		dnatRuleName := createDNATRuleName(virtualServiceName)
 		dnatRuleRef, err := client.getNATRuleRef(ctx, dnatRuleName)
 		if err != nil {
 			return "", fmt.Errorf("Unable to find dnat rule [%s] for virtual service [%s]: [%v]",
@@ -1169,20 +1179,17 @@ func (client *Client) removeVirtualIpFromRDE(ctx context.Context, removeIp strin
 		}
 
 		// form updated virtual ip list
-		updatedIps := make([]string, len(currIps)-1)
-		updatedInd := 0
-		foundRemoveIp := false
-		for _, ip := range currIps {
+		foundIdx := -1
+		for idx, ip := range currIps {
 			if ip == removeIp {
-				foundRemoveIp = true
-				continue // for inner loop
+				foundIdx = idx
+				break // for inner loop
 			}
-			updatedIps[updatedInd] = ip
-			updatedInd += 1
 		}
-		if !foundRemoveIp {
+		if foundIdx == -1 {
 			return nil // no need to update RDE
 		}
+		updatedIps := append(currIps[:foundIdx], currIps[foundIdx + 1:]...)
 
 		httpResponse, err := client.updateRDEVirtualIps(ctx, updatedIps, etag, defEnt)
 		if err != nil {
