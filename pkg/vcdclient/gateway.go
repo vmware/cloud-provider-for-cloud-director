@@ -689,7 +689,7 @@ func (client *Client) getVirtualService(ctx context.Context,
 
 func (client *Client) createVirtualService(ctx context.Context, virtualServiceName string,
 	lbPoolRef *swaggerClient.EntityReference, segRef *swaggerClient.EntityReference,
-	freeIP string, externalIP string, vsType string, externalPort int32,
+	freeIP string, rdeVIP string, vsType string, externalPort int32,
 	certificateAlias string) (*swaggerClient.EntityReference, error) {
 
 	if client.gatewayRef == nil {
@@ -806,7 +806,7 @@ func (client *Client) createVirtualService(ctx context.Context, virtualServiceNa
 
 	// update RDE with freeIp
 	if client.ClusterID != "" {
-		err = client.addVirtualIpToRDE(ctx, externalIP)
+		err = client.addVirtualIpToRDE(ctx, rdeVIP)
 		if err != nil {
 			klog.Errorf("error when adding virtual IP to RDE: [%v]", err)
 		}
@@ -832,7 +832,7 @@ func (client *Client) createVirtualService(ctx context.Context, virtualServiceNa
 }
 
 func (client *Client) deleteVirtualService(ctx context.Context, virtualServiceName string,
-	failIfAbsent bool, externalIP string) error {
+	failIfAbsent bool, rdeVIP string) error {
 
 	if client.gatewayRef == nil {
 		return fmt.Errorf("gateway reference should not be nil")
@@ -869,7 +869,7 @@ func (client *Client) deleteVirtualService(ctx context.Context, virtualServiceNa
 
 	// remove virtual ip from RDE
 	if client.ClusterID != "" {
-		err = client.removeVirtualIpFromRDE(ctx, externalIP)
+		err = client.removeVirtualIpFromRDE(ctx, rdeVIP)
 		if err != nil {
 			return fmt.Errorf("error when removing vip from RDE: [%v]", err)
 		}
@@ -1012,6 +1012,7 @@ func (client *Client) DeleteLoadBalancer(ctx context.Context, virtualServiceName
 	defer client.rwLock.Unlock()
 
 	// TODO: try to continue in case of errors
+	var err error
 
 	for _, suffix := range []string{"http", "https"} {
 
@@ -1019,14 +1020,28 @@ func (client *Client) DeleteLoadBalancer(ctx context.Context, virtualServiceName
 		lbPoolName := fmt.Sprintf("%s-%s", lbPoolNamePrefix, suffix)
 
 		// get external IP
-		dnatRuleName := createDNATRuleName(virtualServiceName)
-		dnatRuleRef, err := client.getNATRuleRef(ctx, dnatRuleName)
-		if err != nil {
-			fmt.Errorf("unable to get dnat rule ref for nat rule [%s]: [%v]", dnatRuleName, err)
+		rdeVIP := ""
+		dnatRuleName := ""
+		if client.OneArm != nil {
+			dnatRuleName = createDNATRuleName(virtualServiceName)
+			dnatRuleRef, err := client.getNATRuleRef(ctx, dnatRuleName)
+			if err != nil {
+				return fmt.Errorf("unable to get dnat rule ref for nat rule [%s]: [%v]", dnatRuleName, err)
+			}
+			rdeVIP = dnatRuleRef.ExternalIP
+		} else {
+			vsSummary, err := client.getVirtualService(ctx, virtualServiceName)
+			if err != nil {
+				return fmt.Errorf("unable to get summary for LB Virtual Service [%s]: [%v]",
+					virtualServiceName, err)
+			}
+			if vsSummary == nil {
+				return fmt.Errorf("no virtual service with name [%s]", virtualServiceName)
+			}
+			rdeVIP = vsSummary.VirtualIpAddress
 		}
-		externalIP := dnatRuleRef.ExternalIP
 
-		err = client.deleteVirtualService(ctx, virtualServiceName, false, externalIP)
+		err = client.deleteVirtualService(ctx, virtualServiceName, false, rdeVIP)
 		if err != nil {
 			return fmt.Errorf("unable to delete virtual service [%s]: [%v]", virtualServiceName, err)
 		}
