@@ -92,6 +92,21 @@ The LoadBalancer section of the Edge Gateway for a Tenant should be enabled, and
 #### Tenant Setup
 A ServiceEngineGroup needs to be added to the gateway of the OVDC within which the Kubernetes cluster is to be created. The overall steps to achieve that are documented at [Enable Load Balancer on an NSX-T Data Center Edge Gateway](https://docs.vmware.com/en/VMware-Cloud-Director/10.2/VMware-Cloud-Director-Service-Provider-Admin-Portal-Guide/GUID-1784B96B-20F8-4E4D-BF33-86D2264EDBCF.html)
 
+#### Creation of a LoadBalancer using a third-party ingress
+Any third party ingress such as Contour, Nginx or Traefik could be used with the CPI in order to create an L7 ingress and NSX Advanced Load Balancer with Avi will act as the L4 LoadBalancer.
+
+Note that in order to create a HTTPS Ingress using the Avi LoadBalancer, a certificate needs to be used. For Kubernetes clusters created using the Container Service Extension, the certificate needs to be named in a particular way as follows:
+1. Get the ID of the Kubernetes cluster using the following command. Let us name it `ClusterID`
+```
+vcd cse cluster info <kubernetes cluster name>
+```
+2. Upload a certificate into the Trusted Certificates of the Organization using the VCD UI. Name the certificate with the following format:
+```
+<cluster ID>-cert
+```
+
+This will enable all HTTPS ingresses of the Kubernetes cluster to use the same certificate that has been uploaded here.
+
 ## Documentation
 
 Documentation for the Kubernetes External Cloud Provider for VMware Cloud Director can be obtained here:
