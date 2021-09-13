@@ -22,7 +22,7 @@ This cloud-provider is in a preliminary `beta` state and is not yet ready to be 
 3. CPI user: CPI needs to be running in the cluster as a user with a set of rights as described in this section and the Rights section below. For convenience, let us term this user as the `CPI user`.
 
 ## VMware Cloud Director Configuration
-In this section, we assume that the Kubernetes cluster is created using the [Container Service Extension](https://github.com/vmware/container-service-extension). However that is not a mandatory requirement. We will later describe the process of enabling a user-created Kubernetes Cluster with CPI.
+In this section, we assume that the Kubernetes cluster is created using the [Container Service Extension](https://github.com/vmware/container-service-extension). However that is not a mandatory requirement.
 
 NSX-T with NSX Advanced Load Balancer is a prerequisite to use LoadBalancers with CPI of VCD. 
 
@@ -101,28 +101,6 @@ vcd cse cluster info <kubernetes cluster name>
 ```
 
 This will enable all HTTPS ingresses of the Kubernetes cluster to use the same certificate that has been uploaded here.
-
-## Working with customer hand-crafted Kubernetes clusters
-If you are bringing your own Kubernetes Cluster, the CPI can still be used. The Kubernetes Clusters needs to satisfy the following requirements:
-1. The compatibility matrix of VCD must be met.
-2. All the VMs acting as nodes of the Kubernetes Cluster must be within one vApp in VCD.
-3. The `CPI user` account must follow the same requirements as earlier: it should have complete visibility to the vApp and have the required rights.
-4. The `kubelet` service on each of the VMs should have been started with the parameter `--cloud-provider=external`.
-
-Once the above requirements are met, please use the following steps to install the CPI for VCD:
-1. Download [vcloud-basic-auth.yaml](https://raw.githubusercontent.com/vmware/cloud-provider-for-cloud-director/0.1.0-beta/manifests/vcloud-basic-auth.yaml) and update it with the **Base-64 encoded versions** of the username and password of the `CPI user`. A more detailed description can be found in the `Additional Setup Steps for 0.1.0-beta` section above.
-2. Download [vcloud-configmap.yaml](https://raw.githubusercontent.com/vmware/cloud-provider-for-cloud-director/0.1.0-beta/manifests/vcloud-configmap.yaml) and update the parameters mentioned in `BOLD`.
-   1. Please use an empty string `""` for the `CLUSTER_ID` parameter
-   2. For the `CLUSTER_ID-cert` parameter, please upload a certificate as mentioned above for HTTPS ingress services and use the name that you have provided while uploading the certificate.
-3. Download [cloud-director-ccm.yaml](https://raw.githubusercontent.com/vmware/cloud-provider-for-cloud-director/0.1.0-beta/manifests/cloud-director-ccm.yaml)
-4. Once the `vcloud-basic-auth.yaml`, `vcloud-configmap.yaml` and the `cloud-director-ccm.yaml` files have been created, issue the following commands (in order) to install the CPI into the cluster:
-```
-kubectl apply -f vcloud-basic-auth.yaml
-kubectl apply -f vcloud-configmap.yaml
-kubectl apply -f cloud-director-ccm.yaml
-```
-
-The above steps will install the Cloud Provider for Cloud Director into the user-provisioned Kubernetes cluster.
 
 ## Contributing
 Please see [CONTRIBUTING.md](CONTRIBUTING.md) for instructions on how to contribute.
