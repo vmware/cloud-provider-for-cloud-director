@@ -1,6 +1,5 @@
 # Kubernetes External Cloud Provider for VMware Cloud Director
-
-**cloud-provider-for-cloud-director** contains the source code and build methods to implement and deploy a Kubernetes Cloud Provider with [VMware Cloud Director](https://www.vmware.com/products/cloud-director.html). This Cloud Provider implements the controllers for [Services](https://kubernetes.io/docs/concepts/architecture/cloud-controller/#service-controller) and [Instances](https://kubernetes.io/docs/concepts/architecture/cloud-controller/#node-controller) which would enable users to deploy Ingresses and also manage the lifecycle of Kubernetes nodes, which are [VMware Cloud Director VMs](https://docs.vmware.com/en/VMware-Cloud-Director/10.3/VMware-Cloud-Director-Tenant-Portal-Guide/GUID-8F806B38-2489-4D36-82FF-B23BAFC3B294.html) in this Cloud Provider.
+This repository contains the [Kubernetes cloud-controller-manager](https://kubernetes.io/docs/concepts/architecture/cloud-controller/) for VMware Cloud Director.
 
 The version of the VMware Cloud Director API and Installation that are compatible for a given cloud-provider container image are described in the following compatibility matrix:
 
@@ -14,33 +13,29 @@ This extension is intended to be installed into a Kubernetes cluster installed w
 
 This cloud-provider is in a preliminary `beta` state and is not yet ready to be used in production.
 
-## VMware Cloud Director Configuration
+## Terminology
+1. VCD: VMware Cloud Director
+2. ClusterAdminRole: This is a user who has enough rights to create and administer a Kubernetes Cluster in VCD. This role can be created by cloning the [vApp Author Role](https://docs.vmware.com/en/VMware-Cloud-Director/10.3/VMware-Cloud-Director-Tenant-Portal-Guide/GUID-BC504F6B-3D38-4F25-AACF-ED584063754F.html) and then adding the following rights:
+   1. Full Control: CSE:NATIVECLUSTER
+   2. Edit: CSE:NATIVECLUSTER
+   3. View: CSE:NATIVECLUSTER
+3. CPI user: CPI needs to be running in the cluster as a user with a set of rights as described in this section and the Rights section below. For convenience, let us term this user as the `CPI user`.
 
+## VMware Cloud Director Configuration
 In this section, we assume that the Kubernetes cluster is created using the [Container Service Extension](https://github.com/vmware/container-service-extension). However that is not a mandatory requirement. We will later describe the process of enabling a user-created Kubernetes Cluster with CPI.
 
 NSX-T with NSX Advanced Load Balancer is a prerequisite to use LoadBalancers with CPI of VCD. 
 
-The Kubernetes cluster on which the CPI needs to be installed must be accessible to the user whose credentials are used by CPI. Let us call the latter user as the `CPI user`.
-The `CPI user` can have access to the Kubernetes cluster in onw of two ways:
-1. The `CPI user` itself creates the cluster.
-2. The `CPI user` is able to view the vApp of the Kubernetes cluster using VCD sharing methods.
-
-In either case, the `CPI user` will be able to manage the cluster.
-
 ### Rights
-This `CPI user` needs to be created from a `ClusterAdminRole` with additional rights. The `ClusterAdminRole` is a clone of the [vApp Author Role](https://docs.vmware.com/en/VMware-Cloud-Director/10.3/VMware-Cloud-Director-Tenant-Portal-Guide/GUID-BC504F6B-3D38-4F25-AACF-ED584063754F.html) with the following additional rights: 
-1. Other =>
-   1. Full Control: CSE:NATIVECLUSTER
-   2. Edit: CSE:NATIVECLUSTER
-   3. View: CSE:NATIVECLUSTER
-2. Gateway =>
+The `CPI user` should have view access to the vApp containing the Kubernetes cluster. If the CPI user itself has created the cluster, it will have this access by default.
+This `CPI user` needs to be created from a `ClusterAdminRole` with the following additional rights:
+1. Gateway =>
    1. View Gateway
-3. Gateway Services =>
+2. Gateway Services =>
    1. NAT Configure (adds NAT View)
    2. LoadBalancer Configure (adds LoadBalancer View)
 
 ### Additional Setup Steps for 0.1.0-beta
-
 There is a set of additional steps needed in order to feed the `CPI user` credentials into the Kubernetes cluster. These steps lead to a less secure cluster and are only applicable for the Beta release. The GA release of this product will not need these additional steps and will therefore result in a more secure cluster.
 
 These additional steps are as follows:
@@ -129,17 +124,8 @@ kubectl apply -f cloud-director-ccm.yaml
 
 The above steps will install the Cloud Provider for Cloud Director into the user-provisioned Kubernetes cluster.
 
-## Documentation
-
-Documentation for the Kubernetes External Cloud Provider for VMware Cloud Director can be obtained here:
-* TBD
-
-
 ## Contributing
-
 Please see [CONTRIBUTING.md](CONTRIBUTING.md) for instructions on how to contribute.
 
-
 ## License
-
 [Apache-2.0](LICENSE.txt)
