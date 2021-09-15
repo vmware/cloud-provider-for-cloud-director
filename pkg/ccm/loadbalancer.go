@@ -155,10 +155,25 @@ func (lb *LBManager) GetLoadBalancer(ctx context.Context, clusterName string,
 	return lb.getLoadBalancer(ctx, service)
 }
 
+func (lb *LBManager) getServiceSuffix(service *v1.Service) string {
+	for _, port := range service.Spec.Ports {
+		switch port.Port {
+		case lb.vcdClient.HTTPPort:
+			return "http"
+		case lb.vcdClient.HTTPSPort:
+			return "https"
+		default:
+			continue
+		}
+	}
+	return ""
+}
+
 // GetLoadBalancerName returns the name of the load balancer. Implementations must treat the
 // *v1.Service parameter as read-only and not modify it.
 func (lb *LBManager) GetLoadBalancerName(_ context.Context, clusterName string, service *v1.Service) string {
-	return fmt.Sprintf("ingress-vs-%s-%s", service.Name, lb.vcdClient.ClusterID)
+	svcSuffix := lb.getServiceSuffix(service)
+	return fmt.Sprintf("ingress-vs-%s-%s-%s", service.Name, lb.vcdClient.ClusterID, svcSuffix)
 }
 
 func (lb *LBManager) deleteLoadBalancer(ctx context.Context, service *v1.Service) error {
