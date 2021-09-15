@@ -964,6 +964,17 @@ func (client *Client) CreateLoadBalancer(ctx context.Context, virtualServiceName
 			}
 			// use the internal IP to create virtual service
 			virtualServiceIP = internalIP
+
+			// the dnat rule may have been created, or it may already exist
+			// we will retrieve the dnat rule's external ip
+			dnatRuleRef, err := client.getNATRuleRef(ctx, dnatRuleName)
+			if err != nil {
+				return "", fmt.Errorf("unable to retrieve created dnat rule [%s]: [%v]", dnatRuleName, err)
+			}
+			if dnatRuleRef == nil {
+				return "", fmt.Errorf("retrieved dnat rule ref is nil")
+			}
+			externalIP = dnatRuleRef.ExternalIP
 		}
 
 		segRef, err := client.getLoadBalancerSEG(ctx)

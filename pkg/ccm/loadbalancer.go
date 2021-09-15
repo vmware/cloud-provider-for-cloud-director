@@ -209,9 +209,9 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 	httpsPort := int32(0)
 	for _, port := range service.Spec.Ports {
 		switch port.Port {
-		case 80:
+		case lb.vcdClient.HTTPPort:
 			httpPort = port.NodePort
-		case 443:
+		case lb.vcdClient.HTTPSPort:
 			httpsPort = port.NodePort
 		default:
 			klog.Infof("Encountered unhandled port [%d]\n", port.Port)
