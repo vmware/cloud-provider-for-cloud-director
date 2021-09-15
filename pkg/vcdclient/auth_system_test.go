@@ -18,6 +18,12 @@ func TestNewVCDAuthConfigFromSecrets(t *testing.T) {
 	assert.NotNil(t, vcdClient, "VCD Client should not be nil")
 
 	vcdClient, err = getTestVCDClient(map[string]interface{}{
+		"refreshToken": "",
+	})
+	assert.NoError(t, err, "Unable to get VCD Client")
+	assert.NotNil(t, vcdClient, "VCD Client should not be nil")
+
+	vcdClient, err = getTestVCDClient(map[string]interface{}{
 		"getVdcClient": true,
 	})
 	assert.NoError(t, err, "Unable to get Client with VDC details.")

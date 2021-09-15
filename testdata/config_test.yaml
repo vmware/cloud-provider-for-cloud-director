@@ -4,6 +4,7 @@ vcd:
   vdc: "org-vdc"
   user: "vmware-cloud-director-user"
   secret: "password-of-vmware-cloud-director-user"
+  refreshToken: "refresh-token"
   network: "network-used-in-org-vdc"
   vipSubnet: "subnet-CIDR-from-which-VirtualIPs-are-picked"
 loadbalancer:

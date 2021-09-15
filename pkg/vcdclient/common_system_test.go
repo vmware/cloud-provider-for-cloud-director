@@ -105,6 +105,8 @@ func getTestVCDClient(inputMap map[string]interface{}) (*Client, error) {
 				cloudConfig.LB.CertificateAlias = getStrValStrict(val, cloudConfig.LB.CertificateAlias)
 			case "getVdcClient":
 				getVdcClient = getBoolValStrict(val, false)
+			case "refreshToken":
+				cloudConfig.VCD.RefreshToken = getStrValStrict(val, cloudConfig.VCD.RefreshToken)
 			}
 		}
 	}
@@ -117,6 +119,7 @@ func getTestVCDClient(inputMap map[string]interface{}) (*Client, error) {
 		cloudConfig.VCD.VIPSubnet,
 		cloudConfig.VCD.User,
 		cloudConfig.VCD.Secret,
+		cloudConfig.VCD.RefreshToken,
 		insecure,
 		cloudConfig.ClusterID,
 		oneArm,

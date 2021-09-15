@@ -1,6 +1,6 @@
 /*
-    Copyright 2021 VMware, Inc.
-    SPDX-License-Identifier: Apache-2.0
+   Copyright 2021 VMware, Inc.
+   SPDX-License-Identifier: Apache-2.0
 */
 
 package vcdclient
@@ -46,7 +46,7 @@ type Client struct {
 
 // RefreshToken will check if can authenticate and rebuild clients if needed
 func (client *Client) RefreshToken() error {
-	_, r, err := client.vcdAuthConfig.GetBearerTokenFromSecrets()
+	_, r, err := client.vcdAuthConfig.GetBearerToken()
 	if r == nil && err != nil {
 		return fmt.Errorf("error while getting bearer token from secrets: [%v]", err)
 	} else if r != nil && r.StatusCode == 401 {
@@ -80,8 +80,8 @@ func (client *Client) RefreshToken() error {
 // NewVCDClientFromSecrets :
 func NewVCDClientFromSecrets(host string, orgName string, vdcName string,
 	networkName string, ipamSubnet string, user string, password string,
-	insecure bool, clusterID string, oneArm *OneArm, httpPort int32,
-	httpsPort int32, certAlias string, getVdcClient bool) (*Client, error) {
+	refreshToken string, insecure bool, clusterID string, oneArm *OneArm,
+	httpPort int32, httpsPort int32, certAlias string, getVdcClient bool) (*Client, error) {
 
 	// TODO: validation of parameters
 
@@ -96,12 +96,13 @@ func NewVCDClientFromSecrets(host string, orgName string, vdcName string,
 			clientSingleton.vcdAuthConfig.VDC == vdcName &&
 			clientSingleton.vcdAuthConfig.User == user &&
 			clientSingleton.vcdAuthConfig.Password == password &&
+			clientSingleton.vcdAuthConfig.RefreshToken == refreshToken &&
 			clientSingleton.vcdAuthConfig.Insecure == insecure {
 			return clientSingleton, nil
 		}
 	}
 
-	vcdAuthConfig := NewVCDAuthConfigFromSecrets(host, user, password, orgName, insecure)
+	vcdAuthConfig := NewVCDAuthConfigFromSecrets(host, user, password, refreshToken, orgName, insecure)
 
 	vcdClient, apiClient, err := vcdAuthConfig.GetSwaggerClientFromSecrets()
 	if err != nil {

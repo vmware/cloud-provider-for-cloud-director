@@ -71,6 +71,10 @@ func ParseCloudConfig(configReader io.Reader) (*CloudConfig, error) {
 }
 
 func SetAuthorization(config *CloudConfig) error {
+	refreshToken, err := ioutil.ReadFile("/etc/kubernetes/vcloud/basic-auth/refreshToken")
+	if err != nil{
+		return fmt.Errorf("unable to get refresh token: [%v]", err)
+	}
 	username, err := ioutil.ReadFile("/etc/kubernetes/vcloud/basic-auth/username")
 	if err != nil {
 		return fmt.Errorf("unable to get username: [%v]", err)
@@ -79,6 +83,7 @@ func SetAuthorization(config *CloudConfig) error {
 	if err != nil {
 		return fmt.Errorf("unable to get password: [%v]", err)
 	}
+	config.VCD.RefreshToken = string(refreshToken)
 	config.VCD.User = string(username)
 	config.VCD.Secret = string(secret)
 	return nil
