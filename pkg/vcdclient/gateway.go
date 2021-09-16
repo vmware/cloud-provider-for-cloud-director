@@ -375,11 +375,10 @@ func (client *Client) getNATRuleRef(ctx context.Context,
 	return natRuleRef, nil
 }
 
-func createDNATRuleName(virtualServiceName string) string {
+func getDNATRuleName(virtualServiceName string) string {
 	return fmt.Sprintf("dnat-%s", virtualServiceName)
 }
 
-// TODO: get and return if it already exists
 func (client *Client) createDNATRule(ctx context.Context, dnatRuleName string,
 	externalIP string, internalIP string, port int32) error {
 
@@ -957,7 +956,7 @@ func (client *Client) CreateLoadBalancer(ctx context.Context, virtualServiceName
 				return "", fmt.Errorf("unable to get internal IP address for one-arm mode: [%v]", err)
 			}
 
-			dnatRuleName := createDNATRuleName(virtualServiceName)
+			dnatRuleName := getDNATRuleName(virtualServiceName)
 			if err = client.createDNATRule(ctx, dnatRuleName, externalIP, internalIP, portDetail.externalPort); err != nil {
 				return "", fmt.Errorf("unable to create dnat rule [%s] => [%s]: [%v]",
 					externalIP, internalIP, err)
@@ -965,8 +964,11 @@ func (client *Client) CreateLoadBalancer(ctx context.Context, virtualServiceName
 			// use the internal IP to create virtual service
 			virtualServiceIP = internalIP
 
-			// the dnat rule may have been created, or it may already exist
-			// we will retrieve the dnat rule's external ip
+			// We get an IP address above and try to get-or-create a DNAT rule from external IP => internal IP. If the rule already
+			// existed, the old DNAT rule will remain unchanged. Hence we get the old externalIP from the old rule and use it.
+			// What happens to the new externalIP that we selected above? It just remains unused and hence does not get
+			// allocated and disappears. Since there is no IPAM based resource _acquisition_, the new externalIP can just be
+			// forgotten about.
 			dnatRuleRef, err := client.getNATRuleRef(ctx, dnatRuleName)
 			if err != nil {
 				return "", fmt.Errorf("unable to retrieve created dnat rule [%s]: [%v]", dnatRuleName, err)
@@ -1034,7 +1036,7 @@ func (client *Client) DeleteLoadBalancer(ctx context.Context, virtualServiceName
 		rdeVIP := ""
 		dnatRuleName := ""
 		if client.OneArm != nil {
-			dnatRuleName = createDNATRuleName(virtualServiceName)
+			dnatRuleName = getDNATRuleName(virtualServiceName)
 			dnatRuleRef, err := client.getNATRuleRef(ctx, dnatRuleName)
 			if err != nil {
 				return fmt.Errorf("unable to get dnat rule ref for nat rule [%s]: [%v]", dnatRuleName, err)
@@ -1087,7 +1089,7 @@ func (client *Client) GetLoadBalancer(ctx context.Context, virtualServiceName st
 
 	vip := vsSummary.VirtualIpAddress
 	if client.OneArm != nil {
-		dnatRuleName := createDNATRuleName(virtualServiceName)
+		dnatRuleName := getDNATRuleName(virtualServiceName)
 		dnatRuleRef, err := client.getNATRuleRef(ctx, dnatRuleName)
 		if err != nil {
 			return "", fmt.Errorf("Unable to find dnat rule [%s] for virtual service [%s]: [%v]",

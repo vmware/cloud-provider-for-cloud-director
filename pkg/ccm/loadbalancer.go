@@ -155,16 +155,25 @@ func (lb *LBManager) GetLoadBalancer(ctx context.Context, clusterName string,
 	return lb.getLoadBalancer(ctx, service)
 }
 
+// if both http and https ports are found, then "http" is returned
 func (lb *LBManager) getServiceSuffix(service *v1.Service) string {
+	httpFound := false
+	httpsFound := false
 	for _, port := range service.Spec.Ports {
 		switch port.Port {
 		case lb.vcdClient.HTTPPort:
-			return "http"
+			httpFound = true
 		case lb.vcdClient.HTTPSPort:
-			return "https"
+			httpsFound = true
 		default:
 			klog.Infof("Encountered unhandled port [%d]\n", port.Port)
 		}
+	}
+	if httpFound {
+		return "http"
+	}
+	if httpsFound {
+		return "https"
 	}
 	return ""
 }
