@@ -8,11 +8,11 @@ package vcdclient
 import (
 	"context"
 	"fmt"
+	"k8s.io/klog"
 	"sync"
 
 	swaggerClient "github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdswaggerclient"
 	"github.com/vmware/go-vcloud-director/v2/govcd"
-	"k8s.io/klog"
 )
 
 var (
@@ -124,12 +124,6 @@ func NewVCDClientFromSecrets(host string, orgName string, vdcName string,
 	}
 
 	if getVdcClient {
-		// this new client is only needed to get the vdc pointer
-		vcdClient, err = vcdAuthConfig.GetPlainClientFromSecrets()
-		if err != nil {
-			return nil, fmt.Errorf("unable to get plain client from secrets: [%v]", err)
-		}
-
 		org, err := vcdClient.GetOrgByName(orgName)
 		if err != nil {
 			return nil, fmt.Errorf("unable to get org from name [%s]: [%v]", orgName, err)
@@ -141,7 +135,6 @@ func NewVCDClientFromSecrets(host string, orgName string, vdcName string,
 		}
 	}
 	client.vcdClient = vcdClient
-
 	// We will specifically cache the gateway ID that corresponds to the
 	// network name since it is used frequently in the loadbalancer context.
 	ctx := context.Background()

@@ -1,6 +1,6 @@
 /*
-    Copyright 2021 VMware, Inc.
-    SPDX-License-Identifier: Apache-2.0
+   Copyright 2021 VMware, Inc.
+   SPDX-License-Identifier: Apache-2.0
 */
 
 package vcdclient
@@ -16,6 +16,11 @@ func TestNewVCDAuthConfigFromSecrets(t *testing.T) {
 	vcdClient, err := getTestVCDClient(nil)
 	assert.NoError(t, err, "Unable to get VCD client")
 	assert.NotNil(t, vcdClient, "VCD Client should not be nil")
+
+	vcdClient, err = getTestVCDClient(map[string]interface{}{
+		"getVdcClient": true,
+	})
+	assert.NoError(t, err, "Unable to get Client with VDC details.")
 
 	vcdClient, err = getTestVCDClient(map[string]interface{}{
 		"refreshToken": "",

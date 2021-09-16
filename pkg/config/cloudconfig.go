@@ -1,6 +1,6 @@
 /*
-    Copyright 2021 VMware, Inc.
-    SPDX-License-Identifier: Apache-2.0
+   Copyright 2021 VMware, Inc.
+   SPDX-License-Identifier: Apache-2.0
 */
 
 package config
@@ -71,21 +71,23 @@ func ParseCloudConfig(configReader io.Reader) (*CloudConfig, error) {
 }
 
 func SetAuthorization(config *CloudConfig) error {
+	var refreshToken, username, secret []byte
 	refreshToken, err := ioutil.ReadFile("/etc/kubernetes/vcloud/basic-auth/refreshToken")
-	if err != nil{
-		return fmt.Errorf("unable to get refresh token: [%v]", err)
-	}
-	username, err := ioutil.ReadFile("/etc/kubernetes/vcloud/basic-auth/username")
 	if err != nil {
-		return fmt.Errorf("unable to get username: [%v]", err)
+		// Couldn't find refresh token. See if username and password can be obtained.
+		username, err = ioutil.ReadFile("/etc/kubernetes/vcloud/basic-auth/username")
+		if err != nil {
+			return fmt.Errorf("unable to get refresh token or username: [%v]", err)
+		}
+		secret, err = ioutil.ReadFile("/etc/kubernetes/vcloud/basic-auth/password")
+		if err != nil {
+			return fmt.Errorf("unable to get refresh token or password: [%v]", err)
+		}
+		config.VCD.User = string(username)
+		config.VCD.Secret = string(secret)
+	} else {
+		config.VCD.RefreshToken = string(refreshToken)
 	}
-	secret, err := ioutil.ReadFile("/etc/kubernetes/vcloud/basic-auth/password")
-	if err != nil {
-		return fmt.Errorf("unable to get password: [%v]", err)
-	}
-	config.VCD.RefreshToken = string(refreshToken)
-	config.VCD.User = string(username)
-	config.VCD.Secret = string(secret)
 	return nil
 }
 

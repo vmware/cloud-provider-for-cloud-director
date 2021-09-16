@@ -1,6 +1,6 @@
 /*
-    Copyright 2021 VMware, Inc.
-    SPDX-License-Identifier: Apache-2.0
+   Copyright 2021 VMware, Inc.
+   SPDX-License-Identifier: Apache-2.0
 */
 
 // +build !testing
@@ -59,7 +59,6 @@ func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error
 			time.Sleep(10 * time.Second)
 			continue
 		}
-
 
 		if cloudConfig.LB.OneArm != nil {
 			oneArm = &vcdclient.OneArm{

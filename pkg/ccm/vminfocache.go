@@ -1,6 +1,6 @@
 /*
-    Copyright 2021 VMware, Inc.
-    SPDX-License-Identifier: Apache-2.0
+   Copyright 2021 VMware, Inc.
+   SPDX-License-Identifier: Apache-2.0
 */
 
 package ccm
@@ -38,7 +38,7 @@ type VmInfoCache struct {
 
 func newVmInfoCache(client *vcdclient.Client, expiry time.Duration) *VmInfoCache {
 	return &VmInfoCache{
-		expiry: expiry,
+		expiry:    expiry,
 		nameMap:   make(map[string]*VmInfo),
 		uuidMap:   make(map[string]*VmInfo),
 		vcdClient: client,
@@ -66,15 +66,15 @@ func (vmic *VmInfoCache) vmToVMInfo(vm *govcd.VM, captureTime time.Time) (*VmInf
 		vmAddresses := make([]v1.NodeAddress, 0)
 		for _, netConn := range vm.VM.NetworkConnectionSection.NetworkConnection {
 			v1helper.AddToNodeAddresses(&vmAddresses,
-				v1.NodeAddress {
+				v1.NodeAddress{
 					Type:    v1.NodeInternalIP,
 					Address: netConn.IPAddress,
 				},
-				v1.NodeAddress {
+				v1.NodeAddress{
 					Type:    v1.NodeExternalIP,
 					Address: netConn.IPAddress,
 				},
-				v1.NodeAddress {
+				v1.NodeAddress{
 					Type:    v1.NodeHostName,
 					Address: vm.VM.Name,
 				})

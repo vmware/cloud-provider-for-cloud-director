@@ -1,6 +1,6 @@
 /*
-    Copyright 2021 VMware, Inc.
-    SPDX-License-Identifier: Apache-2.0
+   Copyright 2021 VMware, Inc.
+   SPDX-License-Identifier: Apache-2.0
 */
 
 package vcdclient
@@ -10,20 +10,20 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"k8s.io/klog"
 	"net/http"
 	"net/url"
 	"strings"
 
 	swaggerClient "github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdswaggerclient"
 	"github.com/vmware/go-vcloud-director/v2/govcd"
-	"k8s.io/klog"
 )
 
 // VCDAuthConfig : contains config related to vcd auth
 type VCDAuthConfig struct {
 	User         string `json:"user"`
 	Password     string `json:"password"`
-	RefreshToken	string `json:"refreshToken"`
+	RefreshToken string `json:"refreshToken"`
 	Org          string `json:"org"`
 	Host         string `json:"host"`
 	CloudAPIHref string `json:"cloudapihref"`
@@ -45,15 +45,22 @@ func (config *VCDAuthConfig) GetBearerToken() (*govcd.VCDClient, *http.Response,
 
 	var resp *http.Response
 	if config.RefreshToken != "" {
-		// Authenticate using refresh token
-		accessTokenResponse, resp, err := config.getAccessTokenFromRefreshToken()
+		// Since it is not known if the user is sysadmin, try to get the access token using tenanted endpoint
+		accessTokenResponse, resp, err := config.getAccessTokenFromRefreshToken(false)
 		if err != nil {
-			return nil, nil, fmt.Errorf("failed to get access token from refresh token [%s]: [%v]", config.RefreshToken, err)
+			return nil, nil, fmt.Errorf("failed to get access token from refresh token: [%v]", err)
 		}
 		err = vcdClient.SetToken(config.Org, "Authorization", fmt.Sprintf("Bearer %s", accessTokenResponse.AccessToken))
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to set authorization header: [%v]", err)
 		}
+
+		isSysAdmin, err := isAdminUser(vcdClient)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to determine if the user is an admin: [%v]", err)
+		}
+		vcdClient.Client.IsSysAdmin = isSysAdmin
+		klog.Infof("Running CPI as sysadmin [%v]", vcdClient.Client.IsSysAdmin)
 		return vcdClient, resp, nil
 	} else {
 		resp, err := vcdClient.GetAuthResponse(config.User, config.Password, config.Org)
@@ -77,7 +84,6 @@ func (config *VCDAuthConfig) GetSwaggerClientFromSecrets() (*govcd.VCDClient, *s
 	} else {
 		authHeader = vcdClient.Client.VCDToken
 	}
-
 
 	swaggerConfig := swaggerClient.NewConfiguration()
 	swaggerConfig.BasePath = fmt.Sprintf("%s/cloudapi", config.Host)
@@ -110,17 +116,15 @@ func (config *VCDAuthConfig) GetPlainClientFromSecrets() (*govcd.VCDClient, erro
 }
 
 type tokenResponse struct {
-	AccessToken string `json:"access_token"`
-	TokenType  string `json:"token_type"`
-	ExpiresIn  int32 `json:"expires_in"`
+	AccessToken  string `json:"access_token"`
+	TokenType    string `json:"token_type"`
+	ExpiresIn    int32  `json:"expires_in"`
 	RefreshToken string `json:"refresh_token"`
 }
 
-func (config *VCDAuthConfig) getAccessTokenFromRefreshToken() (*tokenResponse, *http.Response, error) {
-	accessTokenUrl := ""
-	if strings.ToLower(config.Org) == "system" {
-		accessTokenUrl = fmt.Sprintf("%s/oauth/provider/token", config.Host)
-	} else {
+func (config *VCDAuthConfig) getAccessTokenFromRefreshToken(isSysadminUser bool) (*tokenResponse, *http.Response, error) {
+	accessTokenUrl := fmt.Sprintf("%s/oauth/provider/token", config.Host)
+	if !isSysadminUser {
 		accessTokenUrl = fmt.Sprintf("%s/oauth/tenant/%s/token", config.Host, config.Org)
 	}
 
@@ -142,6 +146,9 @@ func (config *VCDAuthConfig) getAccessTokenFromRefreshToken() (*tokenResponse, *
 	if err != nil {
 		return nil, res, err
 	}
+	if res.StatusCode != http.StatusOK {
+		return nil, res, fmt.Errorf("error while getting access token from refresh token: [%v]", err)
+	}
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		return nil, res, err
@@ -155,11 +162,30 @@ func (config *VCDAuthConfig) getAccessTokenFromRefreshToken() (*tokenResponse, *
 
 func NewVCDAuthConfigFromSecrets(host string, user string, secret string, refreshToken string, org string, insecure bool) *VCDAuthConfig {
 	return &VCDAuthConfig{
-		Host:     host,
-		User:     user,
-		Password: secret,
+		Host:         host,
+		User:         user,
+		Password:     secret,
 		RefreshToken: refreshToken,
-		Org:      org,
-		Insecure: insecure,
+		Org:          org,
+		Insecure:     insecure,
 	}
+}
+
+type currentSessionsResponse struct {
+	Id    string   `json:"id"`
+	Roles []string `json:"roles"`
+}
+
+func isAdminUser(vcdClient *govcd.VCDClient) (bool, error) {
+	currentSessionUrl, err := vcdClient.Client.OpenApiBuildEndpoint("1.0.0/sessions/current")
+	if err != nil {
+		return false, fmt.Errorf("failed to construct current session url [%v]", err)
+	}
+	var output currentSessionsResponse
+	err = vcdClient.Client.OpenApiGetItem(vcdClient.Client.APIVersion, currentSessionUrl, url.Values{}, &output)
+	if err != nil {
+		return false, fmt.Errorf("error while getting current session [%v]", err)
+	}
+	isSysAdmin := output.Roles[0] == "System Administrator"
+	return isSysAdmin, nil
 }

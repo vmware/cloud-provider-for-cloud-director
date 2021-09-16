@@ -1,15 +1,16 @@
 /*
-    Copyright 2021 VMware, Inc.
-    SPDX-License-Identifier: Apache-2.0
+   Copyright 2021 VMware, Inc.
+   SPDX-License-Identifier: Apache-2.0
 */
 
 package vcdclient
 
 import (
 	"fmt"
-	"github.com/vmware/cloud-provider-for-cloud-director/pkg/config"
 	"os"
 	"path/filepath"
+
+	"github.com/vmware/cloud-provider-for-cloud-director/pkg/config"
 )
 
 var (
