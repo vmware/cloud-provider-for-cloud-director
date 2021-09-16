@@ -163,7 +163,7 @@ func (lb *LBManager) getServiceSuffix(service *v1.Service) string {
 		case lb.vcdClient.HTTPSPort:
 			return "https"
 		default:
-			continue
+			klog.Infof("Encountered unhandled port [%d]\n", port.Port)
 		}
 	}
 	return ""
