@@ -46,20 +46,23 @@ func (config *VCDAuthConfig) GetBearerToken() (*govcd.VCDClient, *http.Response,
 	var resp *http.Response
 	if config.RefreshToken != "" {
 		// Since it is not known if the user is sysadmin, try to get the access token using tenanted endpoint
-		accessTokenResponse, resp, err := config.getAccessTokenFromRefreshToken(false)
+		accessTokenResponse, resp, err := config.getAccessTokenFromRefreshToken(true)
 		if err != nil {
-			return nil, nil, fmt.Errorf("failed to get access token from refresh token: [%v]", err)
+			// Failed to get token as provider. Try to get token as tenant user
+			accessTokenResponse, resp, err = config.getAccessTokenFromRefreshToken(false)
+			if err != nil {
+				return nil, nil, fmt.Errorf("failed to get access token from refresh token: [%v]", err)
+			}
 		}
 		err = vcdClient.SetToken(config.Org, "Authorization", fmt.Sprintf("Bearer %s", accessTokenResponse.AccessToken))
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to set authorization header: [%v]", err)
 		}
-
-		isSysAdmin, err := isAdminUser(vcdClient)
+		vcdClient.Client.IsSysAdmin, err = isAdminUser(vcdClient)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to determine if the user is an admin: [%v]", err)
 		}
-		vcdClient.Client.IsSysAdmin = isSysAdmin
+
 		klog.Infof("Running CPI as sysadmin [%v]", vcdClient.Client.IsSysAdmin)
 		return vcdClient, resp, nil
 	} else {
@@ -134,30 +137,30 @@ func (config *VCDAuthConfig) getAccessTokenFromRefreshToken(isSysadminUser bool)
 
 	client := &http.Client{
 		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: config.Insecure},
 		},
 	}
-	r, err := http.NewRequest("POST", accessTokenUrl, strings.NewReader(payload.Encode())) // URL-encoded payload
+	ouathRequest, err := http.NewRequest("POST", accessTokenUrl, strings.NewReader(payload.Encode())) // URL-encoded payload
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to get access token from refresh token: [%v]", err)
 	}
-	r.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-	res, err := client.Do(r)
+	ouathRequest.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	oauthResponse, err := client.Do(ouathRequest)
 	if err != nil {
-		return nil, res, err
+		return nil, oauthResponse, err
 	}
-	if res.StatusCode != http.StatusOK {
-		return nil, res, fmt.Errorf("error while getting access token from refresh token: [%v]", err)
+	if oauthResponse.StatusCode != http.StatusOK {
+		return nil, oauthResponse, fmt.Errorf("error while getting access token from refresh token: [%v]", err)
 	}
-	body, err := ioutil.ReadAll(res.Body)
+	body, err := ioutil.ReadAll(oauthResponse.Body)
 	if err != nil {
-		return nil, res, err
+		return nil, oauthResponse, err
 	}
 	var accessTokenResponse tokenResponse
 	if err = json.Unmarshal(body, &accessTokenResponse); err != nil {
-		return nil, res, err
+		return nil, oauthResponse, err
 	}
-	return &accessTokenResponse, res, nil
+	return &accessTokenResponse, oauthResponse, nil
 }
 
 func NewVCDAuthConfigFromSecrets(host string, user string, secret string, refreshToken string, org string, insecure bool) *VCDAuthConfig {
