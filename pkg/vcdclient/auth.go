@@ -45,7 +45,7 @@ func (config *VCDAuthConfig) GetBearerToken() (*govcd.VCDClient, *http.Response,
 
 	var resp *http.Response
 	if config.RefreshToken != "" {
-		// Since it is not known if the user is sysadmin, try to get the access token using tenanted endpoint
+		// Since it is not known if the user is sysadmin, try to get the access token using provider endpoint
 		accessTokenResponse, resp, err := config.getAccessTokenFromRefreshToken(true)
 		if err != nil {
 			// Failed to get token as provider. Try to get token as tenant user
@@ -60,7 +60,7 @@ func (config *VCDAuthConfig) GetBearerToken() (*govcd.VCDClient, *http.Response,
 		}
 		vcdClient.Client.IsSysAdmin, err = isAdminUser(vcdClient)
 		if err != nil {
-			return nil, nil, fmt.Errorf("failed to determine if the user is an admin: [%v]", err)
+			return nil, nil, fmt.Errorf("failed to determine if the user is a system administrator: [%v]", err)
 		}
 
 		klog.Infof("Running CPI as sysadmin [%v]", vcdClient.Client.IsSysAdmin)
