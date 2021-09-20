@@ -8,6 +8,7 @@ package vcdclient
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"testing"
 
 	"github.com/google/uuid"
@@ -382,4 +383,55 @@ func TestLoadBalancerCRUDE(t *testing.T) {
 	assert.Error(t, err, "updating deleted HTTPS Load Balancer should be an error")
 
 	return
+}
+
+func TestUpdateRDEUsingEtag(t *testing.T) {
+	vcdClient, err := getTestVCDClient(nil)
+	assert.NoError(t, err, "Unable to get VCD client")
+	require.NotNil(t, vcdClient, "VCD Client should not be nil")
+
+	ctx := context.Background()
+
+	// get rde Vips
+	rdeVips1, etag1, defEnt1, err := vcdClient.GetRDEVirtualIps(ctx)
+	assert.NoError(t, err, "Should retrieve RDE vips on first attempt")
+	rdeVips2, etag2, defEnt2, err := vcdClient.GetRDEVirtualIps(ctx)
+	assert.NoError(t, err, "Should retrieve RDE vips on second attempt")
+	assert.Equal(t, etag1, etag2, "etags from consecutive RDE GET calls should match")
+
+	// Test successfully updating using first etag
+	addIp1 := "1.2.3.4"
+	addIp2 := "2.3.4.5"
+	updatedRdeVips1 := append(rdeVips1, addIp1)
+	httpResponse1, err := vcdClient.updateRDEVirtualIps(ctx, updatedRdeVips1, etag1, defEnt1)
+	assert.NoError(t, err, "RDE should be updated")
+	assert.Equal(t, http.StatusOK, httpResponse1.StatusCode, "RDE update status code should be 200 (OK)")
+	rdeVips3, _, _, err := vcdClient.GetRDEVirtualIps(ctx)
+	assert.NoError(t, err, "Should retrieve RDE vips successfully")
+	assert.Equal(t, true, foundStringInSlice(addIp1, rdeVips3), "ip [%s] should be found in rde vips", addIp1)
+
+	// Test adding addIp2 with outdated etag
+	updatedRdeVips2 := append(rdeVips2, addIp2)
+	httpResponse2, err := vcdClient.updateRDEVirtualIps(ctx, updatedRdeVips2, etag2, defEnt2)
+	assert.Error(t, err, "Should have an error updating RDE with outdated etag")
+	assert.Equal(t, http.StatusPreconditionFailed, httpResponse2.StatusCode, "RDE update status code should be 412 (Precondition failed)")
+	rdeVips3, etag3, defEnt3, err := vcdClient.GetRDEVirtualIps(ctx)
+	assert.NoError(t, err, "Should retrieve RDE vips successfully")
+	assert.Equal(t, false, foundStringInSlice(addIp2, rdeVips3), "ip [%s] should not be found in rde vips", addIp2)
+
+	// Try adding addIp2 with correct etag
+	updatedRdeVips3 := append(rdeVips3, addIp2)
+	httpResponse3, err := vcdClient.updateRDEVirtualIps(ctx, updatedRdeVips3, etag3, defEnt3)
+	assert.NoError(t, err, "RDE should be updated")
+	assert.Equal(t, http.StatusOK, httpResponse3.StatusCode, "RDE update status code should be 200 (OK)")
+	rdeVips4, etag4, defEnt4, err := vcdClient.GetRDEVirtualIps(ctx)
+	assert.NoError(t, err, "Should retrieve RDE vips successfully")
+	assert.Equal(t, true, foundStringInSlice(addIp2, rdeVips4), "ip [%s] should be found in rde vips", addIp2)
+
+
+	// reset RDE vips to original state
+	httpResponse4, err := vcdClient.updateRDEVirtualIps(ctx, rdeVips1, etag4, defEnt4)
+	assert.NoError(t, err, "RDE should be updated")
+	assert.Equal(t, http.StatusOK, httpResponse4.StatusCode, "RDE update status code should be 200 (OK)")
+	// no check to ensure ip's removed because they may have been previously present in the RDE vips
 }

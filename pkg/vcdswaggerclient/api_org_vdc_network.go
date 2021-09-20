@@ -66,7 +66,7 @@ func (a *OrgVdcNetworkApiService) DeleteNetwork(ctx context.Context, vdcNetworkI
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{"*_/_*;version=35.0"}
+	localVarHttpHeaderAccepts := []string{fmt.Sprintf("*_/_*;version=%s", ApiVersion)}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -194,7 +194,7 @@ func (a *OrgVdcNetworkApiService) GetAllocatedIpAddresses(ctx context.Context, p
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{"application/json;version=35.0"}
+	localVarHttpHeaderAccepts := []string{fmt.Sprintf("application/json;version=%s", ApiVersion)}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -304,7 +304,7 @@ func (a *OrgVdcNetworkApiService) GetOrgVdcNetwork(ctx context.Context, vdcNetwo
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{"application/json;version=35.0"}
+	localVarHttpHeaderAccepts := []string{fmt.Sprintf("application/json;version=%s", ApiVersion)}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -448,7 +448,7 @@ func (a *OrgVdcNetworkApiService) GetSecondaryAllocatedIpAddresses(ctx context.C
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{"application/json;version=35.0"}
+	localVarHttpHeaderAccepts := []string{fmt.Sprintf("application/json;version=%s", ApiVersion)}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -559,7 +559,7 @@ func (a *OrgVdcNetworkApiService) ResetNetwork(ctx context.Context, vdcNetworkId
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{"*_/_*;version=35.0"}
+	localVarHttpHeaderAccepts := []string{fmt.Sprintf("*_/_*;version=%s", ApiVersion)}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -654,7 +654,7 @@ func (a *OrgVdcNetworkApiService) SyncOrgVdcNetwork(ctx context.Context, vdcNetw
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{"*_/_*;version=35.0"}
+	localVarHttpHeaderAccepts := []string{fmt.Sprintf("*_/_*;version=%s", ApiVersion)}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -749,7 +749,7 @@ func (a *OrgVdcNetworkApiService) SyncSyslogSettingsOfNetwork(ctx context.Contex
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{"*_/_*;version=35.0"}
+	localVarHttpHeaderAccepts := []string{fmt.Sprintf("*_/_*;version=%s", ApiVersion)}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -844,7 +844,7 @@ func (a *OrgVdcNetworkApiService) UpdateNetwork(ctx context.Context, vdcNetwork 
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{"*_/_*;version=35.0"}
+	localVarHttpHeaderAccepts := []string{fmt.Sprintf("*_/_*;version=%s", ApiVersion)}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)

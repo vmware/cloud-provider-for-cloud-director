@@ -7,11 +7,11 @@ package swagger
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
-	"fmt"
 )
 
 // Linger please
@@ -55,7 +55,7 @@ func (a *EdgeGatewayLoadBalancerPoolApiService) DeleteLoadBalancerPool(ctx conte
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{"*_/_*;version=35.0"}
+	localVarHttpHeaderAccepts := []string{fmt.Sprintf("*_/_*;version=%s", ApiVersion)}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -149,7 +149,7 @@ func (a *EdgeGatewayLoadBalancerPoolApiService) GetLoadBalancerPool(ctx context.
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{"application/json;version=35.0"}
+	localVarHttpHeaderAccepts := []string{fmt.Sprintf("application/json;version=%s", ApiVersion)}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -249,7 +249,7 @@ func (a *EdgeGatewayLoadBalancerPoolApiService) UpdateLoadBalancerPool(ctx conte
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{"*_/_*;version=35.0"}
+	localVarHttpHeaderAccepts := []string{fmt.Sprintf("*_/_*;version=%s", ApiVersion)}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)

@@ -66,7 +66,7 @@ func (a *EdgeGatewayApiService) DeleteEdgeGateway(ctx context.Context, gatewayId
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{"*_/_*;version=35.0"}
+	localVarHttpHeaderAccepts := []string{fmt.Sprintf("*_/_*;version=%s", ApiVersion)}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -160,7 +160,7 @@ func (a *EdgeGatewayApiService) GetEdgeGateway(ctx context.Context, gatewayId st
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{"application/json;version=35.0"}
+	localVarHttpHeaderAccepts := []string{fmt.Sprintf("application/json;version=%s", ApiVersion)}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -304,7 +304,7 @@ func (a *EdgeGatewayApiService) GetUsedIpAddresses(ctx context.Context, page int
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{"application/json;version=35.0"}
+	localVarHttpHeaderAccepts := []string{fmt.Sprintf("application/json;version=%s", ApiVersion)}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -415,7 +415,7 @@ func (a *EdgeGatewayApiService) UpdateEdgeGateway(ctx context.Context, gateway E
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{"*_/_*;version=35.0"}
+	localVarHttpHeaderAccepts := []string{fmt.Sprintf("*_/_*;version=%s", ApiVersion)}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)

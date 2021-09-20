@@ -7,12 +7,12 @@ package swagger
 
 import (
 	"context"
+	"fmt"
+	"github.com/antihax/optional"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
-	"fmt"
-	"github.com/antihax/optional"
 )
 
 // Linger please
@@ -56,7 +56,7 @@ func (a *CertificateLibraryApiService) AddCertificateLibraryItem(ctx context.Con
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{"application/json;version=35.0"}
+	localVarHttpHeaderAccepts := []string{fmt.Sprintf("application/json;version=%s", ApiVersion)}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -159,7 +159,7 @@ func (a *CertificateLibraryApiService) AddConsumerRefToCertLibraryItem(ctx conte
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{"application/json;version=35.0"}
+	localVarHttpHeaderAccepts := []string{fmt.Sprintf("application/json;version=%s", ApiVersion)}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -261,7 +261,7 @@ func (a *CertificateLibraryApiService) DeleteCertificateLibraryItem(ctx context.
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{"*_/_*;version=35.0"}
+	localVarHttpHeaderAccepts := []string{fmt.Sprintf("*_/_*;version=%s", ApiVersion)}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -345,7 +345,7 @@ func (a *CertificateLibraryApiService) GetCertificateLibraryItem(ctx context.Con
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{"application/json;version=35.0"}
+	localVarHttpHeaderAccepts := []string{fmt.Sprintf("application/json;version=%s", ApiVersion)}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -478,7 +478,7 @@ func (a *CertificateLibraryApiService) QueryCertLibraryItemConsumerRefs(ctx cont
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{"application/json;version=35.0"}
+	localVarHttpHeaderAccepts := []string{fmt.Sprintf("application/json;version=%s", ApiVersion)}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -609,7 +609,7 @@ func (a *CertificateLibraryApiService) QueryCertificateLibrary(ctx context.Conte
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{"application/json;version=35.0"}
+	localVarHttpHeaderAccepts := []string{fmt.Sprintf("application/json;version=%s", ApiVersion)}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -710,7 +710,7 @@ func (a *CertificateLibraryApiService) ReplaceCertLibraryItemConsumerRefs(ctx co
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{"application/json;version=35.0"}
+	localVarHttpHeaderAccepts := []string{fmt.Sprintf("application/json;version=%s", ApiVersion)}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -813,7 +813,7 @@ func (a *CertificateLibraryApiService) UpdateCertificateLibraryItem(ctx context.
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{"application/json;version=35.0"}
+	localVarHttpHeaderAccepts := []string{fmt.Sprintf("application/json;version=%s", ApiVersion)}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)

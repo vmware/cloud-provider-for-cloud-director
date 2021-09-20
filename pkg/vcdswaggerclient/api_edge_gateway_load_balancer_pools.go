@@ -7,12 +7,12 @@ package swagger
 
 import (
 	"context"
+	"fmt"
+	"github.com/antihax/optional"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
-	"fmt"
-	"github.com/antihax/optional"
 )
 
 // Linger please
@@ -55,7 +55,7 @@ func (a *EdgeGatewayLoadBalancerPoolsApiService) CreateLoadBalancerPool(ctx cont
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{"*_/_*;version=35.0"}
+	localVarHttpHeaderAccepts := []string{fmt.Sprintf("*_/_*;version=%s", ApiVersion)}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -174,7 +174,7 @@ func (a *EdgeGatewayLoadBalancerPoolsApiService) GetPoolSummariesForGateway(ctx 
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{"application/json;version=35.0"}
+	localVarHttpHeaderAccepts := []string{fmt.Sprintf("application/json;version=%s", ApiVersion)}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)

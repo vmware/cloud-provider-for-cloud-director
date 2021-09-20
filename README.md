@@ -6,7 +6,7 @@ The version of the VMware Cloud Director API and Installation that are compatibl
 
 | CPI Version | VMware Cloud Director API | VMware Cloud Director Installation | Notes |
 | :---------: | :-----------------------: | :--------------------------------: | :---: |
-| 0.1.0.latest | 35.0+ | 10.2+ | Needs NSX Advanced Load Balancer (Avi) version 20.1.1+ |
+| 0.1.0.latest | 36.0+ | 10.2+ | Needs NSX Advanced Load Balancer (Avi) version 20.1.1+ |
 
 This extension is intended to be installed into a Kubernetes cluster installed with [VMware Cloud Director](https://www.vmware.com/products/cloud-director.html) as a Cloud Provider, by a user that has the same rights as a [vApp Author](https://docs.vmware.com/en/VMware-Cloud-Director/9.7/com.vmware.vcloud.admin.doc/GUID-BC504F6B-3D38-4F25-AACF-ED584063754F.html).
 
