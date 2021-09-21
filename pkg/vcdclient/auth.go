@@ -65,13 +65,13 @@ func (config *VCDAuthConfig) GetBearerToken() (*govcd.VCDClient, *http.Response,
 
 		klog.Infof("Running CPI as sysadmin [%v]", vcdClient.Client.IsSysAdmin)
 		return vcdClient, resp, nil
-	} else {
-		resp, err := vcdClient.GetAuthResponse(config.User, config.Password, config.Org)
-		if err != nil {
-			return nil, resp, fmt.Errorf("unable to authenticate [%s/%s] for url [%s]: [%+v] : [%v]",
-				config.Org, config.User, href, resp, err)
-		}
 	}
+	resp, err = vcdClient.GetAuthResponse(config.User, config.Password, config.Org)
+	if err != nil {
+		return nil, resp, fmt.Errorf("unable to authenticate [%s/%s] for url [%s]: [%+v] : [%v]",
+			config.Org, config.User, href, resp, err)
+	}
+
 	return vcdClient, resp, nil
 }
 
@@ -147,18 +147,23 @@ func (config *VCDAuthConfig) getAccessTokenFromRefreshToken(isSysadminUser bool)
 	ouathRequest.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	oauthResponse, err := client.Do(ouathRequest)
 	if err != nil {
-		return nil, oauthResponse, err
+		return nil, oauthResponse, fmt.Errorf("request to get access token failed: [%v]", err)
 	}
 	if oauthResponse.StatusCode != http.StatusOK {
 		return nil, oauthResponse, fmt.Errorf("error while getting access token from refresh token: [%v]", err)
 	}
 	body, err := ioutil.ReadAll(oauthResponse.Body)
 	if err != nil {
-		return nil, oauthResponse, err
+		return nil, oauthResponse, fmt.Errorf("unable to read response body while getting access token from refresh token: [%v]", err)
 	}
+	defer func() {
+		if err := oauthResponse.Body.Close(); err != nil {
+			klog.Errorf("failed to close response body: [%v]", err)
+		}
+	}()
 	var accessTokenResponse tokenResponse
 	if err = json.Unmarshal(body, &accessTokenResponse); err != nil {
-		return nil, oauthResponse, err
+		return nil, oauthResponse, fmt.Errorf("error unmarshaling the token response: [%v]", err)
 	}
 	return &accessTokenResponse, oauthResponse, nil
 }
