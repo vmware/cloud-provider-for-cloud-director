@@ -8,7 +8,6 @@ package vcdclient
 import (
 	"context"
 	"fmt"
-	"k8s.io/klog"
 	"sync"
 
 	swaggerClient "github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdswaggerclient"
@@ -44,36 +43,20 @@ type Client struct {
 	rwLock             sync.RWMutex
 }
 
-// RefreshToken will check if can authenticate and rebuild clients if needed
-func (client *Client) RefreshToken() error {
-	_, r, err := client.vcdAuthConfig.GetBearerToken()
-	if r == nil && err != nil {
-		return fmt.Errorf("error while getting bearer token from secrets: [%v]", err)
-	} else if r != nil && r.StatusCode == 401 {
-		klog.Info("Refreshing tokens as previous one has expired")
-		client.vcdClient.Client.APIVersion = VCloudApiVersion
-		err := client.vcdClient.Authenticate(client.vcdAuthConfig.User,
-			client.vcdAuthConfig.Password, client.vcdAuthConfig.Org)
-		if err != nil {
-			return fmt.Errorf("unable to Authenticate user [%s]: [%v]",
-				client.vcdAuthConfig.User, err)
-		}
-
-		org, err := client.vcdClient.GetOrgByNameOrId(client.vcdAuthConfig.Org)
-		if err != nil {
-			return fmt.Errorf("unable to get vcd organization [%s]: [%v]",
-				client.vcdAuthConfig.Org, err)
-		}
-
-		vdc, err := org.GetVDCByName(client.vcdAuthConfig.VDC, true)
-		if err != nil {
-			return fmt.Errorf("unable to get vdc from org [%s], vdc [%s]: [%v]",
-				client.vcdAuthConfig.Org, client.vcdAuthConfig.VDC, err)
-		}
-
-		client.vdc = vdc
+func (client *Client) RefreshBearerToken() error {
+	// No need to refresh token if logged in using username and password
+	if client.vcdAuthConfig.User != "" && client.vcdAuthConfig.Password != "" && client.vcdAuthConfig.RefreshToken == "" {
+		return nil
 	}
-
+	client.vcdClient.Client.APIVersion = VCloudApiVersion
+	accessTokenResponse, _, err := client.vcdAuthConfig.getAccessTokenFromRefreshToken(client.vcdClient.Client.IsSysAdmin)
+	if err != nil {
+		return fmt.Errorf("failed to refresh access token: [%v]", err)
+	}
+	err = client.vcdClient.SetToken(client.vcdAuthConfig.Org, "Authorization", fmt.Sprintf("Bearer %s", accessTokenResponse.AccessToken))
+	if err != nil {
+		return fmt.Errorf("failed to set authorization header: [%v]", err)
+	}
 	return nil
 }
 
