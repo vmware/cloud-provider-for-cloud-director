@@ -1156,7 +1156,8 @@ func (client *Client) updateRDEVirtualIps(ctx context.Context, updatedIps []stri
 	}
 
 	statusMap["virtual_IPs"] = updatedIps
-	_, httpResponse, err := client.apiClient.DefinedEntityApi.UpdateDefinedEntity(ctx, *defEnt, etag, client.ClusterID)
+	// can pass invokeHooks
+	_, httpResponse, err := client.apiClient.DefinedEntityApi.UpdateDefinedEntity(ctx, *defEnt, etag, client.ClusterID, nil)
 	if err != nil {
 		return httpResponse, fmt.Errorf("error when updating defined entity: [%v]", err)
 	}

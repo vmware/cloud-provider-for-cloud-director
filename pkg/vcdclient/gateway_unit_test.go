@@ -112,7 +112,7 @@ func TestGetCursor(t *testing.T) {
 						`<https://bos1-vcloud-static-176-199.eng.vmware.com/cloudapi/1.0.0/edgeGateways/urn%3Avcloud%3Agateway%3A35835bef-664f-4afe-a45b-07b25ea0b6e4>;rel="up";type="application/json";model="EdgeGateway"`,
 					},
 					"Content-Type": []string{
-						fmt.Sprintf("application/json;version=%s", ApiVersion),
+						fmt.Sprintf("application/json;version=%s", VCloudApiVersion),
 					},
 					"Cache-Control": []string{
 						"no-store, must-revalidate",

@@ -276,8 +276,9 @@ func TestVirtualServiceHttpsCRUDE(t *testing.T) {
 	externalIP := "11.12.13.14"
 	internalIP := "3.4.5.6"
 	virtualServiceName := fmt.Sprintf("test-virtual-service-https-%s", uuid.New().String())
+	certName := fmt.Sprintf("%s-cert", vcdClient.ClusterID)
 	vsRef, err := vcdClient.createVirtualService(ctx, virtualServiceName, lbPoolRef, segRef,
-		internalIP, externalIP, "HTTPS", 443, "test")
+		internalIP, externalIP, "HTTPS", 443, certName)
 	assert.NoError(t, err, "Unable to create virtual service")
 	require.NotNil(t, vsRef, "VirtualServiceRef should not be nil")
 	assert.Equal(t, virtualServiceName, vsRef.Name, "Virtual Service name should match")
@@ -295,7 +296,7 @@ func TestVirtualServiceHttpsCRUDE(t *testing.T) {
 
 	// repeated creation should not fail
 	vsRef, err = vcdClient.createVirtualService(ctx, virtualServiceName, lbPoolRef, segRef,
-		internalIP, externalIP, "HTTPS", 443, "test")
+		internalIP, externalIP, "HTTPS", 443, certName)
 	assert.NoError(t, err, "Unable to create virtual service for the second time")
 	require.NotNil(t, vsRef, "VirtualServiceRef should not be nil")
 	assert.Equal(t, virtualServiceName, vsRef.Name, "Virtual Service name should match")
@@ -398,6 +399,8 @@ func TestUpdateRDEUsingEtag(t *testing.T) {
 	rdeVips2, etag2, defEnt2, err := vcdClient.GetRDEVirtualIps(ctx)
 	assert.NoError(t, err, "Should retrieve RDE vips on second attempt")
 	assert.Equal(t, etag1, etag2, "etags from consecutive RDE GET calls should match")
+	origRdeVips := make([]string, len(rdeVips1))
+	copy(origRdeVips, rdeVips1)
 
 	// Test successfully updating using first etag
 	addIp1 := "1.2.3.4"
@@ -434,4 +437,8 @@ func TestUpdateRDEUsingEtag(t *testing.T) {
 	assert.NoError(t, err, "RDE should be updated")
 	assert.Equal(t, http.StatusOK, httpResponse4.StatusCode, "RDE update status code should be 200 (OK)")
 	// no check to ensure ip's removed because they may have been previously present in the RDE vips
+	rdeVips5, _, _, err := vcdClient.GetRDEVirtualIps(ctx)
+	assert.NoError(t, err, "Should retrieve RDE vips to check added ips are removed")
+	assert.Equal(t, false, foundStringInSlice(addIp1, rdeVips5), "ip [%s] should not be found in rde vips", addIp1)
+	assert.Equal(t, false, foundStringInSlice(addIp2, rdeVips5), "ip [%s] should not be found in rde vips", addIp2)
 }
