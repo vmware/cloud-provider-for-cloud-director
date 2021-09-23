@@ -1,6 +1,6 @@
 /*
-    Copyright 2021 VMware, Inc.
-    SPDX-License-Identifier: Apache-2.0
+   Copyright 2021 VMware, Inc.
+   SPDX-License-Identifier: Apache-2.0
 */
 
 package vcdclient
@@ -183,7 +183,7 @@ func TestGetUnusedGatewayIP(t *testing.T) {
 	return
 }
 
-	func TestVirtualServiceHttpCRUDE(t *testing.T) {
+func TestVirtualServiceHttpCRUDE(t *testing.T) {
 
 	vcdClient, err := getTestVCDClient(nil)
 	assert.NoError(t, err, "Unable to get VCD client")
@@ -254,7 +254,7 @@ func foundStringInSlice(find string, slice []string) bool {
 			return true
 		}
 	}
-	return  false
+	return false
 }
 
 func TestVirtualServiceHttpsCRUDE(t *testing.T) {
@@ -358,7 +358,6 @@ func TestLoadBalancerCRUDE(t *testing.T) {
 	assert.NoError(t, err, "HTTP Load Balancer should be updated")
 	err = vcdClient.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-https", updatedIps, updatedInternalPort)
 	assert.NoError(t, err, "HTTPS Load Balancer should be updated")
-
 
 	err = vcdClient.DeleteLoadBalancer(ctx, virtualServiceNamePrefix,
 		lbPoolNamePrefix)

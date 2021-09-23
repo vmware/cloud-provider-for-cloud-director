@@ -1,6 +1,6 @@
 /*
-    Copyright 2021 VMware, Inc.
-    SPDX-License-Identifier: Apache-2.0
+   Copyright 2021 VMware, Inc.
+   SPDX-License-Identifier: Apache-2.0
 */
 
 package vcdclient
@@ -8,18 +8,18 @@ package vcdclient
 import (
 	"context"
 	"fmt"
+	"k8s.io/klog"
 	"net"
 	"net/http"
 	"net/url"
 	"strconv"
 
+	"github.com/antihax/optional"
 	"github.com/apparentlymart/go-cidr/cidr"
 	"github.com/peterhellberg/link"
 
-	"github.com/antihax/optional"
 	swaggerClient "github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdswaggerclient"
 	"github.com/vmware/go-vcloud-director/v2/govcd"
-	"k8s.io/klog"
 )
 
 // CacheGatewayDetails : get gateway reference and cache some details in client object
@@ -1217,7 +1217,7 @@ func (client *Client) removeVirtualIpFromRDE(ctx context.Context, removeIp strin
 		if foundIdx == -1 {
 			return nil // no need to update RDE
 		}
-		updatedIps := append(currIps[:foundIdx], currIps[foundIdx + 1:]...)
+		updatedIps := append(currIps[:foundIdx], currIps[foundIdx+1:]...)
 
 		httpResponse, err := client.updateRDEVirtualIps(ctx, updatedIps, etag, defEnt)
 		if err != nil {

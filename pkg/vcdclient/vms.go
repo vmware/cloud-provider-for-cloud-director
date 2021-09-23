@@ -1,6 +1,6 @@
 /*
-    Copyright 2021 VMware, Inc.
-    SPDX-License-Identifier: Apache-2.0
+   Copyright 2021 VMware, Inc.
+   SPDX-License-Identifier: Apache-2.0
 */
 
 package vcdclient
@@ -79,7 +79,6 @@ func (client *Client) FindVMByUUID(vcdVmUUID string) (*govcd.VM, error) {
 
 	return vm, nil
 }
-
 
 // IsVmNotAvailable : In VCD, if the VM is not available, it can be an access error or the VM may not be present.
 // Hence we sometimes get an error different from govcd.ErrorEntityNotFound

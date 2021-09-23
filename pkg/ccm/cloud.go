@@ -1,6 +1,6 @@
 /*
-    Copyright 2021 VMware, Inc.
-    SPDX-License-Identifier: Apache-2.0
+   Copyright 2021 VMware, Inc.
+   SPDX-License-Identifier: Apache-2.0
 */
 
 // +build !testing
@@ -60,7 +60,6 @@ func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error
 			continue
 		}
 
-
 		if cloudConfig.LB.OneArm != nil {
 			oneArm = &vcdclient.OneArm{
 				StartIPAddress: cloudConfig.LB.OneArm.StartIP,
@@ -75,6 +74,7 @@ func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error
 			cloudConfig.VCD.VIPSubnet,
 			cloudConfig.VCD.User,
 			cloudConfig.VCD.Secret,
+			cloudConfig.VCD.RefreshToken,
 			true,
 			cloudConfig.ClusterID,
 			oneArm,

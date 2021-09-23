@@ -1,15 +1,16 @@
 /*
-    Copyright 2021 VMware, Inc.
-    SPDX-License-Identifier: Apache-2.0
+   Copyright 2021 VMware, Inc.
+   SPDX-License-Identifier: Apache-2.0
 */
 
 package vcdclient
 
 import (
 	"fmt"
-	"github.com/vmware/cloud-provider-for-cloud-director/pkg/config"
 	"os"
 	"path/filepath"
+
+	"github.com/vmware/cloud-provider-for-cloud-director/pkg/config"
 )
 
 var (
@@ -105,6 +106,8 @@ func getTestVCDClient(inputMap map[string]interface{}) (*Client, error) {
 				cloudConfig.LB.CertificateAlias = getStrValStrict(val, cloudConfig.LB.CertificateAlias)
 			case "getVdcClient":
 				getVdcClient = getBoolValStrict(val, false)
+			case "refreshToken":
+				cloudConfig.VCD.RefreshToken = getStrValStrict(val, cloudConfig.VCD.RefreshToken)
 			}
 		}
 	}
@@ -117,6 +120,7 @@ func getTestVCDClient(inputMap map[string]interface{}) (*Client, error) {
 		cloudConfig.VCD.VIPSubnet,
 		cloudConfig.VCD.User,
 		cloudConfig.VCD.Secret,
+		cloudConfig.VCD.RefreshToken,
 		insecure,
 		cloudConfig.ClusterID,
 		oneArm,

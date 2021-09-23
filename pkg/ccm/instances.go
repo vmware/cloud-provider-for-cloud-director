@@ -1,6 +1,6 @@
 /*
-    Copyright 2021 VMware, Inc.
-    SPDX-License-Identifier: Apache-2.0
+   Copyright 2021 VMware, Inc.
+   SPDX-License-Identifier: Apache-2.0
 */
 
 package ccm
@@ -26,7 +26,7 @@ func newInstances(vmInfoCache *VmInfoCache) cloudProvider.Instances {
 }
 
 func getUUIDFromProviderID(providerID string) string {
-	withoutPrefix := strings.TrimPrefix(providerID, ProviderName + "://")
+	withoutPrefix := strings.TrimPrefix(providerID, ProviderName+"://")
 	return strings.ToLower(strings.TrimSpace(withoutPrefix))
 }
 
