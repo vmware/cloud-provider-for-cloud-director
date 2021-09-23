@@ -102,7 +102,7 @@ func (vmic *VmInfoCache) GetByName(vmName string) (*VmInfo, error) {
 
 	captureTime := time.Now()
 	if err := vmic.vcdClient.RefreshBearerToken(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error while obtaining access token: [%v]", err)
 	}
 	vm, err := vmic.vcdClient.FindVMByName(vmName)
 	if err != nil {
@@ -145,7 +145,7 @@ func (vmic *VmInfoCache) GetByUUID(vmUUID string) (*VmInfo, error) {
 
 	captureTime := time.Now()
 	if err := vmic.vcdClient.RefreshBearerToken(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error while obtaining access token: [%v]", err)
 	}
 	vm, err := vmic.vcdClient.FindVMByUUID(vmUUID)
 	if err != nil {
