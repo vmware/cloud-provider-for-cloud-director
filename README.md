@@ -71,6 +71,11 @@ kubectl logs -f -n kube-system <pod whose name starts with vmware-cloud-director
 
 After a while, the CPI initializes the nodes of the cluster, and pods such as `core-dns` will move from `Pending` to `Running` state.
 
+### Known Issues in Beta
+With the manual secret-injection method of Beta as described above, the credentials expire after 24 hours. These credentials are not automatically refreshed later.
+
+This limitation is for the beta release only. The current workaround for this limitation is to delete the CCM pod. Once deleted, the pod will be restarted automatically with the refreshed credentials.
+
 
 ### Instances Interface: Node Lifecycle Management (LCM)
 There is no particular configuration needed in order to use the Node LCM.
