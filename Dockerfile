@@ -14,9 +14,7 @@ RUN ["make", "build-within-docker"]
 
 ########################################################
 
-FROM ubuntu:16.04
-
-RUN apt-get update -y
+FROM photon:4.0-20210910
 
 WORKDIR /opt/vcloud/bin
 
