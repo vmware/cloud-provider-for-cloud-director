@@ -139,7 +139,7 @@ spec:
       serviceAccountName: cloud-controller-manager
       containers:
         - name: vmware-cloud-director-ccm
-          image: projects.registry.vmware.com/vmware-cloud-director/cloud-provider-for-cloud-director:0.1.0.latest
+          image: harbor-repo.vmare.com/vcloud/cloud-provider-for-cloud-director:0.1.0.shamasundara.latest
           imagePullPolicy: IfNotPresent
           command:
             - /opt/vcloud/bin/cloud-provider-for-cloud-director
