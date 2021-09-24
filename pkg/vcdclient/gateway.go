@@ -1191,12 +1191,13 @@ func (client *Client) addVirtualIpToRDE(ctx context.Context, addIp string) error
 			}
 			return fmt.Errorf("error when adding virtual ip to RDE: [%v]", err)
 		}
+		return nil
 	}
 	return fmt.Errorf("unable to update rde due to incorrect etag after 10 tries")
 }
 
 func (client *Client) removeVirtualIpFromRDE(ctx context.Context, removeIp string) error {
-	for {
+	for i := 0; i < 10; i++ {
 		currIps, etag, defEnt, err := client.GetRDEVirtualIps(ctx)
 		if err != nil {
 			return fmt.Errorf("error for getting current vips: [%v]", err)
@@ -1226,7 +1227,7 @@ func (client *Client) removeVirtualIpFromRDE(ctx context.Context, removeIp strin
 			}
 			return fmt.Errorf("error when adding virtual ip to RDE: [%v]", err)
 		}
-		break
+		return nil
 	}
-	return nil
+	return fmt.Errorf("unable to update rde due to incorrect etag after 10 tries")
 }
