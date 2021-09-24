@@ -184,7 +184,7 @@ func TestGetUnusedGatewayIP(t *testing.T) {
 	return
 }
 
-	func TestVirtualServiceHttpCRUDE(t *testing.T) {
+func TestVirtualServiceHttpCRUDE(t *testing.T) {
 
 	vcdClient, err := getTestVCDClient(nil)
 	assert.NoError(t, err, "Unable to get VCD client")
@@ -216,8 +216,8 @@ func TestGetUnusedGatewayIP(t *testing.T) {
 
 	rdeVips, _, _, err := vcdClient.GetRDEVirtualIps(ctx)
 	assert.NoError(t, err, "Unable to get RDE vips after virtual service creation")
-	assert.Equal(t, true, foundStringInSlice(externalIP, rdeVips), "external ip should be found in rde vips")
-	assert.Equal(t, false, foundStringInSlice(internalIP, rdeVips), "internal ip should not be in rde vips")
+	assert.True(t, foundStringInSlice(externalIP, rdeVips), "external ip should be found in rde vips")
+	assert.False(t, foundStringInSlice(internalIP, rdeVips), "internal ip should not be in rde vips")
 
 	// repeated creation should not fail
 	vsRef, err = vcdClient.createVirtualService(ctx, virtualServiceName, lbPoolRef, segRef,
@@ -231,7 +231,7 @@ func TestGetUnusedGatewayIP(t *testing.T) {
 
 	rdeVips, _, _, err = vcdClient.GetRDEVirtualIps(ctx)
 	assert.NoError(t, err, "Unable to get vips from RDE after virtual service deletion")
-	assert.Equal(t, false, foundStringInSlice(externalIP, rdeVips), "external ip should not be found in RDE vips")
+	assert.False(t, foundStringInSlice(externalIP, rdeVips), "external ip should not be found in RDE vips")
 
 	err = vcdClient.deleteVirtualService(ctx, virtualServiceName, true, externalIP)
 	assert.Error(t, err, "Should fail when deleting non-existing Virtual Service")
@@ -291,8 +291,8 @@ func TestVirtualServiceHttpsCRUDE(t *testing.T) {
 
 	rdeVips, _, _, err := vcdClient.GetRDEVirtualIps(ctx)
 	assert.NoError(t, err, "Unable to get RDE vips after virtual service creation")
-	assert.Equal(t, true, foundStringInSlice(externalIP, rdeVips), "external ip should be found in rde vips")
-	assert.Equal(t, false, foundStringInSlice(internalIP, rdeVips), "internal ip should not be found in rde vips")
+	assert.True(t, foundStringInSlice(externalIP, rdeVips), "external ip should be found in rde vips")
+	assert.False(t, foundStringInSlice(internalIP, rdeVips), "internal ip should not be found in rde vips")
 
 	// repeated creation should not fail
 	vsRef, err = vcdClient.createVirtualService(ctx, virtualServiceName, lbPoolRef, segRef,
@@ -306,7 +306,7 @@ func TestVirtualServiceHttpsCRUDE(t *testing.T) {
 
 	rdeVips, _, _, err = vcdClient.GetRDEVirtualIps(ctx)
 	assert.NoError(t, err, "Unable to get vips from RDE after virtual service deletion")
-	assert.Equal(t, false, foundStringInSlice(externalIP, rdeVips), "external ip should not be found in RDE vips")
+	assert.False(t, foundStringInSlice(externalIP, rdeVips), "external ip should not be found in RDE vips")
 
 	err = vcdClient.deleteVirtualService(ctx, virtualServiceName, true, externalIP)
 	assert.Error(t, err, "Should fail when deleting non-existing Virtual Service")
@@ -411,7 +411,7 @@ func TestUpdateRDEUsingEtag(t *testing.T) {
 	assert.Equal(t, http.StatusOK, httpResponse1.StatusCode, "RDE update status code should be 200 (OK)")
 	rdeVips3, _, _, err := vcdClient.GetRDEVirtualIps(ctx)
 	assert.NoError(t, err, "Should retrieve RDE vips successfully")
-	assert.Equal(t, true, foundStringInSlice(addIp1, rdeVips3), "ip [%s] should be found in rde vips", addIp1)
+	assert.True(t, foundStringInSlice(addIp1, rdeVips3), "ip [%s] should be found in rde vips", addIp1)
 
 	// Test adding addIp2 with outdated etag
 	updatedRdeVips2 := append(rdeVips2, addIp2)
@@ -420,7 +420,7 @@ func TestUpdateRDEUsingEtag(t *testing.T) {
 	assert.Equal(t, http.StatusPreconditionFailed, httpResponse2.StatusCode, "RDE update status code should be 412 (Precondition failed)")
 	rdeVips3, etag3, defEnt3, err := vcdClient.GetRDEVirtualIps(ctx)
 	assert.NoError(t, err, "Should retrieve RDE vips successfully")
-	assert.Equal(t, false, foundStringInSlice(addIp2, rdeVips3), "ip [%s] should not be found in rde vips", addIp2)
+	assert.False(t, foundStringInSlice(addIp2, rdeVips3), "ip [%s] should not be found in rde vips", addIp2)
 
 	// Try adding addIp2 with correct etag
 	updatedRdeVips3 := append(rdeVips3, addIp2)
@@ -429,7 +429,7 @@ func TestUpdateRDEUsingEtag(t *testing.T) {
 	assert.Equal(t, http.StatusOK, httpResponse3.StatusCode, "RDE update status code should be 200 (OK)")
 	rdeVips4, etag4, defEnt4, err := vcdClient.GetRDEVirtualIps(ctx)
 	assert.NoError(t, err, "Should retrieve RDE vips successfully")
-	assert.Equal(t, true, foundStringInSlice(addIp2, rdeVips4), "ip [%s] should be found in rde vips", addIp2)
+	assert.True(t, foundStringInSlice(addIp2, rdeVips4), "ip [%s] should be found in rde vips", addIp2)
 
 
 	// reset RDE vips to original state
@@ -439,6 +439,6 @@ func TestUpdateRDEUsingEtag(t *testing.T) {
 	// no check to ensure ip's removed because they may have been previously present in the RDE vips
 	rdeVips5, _, _, err := vcdClient.GetRDEVirtualIps(ctx)
 	assert.NoError(t, err, "Should retrieve RDE vips to check added ips are removed")
-	assert.Equal(t, false, foundStringInSlice(addIp1, rdeVips5), "ip [%s] should not be found in rde vips", addIp1)
-	assert.Equal(t, false, foundStringInSlice(addIp2, rdeVips5), "ip [%s] should not be found in rde vips", addIp2)
+	assert.False(t, foundStringInSlice(addIp1, rdeVips5), "ip [%s] should not be found in rde vips", addIp1)
+	assert.False(t, foundStringInSlice(addIp2, rdeVips5), "ip [%s] should not be found in rde vips", addIp2)
 }
