@@ -19,6 +19,10 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/govcd"
 )
 
+const (
+	VCloudApiVersion = "36.0"
+)
+
 // VCDAuthConfig : contains config related to vcd auth
 type VCDAuthConfig struct {
 	User         string `json:"user"`
@@ -40,7 +44,7 @@ func (config *VCDAuthConfig) GetBearerToken() (*govcd.VCDClient, *http.Response,
 	}
 
 	vcdClient := govcd.NewVCDClient(*u, config.Insecure)
-	vcdClient.Client.APIVersion = "35.0"
+	vcdClient.Client.APIVersion = VCloudApiVersion
 	klog.Infof("Using VCD OpenAPI version [%s]", vcdClient.Client.APIVersion)
 
 	var resp *http.Response
@@ -109,7 +113,7 @@ func (config *VCDAuthConfig) GetPlainClientFromSecrets() (*govcd.VCDClient, erro
 	}
 
 	vcdClient := govcd.NewVCDClient(*u, config.Insecure)
-	vcdClient.Client.APIVersion = "35.0"
+	vcdClient.Client.APIVersion = VCloudApiVersion
 	klog.Infof("Using VCD XML API version [%s]", vcdClient.Client.APIVersion)
 	if err = vcdClient.Authenticate(config.User, config.Password, config.Org); err != nil {
 		return nil, fmt.Errorf("cannot authenticate with vcd: [%v]", err)
