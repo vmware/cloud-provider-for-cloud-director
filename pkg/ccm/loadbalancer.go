@@ -56,6 +56,9 @@ func (lb *LBManager) getNodeIPs() ([]string, error) {
 func (lb *LBManager) EnsureLoadBalancer(ctx context.Context, clusterName string,
 	service *v1.Service, nodes []*v1.Node) (lbs *v1.LoadBalancerStatus, err error) {
 
+	if err = lb.vcdClient.RefreshBearerToken(); err != nil {
+		return nil, fmt.Errorf("error while obtaining access token: [%v]", err)
+	}
 	nodeIPs, err := lb.getNodeIPs()
 	if err != nil {
 		return nil, fmt.Errorf("unable to get nodes in cluster: [%v]", err)
@@ -94,6 +97,9 @@ func (lb *LBManager) getLBPoolNamePrefix(serviceName string, clusterID string) s
 // Parameter 'clusterName' is the name of the cluster as presented to kube-controller-manager
 func (lb *LBManager) UpdateLoadBalancer(ctx context.Context, clusterName string,
 	service *v1.Service, nodes []*v1.Node) (err error) {
+	if err = lb.vcdClient.RefreshBearerToken(); err != nil {
+		return fmt.Errorf("error while obtaining access token: [%v]", err)
+	}
 	lbPoolNamePrefix := lb.getLBPoolNamePrefix(service.Name, lb.vcdClient.ClusterID)
 	nodeIps := lb.getNodeInternalIps(nodes)
 	klog.Infof("UpdateLoadBalancer Node Ips: %v", nodeIps)
@@ -119,6 +125,9 @@ func (lb *LBManager) UpdateLoadBalancer(ctx context.Context, clusterName string,
 func (lb *LBManager) EnsureLoadBalancerDeleted(ctx context.Context, clusterName string,
 	service *v1.Service) error {
 
+	if err := lb.vcdClient.RefreshBearerToken(); err != nil {
+		return fmt.Errorf("error while obtaining access token: [%v]", err)
+	}
 	return lb.deleteLoadBalancer(ctx, service)
 }
 
@@ -152,6 +161,9 @@ func (lb *LBManager) getLoadBalancer(ctx context.Context,
 func (lb *LBManager) GetLoadBalancer(ctx context.Context, clusterName string,
 	service *v1.Service) (status *v1.LoadBalancerStatus, exists bool, err error) {
 
+	if err = lb.vcdClient.RefreshBearerToken(); err != nil {
+		return nil, false, fmt.Errorf("error while obtaining access token: [%v]", err)
+	}
 	return lb.getLoadBalancer(ctx, service)
 }
 
