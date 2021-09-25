@@ -9,6 +9,7 @@ data:
       host: VCD_HOST
       org: ORG
       vdc: OVDC
+      vAppName: VAPP
       network: NETWORK
       vipSubnet: VIP_SUBNET_CIDR
     loadbalancer:
