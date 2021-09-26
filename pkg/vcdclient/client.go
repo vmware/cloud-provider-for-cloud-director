@@ -53,6 +53,7 @@ func (client *Client) RefreshBearerToken() error {
 	href := fmt.Sprintf("%s/api", client.vcdAuthConfig.Host)
 	client.vcdClient.Client.APIVersion = VCloudApiVersion
 
+	klog.Infof("Is user sysadmin: [%v]", client.vcdClient.Client.IsSysAdmin)
 	if client.vcdAuthConfig.RefreshToken != "" {
 		// Refresh vcd client using refresh token
 		accessTokenResponse, _, err := client.vcdAuthConfig.getAccessTokenFromRefreshToken(
@@ -68,6 +69,9 @@ func (client *Client) RefreshBearerToken() error {
 		if err != nil {
 			return fmt.Errorf("failed to set authorization header: [%v]", err)
 		}
+		// The previous function call will unset IsSysAdmin boolean for administrator because govcd makes a hard check
+		// on org name. Set the boolean back
+		client.vcdClient.Client.IsSysAdmin = client.vcdAuthConfig.IsSysAdmin
 	} else if client.vcdAuthConfig.User != "" && client.vcdAuthConfig.Password != "" {
 		// Refresh vcd client using username and password
 		resp, err := client.vcdClient.GetAuthResponse(client.vcdAuthConfig.User, client.vcdAuthConfig.Password,
@@ -134,19 +138,19 @@ func NewVCDClientFromSecrets(host string, orgName string, vdcName string, vAppNa
 	}
 
 	client := &Client{
-		vcdAuthConfig:   vcdAuthConfig,
-		ClusterOrgName:  orgName,
-		ClusterOVDCName: vdcName,
-		ClusterVAppName: vAppName,
-		vcdClient:       vcdClient,
-		apiClient:       apiClient,
-		networkName:     networkName,
-		ipamSubnet:      ipamSubnet,
-		gatewayRef:      nil,
-		ClusterID:       clusterID,
-		OneArm:          oneArm,
-		HTTPPort:        httpPort,
-		HTTPSPort:       httpsPort,
+		vcdAuthConfig:    vcdAuthConfig,
+		ClusterOrgName:   orgName,
+		ClusterOVDCName:  vdcName,
+		ClusterVAppName:  vAppName,
+		vcdClient:        vcdClient,
+		apiClient:        apiClient,
+		networkName:      networkName,
+		ipamSubnet:       ipamSubnet,
+		gatewayRef:       nil,
+		ClusterID:        clusterID,
+		OneArm:           oneArm,
+		HTTPPort:         httpPort,
+		HTTPSPort:        httpsPort,
 		CertificateAlias: certAlias,
 	}
 
@@ -171,5 +175,6 @@ func NewVCDClientFromSecrets(host string, orgName string, vdcName string, vAppNa
 	}
 	clientSingleton = client
 
+	klog.Infof("Client singleton is sysadmin: [%v]", clientSingleton.vcdClient.Client.IsSysAdmin)
 	return clientSingleton, nil
 }
