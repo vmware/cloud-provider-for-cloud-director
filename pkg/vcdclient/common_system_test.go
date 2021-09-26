@@ -116,6 +116,7 @@ func getTestVCDClient(inputMap map[string]interface{}) (*Client, error) {
 		cloudConfig.VCD.Host,
 		cloudConfig.VCD.Org,
 		cloudConfig.VCD.VDC,
+		cloudConfig.VCD.VAppName,
 		cloudConfig.VCD.VDCNetwork,
 		cloudConfig.VCD.VIPSubnet,
 		cloudConfig.VCD.UserOrg,
