@@ -12,6 +12,7 @@ import (
 	"io/ioutil"
 	"k8s.io/klog"
 	"os"
+	"strings"
 )
 
 // VCDConfig :
@@ -19,16 +20,21 @@ type VCDConfig struct {
 	Host string `yaml:"host"`
 	VDC  string `yaml:"vdc"`
 	Org  string `yaml:"org"`
+	UserOrg      string // this defaults to Org or a prefix of User
 
-	// It is allowed to pass the following variables using the config. However
+	// It is allowed to pass the following variables using the config. However,
 	// that is unsafe security practice. However there can be user scenarios and
 	// testing scenarios where this is sensible.
+
+	// This could be userOrg/user or just user. In the latter case, we assume
+	// that Org is the org in which the user exists.
 	User         string `yaml:"user" default:""`
 	Secret       string `yaml:"secret" default:""`
 	RefreshToken string `yaml:"refreshToken" default:""`
 
 	VDCNetwork string `yaml:"network"`
 	VIPSubnet  string `yaml:"vipSubnet"`
+	VAppName  string  `yaml:"vAppName"`
 }
 
 // Ports :
@@ -57,6 +63,29 @@ type CloudConfig struct {
 	ClusterID string    `yaml:"clusterid"`
 }
 
+func getUserAndOrg(fullUserName string, clusterOrg string) (userOrg string, userName string, err error) {
+	// If the full username is specified as org/user, the scenario is that the user
+	// may belong to an org different from the cluster, but still has the
+	// necessary rights to view the VMs on this org. Else if the username is
+	// specified as just user, the scenario is that the user is in the same org
+	// as the cluster.
+	parts := strings.Split(string(fullUserName), "/")
+	if len(parts) > 2 {
+		return "", "", fmt.Errorf(
+			"invalid username format; expected at most two fields separated by /, obtained [%d]",
+			len(parts))
+	}
+	if len(parts) == 1 {
+		userOrg = clusterOrg
+		userName = parts[0]
+	} else {
+		userOrg = parts[0]
+		userName = parts[1]
+	}
+
+	return userOrg, userName, nil
+}
+
 // ParseCloudConfig : parses config and env to fill in the CloudConfig struct
 func ParseCloudConfig(configReader io.Reader) (*CloudConfig, error) {
 	var err error
@@ -67,6 +96,12 @@ func ParseCloudConfig(configReader io.Reader) (*CloudConfig, error) {
 
 	if err = decoder.Decode(&config); err != nil {
 		return nil, fmt.Errorf("unable to decode yaml file: [%v]", err)
+	}
+
+	fullUserName := config.VCD.User
+	config.VCD.UserOrg, config.VCD.User, err = getUserAndOrg(fullUserName, config.VCD.Org)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get user org and name: [%v]", err)
 	}
 
 	return config, nil
@@ -92,8 +127,14 @@ func SetAuthorization(config *CloudConfig) error {
 	if err != nil {
 		return fmt.Errorf("unable to get password: [%v]", err)
 	}
-	config.VCD.User = string(username)
+
+	config.VCD.UserOrg, config.VCD.User, err = getUserAndOrg(string(username), config.VCD.Org)
+	if err != nil {
+		return fmt.Errorf("unable to get user org and name: [%v]", err)
+	}
+
 	config.VCD.Secret = string(secret)
+
 	return nil
 }
 
@@ -108,6 +149,9 @@ func ValidateCloudConfig(config *CloudConfig) error {
 	}
 	if config.VCD.VDCNetwork == "" {
 		return fmt.Errorf("need a valid ovdc network name")
+	}
+	if config.VCD.VAppName == "" {
+		return fmt.Errorf("need a valid vApp name")
 	}
 
 	if config.VCD.RefreshToken == "" {
