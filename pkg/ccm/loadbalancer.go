@@ -147,6 +147,10 @@ func (lb *LBManager) getLoadBalancer(ctx context.Context,
 					fmt.Errorf("unable to get virtual service summary for [%s]: [%v]",
 					virtualServiceName, err)
 			}
+			if virtualIP == "" {
+				// if any lb that is expected is not created, return false to retry creation
+				return nil, false, nil
+			}
 
 		case lb.vcdClient.HTTPSPort:
 			virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, "https")
@@ -155,6 +159,10 @@ func (lb *LBManager) getLoadBalancer(ctx context.Context,
 				return nil, false,
 					fmt.Errorf("unable to get virtual service summary for [%s]: [%v]",
 						virtualServiceName, err)
+			}
+			if virtualIP == "" {
+				// if any lb that is expected is not created, return false to retry creation
+				return nil, false, nil
 			}
 
 		default:
