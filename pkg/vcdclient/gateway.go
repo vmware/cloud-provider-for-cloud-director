@@ -301,8 +301,8 @@ type NatRuleRef struct {
 	InternalPort int
 }
 
-func (client *Client) getNATRuleRef(ctx context.Context,
-	natRuleName string) (*NatRuleRef, error) {
+// getNATRuleRef: returns nil if the rule is not found;
+func (client *Client) getNATRuleRef(ctx context.Context, natRuleName string) (*NatRuleRef, error) {
 
 	if client.gatewayRef == nil {
 		return nil, fmt.Errorf("gateway reference should not be nil")
@@ -1087,18 +1087,21 @@ func (client *Client) GetLoadBalancer(ctx context.Context, virtualServiceName st
 		return "", nil // this is not an error
 	}
 
-	vip := vsSummary.VirtualIpAddress
-	if client.OneArm != nil {
-		dnatRuleName := getDNATRuleName(virtualServiceName)
-		dnatRuleRef, err := client.getNATRuleRef(ctx, dnatRuleName)
-		if err != nil {
-			return "", fmt.Errorf("Unable to find dnat rule [%s] for virtual service [%s]: [%v]",
-				dnatRuleName, virtualServiceName, err)
-		}
-		vip = dnatRuleRef.ExternalIP
+	if client.OneArm == nil {
+		return vsSummary.VirtualIpAddress, nil
 	}
 
-	return vip, nil
+	dnatRuleName := getDNATRuleName(virtualServiceName)
+	dnatRuleRef, err := client.getNATRuleRef(ctx, dnatRuleName)
+	if err != nil {
+		return "", fmt.Errorf("Unable to find dnat rule [%s] for virtual service [%s]: [%v]",
+			dnatRuleName, virtualServiceName, err)
+	}
+	if dnatRuleRef == nil {
+		return "", nil // so that a retry creates the DNAT rule
+	}
+
+	return dnatRuleRef.ExternalIP, nil
 }
 
 // IsNSXTBackedGateway : return true if gateway is backed by NSX-T

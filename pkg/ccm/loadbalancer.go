@@ -88,7 +88,7 @@ func (lb *LBManager) getServicePortMap(service *v1.Service) map[string]int32 {
 }
 
 func (lb *LBManager) getLBPoolNamePrefix(serviceName string, clusterID string) string {
-	return fmt.Sprintf("ingress-pool-%s-%s-", serviceName, clusterID)
+	return fmt.Sprintf("ingress-pool-%s-%s", serviceName, clusterID)
 }
 
 // UpdateLoadBalancer updates hosts under the specified load balancer.
@@ -134,13 +134,36 @@ func (lb *LBManager) EnsureLoadBalancerDeleted(ctx context.Context, clusterName 
 func (lb *LBManager) getLoadBalancer(ctx context.Context,
 	service *v1.Service) (status *v1.LoadBalancerStatus, exists bool, err error) {
 
-	virtualServiceName := lb.GetLoadBalancerName(ctx, lb.vcdClient.ClusterID, service)
-	virtualIP, err := lb.vcdClient.GetLoadBalancer(ctx, virtualServiceName)
-	if err != nil {
-		return nil, false, fmt.Errorf("unable to get virtual service summary for [%s]: [%v]",
-			virtualServiceName, err)
+	virtualServiceNamePrefix := lb.getLoadBalancerPrefix(ctx, service)
+	virtualIP := ""
+	for _, port := range service.Spec.Ports {
+		switch port.Port {
+
+		case lb.vcdClient.HTTPPort:
+			virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, "http")
+			virtualIP, err = lb.vcdClient.GetLoadBalancer(ctx, virtualServiceName)
+			if err != nil {
+				return nil, false,
+					fmt.Errorf("unable to get virtual service summary for [%s]: [%v]",
+					virtualServiceName, err)
+			}
+
+		case lb.vcdClient.HTTPSPort:
+			virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, "https")
+			virtualIP, err = lb.vcdClient.GetLoadBalancer(ctx, virtualServiceName)
+			if err != nil {
+				return nil, false,
+					fmt.Errorf("unable to get virtual service summary for [%s]: [%v]",
+						virtualServiceName, err)
+			}
+
+		default:
+			klog.Infof("Encountered unhandled port [%d]\n", port.Port)
+		}
 	}
+
 	if virtualIP == "" {
+		// this implies that no loadbalancer has been created.
 		return nil, false, nil
 	}
 
@@ -167,34 +190,14 @@ func (lb *LBManager) GetLoadBalancer(ctx context.Context, clusterName string,
 	return lb.getLoadBalancer(ctx, service)
 }
 
-// if both http and https ports are found, then "http" is returned
-func (lb *LBManager) getServiceSuffix(service *v1.Service) string {
-	httpFound := false
-	httpsFound := false
-	for _, port := range service.Spec.Ports {
-		switch port.Port {
-		case lb.vcdClient.HTTPPort:
-			httpFound = true
-		case lb.vcdClient.HTTPSPort:
-			httpsFound = true
-		default:
-			klog.Infof("Encountered unhandled port [%d]\n", port.Port)
-		}
-	}
-	if httpFound {
-		return "http"
-	}
-	if httpsFound {
-		return "https"
-	}
-	return ""
+func (lb *LBManager) getLoadBalancerPrefix(_ context.Context, service *v1.Service) string {
+	return fmt.Sprintf("ingress-vs-%s-%s", service.Name, lb.vcdClient.ClusterID)
 }
 
 // GetLoadBalancerName returns the name of the load balancer. Implementations must treat the
 // *v1.Service parameter as read-only and not modify it.
-func (lb *LBManager) GetLoadBalancerName(_ context.Context, clusterName string, service *v1.Service) string {
-	svcSuffix := lb.getServiceSuffix(service)
-	return fmt.Sprintf("ingress-vs-%s-%s-%s", service.Name, lb.vcdClient.ClusterID, svcSuffix)
+func (lb *LBManager) GetLoadBalancerName(ctx context.Context, clusterName string, service *v1.Service) string {
+	return lb.getLoadBalancerPrefix(ctx, service)
 }
 
 func (lb *LBManager) deleteLoadBalancer(ctx context.Context, service *v1.Service) error {
@@ -226,6 +229,8 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 	virtualServiceName := fmt.Sprintf("ingress-vs-%s-%s", service.Name, lb.vcdClient.ClusterID)
 	lbPoolNamePrefix := lb.getLBPoolNamePrefix(service.Name, lb.vcdClient.ClusterID)
 
+	// While creating the lb, even if only one of http/https is remaining and the other is completed,
+	// ask for both to be created. The already created one will silently pass.
 	httpPort := int32(0)
 	httpsPort := int32(0)
 	for _, port := range service.Spec.Ports {
