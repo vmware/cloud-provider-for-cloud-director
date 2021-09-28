@@ -301,8 +301,8 @@ type NatRuleRef struct {
 	InternalPort int
 }
 
-func (client *Client) getNATRuleRef(ctx context.Context,
-	natRuleName string) (*NatRuleRef, error) {
+// getNATRuleRef: returns nil if the rule is not found;
+func (client *Client) getNATRuleRef(ctx context.Context, natRuleName string) (*NatRuleRef, error) {
 
 	if client.gatewayRef == nil {
 		return nil, fmt.Errorf("gateway reference should not be nil")
@@ -804,11 +804,9 @@ func (client *Client) createVirtualService(ctx context.Context, virtualServiceNa
 	}
 
 	// update RDE with freeIp
-	if client.ClusterID != "" {
-		err = client.addVirtualIpToRDE(ctx, rdeVIP)
-		if err != nil {
-			klog.Errorf("error when adding virtual IP to RDE: [%v]", err)
-		}
+	err = client.addVirtualIpToRDE(ctx, rdeVIP)
+	if err != nil {
+		klog.Errorf("error when adding virtual IP to RDE: [%v]", err)
 	}
 
 	vsSummary, err = client.getVirtualService(ctx, virtualServiceName)
@@ -867,11 +865,9 @@ func (client *Client) deleteVirtualService(ctx context.Context, virtualServiceNa
 	klog.Infof("Deleted virtual service [%s]\n", virtualServiceName)
 
 	// remove virtual ip from RDE
-	if client.ClusterID != "" {
-		err = client.removeVirtualIpFromRDE(ctx, rdeVIP)
-		if err != nil {
-			return fmt.Errorf("error when removing vip from RDE: [%v]", err)
-		}
+	err = client.removeVirtualIpFromRDE(ctx, rdeVIP)
+	if err != nil {
+		return fmt.Errorf("error when removing vip from RDE: [%v]", err)
 	}
 
 	return nil
@@ -1027,6 +1023,9 @@ func (client *Client) DeleteLoadBalancer(ctx context.Context, virtualServiceName
 	// TODO: try to continue in case of errors
 	var err error
 
+	// Here the principle is to delete what is available; retry in case of failure
+	// but do not fail for missing entities, since a retry will always have missing
+	// entities.
 	for _, suffix := range []string{"http", "https"} {
 
 		virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, suffix)
@@ -1041,17 +1040,18 @@ func (client *Client) DeleteLoadBalancer(ctx context.Context, virtualServiceName
 			if err != nil {
 				return fmt.Errorf("unable to get dnat rule ref for nat rule [%s]: [%v]", dnatRuleName, err)
 			}
-			rdeVIP = dnatRuleRef.ExternalIP
+			if dnatRuleRef != nil {
+				rdeVIP = dnatRuleRef.ExternalIP
+			}
 		} else {
 			vsSummary, err := client.getVirtualService(ctx, virtualServiceName)
 			if err != nil {
 				return fmt.Errorf("unable to get summary for LB Virtual Service [%s]: [%v]",
 					virtualServiceName, err)
 			}
-			if vsSummary == nil {
-				return fmt.Errorf("no virtual service with name [%s]", virtualServiceName)
+			if vsSummary != nil {
+				rdeVIP = vsSummary.VirtualIpAddress
 			}
-			rdeVIP = vsSummary.VirtualIpAddress
 		}
 
 		err = client.deleteVirtualService(ctx, virtualServiceName, false, rdeVIP)
@@ -1087,18 +1087,21 @@ func (client *Client) GetLoadBalancer(ctx context.Context, virtualServiceName st
 		return "", nil // this is not an error
 	}
 
-	vip := vsSummary.VirtualIpAddress
-	if client.OneArm != nil {
-		dnatRuleName := getDNATRuleName(virtualServiceName)
-		dnatRuleRef, err := client.getNATRuleRef(ctx, dnatRuleName)
-		if err != nil {
-			return "", fmt.Errorf("Unable to find dnat rule [%s] for virtual service [%s]: [%v]",
-				dnatRuleName, virtualServiceName, err)
-		}
-		vip = dnatRuleRef.ExternalIP
+	if client.OneArm == nil {
+		return vsSummary.VirtualIpAddress, nil
 	}
 
-	return vip, nil
+	dnatRuleName := getDNATRuleName(virtualServiceName)
+	dnatRuleRef, err := client.getNATRuleRef(ctx, dnatRuleName)
+	if err != nil {
+		return "", fmt.Errorf("Unable to find dnat rule [%s] for virtual service [%s]: [%v]",
+			dnatRuleName, virtualServiceName, err)
+	}
+	if dnatRuleRef == nil {
+		return "", nil // so that a retry creates the DNAT rule
+	}
+
+	return dnatRuleRef.ExternalIP, nil
 }
 
 // IsNSXTBackedGateway : return true if gateway is backed by NSX-T
@@ -1165,10 +1168,20 @@ func (client *Client) updateRDEVirtualIps(ctx context.Context, updatedIps []stri
 }
 
 func (client *Client) addVirtualIpToRDE(ctx context.Context, addIp string) error {
-	for i := 0; i < 10; i++ {
+	if addIp == "" {
+		klog.Infof("VIP is empty, hence not adding anything to RDE")
+		return nil
+	}
+	if client.ClusterID == "" {
+		klog.Infof("ClusterID is empty, hence not adding VIP [%s] from RDE", addIp)
+		return nil
+	}
+
+	numRetries := 10
+	for i := 0; i < numRetries; i++ {
 		currIps, etag, defEnt, err := client.GetRDEVirtualIps(ctx)
 		if err != nil {
-			return fmt.Errorf("error for getting current vips: [%v]", err)
+			return fmt.Errorf("error getting current vips: [%v]", err)
 		}
 
 		// check if need to update RDE
@@ -1187,24 +1200,37 @@ func (client *Client) addVirtualIpToRDE(ctx context.Context, addIp string) error
 		httpResponse, err := client.updateRDEVirtualIps(ctx, updatedIps, etag, defEnt)
 		if err != nil {
 			if httpResponse.StatusCode == http.StatusPreconditionFailed {
+				klog.Infof("Wrong ETag while adding virtual IP [%s]", addIp)
 				continue
 			}
-			return fmt.Errorf("error when adding virtual ip to RDE: [%v]", err)
+			return fmt.Errorf("error when adding virtual ip [%s] to RDE: [%v]", addIp, err)
 		}
 		return nil
 	}
-	return fmt.Errorf("unable to update rde due to incorrect etag after 10 tries")
+
+	return fmt.Errorf("unable to update rde due to incorrect etag after [%d]] tries", numRetries)
 }
 
 func (client *Client) removeVirtualIpFromRDE(ctx context.Context, removeIp string) error {
-	for i := 0; i < 10; i++ {
+	if removeIp == "" {
+		klog.Infof("VIP is empty, hence not removing anything from RDE")
+		return nil
+	}
+	if client.ClusterID == "" {
+		klog.Infof("ClusterID is empty, hence not removing VIP [%s] from RDE", removeIp)
+		return nil
+	}
+
+	numRetries := 10
+	for i := 0; i < numRetries; i++ {
 		currIps, etag, defEnt, err := client.GetRDEVirtualIps(ctx)
 		if err != nil {
-			return fmt.Errorf("error for getting current vips: [%v]", err)
+			return fmt.Errorf("error getting current vips: [%v]", err)
 		}
 		// currIps is guaranteed not to be nil by GetRDEVirtualIps
 		if len(currIps) == 0 {
-			return fmt.Errorf("no RDE virtual ips to remove")
+			// valid case since this could be a retry operation
+			return nil
 		}
 
 		// form updated virtual ip list
@@ -1223,11 +1249,14 @@ func (client *Client) removeVirtualIpFromRDE(ctx context.Context, removeIp strin
 		httpResponse, err := client.updateRDEVirtualIps(ctx, updatedIps, etag, defEnt)
 		if err != nil {
 			if httpResponse.StatusCode == http.StatusPreconditionFailed {
+				klog.Infof("Wrong ETag while removing virtual IP [%s]", removeIp)
 				continue
 			}
-			return fmt.Errorf("error when adding virtual ip to RDE: [%v]", err)
+			return fmt.Errorf("error when removing virtual ip [%s] from RDE: [%v]",
+				removeIp, err)
 		}
 		return nil
 	}
-	return fmt.Errorf("unable to update rde due to incorrect etag after 10 tries")
+
+	return fmt.Errorf("unable to update rde due to incorrect etag after [%d] tries", numRetries)
 }
