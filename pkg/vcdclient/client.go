@@ -7,8 +7,10 @@ package vcdclient
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"k8s.io/klog"
+	"net/http"
 	"sync"
 
 	swaggerClient "github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdswaggerclient"
@@ -54,6 +56,7 @@ func (client *Client) RefreshBearerToken() error {
 	client.vcdClient.Client.APIVersion = VCloudApiVersion
 
 	klog.Infof("Is user sysadmin: [%v]", client.vcdClient.Client.IsSysAdmin)
+	var token string
 	if client.vcdAuthConfig.RefreshToken != "" {
 		// Refresh vcd client using refresh token
 		accessTokenResponse, _, err := client.vcdAuthConfig.getAccessTokenFromRefreshToken(
@@ -72,6 +75,7 @@ func (client *Client) RefreshBearerToken() error {
 		// The previous function call will unset IsSysAdmin boolean for administrator because govcd makes a hard check
 		// on org name. Set the boolean back
 		client.vcdClient.Client.IsSysAdmin = client.vcdAuthConfig.IsSysAdmin
+		token = accessTokenResponse.AccessToken
 	} else if client.vcdAuthConfig.User != "" && client.vcdAuthConfig.Password != "" {
 		// Refresh vcd client using username and password
 		resp, err := client.vcdClient.GetAuthResponse(client.vcdAuthConfig.User, client.vcdAuthConfig.Password,
@@ -80,13 +84,14 @@ func (client *Client) RefreshBearerToken() error {
 			return fmt.Errorf("unable to authenticate [%s/%s] for url [%s]: [%+v] : [%v]",
 				client.vcdAuthConfig.UserOrg, client.vcdAuthConfig.User, href, resp, err)
 		}
+		token = client.vcdClient.Client.VCDToken
 	} else {
 		return fmt.Errorf(
 			"unable to find refresh token or secret to refresh vcd client for user [%s/%s] and url [%s]",
 			client.vcdAuthConfig.UserOrg, client.vcdAuthConfig.User, href)
 	}
 
-	// Fill up the vdc field again so that clients can reuse legacy API
+	// reset legacy client
 	org, err := client.vcdClient.GetOrgByNameOrId(client.ClusterOrgName)
 	if err != nil {
 		return fmt.Errorf("unable to get vcd organization [%s]: [%v]",
@@ -100,6 +105,18 @@ func (client *Client) RefreshBearerToken() error {
 	}
 	client.vdc = vdc
 
+	// reset swagger client
+	swaggerConfig := swaggerClient.NewConfiguration()
+	swaggerConfig.BasePath = fmt.Sprintf("%s/cloudapi", client.vcdAuthConfig.Host)
+	swaggerConfig.AddDefaultHeader("Authorization", fmt.Sprintf("Bearer %s", token))
+	swaggerConfig.HTTPClient = &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: client.vcdAuthConfig.Insecure},
+		},
+	}
+	client.apiClient = swaggerClient.NewAPIClient(swaggerConfig)
+
+	klog.Info("successfully refreshed all clients")
 	return nil
 }
 
