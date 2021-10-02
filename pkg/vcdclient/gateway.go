@@ -22,11 +22,9 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/govcd"
 )
 
-// CacheGatewayDetails : get gateway reference and cache some details in client object
-func (client *Client) CacheGatewayDetails(ctx context.Context) error {
-
-	if client.networkName == "" {
-		return fmt.Errorf("network name should not be empty")
+func (client *Client) getOVDCNetwork(ctx context.Context, networkName string) (*swaggerClient.VdcNetwork, error) {
+	if networkName == "" {
+		return nil, fmt.Errorf("network name should not be empty")
 	}
 
 	ovdcNetworksAPI := client.apiClient.OrgVdcNetworksApi
@@ -36,7 +34,7 @@ func (client *Client) CacheGatewayDetails(ctx context.Context) error {
 		ovdcNetworks, resp, err := ovdcNetworksAPI.GetAllVdcNetworks(ctx, pageNum, 32, nil)
 		if err != nil {
 			// TODO: log resp in debug mode only
-			return fmt.Errorf("unable to get all ovdc networks: [%+v]: [%v]", resp, err)
+			return nil, fmt.Errorf("unable to get all ovdc networks: [%+v]: [%v]", resp, err)
 		}
 
 		if len(ovdcNetworks.Values) == 0 {
@@ -56,24 +54,48 @@ func (client *Client) CacheGatewayDetails(ctx context.Context) error {
 		pageNum++
 	}
 	if ovdcNetworkID == "" {
-		return fmt.Errorf("unable to obtain ID for ovdc network name [%s]",
+		return nil, fmt.Errorf("unable to obtain ID for ovdc network name [%s]",
 			client.networkName)
 	}
 
 	ovdcNetworkAPI := client.apiClient.OrgVdcNetworkApi
 	ovdcNetwork, resp, err := ovdcNetworkAPI.GetOrgVdcNetwork(ctx, ovdcNetworkID)
 	if err != nil {
-		return fmt.Errorf("unable to get network for id [%s]: [%+v]: [%v]", ovdcNetworkID, resp, err)
+		return nil, fmt.Errorf("unable to get network for id [%s]: [%+v]: [%v]", ovdcNetworkID, resp, err)
+	}
+
+	return &ovdcNetwork, nil
+}
+
+// CacheGatewayDetails : get gateway reference and cache some details in client object
+func (client *Client) CacheGatewayDetails(ctx context.Context) error {
+
+	if client.networkName == "" {
+		return fmt.Errorf("network name should not be empty")
+	}
+
+	ovdcNetwork, err := client.getOVDCNetwork(ctx, client.networkName)
+	if err != nil {
+		return fmt.Errorf("unable to get OVDC network [%s]: [%v]", client.networkName, err)
+	}
+
+	// Cache backing type
+	if ovdcNetwork.BackingNetworkType != nil {
+		client.networkBackingType = *ovdcNetwork.BackingNetworkType
 	}
 
 	// Cache gateway reference
+	if ovdcNetwork.Connection == nil ||
+		ovdcNetwork.Connection.RouterRef == nil {
+		klog.Infof("Gateway for Network Name [%s] is of type [%v]\n",
+			client.networkName, client.networkBackingType)
+		return nil
+	}
+
 	client.gatewayRef = &swaggerClient.EntityReference{
 		Name: ovdcNetwork.Connection.RouterRef.Name,
 		Id:   ovdcNetwork.Connection.RouterRef.Id,
 	}
-
-	// Cache backing type
-	client.networkBackingType = *ovdcNetwork.BackingNetworkType
 
 	klog.Infof("Obtained Gateway [%s] for Network Name [%s] of type [%v]\n",
 		client.gatewayRef.Name, client.networkName, client.networkBackingType)
