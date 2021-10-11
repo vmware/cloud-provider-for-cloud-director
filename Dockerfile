@@ -14,10 +14,13 @@ RUN ["make", "build-within-docker"]
 
 ########################################################
 
-FROM photon:4.0-20210910
+FROM photonos-docker-local.artifactory.eng.vmware.com/photon4:4.0-GA
 
 WORKDIR /opt/vcloud/bin
 
+COPY --from=builder /go/src/github.com/vmware/cloud-provider-for-cloud-director/LICENSE.txt .
+COPY --from=builder /go/src/github.com/vmware/cloud-provider-for-cloud-director/NOTICE.txt .
+COPY --from=builder /go/src/github.com/vmware/cloud-provider-for-cloud-director/open_source_license.txt .
 COPY --from=builder /build/vcloud/cloud-provider-for-cloud-director .
 
 RUN chmod +x /opt/vcloud/bin/cloud-provider-for-cloud-director
