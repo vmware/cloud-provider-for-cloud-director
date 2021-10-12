@@ -11,15 +11,15 @@ This extension is intended to be installed into a Kubernetes cluster installed w
 
 **cloud-provider-for-cloud-director** is distributed as a container image hosted at [Distribution Harbor](https://projects.registry.vmware.com) as `projects.registry.vmware.com/vmware-cloud-director/cloud-provider-for-cloud-director:<CPI Version>`.
 
-This cloud-provider is in a preliminary `beta` state and is not yet ready to be used in production.
+This cloud-provider is in a `GA` state and will be supported in production.
 
 ## Terminology
 1. VCD: VMware Cloud Director
-2. ClusterAdminRole: This is a user who has enough rights to create and administer a Kubernetes Cluster in VCD. This role can be created by cloning the [vApp Author Role](https://docs.vmware.com/en/VMware-Cloud-Director/10.3/VMware-Cloud-Director-Tenant-Portal-Guide/GUID-BC504F6B-3D38-4F25-AACF-ED584063754F.html) and then adding the following rights:
+2. ClusterAdminRole: This is the role that has enough rights to create and administer a Kubernetes Cluster in VCD. This role can be created by cloning the [vApp Author Role](https://docs.vmware.com/en/VMware-Cloud-Director/10.3/VMware-Cloud-Director-Tenant-Portal-Guide/GUID-BC504F6B-3D38-4F25-AACF-ED584063754F.html) and then adding the following rights:
     1. Full Control: CSE:NATIVECLUSTER
     2. Edit: CSE:NATIVECLUSTER
     3. View: CSE:NATIVECLUSTER
-3. CPI user: CPI needs to be running in the cluster as a user with a set of rights as described in this section and the Rights section below. For convenience, let us term this user as the `CPI user`.
+3. ClusterAdminUser: The Kubernetes Cluster needs to be created by a user belonging to the `ClusterAdminRole`. For convenience, let us term this user as the `ClusterAdminUser`. For CPI functionality, there needs to be a set of additional rights added to the `ClusterAdminRole` as described in the Rights section below.
 
 ## VMware Cloud Director Configuration
 In this section, we assume that the Kubernetes cluster is created using the [Container Service Extension](https://github.com/vmware/container-service-extension). However that is not a mandatory requirement.
@@ -27,55 +27,17 @@ In this section, we assume that the Kubernetes cluster is created using the [Con
 NSX-T with NSX Advanced Load Balancer is a prerequisite to use LoadBalancers with CPI of VCD.
 
 ### Rights
-The `CPI user` should have view access to the vApp containing the Kubernetes cluster. If the CPI user itself has created the cluster, it will have this access by default.
-This `CPI user` needs to be created from a `ClusterAdminRole` with the following additional rights:
+The `ClusterAdminUser` should have view access to the vApp containing the Kubernetes cluster. If the CPI user itself has created the cluster, it will have this access by default.
+This `ClusterAdminUser` needs to be created from a `ClusterAdminRole` with the following additional rights:
 1. Gateway =>
     1. View Gateway
 2. Gateway Services =>
     1. NAT Configure (adds NAT View)
     2. LoadBalancer Configure (adds LoadBalancer View)
+3. Access Control =>
+    1. User => Manage user's own API TOKEN
 
-### Additional Setup Steps for 0.1.0-beta
-There is a set of additional steps needed in order to feed the `CPI user` credentials into the Kubernetes cluster. These steps lead to a less secure cluster and are only applicable for the Beta release. The GA release of this product will not need these additional steps and will therefore result in a more secure cluster.
-
-These additional steps are as follows:
-1. Get the `KUBECONFIG` file from the cluster created. If the cluster was created using the Container Service Extension, the following command can be used:
-```
-    vcd cse cluster config <cluster name>  > myk8sclusterkubeconfig
-    export KUBECONFIG="<path to myk8sclusterkubeconfig>"
-```
-2. Create a Kubernetes secret with the username and password of the `CPI user` as follows:
-```
-VCDUSER=$(echo -n '<cpi user name>' | base64)
-PASSWORD=$(echo -n '<cpi user password>' | base64)
-
-cat > vcloud-basic-auth.yaml << END
----
-apiVersion: v1
-kind: Secret
-metadata:
-name: vcloud-basic-auth
-namespace: kube-system
-data:
-username: "VCDUSER"
-password: "$PASSWORD"
-END
-
-kubectl apply  -f vcloud-basic-auth.yaml
-```   
-This will create a secret and in a while start the CPI cleanly with the right credentials. If you wish, you can monitor it as follows:
-```
-kubectl get po -A -o wide # <== look for the pod whose name starts with `vmware-cloud-director-ccm-`
-kubectl logs -f -n kube-system <pod whose name starts with vmware-cloud-director-ccm>
-```
-
-After a while, the CPI initializes the nodes of the cluster, and pods such as `core-dns` will move from `Pending` to `Running` state.
-
-### Known Issues in Beta
-With the manual secret-injection method of Beta as described above, the credentials expire after 24 hours. These credentials are not automatically refreshed later.
-
-This limitation is for the beta release only. The current workaround for this limitation is to delete the CCM pod. Once deleted, the pod will be restarted automatically with the refreshed credentials.
-
+The `Access Control` right is needed in order to generate refresh tokens for the `ClusterAdminUser`.
 
 ### Instances Interface: Node Lifecycle Management (LCM)
 There is no particular configuration needed in order to use the Node LCM.
@@ -95,7 +57,7 @@ A ServiceEngineGroup needs to be added to the gateway of the OVDC within which t
 #### Creation of a LoadBalancer using a third-party ingress
 Any third party ingress such as Contour could be used with the CPI in order to create an L7 ingress and NSX Advanced Load Balancer with Avi will act as the L4 LoadBalancer.
 
-Note that in order to create a HTTPS Ingress using the Avi LoadBalancer, a certificate needs to be used. For Kubernetes clusters created using the Container Service Extension, the certificate needs to be named in a particular way as follows:
+**Note**: In order to create a HTTPS Ingress using the Avi LoadBalancer, a certificate needs to be used. For Kubernetes clusters created using the Container Service Extension, the certificate needs to be named in a particular way as follows:
 1. Get the ID of the Kubernetes cluster using the following command. Let us name it `ClusterID`
 ```
 vcd cse cluster info <kubernetes cluster name>
