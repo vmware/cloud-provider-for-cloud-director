@@ -24,7 +24,7 @@ This cloud-provider is in a `GA` state and will be supported in production.
 ## VMware Cloud Director Configuration
 In this section, we assume that the Kubernetes cluster is created using the [Container Service Extension](https://github.com/vmware/container-service-extension). However that is not a mandatory requirement.
 
-NSX-T with NSX Advanced Load Balancer is a prerequisite to use LoadBalancers with CPI of VCD.
+**Note:** NSX-T with NSX Advanced Load Balancer is a prerequisite to use LoadBalancers with CPI of VCD.
 
 ### Additional Rights for CPI
 The `ClusterAdminUser` should have view access to the vApp containing the Kubernetes cluster. Since the `ClusterAdminUser` itself creates the cluster, it will have this access by default.
