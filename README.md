@@ -19,15 +19,15 @@ This cloud-provider is in a `GA` state and will be supported in production.
     1. Full Control: CSE:NATIVECLUSTER
     2. Edit: CSE:NATIVECLUSTER
     3. View: CSE:NATIVECLUSTER
-3. ClusterAdminUser: The Kubernetes Cluster needs to be created by a user belonging to the `ClusterAdminRole`. For convenience, let us term this user as the `ClusterAdminUser`. For CPI functionality, there needs to be a set of additional rights added to the `ClusterAdminRole` as described in the Rights section below.
+3. ClusterAdminUser: For CPI functionality, there needs to be a set of additional rights added to the `ClusterAdminRole` as described in the "Additional Rights for CPI" section below. The Kubernetes Cluster needs to be **created** by a user belonging to this **enhanced** `ClusterAdminRole`. For convenience, let us term this user as the `ClusterAdminUser`. 
 
 ## VMware Cloud Director Configuration
 In this section, we assume that the Kubernetes cluster is created using the [Container Service Extension](https://github.com/vmware/container-service-extension). However that is not a mandatory requirement.
 
 NSX-T with NSX Advanced Load Balancer is a prerequisite to use LoadBalancers with CPI of VCD.
 
-### Rights
-The `ClusterAdminUser` should have view access to the vApp containing the Kubernetes cluster. If the CPI user itself has created the cluster, it will have this access by default.
+### Additional Rights for CPI
+The `ClusterAdminUser` should have view access to the vApp containing the Kubernetes cluster. Since the `ClusterAdminUser` itself creates the cluster, it will have this access by default.
 This `ClusterAdminUser` needs to be created from a `ClusterAdminRole` with the following additional rights:
 1. Gateway =>
     1. View Gateway
