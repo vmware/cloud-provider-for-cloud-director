@@ -3,9 +3,9 @@ This repository contains the [Kubernetes cloud-controller-manager](https://kuber
 
 The version of the VMware Cloud Director API and Installation that are compatible for a given cloud-provider container image are described in the following compatibility matrix:
 
-| CPI Version | VMware Cloud Director API | VMware Cloud Director Installation | Notes |
-| :---------: | :-----------------------: | :--------------------------------: | :---: |
-| 1.0.0 | 36.0+ | 10.3.1+ | Needs NSX-T 3.1.1 with NSX Advanced Load Balancer (Avi) version 20.1.3+ |
+| CPI Version | VMware Cloud Director API | VMware Cloud Director Installation | Notes | Kubernetes Versions |
+| :---------: | :-----------------------: | :--------------------------------: | :---: | :------------------ |
+| 1.0.0 | 36.0+ | 10.3.1+ | Needs NSX-T 3.1.1 with NSX Advanced Load Balancer (Avi) version 20.1.3+ |<ul><li>1.21.2</li><li>1.20.5</li><li>1.20.4</li><li>1.19.12</li></ul>|
 
 This extension is intended to be installed into a Kubernetes cluster installed with [VMware Cloud Director](https://www.vmware.com/products/cloud-director.html) as a Cloud Provider, by a user that has the rights as described in the sections below.
 
