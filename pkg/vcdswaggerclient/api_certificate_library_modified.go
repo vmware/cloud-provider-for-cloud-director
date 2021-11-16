@@ -569,7 +569,9 @@ type CertificateLibraryApiQueryCertificateLibraryOpts struct {
 	SortDesc optional.String
 }
 
-func (a *CertificateLibraryApiService) QueryCertificateLibrary(ctx context.Context, page int32, pageSize int32, localVarOptionals *CertificateLibraryApiQueryCertificateLibraryOpts) (CertificateLibraryItems, *http.Response, error) {
+func (a *CertificateLibraryApiService) QueryCertificateLibrary(ctx context.Context, page int32, pageSize int32,
+	localVarOptionals *CertificateLibraryApiQueryCertificateLibraryOpts,
+	orgName string) (CertificateLibraryItems, *http.Response, error) {
 	var (
 		localVarHttpMethod = strings.ToUpper("Get")
 		localVarPostBody   interface{}
@@ -622,6 +624,12 @@ func (a *CertificateLibraryApiService) QueryCertificateLibrary(ctx context.Conte
 	if localVarHttpHeaderAccept != "" {
 		localVarHeaderParams["Accept"] = localVarHttpHeaderAccept
 	}
+
+	// if there is an orgName set, use the appropriate header
+	if orgName != "" {
+		localVarHeaderParams["X-VMWARE-VCLOUD-TENANT-CONTEXT"] = orgName
+	}
+
 	if ctx != nil {
 		// API Key Authentication
 		if auth, ok := ctx.Value(ContextAPIKey).(APIKey); ok {
@@ -885,4 +893,3 @@ func (a *CertificateLibraryApiService) UpdateCertificateLibraryItem(ctx context.
 
 	return localVarReturnValue, localVarHttpResponse, nil
 }
-

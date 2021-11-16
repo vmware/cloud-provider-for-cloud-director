@@ -137,41 +137,20 @@ func (lb *LBManager) getLoadBalancer(ctx context.Context,
 	virtualServiceNamePrefix := lb.getLoadBalancerPrefix(ctx, service)
 	virtualIP := ""
 	for _, port := range service.Spec.Ports {
-		switch port.Port {
-
-		case lb.vcdClient.HTTPPort:
-			virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, "http")
-			virtualIP, err = lb.vcdClient.GetLoadBalancer(ctx, virtualServiceName)
-			if err != nil {
-				return nil, false,
-					fmt.Errorf("unable to get virtual service summary for [%s]: [%v]",
+		virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, port.Name)
+		virtualIP, err = lb.vcdClient.GetLoadBalancer(ctx, virtualServiceName)
+		if err != nil {
+			return nil, false,
+				fmt.Errorf("unable to get virtual service summary for [%s]: [%v]",
 					virtualServiceName, err)
-			}
-			if virtualIP == "" {
-				// if any lb that is expected is not created, return false to retry creation
-				return nil, false, nil
-			}
-
-		case lb.vcdClient.HTTPSPort:
-			virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, "https")
-			virtualIP, err = lb.vcdClient.GetLoadBalancer(ctx, virtualServiceName)
-			if err != nil {
-				return nil, false,
-					fmt.Errorf("unable to get virtual service summary for [%s]: [%v]",
-						virtualServiceName, err)
-			}
-			if virtualIP == "" {
-				// if any lb that is expected is not created, return false to retry creation
-				return nil, false, nil
-			}
-
-		default:
-			klog.Infof("Encountered unhandled port [%d]\n", port.Port)
+		}
+		if virtualIP == "" {
+			// if any lb that is expected is not created, return false to retry creation
+			return nil, false, nil
 		}
 	}
-
 	if virtualIP == "" {
-		// this implies that no loadbalancer has been created.
+		// this implies that no port was specified
 		return nil, false, nil
 	}
 
@@ -239,29 +218,41 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 
 	// While creating the lb, even if only one of http/https is remaining and the other is completed,
 	// ask for both to be created. The already created one will silently pass.
+	httpPortSuffix := ""
 	httpPort := int32(0)
+	httpNodePort := int32(0)
+
+	httpsPortSuffix := ""
 	httpsPort := int32(0)
+	httpsNodePort := int32(0)
 	for _, port := range service.Spec.Ports {
-		switch port.Port {
-		case lb.vcdClient.HTTPPort:
-			httpPort = port.NodePort
-		case lb.vcdClient.HTTPSPort:
-			httpsPort = port.NodePort
+		switch port.Name {
+		case `http`:
+			httpPortSuffix = port.Name
+			httpPort = port.Port
+			httpNodePort = port.NodePort
+
+		case `https`:
+			httpsPortSuffix = port.Name
+			httpsPort = port.Port
+			httpsNodePort = port.NodePort
+
 		default:
-			klog.Infof("Encountered unhandled port [%d]\n", port.Port)
+			klog.Infof("Encountered unhandled port [%#v]\n", port)
 		}
 	}
-	klog.Infof("Creating loadbalancer for nodeports http:[%d], https: [%d]\n", httpPort, httpsPort)
+	klog.Infof("Creating loadbalancer for ports http:[%d=>%d], https: [%d=>%d]\n",
+		httpPort, httpNodePort, httpsPort, httpsNodePort)
 
 	// Create using VCD API
-	lbIP, err := lb.vcdClient.CreateLoadBalancer(ctx, virtualServiceName, lbPoolNamePrefix,
-		nodeIPs, httpPort, httpsPort)
+	lbIP, err := lb.vcdClient.CreateLoadBalancer(ctx, virtualServiceName, lbPoolNamePrefix, nodeIPs,
+		httpPortSuffix, httpPort, httpNodePort, httpsPortSuffix, httpsPort, httpsNodePort)
 	if err != nil {
-		return nil, fmt.Errorf("unable to create loadbalancer for http:[%d], https: [%d]: [%v]",
-			httpPort, httpsPort, err)
+		return nil, fmt.Errorf("unable to create loadbalancer for http:[%d=>%d], https: [%d=>%d]: [%v]",
+			httpPort, httpNodePort, httpsPort, httpsNodePort, err)
 	}
-	klog.Infof("Created loadbalancer with external IP [%s] to nodeports [%d, %d]\n",
-		lbIP, httpPort, httpsPort)
+	klog.Infof("Created loadbalancer with external IP [%s], ports [%d=>%d], [%d=>%d]\n",
+		lbIP, httpPort, httpNodePort, httpsPort, httpsNodePort)
 
 	return &v1.LoadBalancerStatus{
 		Ingress: []v1.LoadBalancerIngress{
