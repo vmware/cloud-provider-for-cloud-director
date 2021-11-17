@@ -571,7 +571,7 @@ type CertificateLibraryApiQueryCertificateLibraryOpts struct {
 
 func (a *CertificateLibraryApiService) QueryCertificateLibrary(ctx context.Context, page int32, pageSize int32,
 	localVarOptionals *CertificateLibraryApiQueryCertificateLibraryOpts,
-	orgName string) (CertificateLibraryItems, *http.Response, error) {
+	orgID string) (CertificateLibraryItems, *http.Response, error) {
 	var (
 		localVarHttpMethod = strings.ToUpper("Get")
 		localVarPostBody   interface{}
@@ -625,9 +625,9 @@ func (a *CertificateLibraryApiService) QueryCertificateLibrary(ctx context.Conte
 		localVarHeaderParams["Accept"] = localVarHttpHeaderAccept
 	}
 
-	// if there is an orgName set, use the appropriate header
-	if orgName != "" {
-		localVarHeaderParams["X-VMWARE-VCLOUD-TENANT-CONTEXT"] = orgName
+	// if there is an orgID set, use the appropriate header
+	if orgID != "" {
+		localVarHeaderParams["X-VMWARE-VCLOUD-TENANT-CONTEXT"] = orgID
 	}
 
 	if ctx != nil {
