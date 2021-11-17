@@ -5,12 +5,13 @@ if [[ -z "${KUBECONFIG}" ]]; then
   exit 1
 fi
 
+
 LOGDIR="cse-k8s-tkgm-logs-"$(date '+%F-%H-%M-%S')
 mkdir -p ${LOGDIR}
 
 function logger() {
   echo "-------- START LOG $2" >> "${LOGDIR}/$1"
-  /bin/bash -c "$2" >> "${LOGDIR}/$1" 2>&1
+  /bin/bash -c "$2" &>> "${LOGDIR}/$1"
   exitCode="$?"
 
   # add a newline in case the command does not add it
@@ -36,10 +37,12 @@ logger kubernetes.txt 'kubectl describe configmaps -A'
 logger kubernetes.txt 'kubectl get secrets -A'
 logger kubernetes.txt 'kubectl describe pv -A'
 
+
 echo "Collecting Kubernetes logs..."
 kubectl cluster-info dump -A --output-directory="${LOGDIR}"/k8s-cluster-info &>/dev/null
 
 echo "Compressing logs and generating tarball at ${LOGDIR}.tar.gz..."
 tar -czvf "${LOGDIR}.tar.gz" "${LOGDIR}" &> /dev/null
+
 
 exit 0
