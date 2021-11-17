@@ -226,12 +226,13 @@ func (lb *LBManager) deleteLoadBalancer(ctx context.Context, service *v1.Service
 func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service,
 	nodeIPs []string) (*v1.LoadBalancerStatus, error) {
 
-	_, lbExists, err := lb.getLoadBalancer(ctx, service)
+	lbStatus, lbExists, err := lb.getLoadBalancer(ctx, service)
 	if err != nil {
 		return nil, fmt.Errorf("unexpected error while querying for loadbalancer: [%v]", err)
 	}
 	if lbExists {
-		return nil, fmt.Errorf("loadbalancer already exists")
+		// Return existing LB. No need to update here as separate functions are called for Update.
+		return lbStatus, nil
 	}
 
 	virtualServiceName := fmt.Sprintf("ingress-vs-%s-%s", service.Name, lb.vcdClient.ClusterID)
