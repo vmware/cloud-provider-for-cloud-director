@@ -335,7 +335,8 @@ func TestLoadBalancerCRUDE(t *testing.T) {
 	virtualServiceNamePrefix := fmt.Sprintf("test-virtual-service-https-%s", uuid.New().String())
 	lbPoolNamePrefix := fmt.Sprintf("test-lb-pool-%s", uuid.New().String())
 	freeIP, err := vcdClient.CreateLoadBalancer(ctx, virtualServiceNamePrefix,
-		lbPoolNamePrefix, []string{"1.2.3.4", "1.2.3.5"}, 31234, 31235)
+		lbPoolNamePrefix, []string{"1.2.3.4", "1.2.3.5"},
+		"http", 80, 31234, "https", 443, 31235)
 	assert.NoError(t, err, "Load Balancer should be created")
 	assert.NotEmpty(t, freeIP, "There should be a non-empty IP returned")
 
@@ -350,7 +351,8 @@ func TestLoadBalancerCRUDE(t *testing.T) {
 	assert.Equal(t, freeIP, freeIPObtained, "The IPs should match")
 
 	freeIP, err = vcdClient.CreateLoadBalancer(ctx, virtualServiceNamePrefix,
-		lbPoolNamePrefix, []string{"1.2.3.4", "1.2.3.5"}, 31234, 31235)
+		lbPoolNamePrefix, []string{"1.2.3.4", "1.2.3.5"}, "http", 80, 31234,
+		"https", 443, 31235)
 	assert.NoError(t, err, "Load Balancer should be created even on second attempt")
 	assert.NotEmpty(t, freeIP, "There should be a non-empty IP returned")
 
