@@ -762,15 +762,24 @@ func (client *Client) createVirtualService(ctx context.Context, virtualServiceNa
 			return nil, fmt.Errorf("certificate alias should no be empty for HTTPS service")
 		}
 
+		clusterOrg, err := client.vcdClient.GetOrgByName(client.ClusterOrgName)
+		if err != nil {
+			return nil, fmt.Errorf("unable to get org for org [%s]: [%v]", client.ClusterOrgName, err)
+		}
+		if clusterOrg == nil || clusterOrg.Org == nil {
+			return nil, fmt.Errorf("obtained nil org for name [%s]", client.ClusterOrgName)
+		}
+
 		certLibItems, resp, err := client.apiClient.CertificateLibraryApi.QueryCertificateLibrary(ctx,
 			1, 128,
 			&swaggerClient.CertificateLibraryApiQueryCertificateLibraryOpts{
 				Filter: optional.NewString(fmt.Sprintf("alias==%s", certificateAlias)),
 			},
+			clusterOrg.Org.ID,
 		)
 		if err != nil {
-			return nil, fmt.Errorf("unable to get cert with alias [%s]: resp: [%v]: [%v]",
-				certificateAlias, resp, err)
+			return nil, fmt.Errorf("unable to get cert with alias [%s] in org [%s]: resp: [%v]: [%v]",
+				certificateAlias, client.ClusterOrgName, resp, err)
 		}
 		if len(certLibItems.Values) != 1 {
 			return nil, fmt.Errorf("expected 1 cert with alias [%s], obtained [%d]",
@@ -897,7 +906,8 @@ func (client *Client) deleteVirtualService(ctx context.Context, virtualServiceNa
 
 // CreateLoadBalancer : create a new load balancer pool and virtual service pointing to it
 func (client *Client) CreateLoadBalancer(ctx context.Context, virtualServiceNamePrefix string,
-	lbPoolNamePrefix string, ips []string, httpPort int32, httpsPort int32) (string, error) {
+	lbPoolNamePrefix string, ips []string, httpPortSuffix string, httpPort int32, httpNodePort int32,
+	httpsPortSuffix string, httpsPort int32, httpsNodePort int32) (string, error) {
 
 	client.rwLock.Lock()
 	defer client.rwLock.Unlock()
@@ -921,17 +931,17 @@ func (client *Client) CreateLoadBalancer(ctx context.Context, virtualServiceName
 	}
 	portDetails := []PortDetails{
 		{
-			portSuffix:       "http",
+			portSuffix:       httpPortSuffix,
 			serviceType:      "HTTP",
-			externalPort:     client.HTTPPort,
-			internalPort:     httpPort,
+			externalPort:     httpPort,
+			internalPort:     httpNodePort,
 			certificateAlias: "",
 		},
 		{
-			portSuffix:       "https",
+			portSuffix:       httpsPortSuffix,
 			serviceType:      "HTTPS",
-			externalPort:     client.HTTPSPort,
-			internalPort:     httpsPort,
+			externalPort:     httpsPort,
+			internalPort:     httpsNodePort,
 			certificateAlias: client.CertificateAlias,
 		},
 	}
