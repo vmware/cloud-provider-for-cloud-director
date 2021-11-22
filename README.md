@@ -6,8 +6,8 @@ The version of the VMware Cloud Director API and Installation that are compatibl
 | CPI Version | VMware Cloud Director API | VMware Cloud Director Installation | Notes | Kubernetes Versions |
 | :---------: | :-----------------------: | :--------------------------------: | :---: | :------------------ |
 | 1.0.0 | 36.0+ | 10.3.1+ (Needs hotpatch to prevent VCD cell crashes when used in a multi-cell environment) | Needs NSX-T 3.1.1 with NSX Advanced Load Balancer (Avi) version 20.1.3+ |<ul><li>1.21</li><li>1.20</li><li>1.19</li></ul>|
-| 1.0.1 | 36.0+ | 10.3.1+ (Needs hotpatch to prevent VCD cell crashes when used in a multi-cell environment) | <ul><li>Some resiliency added when VCD cells are restarted (34c1689)</li><li>Fixed Org name query so that `system/administrator` can also create https load balancers</li></ul> |<ul><li>1.21</li><li>1.20</li><li>1.19</li></ul>|
-| 1.0.2 | 36.0+ | 10.3.1+ (Needs hotpatch to prevent VCD cell crashes when used in a multi-cell environment) | <ul><li>Added fix to allow multiple ports to be allowed in loadbalancer</li></ul> |<ul><li>1.21</li><li>1.20</li><li>1.19</li></ul>|
+| 1.0.1 | 36.0+ | 10.3.1+ (Needs hotpatch to prevent VCD cell crashes when used in a multi-cell environment) | <ul><li>Some resiliency added when VCD cells are restarted (34c1689)</li><li>Added Org ID to cert query so that `system/administrator` can also create https load balancers (44c72ab)</li></ul> |<ul><li>1.21</li><li>1.20</li><li>1.19</li></ul>|
+| 1.0.2 | 36.0+ | 10.3.1+ (Needs hotpatch to prevent VCD cell crashes when used in a multi-cell environment) | <ul><li>Added fix to allow multiple http and https ports to be allowed in load-balancer (d67c19b)</li></ul> |<ul><li>1.21</li><li>1.20</li><li>1.19</li></ul>|
 
 This extension is intended to be installed into a Kubernetes cluster installed with [VMware Cloud Director](https://www.vmware.com/products/cloud-director.html) as a Cloud Provider, by a user that has the rights as described in the sections below.
 
