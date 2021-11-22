@@ -219,41 +219,24 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 
 	// While creating the lb, even if only one of http/https is remaining and the other is completed,
 	// ask for both to be created. The already created one will silently pass.
-	httpPortSuffix := ""
-	httpPort := int32(0)
-	httpNodePort := int32(0)
 
-	httpsPortSuffix := ""
-	httpsPort := int32(0)
-	httpsNodePort := int32(0)
-	for _, port := range service.Spec.Ports {
-		switch port.Name {
-		case `http`:
-			httpPortSuffix = port.Name
-			httpPort = port.Port
-			httpNodePort = port.NodePort
+	portDetailsList := make([]*vcdclient.PortDetails, len(service.Spec.Ports))
 
-		case `https`:
-			httpsPortSuffix = port.Name
-			httpsPort = port.Port
-			httpsNodePort = port.NodePort
-
-		default:
-			klog.Infof("Encountered unhandled port [%#v]\n", port)
+	for idx, port := range service.Spec.Ports {
+		portDetailsList[idx] = &vcdclient.PortDetails{
+			PortSuffix: port.Name,
+			ExternalPort: port.Port,
+			InternalPort: port.NodePort,
 		}
 	}
-	klog.Infof("Creating loadbalancer for ports http:[%d=>%d], https: [%d=>%d]\n",
-		httpPort, httpNodePort, httpsPort, httpsNodePort)
+	klog.Infof("Creating loadbalancer for ports [%#v]\n", portDetailsList)
 
 	// Create using VCD API
-	lbIP, err := lb.vcdClient.CreateLoadBalancer(ctx, virtualServiceName, lbPoolNamePrefix, nodeIPs,
-		httpPortSuffix, httpPort, httpNodePort, httpsPortSuffix, httpsPort, httpsNodePort)
+	lbIP, err := lb.vcdClient.CreateLoadBalancer(ctx, virtualServiceName, lbPoolNamePrefix, nodeIPs, portDetailsList)
 	if err != nil {
-		return nil, fmt.Errorf("unable to create loadbalancer for http:[%d=>%d], https: [%d=>%d]: [%v]",
-			httpPort, httpNodePort, httpsPort, httpsNodePort, err)
+		return nil, fmt.Errorf("unable to create loadbalancer for ports [%#v]: [%v]", portDetailsList, err)
 	}
-	klog.Infof("Created loadbalancer with external IP [%s], ports [%d=>%d], [%d=>%d]\n",
-		lbIP, httpPort, httpNodePort, httpsPort, httpsNodePort)
+	klog.Infof("Created loadbalancer with external IP [%s], ports [%#v]\n", lbIP, portDetailsList)
 
 	return &v1.LoadBalancerStatus{
 		Ingress: []v1.LoadBalancerIngress{

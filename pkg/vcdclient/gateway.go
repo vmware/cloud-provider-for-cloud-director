@@ -904,15 +904,20 @@ func (client *Client) deleteVirtualService(ctx context.Context, virtualServiceNa
 	return nil
 }
 
+type PortDetails struct {
+	PortSuffix       string
+	ExternalPort     int32
+	InternalPort     int32
+}
+
 // CreateLoadBalancer : create a new load balancer pool and virtual service pointing to it
 func (client *Client) CreateLoadBalancer(ctx context.Context, virtualServiceNamePrefix string,
-	lbPoolNamePrefix string, ips []string, httpPortSuffix string, httpPort int32, httpNodePort int32,
-	httpsPortSuffix string, httpsPort int32, httpsNodePort int32) (string, error) {
+	lbPoolNamePrefix string, ips []string, portDetailsList []*PortDetails) (string, error) {
 
 	client.rwLock.Lock()
 	defer client.rwLock.Unlock()
 
-	if httpPort == 0 && httpsPort == 0 {
+	if len(portDetailsList) == 0 {
 		// nothing to do here
 		klog.Infof("There is no port specified. Hence nothing to do.")
 		return "", fmt.Errorf("nothing to do since http and https ports are not specified")
@@ -922,30 +927,6 @@ func (client *Client) CreateLoadBalancer(ctx context.Context, virtualServiceName
 		return "", fmt.Errorf("gateway reference should not be nil")
 	}
 
-	type PortDetails struct {
-		portSuffix       string
-		serviceType      string
-		externalPort     int32
-		internalPort     int32
-		certificateAlias string
-	}
-	portDetails := []PortDetails{
-		{
-			portSuffix:       httpPortSuffix,
-			serviceType:      "HTTP",
-			externalPort:     httpPort,
-			internalPort:     httpNodePort,
-			certificateAlias: "",
-		},
-		{
-			portSuffix:       httpsPortSuffix,
-			serviceType:      "HTTPS",
-			externalPort:     httpsPort,
-			internalPort:     httpsNodePort,
-			certificateAlias: client.CertificateAlias,
-		},
-	}
-
 	externalIP, err := client.getUnusedExternalIPAddress(ctx, client.ipamSubnet)
 	if err != nil {
 		return "", fmt.Errorf("unable to get unused IP address from subnet [%s]: [%v]",
@@ -953,14 +934,15 @@ func (client *Client) CreateLoadBalancer(ctx context.Context, virtualServiceName
 	}
 	klog.Infof("Using external IP [%s] for virtual service\n", externalIP)
 
-	for _, portDetail := range portDetails {
-		if portDetail.internalPort == 0 {
-			klog.Infof("No internal port specified for [%s], hence loadbalancer not created\n", portDetail.portSuffix)
+	for _, portDetails := range portDetailsList {
+		if portDetails.InternalPort == 0 {
+			klog.Infof("No internal port specified for [%s], hence loadbalancer not created\n",
+				portDetails.PortSuffix)
 			continue
 		}
 
-		virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, portDetail.portSuffix)
-		lbPoolName := fmt.Sprintf("%s-%s", lbPoolNamePrefix, portDetail.portSuffix)
+		virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, portDetails.PortSuffix)
+		lbPoolName := fmt.Sprintf("%s-%s", lbPoolNamePrefix, portDetails.PortSuffix)
 
 		vsSummary, err := client.getVirtualService(ctx, virtualServiceName)
 		if err != nil {
@@ -985,18 +967,19 @@ func (client *Client) CreateLoadBalancer(ctx context.Context, virtualServiceName
 			}
 
 			dnatRuleName := getDNATRuleName(virtualServiceName)
-			if err = client.createDNATRule(ctx, dnatRuleName, externalIP, internalIP, portDetail.externalPort); err != nil {
+			if err = client.createDNATRule(ctx, dnatRuleName, externalIP, internalIP,
+				portDetails.ExternalPort); err != nil {
 				return "", fmt.Errorf("unable to create dnat rule [%s] => [%s]: [%v]",
 					externalIP, internalIP, err)
 			}
 			// use the internal IP to create virtual service
 			virtualServiceIP = internalIP
 
-			// We get an IP address above and try to get-or-create a DNAT rule from external IP => internal IP. If the rule already
-			// existed, the old DNAT rule will remain unchanged. Hence we get the old externalIP from the old rule and use it.
-			// What happens to the new externalIP that we selected above? It just remains unused and hence does not get
-			// allocated and disappears. Since there is no IPAM based resource _acquisition_, the new externalIP can just be
-			// forgotten about.
+			// We get an IP address above and try to get-or-create a DNAT rule from external IP => internal IP.
+			// If the rule already existed, the old DNAT rule will remain unchanged. Hence we get the old externalIP
+			// from the old rule and use it. What happens to the new externalIP that we selected above? It just remains
+			// unused and hence does not get allocated and disappears. Since there is no IPAM based resource
+			// _acquisition_, the new externalIP can just be forgotten about.
 			dnatRuleRef, err := client.getNATRuleRef(ctx, dnatRuleName)
 			if err != nil {
 				return "", fmt.Errorf("unable to retrieve created dnat rule [%s]: [%v]", dnatRuleName, err)
@@ -1004,6 +987,7 @@ func (client *Client) CreateLoadBalancer(ctx context.Context, virtualServiceName
 			if dnatRuleRef == nil {
 				return "", fmt.Errorf("retrieved dnat rule ref is nil")
 			}
+
 			externalIP = dnatRuleRef.ExternalIP
 		}
 
@@ -1013,16 +997,22 @@ func (client *Client) CreateLoadBalancer(ctx context.Context, virtualServiceName
 				client.gatewayRef.Name, err)
 		}
 
-		lbPoolRef, err := client.createLoadBalancerPool(ctx, lbPoolName, ips, portDetail.internalPort)
+		lbPoolRef, err := client.createLoadBalancerPool(ctx, lbPoolName, ips, portDetails.InternalPort)
 		if err != nil {
 			return "", fmt.Errorf("unable to create load balancer pool [%s]: [%v]", lbPoolName, err)
 		}
 
+		serviceType := "HTTP"
+		certificateAlias := ""
+		if portDetails.PortSuffix == "https" {
+			serviceType = "HTTPS"
+			certificateAlias = client.CertificateAlias
+		}
 		virtualServiceRef, err := client.createVirtualService(ctx, virtualServiceName, lbPoolRef, segRef,
-			virtualServiceIP, externalIP, portDetail.serviceType, portDetail.externalPort, portDetail.certificateAlias)
+			virtualServiceIP, externalIP, serviceType, portDetails.ExternalPort, certificateAlias)
 		if err != nil {
 			return "", fmt.Errorf("unable to create virtual service [%s] with address [%s:%d]: [%v]",
-				virtualServiceName, virtualServiceIP, portDetail.externalPort, err)
+				virtualServiceName, virtualServiceIP, portDetails.ExternalPort, err)
 		}
 		klog.Infof("Created Load Balancer with virtual service [%v], pool [%v] on gateway [%s]\n",
 			virtualServiceRef, lbPoolRef, client.gatewayRef.Name)
