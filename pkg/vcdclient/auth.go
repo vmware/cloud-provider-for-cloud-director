@@ -73,6 +73,7 @@ func (config *VCDAuthConfig) GetBearerToken() (*govcd.VCDClient, *http.Response,
 		klog.Infof("Running CPI as sysadmin [%v]", vcdClient.Client.IsSysAdmin)
 		return vcdClient, resp, nil
 	}
+
 	resp, err = vcdClient.GetAuthResponse(config.User, config.Password, config.UserOrg)
 	if err != nil {
 		return nil, resp, fmt.Errorf("unable to authenticate [%s/%s] for url [%s]: [%+v] : [%v]",
@@ -86,7 +87,7 @@ func (config *VCDAuthConfig) GetSwaggerClientFromSecrets() (*govcd.VCDClient, *s
 
 	vcdClient, _, err := config.GetBearerToken()
 	if err != nil {
-		return nil, nil, fmt.Errorf("unable to get bearer token from serets: [%v]", err)
+		return nil, nil, fmt.Errorf("unable to get bearer token from secrets: [%v]", err)
 	}
 	var authHeader string
 	if config.RefreshToken == "" {

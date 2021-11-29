@@ -139,24 +139,13 @@ spec:
       serviceAccountName: cloud-controller-manager
       containers:
         - name: vmware-cloud-director-ccm
-          image: projects.registry.vmware.com/vmware-cloud-director/cloud-provider-for-cloud-director:0.1.0.latest
+          image: harbor-repo.vmware.com/vcloud/cloud-provider-for-cloud-director:main-branch.latest
           imagePullPolicy: IfNotPresent
           command:
             - /opt/vcloud/bin/cloud-provider-for-cloud-director
             - --cloud-provider=vmware-cloud-director
             - --cloud-config=/etc/kubernetes/vcloud/vcloud-ccm-config.yaml
             - --allow-untagged-cloud=true
-          env:
-            - name: VCD_BASIC_AUTH_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: vcloud-basic-auth
-                  key: username
-            - name: VCD_BASIC_AUTH_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: vcloud-basic-auth
-                  key: password
           volumeMounts:
             - name: vcloud-ccm-config-volume
               mountPath: /etc/kubernetes/vcloud
