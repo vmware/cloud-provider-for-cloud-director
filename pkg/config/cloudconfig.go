@@ -26,11 +26,13 @@ type VCDConfig struct {
 	// that is unsafe security practice. However there can be user scenarios and
 	// testing scenarios where this is sensible.
 
-	// This could be userOrg/user or just user. In the latter case, we assume
+	// The User, Secret and RefreshToken are obtained from a secret mounted to /etc/kubernetes/vcloud/basic-auth
+	// with files at username, password and refreshToken respectively.
+	// The User could be userOrg/user or just user. In the latter case, we assume
 	// that Org is the org in which the user exists.
-	User         string `yaml:"user" default:""`
-	Secret       string `yaml:"secret" default:""`
-	RefreshToken string `yaml:"refreshToken" default:""`
+	User         string
+	Secret       string
+	RefreshToken string
 
 	VDCNetwork string `yaml:"network"`
 	VIPSubnet  string `yaml:"vipSubnet"`
@@ -98,12 +100,6 @@ func ParseCloudConfig(configReader io.Reader) (*CloudConfig, error) {
 		return nil, fmt.Errorf("unable to decode yaml file: [%v]", err)
 	}
 
-	fullUserName := config.VCD.User
-	config.VCD.UserOrg, config.VCD.User, err = getUserAndOrg(fullUserName, config.VCD.Org)
-	if err != nil {
-		return nil, fmt.Errorf("unable to get user org and name: [%v]", err)
-	}
-
 	return config, nil
 }
 
@@ -115,14 +111,19 @@ func SetAuthorization(config *CloudConfig) error {
 		if err != nil {
 			return fmt.Errorf("unable to get refresh token: [%v]", err)
 		}
+
 		config.VCD.RefreshToken = string(refreshToken)
-		return nil
+		if config.VCD.RefreshToken != "" {
+			return nil
+		}
 	}
-	klog.Infof("unable to get refresh token. Looking for username and password")
+	klog.Infof("Unable to get refresh token. Looking for username and password")
+
 	username, err := ioutil.ReadFile("/etc/kubernetes/vcloud/basic-auth/username")
 	if err != nil {
 		return fmt.Errorf("unable to get username: [%v]", err)
 	}
+
 	secret, err := ioutil.ReadFile("/etc/kubernetes/vcloud/basic-auth/password")
 	if err != nil {
 		return fmt.Errorf("unable to get password: [%v]", err)
@@ -152,17 +153,6 @@ func ValidateCloudConfig(config *CloudConfig) error {
 	}
 	if config.VCD.VAppName == "" {
 		return fmt.Errorf("need a valid vApp name")
-	}
-
-	if config.VCD.RefreshToken == "" {
-		if config.VCD.User == "" || config.VCD.Secret == "" {
-			return fmt.Errorf("credentials not passed correctly")
-		}
-	} else {
-		// if RefreshToken is passed, let's disallow other strings
-		if config.VCD.User != "" || config.VCD.Secret != "" {
-			return fmt.Errorf("credentials not passed correctly")
-		}
 	}
 
 	return nil

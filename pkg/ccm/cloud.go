@@ -48,7 +48,7 @@ func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error
 	for {
 		err = config.SetAuthorization(cloudConfig)
 		if err != nil {
-			klog.Infof("unable to set authorization in config: [%v]", err)
+			klog.Infof("Unable to set authorization in config: [%v]", err)
 			time.Sleep(10 * time.Second)
 			continue
 		}
