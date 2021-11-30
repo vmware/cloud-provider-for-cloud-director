@@ -8,6 +8,7 @@ package vcdclient
 import (
 	"context"
 	"fmt"
+	"github.com/vmware/cloud-provider-for-cloud-director/pkg/util"
 	"k8s.io/klog"
 	"net"
 	"net/http"
@@ -1140,30 +1141,10 @@ func (client *Client) GetRDEVirtualIps(ctx context.Context) ([]string, string, *
 	if err != nil {
 		return nil, "", nil, fmt.Errorf("error when getting defined entity: [%v]", err)
 	}
-	statusEntry, ok := defEnt.Entity["status"]
-	if !ok {
-		return nil, "", nil, fmt.Errorf("could not find 'status' entry in defined entity")
-	}
-	statusMap, ok := statusEntry.(map[string]interface{})
-	if !ok {
-		return nil, "", nil, fmt.Errorf("unable to convert [%T] to map", statusEntry)
-	}
-	virtualIpInterfaces := statusMap["virtual_IPs"]
-	if virtualIpInterfaces == nil {
-		return make([]string, 0), etag, &defEnt, nil
-	}
 
-	virtualIpInterfacesSlice, ok := virtualIpInterfaces.([]interface{})
-	if !ok {
-		return nil, "", nil, fmt.Errorf("unable to convert [%T] to slice of interface", virtualIpInterfaces)
-	}
-	virtualIpStrs := make([]string, len(virtualIpInterfacesSlice))
-	for ind, ipInterface := range virtualIpInterfacesSlice {
-		currIp, ok := ipInterface.(string)
-		if !ok {
-			return nil, "", nil, fmt.Errorf("unable to convert [%T] to string", ipInterface)
-		}
-		virtualIpStrs[ind] = currIp
+	virtualIpStrs, err := util.GetVirtualIPFromRDE(&defEnt)
+	if err != nil {
+		return nil, "", nil, fmt.Errorf("failed to retrieve Virtual IPs from RDE")
 	}
 	return virtualIpStrs, etag, &defEnt, nil
 }
@@ -1171,16 +1152,10 @@ func (client *Client) GetRDEVirtualIps(ctx context.Context) ([]string, string, *
 // This function will modify the passed in defEnt
 func (client *Client) updateRDEVirtualIps(ctx context.Context, updatedIps []string, etag string,
 	defEnt *swaggerClient.DefinedEntity) (*http.Response, error) {
-	statusEntry, ok := defEnt.Entity["status"]
-	if !ok {
-		return nil, fmt.Errorf("could not find 'status' entry in defined entity")
+	defEnt, err := util.UpdateVirtualIPsInRDE(defEnt, updatedIps)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update virtual IPs for RDE with ID %s", client.ClusterID)
 	}
-	statusMap, ok := statusEntry.(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("unable to convert [%T] to map", statusEntry)
-	}
-
-	statusMap["virtual_IPs"] = updatedIps
 	// can pass invokeHooks
 	_, httpResponse, err := client.apiClient.DefinedEntityApi.UpdateDefinedEntity(ctx, *defEnt, etag, client.ClusterID, nil)
 	if err != nil {
@@ -1227,6 +1202,7 @@ func (client *Client) addVirtualIpToRDE(ctx context.Context, addIp string) error
 			}
 			return fmt.Errorf("error when adding virtual ip [%s] to RDE: [%v]", addIp, err)
 		}
+		klog.Infof("Successfully updated RDE [%s] with virtual IP [%s]", client.ClusterID, addIp)
 		return nil
 	}
 
