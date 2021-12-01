@@ -1142,9 +1142,9 @@ func (client *Client) GetRDEVirtualIps(ctx context.Context) ([]string, string, *
 		return nil, "", nil, fmt.Errorf("error when getting defined entity: [%v]", err)
 	}
 
-	virtualIpStrs, err := util.GetVirtualIPFromRDE(&defEnt)
+	virtualIpStrs, err := util.GetVirtualIPsFromRDE(&defEnt)
 	if err != nil {
-		return nil, "", nil, fmt.Errorf("failed to retrieve Virtual IPs from RDE")
+		return nil, "", nil, fmt.Errorf("failed to retrieve Virtual IPs from RDE [%s]: [%v]", client.ClusterID, err)
 	}
 	return virtualIpStrs, etag, &defEnt, nil
 }
@@ -1152,14 +1152,14 @@ func (client *Client) GetRDEVirtualIps(ctx context.Context) ([]string, string, *
 // This function will modify the passed in defEnt
 func (client *Client) updateRDEVirtualIps(ctx context.Context, updatedIps []string, etag string,
 	defEnt *swaggerClient.DefinedEntity) (*http.Response, error) {
-	defEnt, err := util.UpdateVirtualIPsInRDE(defEnt, updatedIps)
+	defEnt, err := util.ReplaceVirtualIPsInRDE(defEnt, updatedIps)
 	if err != nil {
-		return nil, fmt.Errorf("failed to update virtual IPs for RDE with ID %s", client.ClusterID)
+		return nil, fmt.Errorf("failed to update virtual IPs for RDE with ID [%s]: [%v]", client.ClusterID, err)
 	}
 	// can pass invokeHooks
 	_, httpResponse, err := client.apiClient.DefinedEntityApi.UpdateDefinedEntity(ctx, *defEnt, etag, client.ClusterID, nil)
 	if err != nil {
-		return httpResponse, fmt.Errorf("error when updating defined entity: [%v]", err)
+		return httpResponse, fmt.Errorf("error when updating defined entity [%s]: [%v]", client.ClusterID, err)
 	}
 	return httpResponse, nil
 }

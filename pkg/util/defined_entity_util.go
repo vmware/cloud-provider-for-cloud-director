@@ -21,7 +21,7 @@ var (
 	NativeEntityTypeID = fmt.Sprintf("%s:%s:%s:%s", EntityTypePrefix, NativeClusterEntityTypeVendor, NativeClusterEntityTypeNss, NativeClusterEntityTypeVersion)
 )
 
-func GetVirtualIPFromRDE(rde  *swaggerClient.DefinedEntity) ([]string, error) {
+func GetVirtualIPsFromRDE(rde  *swaggerClient.DefinedEntity) ([]string, error) {
 	statusEntry, ok := rde.Entity["status"]
 	if !ok {
 		return nil, fmt.Errorf("could not find 'status' entry in defined entity")
@@ -33,17 +33,15 @@ func GetVirtualIPFromRDE(rde  *swaggerClient.DefinedEntity) ([]string, error) {
 
 	var virtualIpInterfaces interface{}
 	if rde.EntityType == CAPVCDEntityTypeID {
-		virtualIpInterfaces := statusMap["virtualIPs"]
-		if virtualIpInterfaces == nil {
-			return make([]string, 0), nil
-		}
+		virtualIpInterfaces = statusMap["virtualIPs"]
 	} else if rde.EntityType == NativeEntityTypeID {
-		virtualIpInterfaces := statusMap["virtual_IPs"]
-		if virtualIpInterfaces == nil {
-			return make([]string, 0), nil
-		}
+		virtualIpInterfaces = statusMap["virtual_IPs"]
 	} else {
 		return nil, fmt.Errorf("entity type %s not supported by CPI", rde.EntityType)
+	}
+
+	if virtualIpInterfaces == nil {
+		return make([]string, 0), nil
 	}
 
 	virtualIpInterfacesSlice, ok := virtualIpInterfaces.([]interface{})
@@ -61,7 +59,7 @@ func GetVirtualIPFromRDE(rde  *swaggerClient.DefinedEntity) ([]string, error) {
 	return virtualIpStrs, nil
 }
 
-func UpdateVirtualIPsInRDE(rde *swaggerClient.DefinedEntity, updatedIps []string) (*swaggerClient.DefinedEntity, error) {
+func ReplaceVirtualIPsInRDE(rde *swaggerClient.DefinedEntity, updatedIps []string) (*swaggerClient.DefinedEntity, error) {
 	statusEntry, ok := rde.Entity["status"]
 	if !ok {
 		return nil, fmt.Errorf("could not find 'status' entry in defined entity")
