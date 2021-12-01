@@ -59,6 +59,8 @@ func GetVirtualIPsFromRDE(rde  *swaggerClient.DefinedEntity) ([]string, error) {
 	return virtualIpStrs, nil
 }
 
+// ReplaceVirtualIPsInRDE replaces the virtual IPs array in the inputted rde. It does not make an API call to update
+// the RDE.
 func ReplaceVirtualIPsInRDE(rde *swaggerClient.DefinedEntity, updatedIps []string) (*swaggerClient.DefinedEntity, error) {
 	statusEntry, ok := rde.Entity["status"]
 	if !ok {

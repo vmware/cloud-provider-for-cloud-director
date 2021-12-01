@@ -1154,7 +1154,7 @@ func (client *Client) updateRDEVirtualIps(ctx context.Context, updatedIps []stri
 	defEnt *swaggerClient.DefinedEntity) (*http.Response, error) {
 	defEnt, err := util.ReplaceVirtualIPsInRDE(defEnt, updatedIps)
 	if err != nil {
-		return nil, fmt.Errorf("failed to update virtual IPs for RDE with ID [%s]: [%v]", client.ClusterID, err)
+		return nil, fmt.Errorf("failed to locally edit RDE with ID [%s] with virtual IPs: [%v]", client.ClusterID, err)
 	}
 	// can pass invokeHooks
 	_, httpResponse, err := client.apiClient.DefinedEntityApi.UpdateDefinedEntity(ctx, *defEnt, etag, client.ClusterID, nil)
