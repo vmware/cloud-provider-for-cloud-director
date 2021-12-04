@@ -2,21 +2,28 @@
 
 module k8s.io/cloud-provider
 
-go 1.12
+go 1.16
 
 require (
-	k8s.io/api v0.0.0-20190918195907-bd6ac527cfd2
-	k8s.io/apimachinery v0.0.0-20190817020851-f2f3a405f61d
-	k8s.io/client-go v0.0.0-20190918200256-06eb1244587a
-	k8s.io/klog v0.3.1
-	k8s.io/utils v0.0.0-20190221042446-c2654d5206da
+	github.com/google/go-cmp v0.5.5
+	github.com/spf13/cobra v1.1.3
+	github.com/spf13/pflag v1.0.5
+	github.com/stretchr/testify v1.7.0
+	k8s.io/api v0.22.1
+	k8s.io/apimachinery v0.22.1
+	k8s.io/apiserver v0.22.1
+	k8s.io/client-go v0.22.1
+	k8s.io/component-base v0.22.1
+	k8s.io/controller-manager v0.22.1
+	k8s.io/klog/v2 v2.9.0
+	k8s.io/utils v0.0.0-20210707171843-4b05e18ac7d9
 )
 
 replace (
-	golang.org/x/sync => golang.org/x/sync v0.0.0-20181108010431-42b317875d0f
-	golang.org/x/sys => golang.org/x/sys v0.0.0-20190209173611-3b5209105503
-	golang.org/x/tools => golang.org/x/tools v0.0.0-20190313210603-aa82965741a9
-	k8s.io/api => k8s.io/api v0.0.0-20190918195907-bd6ac527cfd2
-	k8s.io/apimachinery => k8s.io/apimachinery v0.0.0-20190817020851-f2f3a405f61d
-	k8s.io/client-go => k8s.io/client-go v0.0.0-20190918200256-06eb1244587a
+	k8s.io/api => k8s.io/api v0.22.1
+	k8s.io/apimachinery => k8s.io/apimachinery v0.22.1
+	k8s.io/apiserver => k8s.io/apiserver v0.22.1
+	k8s.io/client-go => k8s.io/client-go v0.22.1
+	k8s.io/component-base => k8s.io/component-base v0.22.1
+	k8s.io/controller-manager => k8s.io/controller-manager v0.22.1
 )

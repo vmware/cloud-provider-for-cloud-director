@@ -6,4 +6,4 @@
 package version
 
 // Version is set by the linker flags in the Makefile.
-var Version string = "0.1.0"
+var Version string
