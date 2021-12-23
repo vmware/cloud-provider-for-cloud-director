@@ -138,6 +138,7 @@ func (config *VCDAuthConfig) getAccessTokenFromRefreshToken(isSysadminUser bool)
 	if !isSysadminUser {
 		accessTokenUrl = fmt.Sprintf("%s/oauth/tenant/%s/token", config.Host, config.UserOrg)
 	}
+	klog.Infof("Accessing URL [%s]", accessTokenUrl)
 
 	payload := url.Values{}
 	payload.Set("grant_type", "refresh_token")
@@ -148,18 +149,23 @@ func (config *VCDAuthConfig) getAccessTokenFromRefreshToken(isSysadminUser bool)
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: config.Insecure},
 		},
 	}
-	ouathRequest, err := http.NewRequest("POST", accessTokenUrl, strings.NewReader(payload.Encode())) // URL-encoded payload
+	oauthRequest, err := http.NewRequest("POST", accessTokenUrl, strings.NewReader(payload.Encode())) // URL-encoded payload
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to get access token from refresh token: [%v]", err)
 	}
-	ouathRequest.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-	oauthResponse, err := client.Do(ouathRequest)
+
+	oauthRequest.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	oauthResponse, err := client.Do(oauthRequest)
 	if err != nil {
 		return nil, oauthResponse, fmt.Errorf("request to get access token failed: [%v]", err)
 	}
 	if oauthResponse.StatusCode != http.StatusOK {
-		return nil, oauthResponse, fmt.Errorf("error while getting access token from refresh token: [%v]", err)
+		klog.Infof("Failed to get bearer token using request: [%#v]", oauthRequest.URL)
+		return nil, oauthResponse,
+			fmt.Errorf("unexpected http response while getting access token from refresh token: [%d]",
+				oauthResponse.StatusCode)
 	}
+
 	body, err := ioutil.ReadAll(oauthResponse.Body)
 	if err != nil {
 		return nil, oauthResponse, fmt.Errorf("unable to read response body while getting access token from refresh token: [%v]", err)
