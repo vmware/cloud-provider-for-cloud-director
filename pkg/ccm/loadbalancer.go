@@ -35,8 +35,8 @@ func newLoadBalancer(vcdClient *vcdclient.Client) cloudProvider.LoadBalancer {
 	}
 }
 
-func (lb *LBManager) getNodeIPs() ([]string, error) {
-	nodes, err := lb.kubeClient.CoreV1().Nodes().List(metav1.ListOptions{})
+func (lb *LBManager) getNodeIPs(ctx context.Context) ([]string, error) {
+	nodes, err := lb.kubeClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("unable to get nodes of cluster: [%v]", err)
 	}
@@ -59,7 +59,7 @@ func (lb *LBManager) EnsureLoadBalancer(ctx context.Context, clusterName string,
 	if err = lb.vcdClient.RefreshBearerToken(); err != nil {
 		return nil, fmt.Errorf("error while obtaining access token: [%v]", err)
 	}
-	nodeIPs, err := lb.getNodeIPs()
+	nodeIPs, err := lb.getNodeIPs(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get nodes in cluster: [%v]", err)
 	}

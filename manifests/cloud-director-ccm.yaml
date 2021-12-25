@@ -13,6 +13,17 @@ metadata:
   name: system:cloud-controller-manager
 rules:
   - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - get
+      - list
+      - watch
+      - patch
+      - create
+      - update
+  - apiGroups:
       - ""
     resources:
       - configmaps
