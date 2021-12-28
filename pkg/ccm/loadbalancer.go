@@ -10,6 +10,7 @@ package ccm
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdclient"
@@ -18,6 +19,11 @@ import (
 	"k8s.io/client-go/kubernetes"
 	cloudProvider "k8s.io/cloud-provider"
 	"k8s.io/klog"
+)
+
+const (
+	sslPortsAnnotation = `service.beta.kubernetes.io/vcloud-avi-ssl-ports`
+	sslCertAliasAnnotation = `service.beta.kubernetes.io/vcloud-avi-ssl-cert-alias`
 )
 
 //LBManager -
@@ -97,20 +103,25 @@ func (lb *LBManager) getLBPoolNamePrefix(serviceName string, clusterID string) s
 // Parameter 'clusterName' is the name of the cluster as presented to kube-controller-manager
 func (lb *LBManager) UpdateLoadBalancer(ctx context.Context, clusterName string,
 	service *v1.Service, nodes []*v1.Node) (err error) {
+
 	if err = lb.vcdClient.RefreshBearerToken(); err != nil {
 		return fmt.Errorf("error while obtaining access token: [%v]", err)
 	}
-	lbPoolNamePrefix := lb.getLBPoolNamePrefix(service.Name, lb.vcdClient.ClusterID)
+
 	nodeIps := lb.getNodeInternalIps(nodes)
 	klog.Infof("UpdateLoadBalancer Node Ips: %v", nodeIps)
+
+	lbPoolNamePrefix := lb.getLBPoolNamePrefix(service.Name, lb.vcdClient.ClusterID)
 	typeToInternalPortMap := lb.getServicePortMap(service)
-	for portType, internalPort := range typeToInternalPortMap {
-		if portType != "http" && portType != "https" {
-			klog.Infof("Encountered unhandled port type: [%s]", portType)
-			continue
+	for portName, internalPort := range typeToInternalPortMap {
+		lbPoolName := fmt.Sprintf("%s-%s", lbPoolNamePrefix, portName)
+		klog.Infof("Updating pool [%s] with port [%s:%d]", lbPoolName, portName, internalPort)
+		if err := lb.vcdClient.UpdateLoadBalancer(ctx, lbPoolName, nodeIps, internalPort); err != nil {
+			return fmt.Errorf("unable to update pool [%s] with port [%s:%d]: [%v]", lbPoolName, portName,
+				internalPort, err)
 		}
-		lb.vcdClient.UpdateLoadBalancer(ctx, lbPoolNamePrefix+portType, nodeIps, internalPort)
 	}
+
 	return nil
 }
 
@@ -193,13 +204,53 @@ func (lb *LBManager) deleteLoadBalancer(ctx context.Context, service *v1.Service
 	lbPoolNamePrefix := lb.getLBPoolNamePrefix(service.Name, lb.vcdClient.ClusterID)
 	klog.Infof("Deleting virtual service [%s] and lb pool [%s]", virtualServiceName, lbPoolNamePrefix)
 
-	err := lb.vcdClient.DeleteLoadBalancer(ctx, virtualServiceName, lbPoolNamePrefix)
+	portDetailsList := make([]vcdclient.PortDetails, len(service.Spec.Ports))
+	for idx, port := range service.Spec.Ports {
+		portDetailsList[idx] = vcdclient.PortDetails{
+			PortSuffix: port.Name,
+			ExternalPort: port.Port,
+			InternalPort: port.NodePort,
+			Protocol: string(port.Protocol),
+			// no need to set UseSSL for deletion
+		}
+	}
+	klog.Infof("Deleting loadbalancer for ports [%#v]\n", portDetailsList)
+
+	err := lb.vcdClient.DeleteLoadBalancer(ctx, virtualServiceName, lbPoolNamePrefix, portDetailsList)
 	if err != nil {
 		return fmt.Errorf("Unable to delete load balancer for virtual-service [%s] and lb pool [%s]: [%v]",
 			virtualServiceName, lbPoolNamePrefix, err)
 	}
 
 	return nil
+}
+
+func getSSLPorts(service *v1.Service) ([]int32, error) {
+	sslPortsString, ok := service.Annotations[sslPortsAnnotation]
+	if !ok {
+		return nil, nil
+	}
+
+	portStrings := strings.Split(sslPortsString, ",")
+	ports := make([]int32, len(portStrings))
+	for idx, portStr := range(portStrings) {
+		port, err := strconv.ParseInt(portStr, 10, 32)
+		if err != nil {
+			return nil, fmt.Errorf("unable to convert [%s] to int32: [%v]", portStr, err)
+		}
+		ports[idx] = int32(port)
+	}
+
+	return ports, nil
+}
+
+func getSSLCertAlias(service *v1.Service) string {
+	sslCertAlias, ok := service.Annotations[sslCertAliasAnnotation]
+	if !ok {
+		return ""
+	}
+
+	return sslCertAlias
 }
 
 func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service,
@@ -220,14 +271,38 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 	// While creating the lb, even if only one of http/https is remaining and the other is completed,
 	// ask for both to be created. The already created one will silently pass.
 
-	portDetailsList := make([]*vcdclient.PortDetails, len(service.Spec.Ports))
+	portDetailsList := make([]vcdclient.PortDetails, len(service.Spec.Ports))
 
+	ports, err := getSSLPorts(service)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get ports from service annotation for [%#v]: [%v]",
+			service, err)
+	}
+
+	certAlias := getSSLCertAlias(service)
+	if certAlias == "" {
+		certAlias = lb.vcdClient.CertificateAlias
+	}
+
+	// golang doesn't have the set data structure
+	portsMap := make(map[int32]bool)
+	for _, port := range ports {
+		portsMap[port] = true
+	}
 	for idx, port := range service.Spec.Ports {
-		portDetailsList[idx] = &vcdclient.PortDetails{
+		portDetailsList[idx] = vcdclient.PortDetails{
 			PortSuffix: port.Name,
 			ExternalPort: port.Port,
 			InternalPort: port.NodePort,
+			Protocol: string(port.Protocol),
 		}
+		if _, ok := portsMap[port.Port]; ok {
+			portDetailsList[idx].UseSSL = true
+		}
+		if portDetailsList[idx].UseSSL && certAlias == "" {
+			return nil, fmt.Errorf("cert alias empty while port [%d] for SSL is specified", port.Port)
+		}
+		portDetailsList[idx].CertAlias = certAlias
 	}
 	klog.Infof("Creating loadbalancer for ports [%#v]\n", portDetailsList)
 

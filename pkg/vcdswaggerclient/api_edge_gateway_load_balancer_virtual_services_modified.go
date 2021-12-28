@@ -36,7 +36,7 @@ Create a new Virtual Service for a specific Edge Gateway.
 
 
 */
-func (a *EdgeGatewayLoadBalancerVirtualServicesApiService) CreateVirtualService(ctx context.Context, virtualServiceConfig EdgeLoadBalancerVirtualService) (*http.Response, error) {
+func (a *EdgeGatewayLoadBalancerVirtualServicesApiService) CreateVirtualService(ctx context.Context, virtualServiceConfig EdgeLoadBalancerVirtualService) (*http.Response, *GenericSwaggerError) {
 	var (
 		localVarHttpMethod = strings.ToUpper("Post")
 		localVarPostBody   interface{}
@@ -86,18 +86,24 @@ func (a *EdgeGatewayLoadBalancerVirtualServicesApiService) CreateVirtualService(
 	}
 	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFileName, localVarFileBytes)
 	if err != nil {
-		return nil, err
+		return nil, &GenericSwaggerError{
+			error: err.Error(),
+		}
 	}
 
 	localVarHttpResponse, err := a.client.callAPI(r)
 	if err != nil || localVarHttpResponse == nil {
-		return localVarHttpResponse, err
+		return localVarHttpResponse, &GenericSwaggerError{
+			error: err.Error(),
+		}
 	}
 
 	localVarBody, err := ioutil.ReadAll(localVarHttpResponse.Body)
 	localVarHttpResponse.Body.Close()
 	if err != nil {
-		return localVarHttpResponse, err
+		return localVarHttpResponse, &GenericSwaggerError{
+			error: err.Error(),
+		}
 	}
 
 
@@ -107,7 +113,7 @@ func (a *EdgeGatewayLoadBalancerVirtualServicesApiService) CreateVirtualService(
 			error: localVarHttpResponse.Status,
 		}
 
-		return localVarHttpResponse, newErr
+		return localVarHttpResponse, &newErr
 	}
 
 	return localVarHttpResponse, nil
@@ -245,4 +251,3 @@ func (a *EdgeGatewayLoadBalancerVirtualServicesApiService) GetVirtualServiceSumm
 
 	return localVarReturnValue, localVarHttpResponse, nil
 }
-
