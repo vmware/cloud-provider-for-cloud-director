@@ -709,6 +709,29 @@ func (client *Client) getVirtualService(ctx context.Context,
 	return &lbVSSummaries.Values[0], nil
 }
 
+func (client *Client) checkIfVirtualServiceIsPending(ctx context.Context, virtualServiceName string) error {
+	if client.gatewayRef == nil {
+		return fmt.Errorf("gateway reference should not be nil")
+	}
+
+	klog.V(3).Infof("Checking if virtual service [%s] is still pending", virtualServiceName)
+	vsSummary, err := client.getVirtualService(ctx, virtualServiceName)
+	if err != nil {
+		return fmt.Errorf("unable to get summary for LB VS [%s]: [%v]", virtualServiceName, err)
+	}
+	if vsSummary == nil {
+		return fmt.Errorf("unable to get summary of virtual service [%s]: [%v]", virtualServiceName, err)
+	}
+	if vsSummary.HealthStatus == "UP" || vsSummary.HealthStatus == "DOWN" {
+		klog.V(3).Infof("Completed waiting for [%s] since healthStatus is [%s]",
+			virtualServiceName, vsSummary.HealthStatus)
+		return nil
+	}
+
+	klog.Errorf("Virtual service [%s] is still pending. Virtual service status: [%s]", virtualServiceName, vsSummary.HealthStatus)
+	return NewVirtualServicePendingError(virtualServiceName)
+}
+
 func (client *Client) createVirtualService(ctx context.Context, virtualServiceName string,
 	lbPoolRef *swaggerClient.EntityReference, segRef *swaggerClient.EntityReference,
 	freeIP string, rdeVIP string, vsType string, externalPort int32,
@@ -724,7 +747,11 @@ func (client *Client) createVirtualService(ctx context.Context, virtualServiceNa
 			virtualServiceName, err)
 	}
 	if vsSummary != nil {
-		klog.Infof("LoadBalancer Virtual Service [%s] already exists", virtualServiceName)
+		klog.V(3).Infof("LoadBalancer Virtual Service [%s] already exists", virtualServiceName)
+		if err = client.checkIfVirtualServiceIsPending(ctx, virtualServiceName); err != nil {
+			return nil, err
+		}
+
 		return &swaggerClient.EntityReference{
 			Name: vsSummary.Name,
 			Id:   vsSummary.Id,
@@ -863,6 +890,10 @@ func (client *Client) createVirtualService(ctx context.Context, virtualServiceNa
 			virtualServiceName, err)
 	}
 
+	if err = client.checkIfVirtualServiceIsPending(ctx, virtualServiceName); err != nil {
+		return nil, err
+	}
+
 	virtualServiceRef := &swaggerClient.EntityReference{
 		Name: vsSummary.Name,
 		Id:   vsSummary.Id,
@@ -971,7 +1002,11 @@ func (client *Client) CreateLoadBalancer(ctx context.Context, virtualServiceName
 					virtualServiceName, lbPoolName)
 			}
 
-			klog.Infof("LoadBalancer Virtual Service [%s] already exists", virtualServiceName)
+			klog.V(3).Infof("LoadBalancer Virtual Service [%s] already exists", virtualServiceName)
+			if err = client.checkIfVirtualServiceIsPending(ctx, virtualServiceName); err != nil {
+				return "", err
+			}
+
 			continue
 		}
 
@@ -1122,6 +1157,11 @@ func (client *Client) GetLoadBalancer(ctx context.Context, virtualServiceName st
 	}
 	if vsSummary == nil {
 		return "", nil // this is not an error
+	}
+
+	klog.V(3).Infof("LoadBalancer Virtual Service [%s] exists", virtualServiceName)
+	if err = client.checkIfVirtualServiceIsPending(ctx, virtualServiceName); err != nil {
+		return "", err
 	}
 
 	if client.OneArm == nil {
