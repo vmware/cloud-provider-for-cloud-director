@@ -8,16 +8,14 @@ package vcdclient
 import (
 	"context"
 	"fmt"
-	"github.com/vmware/cloud-provider-for-cloud-director/pkg/util"
+	"github.com/antihax/optional"
+	"github.com/apparentlymart/go-cidr/cidr"
+	"github.com/peterhellberg/link"
 	"k8s.io/klog"
 	"net"
 	"net/http"
 	"net/url"
 	"strconv"
-
-	"github.com/antihax/optional"
-	"github.com/apparentlymart/go-cidr/cidr"
-	"github.com/peterhellberg/link"
 
 	swaggerClient "github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdswaggerclient"
 	"github.com/vmware/go-vcloud-director/v2/govcd"
@@ -352,7 +350,7 @@ func (client *Client) getNATRuleRef(ctx context.Context, natRuleName string) (*N
 				if rule.DnatExternalPort != "" {
 					externalPort, err = strconv.Atoi(rule.DnatExternalPort)
 					if err != nil {
-						return nil, fmt.Errorf("Unable to convert external port [%s] to int: [%v]",
+						return nil, fmt.Errorf("unable to convert external port [%s] to int: [%v]",
 							rule.DnatExternalPort, err)
 					}
 				}
@@ -361,7 +359,7 @@ func (client *Client) getNATRuleRef(ctx context.Context, natRuleName string) (*N
 				if rule.InternalPort != "" {
 					internalPort, err = strconv.Atoi(rule.InternalPort)
 					if err != nil {
-						return nil, fmt.Errorf("Unable to convert internal port [%s] to int: [%v]",
+						return nil, fmt.Errorf("unable to convert internal port [%s] to int: [%v]",
 							rule.InternalPort, err)
 					}
 				}
@@ -403,7 +401,7 @@ func getDNATRuleName(virtualServiceName string) string {
 }
 
 func (client *Client) createDNATRule(ctx context.Context, dnatRuleName string,
-	externalIP string, internalIP string, port int32) error {
+	externalIP string, internalIP string, externalPort int32, internalPort int32) error {
 
 	if client.gatewayRef == nil {
 		return fmt.Errorf("gateway reference should not be nil")
@@ -419,22 +417,24 @@ func (client *Client) createDNATRule(ctx context.Context, dnatRuleName string,
 		return nil
 	}
 
-	ruleType := swaggerClient.NatRuleType(swaggerClient.DNAT_NatRuleType)
+	ruleType := swaggerClient.DNAT_NatRuleType
 	edgeNatRule := swaggerClient.EdgeNatRule{
 		Name:              dnatRuleName,
 		Enabled:           true,
 		RuleType:          &ruleType,
 		ExternalAddresses: externalIP,
 		InternalAddresses: internalIP,
-		DnatExternalPort:  fmt.Sprintf("%d", port),
+		DnatExternalPort:  fmt.Sprintf("%d", externalPort),
 	}
 	resp, err := client.apiClient.EdgeGatewayNatRulesApi.CreateNatRule(ctx, edgeNatRule, client.gatewayRef.Id)
-	if resp != nil && resp.StatusCode != http.StatusAccepted {
-		return fmt.Errorf("unable to create dnat rule [%s]: [%s]=>[%s]; expected http response [%v], obtained [%v]: [%v]",
-			dnatRuleName, externalIP, internalIP, http.StatusAccepted, resp.StatusCode, err)
-	} else if err != nil {
+	if err != nil {
 		return fmt.Errorf("unable to create dnat rule [%s]: [%s:%d]=>[%s:%d]: [%v]", dnatRuleName,
-			externalIP, port, internalIP, port, err)
+			externalIP, externalPort, internalIP, internalPort, err)
+	}
+	if resp != nil && resp.StatusCode != http.StatusAccepted {
+		return fmt.Errorf(
+			"unable to create dnat rule [%s]: [%s]=>[%s]; expected http response [%v], obtained [%v]: [%v]",
+			dnatRuleName, externalIP, internalIP, http.StatusAccepted, resp.StatusCode, err)
 	}
 
 	taskURL := resp.Header.Get("Location")
@@ -445,8 +445,8 @@ func (client *Client) createDNATRule(ctx context.Context, dnatRuleName string,
 			dnatRuleName, externalIP, internalIP, taskURL, err)
 	}
 
-	klog.Infof("Created DNAT rule [%s]: [%s:%d] => [%s] on gateway [%s]\n", dnatRuleName,
-		externalIP, port, internalIP, client.gatewayRef.Name)
+	klog.Infof("Created DNAT rule [%s]: [%s:%d] => [%s:%d] on gateway [%s]\n", dnatRuleName,
+		externalIP, externalPort, internalIP, internalPort, client.gatewayRef.Name)
 
 	return nil
 }
@@ -709,6 +709,29 @@ func (client *Client) getVirtualService(ctx context.Context,
 	return &lbVSSummaries.Values[0], nil
 }
 
+func (client *Client) checkIfVirtualServiceIsPending(ctx context.Context, virtualServiceName string) error {
+	if client.gatewayRef == nil {
+		return fmt.Errorf("gateway reference should not be nil")
+	}
+
+	klog.V(3).Infof("Checking if virtual service [%s] is still pending", virtualServiceName)
+	vsSummary, err := client.getVirtualService(ctx, virtualServiceName)
+	if err != nil {
+		return fmt.Errorf("unable to get summary for LB VS [%s]: [%v]", virtualServiceName, err)
+	}
+	if vsSummary == nil {
+		return fmt.Errorf("unable to get summary of virtual service [%s]: [%v]", virtualServiceName, err)
+	}
+	if vsSummary.HealthStatus == "UP" || vsSummary.HealthStatus == "DOWN" {
+		klog.V(3).Infof("Completed waiting for [%s] since healthStatus is [%s]",
+			virtualServiceName, vsSummary.HealthStatus)
+		return nil
+	}
+
+	klog.Errorf("Virtual service [%s] is still pending. Virtual service status: [%s]", virtualServiceName, vsSummary.HealthStatus)
+	return NewVirtualServicePendingError(virtualServiceName)
+}
+
 func (client *Client) createVirtualService(ctx context.Context, virtualServiceName string,
 	lbPoolRef *swaggerClient.EntityReference, segRef *swaggerClient.EntityReference,
 	freeIP string, rdeVIP string, vsType string, externalPort int32,
@@ -724,15 +747,53 @@ func (client *Client) createVirtualService(ctx context.Context, virtualServiceNa
 			virtualServiceName, err)
 	}
 	if vsSummary != nil {
-		klog.Infof("LoadBalancer Virtual Service [%s] already exists", virtualServiceName)
+		klog.V(3).Infof("LoadBalancer Virtual Service [%s] already exists", virtualServiceName)
+		if err = client.checkIfVirtualServiceIsPending(ctx, virtualServiceName); err != nil {
+			return nil, err
+		}
+
 		return &swaggerClient.EntityReference{
 			Name: vsSummary.Name,
 			Id:   vsSummary.Id,
 		}, nil
 	}
 
+	useSSL := certificateAlias != ""
+	if useSSL {
+		klog.Infof("Creating SSL-enabled service with certificate [%s]", certificateAlias)
+	}
+
 	var virtualServiceConfig *swaggerClient.EdgeLoadBalancerVirtualService = nil
 	switch vsType {
+	case "TCP":
+		virtualServiceConfig = &swaggerClient.EdgeLoadBalancerVirtualService{
+			Name:                  virtualServiceName,
+			Enabled:               true,
+			VirtualIpAddress:      freeIP,
+			LoadBalancerPoolRef:   lbPoolRef,
+			GatewayRef:            client.gatewayRef,
+			ServiceEngineGroupRef: segRef,
+			ServicePorts: []swaggerClient.EdgeLoadBalancerServicePort{
+				{
+					TcpUdpProfile: &swaggerClient.EdgeLoadBalancerTcpUdpProfile{
+						Type_: "TCP_PROXY",
+					},
+					PortStart:  externalPort,
+					SslEnabled: useSSL,
+				},
+			},
+			ApplicationProfile: &swaggerClient.EdgeLoadBalancerApplicationProfile{
+				Name:          "System-L4-Application",
+				Type_:         "L4",
+				SystemDefined: true,
+			},
+		}
+		if useSSL {
+			virtualServiceConfig.ApplicationProfile.Name = "System-SSL-Application"
+			virtualServiceConfig.ApplicationProfile.Type_ = "L4_TLS"
+		}
+		break
+
 	case "HTTP":
 		virtualServiceConfig = &swaggerClient.EdgeLoadBalancerVirtualService{
 			Name:                  virtualServiceName,
@@ -747,22 +808,26 @@ func (client *Client) createVirtualService(ctx context.Context, virtualServiceNa
 						Type_: "TCP_PROXY",
 					},
 					PortStart:  externalPort,
-					SslEnabled: false,
+					SslEnabled: useSSL,
 				},
 			},
 			ApplicationProfile: &swaggerClient.EdgeLoadBalancerApplicationProfile{
 				Name:          "System-HTTP",
-				Type_:         vsType,
+				Type_:         "HTTP",
 				SystemDefined: true,
 			},
 		}
+		if useSSL {
+			virtualServiceConfig.ApplicationProfile.Name = "System-Secure-HTTP"
+			virtualServiceConfig.ApplicationProfile.Type_ = "HTTPS"
+		}
 		break
 
-	case "HTTPS":
-		if certificateAlias == "" {
-			return nil, fmt.Errorf("certificate alias should no be empty for HTTPS service")
-		}
+	default:
+		return nil, fmt.Errorf("unhandled virtual service type [%s]", vsType)
+	}
 
+	if useSSL {
 		clusterOrg, err := client.vcdClient.GetOrgByName(client.ClusterOrgName)
 		if err != nil {
 			return nil, fmt.Errorf("unable to get org for org [%s]: [%v]", client.ClusterOrgName, err)
@@ -786,45 +851,19 @@ func (client *Client) createVirtualService(ctx context.Context, virtualServiceNa
 			return nil, fmt.Errorf("expected 1 cert with alias [%s], obtained [%d]",
 				certificateAlias, len(certLibItems.Values))
 		}
-		virtualServiceConfig = &swaggerClient.EdgeLoadBalancerVirtualService{
-			Name:                  virtualServiceName,
-			Enabled:               true,
-			VirtualIpAddress:      freeIP,
-			LoadBalancerPoolRef:   lbPoolRef,
-			GatewayRef:            client.gatewayRef,
-			ServiceEngineGroupRef: segRef,
-			CertificateRef: &swaggerClient.EntityReference{
-				Name: certLibItems.Values[0].Alias,
-				Id:   certLibItems.Values[0].Id,
-			},
-			ServicePorts: []swaggerClient.EdgeLoadBalancerServicePort{
-				{
-					TcpUdpProfile: &swaggerClient.EdgeLoadBalancerTcpUdpProfile{
-						Type_: "TCP_PROXY",
-					},
-					PortStart:  externalPort,
-					SslEnabled: true,
-				},
-			},
-			ApplicationProfile: &swaggerClient.EdgeLoadBalancerApplicationProfile{
-				Name:          "System-HTTP",
-				Type_:         vsType,
-				SystemDefined: true,
-			},
+		virtualServiceConfig.CertificateRef =  &swaggerClient.EntityReference{
+			Name: certLibItems.Values[0].Alias,
+			Id:   certLibItems.Values[0].Id,
 		}
-		break
-
-	default:
-		return nil, fmt.Errorf("unhandled virtual service type [%s]", vsType)
 	}
 
-	resp, err := client.apiClient.EdgeGatewayLoadBalancerVirtualServicesApi.CreateVirtualService(ctx, *virtualServiceConfig)
+	resp, gsErr := client.apiClient.EdgeGatewayLoadBalancerVirtualServicesApi.CreateVirtualService(ctx, *virtualServiceConfig)
 	if resp != nil && resp.StatusCode != http.StatusAccepted {
 		return nil, fmt.Errorf(
-			"unable to create virtual service; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]",
-			http.StatusAccepted, resp.StatusCode, resp, err)
-	} else if err != nil {
-		return nil, fmt.Errorf("error while creating virtual service [%s]: [%v]", virtualServiceName, err)
+			"unable to create virtual service; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]: [%v]",
+			http.StatusAccepted, resp.StatusCode, resp, gsErr, string(gsErr.Body()))
+	} else if gsErr != nil {
+		return nil, fmt.Errorf("error while creating virtual service [%s]: [%v]", virtualServiceName, gsErr)
 	}
 
 	taskURL := resp.Header.Get("Location")
@@ -851,6 +890,10 @@ func (client *Client) createVirtualService(ctx context.Context, virtualServiceNa
 			virtualServiceName, err)
 	}
 
+	if err = client.checkIfVirtualServiceIsPending(ctx, virtualServiceName); err != nil {
+		return nil, err
+	}
+
 	virtualServiceRef := &swaggerClient.EntityReference{
 		Name: vsSummary.Name,
 		Id:   vsSummary.Id,
@@ -874,7 +917,7 @@ func (client *Client) deleteVirtualService(ctx context.Context, virtualServiceNa
 	}
 	if vsSummary == nil {
 		if failIfAbsent {
-			return fmt.Errorf("Virtual Service [%s] does not exist", virtualServiceName)
+			return fmt.Errorf("virtual Service [%s] does not exist", virtualServiceName)
 		}
 
 		return nil
@@ -906,14 +949,17 @@ func (client *Client) deleteVirtualService(ctx context.Context, virtualServiceNa
 }
 
 type PortDetails struct {
-	PortSuffix       string
-	ExternalPort     int32
-	InternalPort     int32
+	Protocol     string
+	PortSuffix   string
+	ExternalPort int32
+	InternalPort int32
+	UseSSL       bool
+	CertAlias    string
 }
 
 // CreateLoadBalancer : create a new load balancer pool and virtual service pointing to it
 func (client *Client) CreateLoadBalancer(ctx context.Context, virtualServiceNamePrefix string,
-	lbPoolNamePrefix string, ips []string, portDetailsList []*PortDetails) (string, error) {
+	lbPoolNamePrefix string, ips []string, portDetailsList []PortDetails) (string, error) {
 
 	client.rwLock.Lock()
 	defer client.rwLock.Unlock()
@@ -952,11 +998,15 @@ func (client *Client) CreateLoadBalancer(ctx context.Context, virtualServiceName
 		}
 		if vsSummary != nil {
 			if vsSummary.LoadBalancerPoolRef.Name != lbPoolName {
-				return "", fmt.Errorf("Virtual Service [%s] found with unexpected loadbalancer pool [%s]",
+				return "", fmt.Errorf("virtual Service [%s] found with unexpected loadbalancer pool [%s]",
 					virtualServiceName, lbPoolName)
 			}
 
-			klog.Infof("LoadBalancer Virtual Service [%s] already exists", virtualServiceName)
+			klog.V(3).Infof("LoadBalancer Virtual Service [%s] already exists", virtualServiceName)
+			if err = client.checkIfVirtualServiceIsPending(ctx, virtualServiceName); err != nil {
+				return "", err
+			}
+
 			continue
 		}
 
@@ -969,9 +1019,9 @@ func (client *Client) CreateLoadBalancer(ctx context.Context, virtualServiceName
 
 			dnatRuleName := getDNATRuleName(virtualServiceName)
 			if err = client.createDNATRule(ctx, dnatRuleName, externalIP, internalIP,
-				portDetails.ExternalPort); err != nil {
-				return "", fmt.Errorf("unable to create dnat rule [%s] => [%s]: [%v]",
-					externalIP, internalIP, err)
+				portDetails.ExternalPort, portDetails.InternalPort); err != nil {
+				return "", fmt.Errorf("unable to create dnat rule [%s:%d] => [%s:%d]: [%v]",
+					externalIP, portDetails.ExternalPort, internalIP, portDetails.InternalPort, err)
 			}
 			// use the internal IP to create virtual service
 			virtualServiceIP = internalIP
@@ -1003,14 +1053,8 @@ func (client *Client) CreateLoadBalancer(ctx context.Context, virtualServiceName
 			return "", fmt.Errorf("unable to create load balancer pool [%s]: [%v]", lbPoolName, err)
 		}
 
-		serviceType := "HTTP"
-		certificateAlias := ""
-		if portDetails.PortSuffix == "https" {
-			serviceType = "HTTPS"
-			certificateAlias = client.CertificateAlias
-		}
 		virtualServiceRef, err := client.createVirtualService(ctx, virtualServiceName, lbPoolRef, segRef,
-			virtualServiceIP, externalIP, serviceType, portDetails.ExternalPort, certificateAlias)
+			virtualServiceIP, externalIP, portDetails.Protocol, portDetails.ExternalPort, portDetails.CertAlias)
 		if err != nil {
 			return "", fmt.Errorf("unable to create virtual service [%s] with address [%s:%d]: [%v]",
 				virtualServiceName, virtualServiceIP, portDetails.ExternalPort, err)
@@ -1038,7 +1082,7 @@ func (client *Client) UpdateLoadBalancer(ctx context.Context, lbPoolName string,
 
 // DeleteLoadBalancer : create a new load balancer pool and virtual service pointing to it
 func (client *Client) DeleteLoadBalancer(ctx context.Context, virtualServiceNamePrefix string,
-	lbPoolNamePrefix string) error {
+	lbPoolNamePrefix string, portDetailsList []PortDetails) error {
 
 	client.rwLock.Lock()
 	defer client.rwLock.Unlock()
@@ -1049,10 +1093,15 @@ func (client *Client) DeleteLoadBalancer(ctx context.Context, virtualServiceName
 	// Here the principle is to delete what is available; retry in case of failure
 	// but do not fail for missing entities, since a retry will always have missing
 	// entities.
-	for _, suffix := range []string{"http", "https"} {
+	for _, portDetails := range portDetailsList {
+		if portDetails.InternalPort == 0 {
+			klog.Infof("No internal port specified for [%s], hence loadbalancer not created\n",
+				portDetails.PortSuffix)
+			continue
+		}
 
-		virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, suffix)
-		lbPoolName := fmt.Sprintf("%s-%s", lbPoolNamePrefix, suffix)
+		virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, portDetails.PortSuffix)
+		lbPoolName := fmt.Sprintf("%s-%s", lbPoolNamePrefix, portDetails.PortSuffix)
 
 		// get external IP
 		rdeVIP := ""
@@ -1110,6 +1159,11 @@ func (client *Client) GetLoadBalancer(ctx context.Context, virtualServiceName st
 		return "", nil // this is not an error
 	}
 
+	klog.V(3).Infof("LoadBalancer Virtual Service [%s] exists", virtualServiceName)
+	if err = client.checkIfVirtualServiceIsPending(ctx, virtualServiceName); err != nil {
+		return "", err
+	}
+
 	if client.OneArm == nil {
 		return vsSummary.VirtualIpAddress, nil
 	}
@@ -1117,7 +1171,7 @@ func (client *Client) GetLoadBalancer(ctx context.Context, virtualServiceName st
 	dnatRuleName := getDNATRuleName(virtualServiceName)
 	dnatRuleRef, err := client.getNATRuleRef(ctx, dnatRuleName)
 	if err != nil {
-		return "", fmt.Errorf("Unable to find dnat rule [%s] for virtual service [%s]: [%v]",
+		return "", fmt.Errorf("unable to find dnat rule [%s] for virtual service [%s]: [%v]",
 			dnatRuleName, virtualServiceName, err)
 	}
 	if dnatRuleRef == nil {
@@ -1134,127 +1188,4 @@ func (client *Client) IsNSXTBackedGateway() bool {
 			(client.networkBackingType == swaggerClient.NSXT_FLEXIBLE_SEGMENT_BackingNetworkType)
 
 	return isNSXTBackedGateway
-}
-
-func (client *Client) GetRDEVirtualIps(ctx context.Context) ([]string, string, *swaggerClient.DefinedEntity, error) {
-	defEnt, _, etag, err := client.apiClient.DefinedEntityApi.GetDefinedEntity(ctx, client.ClusterID)
-	if err != nil {
-		return nil, "", nil, fmt.Errorf("error when getting defined entity: [%v]", err)
-	}
-
-	virtualIpStrs, err := util.GetVirtualIPsFromRDE(&defEnt)
-	if err != nil {
-		return nil, "", nil, fmt.Errorf("failed to retrieve Virtual IPs from RDE [%s]: [%v]", client.ClusterID, err)
-	}
-	return virtualIpStrs, etag, &defEnt, nil
-}
-
-// This function will modify the passed in defEnt
-func (client *Client) updateRDEVirtualIps(ctx context.Context, updatedIps []string, etag string,
-	defEnt *swaggerClient.DefinedEntity) (*http.Response, error) {
-	defEnt, err := util.ReplaceVirtualIPsInRDE(defEnt, updatedIps)
-	if err != nil {
-		return nil, fmt.Errorf("failed to locally edit RDE with ID [%s] with virtual IPs: [%v]", client.ClusterID, err)
-	}
-	// can pass invokeHooks
-	_, httpResponse, err := client.apiClient.DefinedEntityApi.UpdateDefinedEntity(ctx, *defEnt, etag, client.ClusterID, nil)
-	if err != nil {
-		return httpResponse, fmt.Errorf("error when updating defined entity [%s]: [%v]", client.ClusterID, err)
-	}
-	return httpResponse, nil
-}
-
-func (client *Client) addVirtualIpToRDE(ctx context.Context, addIp string) error {
-	if addIp == "" {
-		klog.Infof("VIP is empty, hence not adding anything to RDE")
-		return nil
-	}
-	if client.ClusterID == "" {
-		klog.Infof("ClusterID is empty, hence not adding VIP [%s] from RDE", addIp)
-		return nil
-	}
-
-	numRetries := 10
-	for i := 0; i < numRetries; i++ {
-		currIps, etag, defEnt, err := client.GetRDEVirtualIps(ctx)
-		if err != nil {
-			return fmt.Errorf("error getting current vips: [%v]", err)
-		}
-
-		// check if need to update RDE
-		foundAddIp := false
-		for _, ip := range currIps {
-			if ip == addIp {
-				foundAddIp = true
-				break
-			}
-		}
-		if foundAddIp {
-			return nil // no need to update RDE
-		}
-
-		updatedIps := append(currIps, addIp)
-		httpResponse, err := client.updateRDEVirtualIps(ctx, updatedIps, etag, defEnt)
-		if err != nil {
-			if httpResponse.StatusCode == http.StatusPreconditionFailed {
-				klog.Infof("Wrong ETag while adding virtual IP [%s]", addIp)
-				continue
-			}
-			return fmt.Errorf("error when adding virtual ip [%s] to RDE: [%v]", addIp, err)
-		}
-		klog.Infof("Successfully updated RDE [%s] with virtual IP [%s]", client.ClusterID, addIp)
-		return nil
-	}
-
-	return fmt.Errorf("unable to update rde due to incorrect etag after [%d]] tries", numRetries)
-}
-
-func (client *Client) removeVirtualIpFromRDE(ctx context.Context, removeIp string) error {
-	if removeIp == "" {
-		klog.Infof("VIP is empty, hence not removing anything from RDE")
-		return nil
-	}
-	if client.ClusterID == "" {
-		klog.Infof("ClusterID is empty, hence not removing VIP [%s] from RDE", removeIp)
-		return nil
-	}
-
-	numRetries := 10
-	for i := 0; i < numRetries; i++ {
-		currIps, etag, defEnt, err := client.GetRDEVirtualIps(ctx)
-		if err != nil {
-			return fmt.Errorf("error getting current vips: [%v]", err)
-		}
-		// currIps is guaranteed not to be nil by GetRDEVirtualIps
-		if len(currIps) == 0 {
-			// valid case since this could be a retry operation
-			return nil
-		}
-
-		// form updated virtual ip list
-		foundIdx := -1
-		for idx, ip := range currIps {
-			if ip == removeIp {
-				foundIdx = idx
-				break // for inner loop
-			}
-		}
-		if foundIdx == -1 {
-			return nil // no need to update RDE
-		}
-		updatedIps := append(currIps[:foundIdx], currIps[foundIdx+1:]...)
-
-		httpResponse, err := client.updateRDEVirtualIps(ctx, updatedIps, etag, defEnt)
-		if err != nil {
-			if httpResponse.StatusCode == http.StatusPreconditionFailed {
-				klog.Infof("Wrong ETag while removing virtual IP [%s]", removeIp)
-				continue
-			}
-			return fmt.Errorf("error when removing virtual ip [%s] from RDE: [%v]",
-				removeIp, err)
-		}
-		return nil
-	}
-
-	return fmt.Errorf("unable to update rde due to incorrect etag after [%d] tries", numRetries)
 }

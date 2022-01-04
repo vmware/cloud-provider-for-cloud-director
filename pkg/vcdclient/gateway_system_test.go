@@ -52,11 +52,11 @@ func TestDNATRuleCRUDE(t *testing.T) {
 	ctx := context.Background()
 
 	dnatRuleName := fmt.Sprintf("test-dnat-rule-%s", uuid.New().String())
-	err = vcdClient.createDNATRule(ctx, dnatRuleName, "1.2.3.4", "1.2.3.5", 80)
+	err = vcdClient.createDNATRule(ctx, dnatRuleName, "1.2.3.4", "1.2.3.5", 80, 36123)
 	assert.NoError(t, err, "Unable to create dnat rule")
 
 	// repeated creation should not fail
-	err = vcdClient.createDNATRule(ctx, dnatRuleName, "1.2.3.4", "1.2.3.5", 80)
+	err = vcdClient.createDNATRule(ctx, dnatRuleName, "1.2.3.4", "1.2.3.5", 80, 36123)
 	assert.NoError(t, err, "Unable to create dnat rule for the second time")
 
 	natRuleRef, err := vcdClient.getNATRuleRef(ctx, dnatRuleName)
@@ -334,7 +334,7 @@ func TestLoadBalancerCRUDE(t *testing.T) {
 
 	virtualServiceNamePrefix := fmt.Sprintf("test-virtual-service-https-%s", uuid.New().String())
 	lbPoolNamePrefix := fmt.Sprintf("test-lb-pool-%s", uuid.New().String())
-	portDetailsList := []*PortDetails{
+	portDetailsList := []PortDetails{
 		{
 			PortSuffix: `http`,
 			ExternalPort: 80,
@@ -373,8 +373,7 @@ func TestLoadBalancerCRUDE(t *testing.T) {
 	err = vcdClient.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-https", updatedIps, updatedInternalPort)
 	assert.NoError(t, err, "HTTPS Load Balancer should be updated")
 
-	err = vcdClient.DeleteLoadBalancer(ctx, virtualServiceNamePrefix,
-		lbPoolNamePrefix)
+	err = vcdClient.DeleteLoadBalancer(ctx, virtualServiceNamePrefix, lbPoolNamePrefix, portDetailsList)
 	assert.NoError(t, err, "Load Balancer should be deleted")
 
 	freeIPObtained, err = vcdClient.GetLoadBalancer(ctx, virtualServiceNameHttp)
@@ -385,8 +384,7 @@ func TestLoadBalancerCRUDE(t *testing.T) {
 	assert.NoError(t, err, "Load Balancer should not be found")
 	assert.Empty(t, freeIPObtained, "The VIP should not be found")
 
-	err = vcdClient.DeleteLoadBalancer(ctx, virtualServiceNamePrefix,
-		lbPoolNamePrefix)
+	err = vcdClient.DeleteLoadBalancer(ctx, virtualServiceNamePrefix, lbPoolNamePrefix, portDetailsList)
 	assert.NoError(t, err, "Repeated deletion of Load Balancer should not fail")
 
 	err = vcdClient.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-http", updatedIps, updatedInternalPort)
