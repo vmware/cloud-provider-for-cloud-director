@@ -298,11 +298,11 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 		}
 		if _, ok := portsMap[port.Port]; ok {
 			portDetailsList[idx].UseSSL = true
+			if certAlias == "" {
+				return nil, fmt.Errorf("cert alias empty while port [%d] for SSL is specified", port.Port)
+			}
+			portDetailsList[idx].CertAlias = certAlias
 		}
-		if portDetailsList[idx].UseSSL && certAlias == "" {
-			return nil, fmt.Errorf("cert alias empty while port [%d] for SSL is specified", port.Port)
-		}
-		portDetailsList[idx].CertAlias = certAlias
 	}
 	klog.Infof("Creating loadbalancer for ports [%#v]\n", portDetailsList)
 

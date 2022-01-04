@@ -203,7 +203,7 @@ func TestVirtualServiceHttpCRUDE(t *testing.T) {
 	externalIP := "10.11.12.13"
 	internalIP := "2.3.4.5"
 	vsRef, err := vcdClient.createVirtualService(ctx, virtualServiceName, lbPoolRef, segRef,
-		internalIP, externalIP, "HTTP", 80, "")
+		internalIP, externalIP, "HTTP", 80, false, "")
 	assert.NoError(t, err, "Unable to create virtual service")
 	require.NotNil(t, vsRef, "VirtualServiceRef should not be nil")
 	assert.Equal(t, virtualServiceName, vsRef.Name, "Virtual Service name should match")
@@ -221,7 +221,7 @@ func TestVirtualServiceHttpCRUDE(t *testing.T) {
 
 	// repeated creation should not fail
 	vsRef, err = vcdClient.createVirtualService(ctx, virtualServiceName, lbPoolRef, segRef,
-		internalIP, externalIP, "HTTP", 80, "")
+		internalIP, externalIP, "HTTP", 80, false, "")
 	assert.NoError(t, err, "Unable to create virtual service for the second time")
 	require.NotNil(t, vsRef, "VirtualServiceRef should not be nil")
 	assert.Equal(t, virtualServiceName, vsRef.Name, "Virtual Service name should match")
@@ -278,7 +278,7 @@ func TestVirtualServiceHttpsCRUDE(t *testing.T) {
 	virtualServiceName := fmt.Sprintf("test-virtual-service-https-%s", uuid.New().String())
 	certName := fmt.Sprintf("%s-cert", vcdClient.ClusterID)
 	vsRef, err := vcdClient.createVirtualService(ctx, virtualServiceName, lbPoolRef, segRef,
-		internalIP, externalIP, "HTTPS", 443, certName)
+		internalIP, externalIP, "HTTPS", 443, true, certName)
 	assert.NoError(t, err, "Unable to create virtual service")
 	require.NotNil(t, vsRef, "VirtualServiceRef should not be nil")
 	assert.Equal(t, virtualServiceName, vsRef.Name, "Virtual Service name should match")
@@ -296,7 +296,7 @@ func TestVirtualServiceHttpsCRUDE(t *testing.T) {
 
 	// repeated creation should not fail
 	vsRef, err = vcdClient.createVirtualService(ctx, virtualServiceName, lbPoolRef, segRef,
-		internalIP, externalIP, "HTTPS", 443, certName)
+		internalIP, externalIP, "HTTPS", 443, true, certName)
 	assert.NoError(t, err, "Unable to create virtual service for the second time")
 	require.NotNil(t, vsRef, "VirtualServiceRef should not be nil")
 	assert.Equal(t, virtualServiceName, vsRef.Name, "Virtual Service name should match")
