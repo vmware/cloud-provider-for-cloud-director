@@ -854,13 +854,6 @@ func (client *Client) createVirtualService(ctx context.Context, virtualServiceNa
 		klog.Infof("Creating SSL-enabled service with certificate [%s]", certificateAlias)
 	}
 
-	if useSSL {
-		if vsType == "TCP" {
-			klog.Infof("Converting protocol [%s] to [HTTP] since SSL is enabled.", vsType)
-			vsType = "HTTP"
-		}
-	}
-
 	var virtualServiceConfig *swaggerClient.EdgeLoadBalancerVirtualService = nil
 	switch vsType {
 	case "TCP":
@@ -892,7 +885,7 @@ func (client *Client) createVirtualService(ctx context.Context, virtualServiceNa
 		}
 		break
 
-	case "HTTP":
+	case "HTTP", "HTTPS":
 		virtualServiceConfig = &swaggerClient.EdgeLoadBalancerVirtualService{
 			Name:                  virtualServiceName,
 			Enabled:               true,
@@ -911,13 +904,12 @@ func (client *Client) createVirtualService(ctx context.Context, virtualServiceNa
 			},
 			ApplicationProfile: &swaggerClient.EdgeLoadBalancerApplicationProfile{
 				Name:          "System-HTTP",
-				Type_:         "HTTP",
+				Type_:         vsType,
 				SystemDefined: true,
 			},
 		}
-		if useSSL {
+		if vsType == "HTTPS" {
 			virtualServiceConfig.ApplicationProfile.Name = "System-Secure-HTTP"
-			virtualServiceConfig.ApplicationProfile.Type_ = "HTTPS"
 		}
 		break
 
