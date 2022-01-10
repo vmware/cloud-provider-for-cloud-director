@@ -567,7 +567,12 @@ func (client *Client) deleteDNATRule(ctx context.Context, dnatRuleName string,
 	// we always use tenant scoped profiles
 	scope := types.ApplicationPortProfileScopeTenant
 	appPortProfile, err := org.GetNsxtAppPortProfileByName(appPortProfileName, scope)
-	if err != nil && !strings.Contains(err.Error(), govcd.ErrorEntityNotFound.Error()) {
+	if err != nil {
+		if strings.Contains(err.Error(), govcd.ErrorEntityNotFound.Error()) {
+			// things to delete are done
+			return nil
+		}
+
 		return fmt.Errorf("unable to search for Application Port Profile [%s]: [%v]",
 			appPortProfileName, err)
 	}
@@ -854,63 +859,44 @@ func (client *Client) createVirtualService(ctx context.Context, virtualServiceNa
 		klog.Infof("Creating SSL-enabled service with certificate [%s]", certificateAlias)
 	}
 
-	var virtualServiceConfig *swaggerClient.EdgeLoadBalancerVirtualService = nil
+	virtualServiceConfig := &swaggerClient.EdgeLoadBalancerVirtualService{
+		Name:                  virtualServiceName,
+		Enabled:               true,
+		VirtualIpAddress:      freeIP,
+		LoadBalancerPoolRef:   lbPoolRef,
+		GatewayRef:            client.gatewayRef,
+		ServiceEngineGroupRef: segRef,
+		ServicePorts: []swaggerClient.EdgeLoadBalancerServicePort{
+			{
+				TcpUdpProfile: &swaggerClient.EdgeLoadBalancerTcpUdpProfile{
+					Type_: "TCP_PROXY",
+				},
+				PortStart:  externalPort,
+				SslEnabled: useSSL,
+			},
+		},
+		ApplicationProfile: &swaggerClient.EdgeLoadBalancerApplicationProfile{
+			SystemDefined: true,
+		},
+	}
 	switch vsType {
 	case "TCP":
-		virtualServiceConfig = &swaggerClient.EdgeLoadBalancerVirtualService{
-			Name:                  virtualServiceName,
-			Enabled:               true,
-			VirtualIpAddress:      freeIP,
-			LoadBalancerPoolRef:   lbPoolRef,
-			GatewayRef:            client.gatewayRef,
-			ServiceEngineGroupRef: segRef,
-			ServicePorts: []swaggerClient.EdgeLoadBalancerServicePort{
-				{
-					TcpUdpProfile: &swaggerClient.EdgeLoadBalancerTcpUdpProfile{
-						Type_: "TCP_PROXY",
-					},
-					PortStart:  externalPort,
-					SslEnabled: useSSL,
-				},
-			},
-			ApplicationProfile: &swaggerClient.EdgeLoadBalancerApplicationProfile{
-				Name:          "System-L4-Application",
-				Type_:         "L4",
-				SystemDefined: true,
-			},
-		}
+		virtualServiceConfig.ApplicationProfile.Name = "System-L4-Application"
+		virtualServiceConfig.ApplicationProfile.Type_ = "TCP"
 		if useSSL {
 			virtualServiceConfig.ApplicationProfile.Name = "System-SSL-Application"
-			virtualServiceConfig.ApplicationProfile.Type_ = "L4_TLS"
+			virtualServiceConfig.ApplicationProfile.Type_ = "L4_TLS" // this needs Enterprise License
 		}
 		break
 
-	case "HTTP", "HTTPS":
-		virtualServiceConfig = &swaggerClient.EdgeLoadBalancerVirtualService{
-			Name:                  virtualServiceName,
-			Enabled:               true,
-			VirtualIpAddress:      freeIP,
-			LoadBalancerPoolRef:   lbPoolRef,
-			GatewayRef:            client.gatewayRef,
-			ServiceEngineGroupRef: segRef,
-			ServicePorts: []swaggerClient.EdgeLoadBalancerServicePort{
-				{
-					TcpUdpProfile: &swaggerClient.EdgeLoadBalancerTcpUdpProfile{
-						Type_: "TCP_PROXY",
-					},
-					PortStart:  externalPort,
-					SslEnabled: useSSL,
-				},
-			},
-			ApplicationProfile: &swaggerClient.EdgeLoadBalancerApplicationProfile{
-				Name:          "System-HTTP",
-				Type_:         vsType,
-				SystemDefined: true,
-			},
-		}
-		if vsType == "HTTPS" {
-			virtualServiceConfig.ApplicationProfile.Name = "System-Secure-HTTP"
-		}
+	case "HTTP":
+		virtualServiceConfig.ApplicationProfile.Name = "System-HTTP"
+		virtualServiceConfig.ApplicationProfile.Type_ = "HTTP"
+		break
+
+	case "HTTPS":
+		virtualServiceConfig.ApplicationProfile.Name = "System-Secure-HTTP"
+		virtualServiceConfig.ApplicationProfile.Type_ = "HTTPS"
 		break
 
 	default:
