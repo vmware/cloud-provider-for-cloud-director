@@ -1050,10 +1050,41 @@ func (client *Client) CreateLoadBalancer(ctx context.Context, virtualServiceName
 		return "", fmt.Errorf("gateway reference should not be nil")
 	}
 
-	externalIP, err := client.getUnusedExternalIPAddress(ctx, client.ipamSubnet)
-	if err != nil {
-		return "", fmt.Errorf("unable to get unused IP address from subnet [%s]: [%v]",
-			client.ipamSubnet, err)
+	// Separately loop through all DNAT rules to see if any exist, so that we can reuse the external IP in case a
+	// partial creation of load-balancer is continued and an externalIP was claimed earlier by a dnat rule
+	externalIP := ""
+	var err error
+	if client.OneArm != nil {
+		for _, portDetails := range portDetailsList {
+			if portDetails.InternalPort == 0 {
+				continue
+			}
+
+			virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, portDetails.PortSuffix)
+			dnatRuleName := getDNATRuleName(virtualServiceName)
+			dnatRuleRef, err := client.getNATRuleRef(ctx, dnatRuleName)
+			if err != nil {
+				return "", fmt.Errorf("unable to retrieve created dnat rule [%s]: [%v]", dnatRuleName, err)
+			}
+			if dnatRuleRef == nil {
+				continue // ths implies that the rule does not exist
+			}
+
+			if externalIP != "" && externalIP != dnatRuleRef.ExternalIP {
+				return "", fmt.Errorf("as per dnat there are two external IP rules for the same service: [%s], [%s]",
+					externalIP, dnatRuleRef.ExternalIP)
+			}
+
+			externalIP = dnatRuleRef.ExternalIP
+		}
+	}
+
+	if externalIP == "" {
+		externalIP, err = client.getUnusedExternalIPAddress(ctx, client.ipamSubnet)
+		if err != nil {
+			return "", fmt.Errorf("unable to get unused IP address from subnet [%s]: [%v]",
+				client.ipamSubnet, err)
+		}
 	}
 	klog.Infof("Using external IP [%s] for virtual service\n", externalIP)
 
