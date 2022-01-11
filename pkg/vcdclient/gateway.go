@@ -537,33 +537,34 @@ func (client *Client) deleteDNATRule(ctx context.Context, dnatRuleName string,
 			return fmt.Errorf("dnat rule [%s] does not exist", dnatRuleName)
 		}
 
-		return nil
+		klog.Infof("DNAT rule [%s] does not exist", dnatRuleName)
+	} else {
+		resp, err := client.apiClient.EdgeGatewayNatRuleApi.DeleteNatRule(ctx,
+			client.gatewayRef.Id, dnatRuleRef.ID)
+		if resp.StatusCode != http.StatusAccepted {
+			return fmt.Errorf("unable to delete dnat rule [%s]: expected http response [%v], obtained [%v]",
+				dnatRuleName, http.StatusAccepted, resp.StatusCode)
+		}
+
+		taskURL := resp.Header.Get("Location")
+		task := govcd.NewTask(&client.vcdClient.Client)
+		task.Task.HREF = taskURL
+		if err = task.WaitTaskCompletion(); err != nil {
+			return fmt.Errorf("unable to delete dnat rule [%s]: deletion task [%s] did not complete: [%v]",
+				dnatRuleName, taskURL, err)
+		}
+		klog.Infof("Deleted DNAT rule [%s] on gateway [%s]\n", dnatRuleName, client.gatewayRef.Name)
 	}
 
-	resp, err := client.apiClient.EdgeGatewayNatRuleApi.DeleteNatRule(ctx,
-		client.gatewayRef.Id, dnatRuleRef.ID)
-	if resp.StatusCode != http.StatusAccepted {
-		return fmt.Errorf("unable to delete dnat rule [%s]: expected http response [%v], obtained [%v]",
-			dnatRuleName, http.StatusAccepted, resp.StatusCode)
-	}
-
-	taskURL := resp.Header.Get("Location")
-	task := govcd.NewTask(&client.vcdClient.Client)
-	task.Task.HREF = taskURL
-	if err = task.WaitTaskCompletion(); err != nil {
-		return fmt.Errorf("unable to delete dnat rule [%s]: deletion task [%s] did not complete: [%v]",
-			dnatRuleName, taskURL, err)
-	}
-	klog.Infof("Deleted DNAT rule [%s] on gateway [%s]\n", dnatRuleName, client.gatewayRef.Name)
+	appPortProfileName := getAppPortProfileName(dnatRuleName)
+	klog.Infof("Checking if App Port Profile [%s] in org [%s] exists", appPortProfileName,
+		client.ClusterOrgName)
 
 	org, err := client.vcdClient.GetOrgByName(client.ClusterOrgName)
 	if err != nil {
 		return fmt.Errorf("unable to find org [%s] by name: [%v]", client.ClusterOrgName, err)
 	}
 
-	appPortProfileName := getAppPortProfileName(dnatRuleName)
-	klog.Infof("Checking if App Port Profile [%s] in org [%s] exists", appPortProfileName,
-		client.ClusterOrgName)
 	// we always use tenant scoped profiles
 	scope := types.ApplicationPortProfileScopeTenant
 	appPortProfile, err := org.GetNsxtAppPortProfileByName(appPortProfileName, scope)
@@ -577,11 +578,21 @@ func (client *Client) deleteDNATRule(ctx context.Context, dnatRuleName string,
 			appPortProfileName, err)
 	}
 
-	klog.Infof("Deleting App Port Profile [%s] in org [%s]", appPortProfileName,
-		client.ClusterOrgName)
-	if err = appPortProfile.Delete(); err != nil {
-		return fmt.Errorf("unable to delete application port profile [%s]: [%v]", appPortProfileName, err)
+	if appPortProfile == nil {
+		if failIfAbsent {
+			return fmt.Errorf("app port profile [%s] does not exist in org [%s]",
+				appPortProfileName, client.ClusterOrgName)
+		}
+
+		klog.Infof("App Port Profile [%s] does not exist", appPortProfileName)
+	} else {
+		klog.Infof("Deleting App Port Profile [%s] in org [%s]", appPortProfileName,
+			client.ClusterOrgName)
+		if err = appPortProfile.Delete(); err != nil {
+			return fmt.Errorf("unable to delete application port profile [%s]: [%v]", appPortProfileName, err)
+		}
 	}
+
 
 	return nil
 }
