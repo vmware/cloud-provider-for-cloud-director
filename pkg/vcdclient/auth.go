@@ -9,6 +9,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"io/ioutil"
 	"k8s.io/klog"
 	"net/http"
@@ -200,12 +201,14 @@ type currentSessionsResponse struct {
 }
 
 func isAdminUser(vcdClient *govcd.VCDClient) (bool, error) {
-	currentSessionUrl, err := vcdClient.Client.OpenApiBuildEndpoint("1.0.0/sessions/current")
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointSessionCurrent
+	currentSessionUrl, err := vcdClient.Client.OpenApiBuildEndpoint(endpoint)
 	if err != nil {
 		return false, fmt.Errorf("failed to construct current session url [%v]", err)
 	}
 	var output currentSessionsResponse
-	err = vcdClient.Client.OpenApiGetItem(vcdClient.Client.APIVersion, currentSessionUrl, url.Values{}, &output)
+	err = vcdClient.Client.OpenApiGetItem(vcdClient.Client.APIVersion, currentSessionUrl,
+		nil, &output, nil)
 	if err != nil {
 		return false, fmt.Errorf("error while getting current session [%v]", err)
 	}

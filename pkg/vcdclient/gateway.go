@@ -11,11 +11,13 @@ import (
 	"github.com/antihax/optional"
 	"github.com/apparentlymart/go-cidr/cidr"
 	"github.com/peterhellberg/link"
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"k8s.io/klog"
 	"net"
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 
 	swaggerClient "github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdswaggerclient"
 	"github.com/vmware/go-vcloud-director/v2/govcd"
@@ -400,6 +402,10 @@ func getDNATRuleName(virtualServiceName string) string {
 	return fmt.Sprintf("dnat-%s", virtualServiceName)
 }
 
+func getAppPortProfileName(dnatRuleName string) string {
+	return fmt.Sprintf("appPort_%s", dnatRuleName)
+}
+
 func (client *Client) createDNATRule(ctx context.Context, dnatRuleName string,
 	externalIP string, internalIP string, externalPort int32, internalPort int32) error {
 
@@ -417,6 +423,61 @@ func (client *Client) createDNATRule(ctx context.Context, dnatRuleName string,
 		return nil
 	}
 
+	org, err := client.vcdClient.GetOrgByName(client.ClusterOrgName)
+	if err != nil {
+		return fmt.Errorf("unable to find org [%s] by name: [%v]", client.ClusterOrgName, err)
+	}
+
+	appPortProfileName := getAppPortProfileName(dnatRuleName)
+	klog.Infof("Verifying if app port profile [%s] exists in org [%s]...", appPortProfileName,
+		client.ClusterOrgName)
+	// we always use tenant scoped profiles
+	contextEntityID := client.vdc.Vdc.ID
+	scope := types.ApplicationPortProfileScopeTenant
+	appPortProfile, err := org.GetNsxtAppPortProfileByName(appPortProfileName, scope)
+	if err != nil && !strings.Contains(err.Error(), govcd.ErrorEntityNotFound.Error()) {
+		return fmt.Errorf("unable to search for Application Port Profile [%s]: [%v]",
+			appPortProfileName, err)
+	}
+	if appPortProfile == nil {
+		if err == nil {
+			// this should not arise
+			return fmt.Errorf("obtained empty Application Port Profile even though there was no error")
+		}
+
+		klog.Infof("App Port Profile [%s] in org [%s] does not exist.", appPortProfileName,
+			client.ClusterOrgName)
+
+		appPortProfileConfig := &types.NsxtAppPortProfile{
+			Name:             appPortProfileName,
+			Description:      fmt.Sprintf("App Port Profile for DNAT rule [%s]", dnatRuleName),
+			ApplicationPorts: []types.NsxtAppPortProfilePort{
+				{
+					Protocol: "TCP",
+					// We use the externalPort itself, since the LB does the ExternalPort=>InternalPort
+					// translation.
+					DestinationPorts: []string{fmt.Sprintf("%d", externalPort)},
+				},
+			},
+			OrgRef:           &types.OpenApiReference{
+				Name: org.Org.Name,
+				ID:   org.Org.ID,
+			},
+			ContextEntityId:  contextEntityID,
+			Scope:            scope,
+		}
+
+		klog.Infof("Creating App Port Profile [%s] in org [%s]...", appPortProfileName,
+			client.ClusterOrgName)
+		appPortProfile, err = org.CreateNsxtAppPortProfile(appPortProfileConfig)
+		if err != nil {
+			return fmt.Errorf("unable to create nsxt app port profile with config [%#v]: [%v]",
+				appPortProfileConfig, err)
+		}
+		klog.Infof("Created App Port Profile [%s] in org [%s].", appPortProfileName,
+			client.ClusterOrgName)
+	}
+
 	ruleType := swaggerClient.DNAT_NatRuleType
 	edgeNatRule := swaggerClient.EdgeNatRule{
 		Name:              dnatRuleName,
@@ -425,6 +486,10 @@ func (client *Client) createDNATRule(ctx context.Context, dnatRuleName string,
 		ExternalAddresses: externalIP,
 		InternalAddresses: internalIP,
 		DnatExternalPort:  fmt.Sprintf("%d", externalPort),
+		ApplicationPortProfile: &swaggerClient.EntityReference{
+			Name: appPortProfile.NsxtAppPortProfile.Name,
+			Id:   appPortProfile.NsxtAppPortProfile.ID,
+		},
 	}
 	resp, err := client.apiClient.EdgeGatewayNatRulesApi.CreateNatRule(ctx, edgeNatRule, client.gatewayRef.Id)
 	if err != nil {
@@ -435,6 +500,9 @@ func (client *Client) createDNATRule(ctx context.Context, dnatRuleName string,
 		return fmt.Errorf(
 			"unable to create dnat rule [%s]: [%s]=>[%s]; expected http response [%v], obtained [%v]: [%v]",
 			dnatRuleName, externalIP, internalIP, http.StatusAccepted, resp.StatusCode, err)
+	} else if err != nil {
+		return fmt.Errorf("unable to create dnat rule [%s]: [%s:%d]=>[%s:%d]: [%v]", dnatRuleName,
+			externalIP, externalPort, internalIP, internalPort, err)
 	}
 
 	taskURL := resp.Header.Get("Location")
@@ -451,6 +519,8 @@ func (client *Client) createDNATRule(ctx context.Context, dnatRuleName string,
 	return nil
 }
 
+// Note that this also deletes App Port Profile Config. So we always need to call this
+// even if we don't find a DNAT rule, to ensure that everything is cleaned up.
 func (client *Client) deleteDNATRule(ctx context.Context, dnatRuleName string,
 	failIfAbsent bool) error {
 
@@ -467,24 +537,62 @@ func (client *Client) deleteDNATRule(ctx context.Context, dnatRuleName string,
 			return fmt.Errorf("dnat rule [%s] does not exist", dnatRuleName)
 		}
 
-		return nil
+		klog.Infof("DNAT rule [%s] does not exist", dnatRuleName)
+	} else {
+		resp, err := client.apiClient.EdgeGatewayNatRuleApi.DeleteNatRule(ctx,
+			client.gatewayRef.Id, dnatRuleRef.ID)
+		if resp.StatusCode != http.StatusAccepted {
+			return fmt.Errorf("unable to delete dnat rule [%s]: expected http response [%v], obtained [%v]",
+				dnatRuleName, http.StatusAccepted, resp.StatusCode)
+		}
+
+		taskURL := resp.Header.Get("Location")
+		task := govcd.NewTask(&client.vcdClient.Client)
+		task.Task.HREF = taskURL
+		if err = task.WaitTaskCompletion(); err != nil {
+			return fmt.Errorf("unable to delete dnat rule [%s]: deletion task [%s] did not complete: [%v]",
+				dnatRuleName, taskURL, err)
+		}
+		klog.Infof("Deleted DNAT rule [%s] on gateway [%s]\n", dnatRuleName, client.gatewayRef.Name)
 	}
 
-	resp, err := client.apiClient.EdgeGatewayNatRuleApi.DeleteNatRule(ctx,
-		client.gatewayRef.Id, dnatRuleRef.ID)
-	if resp.StatusCode != http.StatusAccepted {
-		return fmt.Errorf("unable to delete dnat rule [%s]: expected http response [%v], obtained [%v]",
-			dnatRuleName, http.StatusAccepted, resp.StatusCode)
+	appPortProfileName := getAppPortProfileName(dnatRuleName)
+	klog.Infof("Checking if App Port Profile [%s] in org [%s] exists", appPortProfileName,
+		client.ClusterOrgName)
+
+	org, err := client.vcdClient.GetOrgByName(client.ClusterOrgName)
+	if err != nil {
+		return fmt.Errorf("unable to find org [%s] by name: [%v]", client.ClusterOrgName, err)
 	}
 
-	taskURL := resp.Header.Get("Location")
-	task := govcd.NewTask(&client.vcdClient.Client)
-	task.Task.HREF = taskURL
-	if err = task.WaitTaskCompletion(); err != nil {
-		return fmt.Errorf("unable to delete dnat rule [%s]: deletion task [%s] did not complete: [%v]",
-			dnatRuleName, taskURL, err)
+	// we always use tenant scoped profiles
+	scope := types.ApplicationPortProfileScopeTenant
+	appPortProfile, err := org.GetNsxtAppPortProfileByName(appPortProfileName, scope)
+	if err != nil {
+		if strings.Contains(err.Error(), govcd.ErrorEntityNotFound.Error()) {
+			// things to delete are done
+			return nil
+		}
+
+		return fmt.Errorf("unable to search for Application Port Profile [%s]: [%v]",
+			appPortProfileName, err)
 	}
-	klog.Infof("Deleted DNAT rule [%s] on gateway [%s]\n", dnatRuleName, client.gatewayRef.Name)
+
+	if appPortProfile == nil {
+		if failIfAbsent {
+			return fmt.Errorf("app port profile [%s] does not exist in org [%s]",
+				appPortProfileName, client.ClusterOrgName)
+		}
+
+		klog.Infof("App Port Profile [%s] does not exist", appPortProfileName)
+	} else {
+		klog.Infof("Deleting App Port Profile [%s] in org [%s]", appPortProfileName,
+			client.ClusterOrgName)
+		if err = appPortProfile.Delete(); err != nil {
+			return fmt.Errorf("unable to delete application port profile [%s]: [%v]", appPortProfileName, err)
+		}
+	}
+
 
 	return nil
 }
@@ -735,7 +843,7 @@ func (client *Client) checkIfVirtualServiceIsPending(ctx context.Context, virtua
 func (client *Client) createVirtualService(ctx context.Context, virtualServiceName string,
 	lbPoolRef *swaggerClient.EntityReference, segRef *swaggerClient.EntityReference,
 	freeIP string, rdeVIP string, vsType string, externalPort int32,
-	certificateAlias string) (*swaggerClient.EntityReference, error) {
+	useSSL bool, certificateAlias string) (*swaggerClient.EntityReference, error) {
 
 	if client.gatewayRef == nil {
 		return nil, fmt.Errorf("gateway reference should not be nil")
@@ -758,69 +866,48 @@ func (client *Client) createVirtualService(ctx context.Context, virtualServiceNa
 		}, nil
 	}
 
-	useSSL := certificateAlias != ""
 	if useSSL {
 		klog.Infof("Creating SSL-enabled service with certificate [%s]", certificateAlias)
 	}
 
-	var virtualServiceConfig *swaggerClient.EdgeLoadBalancerVirtualService = nil
+	virtualServiceConfig := &swaggerClient.EdgeLoadBalancerVirtualService{
+		Name:                  virtualServiceName,
+		Enabled:               true,
+		VirtualIpAddress:      freeIP,
+		LoadBalancerPoolRef:   lbPoolRef,
+		GatewayRef:            client.gatewayRef,
+		ServiceEngineGroupRef: segRef,
+		ServicePorts: []swaggerClient.EdgeLoadBalancerServicePort{
+			{
+				TcpUdpProfile: &swaggerClient.EdgeLoadBalancerTcpUdpProfile{
+					Type_: "TCP_PROXY",
+				},
+				PortStart:  externalPort,
+				SslEnabled: useSSL,
+			},
+		},
+		ApplicationProfile: &swaggerClient.EdgeLoadBalancerApplicationProfile{
+			SystemDefined: true,
+		},
+	}
 	switch vsType {
 	case "TCP":
-		virtualServiceConfig = &swaggerClient.EdgeLoadBalancerVirtualService{
-			Name:                  virtualServiceName,
-			Enabled:               true,
-			VirtualIpAddress:      freeIP,
-			LoadBalancerPoolRef:   lbPoolRef,
-			GatewayRef:            client.gatewayRef,
-			ServiceEngineGroupRef: segRef,
-			ServicePorts: []swaggerClient.EdgeLoadBalancerServicePort{
-				{
-					TcpUdpProfile: &swaggerClient.EdgeLoadBalancerTcpUdpProfile{
-						Type_: "TCP_PROXY",
-					},
-					PortStart:  externalPort,
-					SslEnabled: useSSL,
-				},
-			},
-			ApplicationProfile: &swaggerClient.EdgeLoadBalancerApplicationProfile{
-				Name:          "System-L4-Application",
-				Type_:         "L4",
-				SystemDefined: true,
-			},
-		}
+		virtualServiceConfig.ApplicationProfile.Name = "System-L4-Application"
+		virtualServiceConfig.ApplicationProfile.Type_ = "TCP"
 		if useSSL {
 			virtualServiceConfig.ApplicationProfile.Name = "System-SSL-Application"
-			virtualServiceConfig.ApplicationProfile.Type_ = "L4_TLS"
+			virtualServiceConfig.ApplicationProfile.Type_ = "L4_TLS" // this needs Enterprise License
 		}
 		break
 
 	case "HTTP":
-		virtualServiceConfig = &swaggerClient.EdgeLoadBalancerVirtualService{
-			Name:                  virtualServiceName,
-			Enabled:               true,
-			VirtualIpAddress:      freeIP,
-			LoadBalancerPoolRef:   lbPoolRef,
-			GatewayRef:            client.gatewayRef,
-			ServiceEngineGroupRef: segRef,
-			ServicePorts: []swaggerClient.EdgeLoadBalancerServicePort{
-				{
-					TcpUdpProfile: &swaggerClient.EdgeLoadBalancerTcpUdpProfile{
-						Type_: "TCP_PROXY",
-					},
-					PortStart:  externalPort,
-					SslEnabled: useSSL,
-				},
-			},
-			ApplicationProfile: &swaggerClient.EdgeLoadBalancerApplicationProfile{
-				Name:          "System-HTTP",
-				Type_:         "HTTP",
-				SystemDefined: true,
-			},
-		}
-		if useSSL {
-			virtualServiceConfig.ApplicationProfile.Name = "System-Secure-HTTP"
-			virtualServiceConfig.ApplicationProfile.Type_ = "HTTPS"
-		}
+		virtualServiceConfig.ApplicationProfile.Name = "System-HTTP"
+		virtualServiceConfig.ApplicationProfile.Type_ = "HTTP"
+		break
+
+	case "HTTPS":
+		virtualServiceConfig.ApplicationProfile.Name = "System-Secure-HTTP"
+		virtualServiceConfig.ApplicationProfile.Type_ = "HTTPS"
 		break
 
 	default:
@@ -974,10 +1061,41 @@ func (client *Client) CreateLoadBalancer(ctx context.Context, virtualServiceName
 		return "", fmt.Errorf("gateway reference should not be nil")
 	}
 
-	externalIP, err := client.getUnusedExternalIPAddress(ctx, client.ipamSubnet)
-	if err != nil {
-		return "", fmt.Errorf("unable to get unused IP address from subnet [%s]: [%v]",
-			client.ipamSubnet, err)
+	// Separately loop through all DNAT rules to see if any exist, so that we can reuse the external IP in case a
+	// partial creation of load-balancer is continued and an externalIP was claimed earlier by a dnat rule
+	externalIP := ""
+	var err error
+	if client.OneArm != nil {
+		for _, portDetails := range portDetailsList {
+			if portDetails.InternalPort == 0 {
+				continue
+			}
+
+			virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, portDetails.PortSuffix)
+			dnatRuleName := getDNATRuleName(virtualServiceName)
+			dnatRuleRef, err := client.getNATRuleRef(ctx, dnatRuleName)
+			if err != nil {
+				return "", fmt.Errorf("unable to retrieve created dnat rule [%s]: [%v]", dnatRuleName, err)
+			}
+			if dnatRuleRef == nil {
+				continue // ths implies that the rule does not exist
+			}
+
+			if externalIP != "" && externalIP != dnatRuleRef.ExternalIP {
+				return "", fmt.Errorf("as per dnat there are two external IP rules for the same service: [%s], [%s]",
+					externalIP, dnatRuleRef.ExternalIP)
+			}
+
+			externalIP = dnatRuleRef.ExternalIP
+		}
+	}
+
+	if externalIP == "" {
+		externalIP, err = client.getUnusedExternalIPAddress(ctx, client.ipamSubnet)
+		if err != nil {
+			return "", fmt.Errorf("unable to get unused IP address from subnet [%s]: [%v]",
+				client.ipamSubnet, err)
+		}
 	}
 	klog.Infof("Using external IP [%s] for virtual service\n", externalIP)
 
@@ -1054,7 +1172,8 @@ func (client *Client) CreateLoadBalancer(ctx context.Context, virtualServiceName
 		}
 
 		virtualServiceRef, err := client.createVirtualService(ctx, virtualServiceName, lbPoolRef, segRef,
-			virtualServiceIP, externalIP, portDetails.Protocol, portDetails.ExternalPort, portDetails.CertAlias)
+			virtualServiceIP, externalIP, portDetails.Protocol, portDetails.ExternalPort,
+			portDetails.UseSSL, portDetails.CertAlias)
 		if err != nil {
 			return "", fmt.Errorf("unable to create virtual service [%s] with address [%s:%d]: [%v]",
 				virtualServiceName, virtualServiceIP, portDetails.ExternalPort, err)
