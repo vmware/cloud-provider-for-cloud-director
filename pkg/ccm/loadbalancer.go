@@ -93,10 +93,6 @@ func (lb *LBManager) getServicePortMap(service *v1.Service) map[string]int32 {
 	return typeToInternalPort
 }
 
-func (lb *LBManager) getLBPoolNamePrefix(serviceName string, clusterID string) string {
-	return fmt.Sprintf("ingress-pool-%s-%s", serviceName, clusterID)
-}
-
 // UpdateLoadBalancer updates hosts under the specified load balancer.
 // Implementations must treat the *v1.Service and *v1.Node
 // parameters as read-only and not modify them.
@@ -111,7 +107,7 @@ func (lb *LBManager) UpdateLoadBalancer(ctx context.Context, clusterName string,
 	nodeIps := lb.getNodeInternalIps(nodes)
 	klog.Infof("UpdateLoadBalancer Node Ips: %v", nodeIps)
 
-	lbPoolNamePrefix := lb.getLBPoolNamePrefix(service.Name, lb.vcdClient.ClusterID)
+	lbPoolNamePrefix := lb.getLBPoolNamePrefix(ctx, service)
 	typeToInternalPortMap := lb.getServicePortMap(service)
 	for portName, internalPort := range typeToInternalPortMap {
 		lbPoolName := fmt.Sprintf("%s-%s", lbPoolNamePrefix, portName)
@@ -188,8 +184,22 @@ func (lb *LBManager) GetLoadBalancer(ctx context.Context, clusterName string,
 	return lb.getLoadBalancer(ctx, service)
 }
 
+// getTrimmedClusterID: this is a mitigation to not overflow VCD name length limits. There is a clearer
+// fix needed in the future.
+func (lb *LBManager) getTrimmedClusterID() string {
+	return strings.TrimPrefix("urn:vcloud:entity:vmware:", lb.vcdClient.ClusterID)
+}
+
+func (lb *LBManager) getLBPoolNamePrefix(_ context.Context, service *v1.Service) string {
+	return fmt.Sprintf("ingress-pool-%s-%s", service.Name, lb.getTrimmedClusterID())
+}
+
 func (lb *LBManager) getLoadBalancerPrefix(_ context.Context, service *v1.Service) string {
-	return fmt.Sprintf("ingress-vs-%s-%s", service.Name, lb.vcdClient.ClusterID)
+	return fmt.Sprintf("ingress-vs-%s-%s", service.Name, lb.getTrimmedClusterID())
+}
+
+func (lb *LBManager) getVirtualServicePrefix(_ context.Context, service *v1.Service) string {
+	return fmt.Sprintf("ingress-vs-%s-%s", service.Name, lb.getTrimmedClusterID())
 }
 
 // GetLoadBalancerName returns the name of the load balancer. Implementations must treat the
@@ -200,8 +210,8 @@ func (lb *LBManager) GetLoadBalancerName(ctx context.Context, clusterName string
 
 func (lb *LBManager) deleteLoadBalancer(ctx context.Context, service *v1.Service) error {
 
-	virtualServiceName := fmt.Sprintf("ingress-vs-%s-%s", service.Name, lb.vcdClient.ClusterID)
-	lbPoolNamePrefix := lb.getLBPoolNamePrefix(service.Name, lb.vcdClient.ClusterID)
+	virtualServiceName := lb.getVirtualServicePrefix(ctx, service)
+	lbPoolNamePrefix := lb.getLBPoolNamePrefix(ctx, service)
 	klog.Infof("Deleting virtual service [%s] and lb pool [%s]", virtualServiceName, lbPoolNamePrefix)
 
 	portDetailsList := make([]vcdclient.PortDetails, len(service.Spec.Ports))
@@ -265,8 +275,8 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 		return lbStatus, nil
 	}
 
-	virtualServiceName := fmt.Sprintf("ingress-vs-%s-%s", service.Name, lb.vcdClient.ClusterID)
-	lbPoolNamePrefix := lb.getLBPoolNamePrefix(service.Name, lb.vcdClient.ClusterID)
+	virtualServiceName := lb.getVirtualServicePrefix(ctx, service)
+	lbPoolNamePrefix := lb.getLBPoolNamePrefix(ctx, service)
 
 	// While creating the lb, even if only one of http/https is remaining and the other is completed,
 	// ask for both to be created. The already created one will silently pass.
