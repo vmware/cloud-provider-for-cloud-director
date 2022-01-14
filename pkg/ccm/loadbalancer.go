@@ -185,9 +185,16 @@ func (lb *LBManager) GetLoadBalancer(ctx context.Context, clusterName string,
 }
 
 // getTrimmedClusterID: this is a mitigation to not overflow VCD name length limits. There is a clearer
-// fix needed in the future.
+// fix needed in the future. Cover all cluster prefixes.
 func (lb *LBManager) getTrimmedClusterID() string {
-	return strings.TrimPrefix(lb.vcdClient.ClusterID, "urn:vcloud:entity:vmware:")
+	clusterID := lb.vcdClient.ClusterID
+	for _, prefix := range []string{
+		"urn:vcloud:entity:vmware:",
+		"urn:vcloud:entity:cse:nativeCluster:",
+	} {
+		clusterID = strings.TrimPrefix(clusterID, prefix)
+	}
+	return clusterID
 }
 
 func (lb *LBManager) getLBPoolNamePrefix(_ context.Context, service *v1.Service) string {

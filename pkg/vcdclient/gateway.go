@@ -893,7 +893,7 @@ func (client *Client) createVirtualService(ctx context.Context, virtualServiceNa
 	switch vsType {
 	case "TCP":
 		virtualServiceConfig.ApplicationProfile.Name = "System-L4-Application"
-		virtualServiceConfig.ApplicationProfile.Type_ = "TCP"
+		virtualServiceConfig.ApplicationProfile.Type_ = "L4"
 		if useSSL {
 			virtualServiceConfig.ApplicationProfile.Name = "System-SSL-Application"
 			virtualServiceConfig.ApplicationProfile.Type_ = "L4_TLS" // this needs Enterprise License
