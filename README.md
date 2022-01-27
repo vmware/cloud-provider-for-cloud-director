@@ -5,13 +5,14 @@ The version of the VMware Cloud Director API and Installation that are compatibl
 
 | CPI Version | VMware Cloud Director API | VMware Cloud Director Installation | Notes | Kubernetes Versions |
 | :---------: | :-----------------------: | :--------------------------------: | :---: | :------------------ |
-| 1.0.0 | 36.0+ | 10.3.1+ (Needs hotpatch to prevent VCD cell crashes when used in a multi-cell environment) | Needs NSX-T 3.1.1 with NSX Advanced Load Balancer (Avi) version 20.1.3+ |<ul><li>1.21</li><li>1.20</li><li>1.19</li></ul>|
-| 1.0.1 | 36.0+ | 10.3.1+ (Needs hotpatch to prevent VCD cell crashes when used in a multi-cell environment) | <ul><li>Some resiliency added when VCD cells are restarted (34c1689)</li><li>Added Org ID to cert query so that `system/administrator` can also create https load balancers (44c72ab)</li></ul> |<ul><li>1.21</li><li>1.20</li><li>1.19</li></ul>|
-| 1.0.2 | 36.0+ | 10.3.1+ (Needs hotpatch to prevent VCD cell crashes when used in a multi-cell environment) | <ul><li>Added fix to allow multiple http and https ports to be allowed in load-balancer (d67c19b)</li></ul> |<ul><li>1.21</li><li>1.20</li><li>1.19</li></ul>|
+| 1.0.0 | 36.0+ | 10.3.1+ <br/>(10.3.1 needs hot-patch to prevent VCD cell crashes in multi-cell environments) | Needs NSX-T 3.1.1 with NSX Advanced Load Balancer (Avi) version 20.1.3+ |<ul><li>1.21</li><li>1.20</li><li>1.19</li></ul>|
+| 1.0.1 | 36.0+ | 10.3.1+ <br/>(10.3.1 needs hot-patch to prevent VCD cell crashes in multi-cell environments) | <ul><li>Some resiliency added when VCD cells are restarted (34c1689)</li><li>Added Org ID to cert query so that `system/administrator` can also create https load balancers (44c72ab)</li></ul> |<ul><li>1.21</li><li>1.20</li><li>1.19</li></ul>|
+| 1.0.2 | 36.0+ | 10.3.1+ <br/>(10.3.1 needs hot-patch to prevent VCD cell crashes in multi-cell environments) | <ul><li>Added fix to allow multiple http and https ports to be allowed in load-balancer (d67c19b)</li></ul> |<ul><li>1.21</li><li>1.20</li><li>1.19</li></ul>|
+| 1.1.0 | 36.0+ | 10.3.1+ <br/>(10.3.1 needs hot-patch to prevent VCD cell crashes in multi-cell environments) | <ul><li>Application port profiles added to DNAT rules (Fixes #43)</li><li>L4, HTTP and HTTPS services supported using `appProtocol` and annotations. Also allow per-service certificates.</li><li>Multiple(>2) service fixes within the same LoadBalancer endpoint</li><li>Support for CAPVCD RDEs</li><li>Detect and handle `PENDING` Avi LoadBalancer state to allow better controller functionality.</li></ul> |<ul><li>1.21</li><li>1.20</li><li>1.19</li></ul>|
 
 This extension is intended to be installed into a Kubernetes cluster installed with [VMware Cloud Director](https://www.vmware.com/products/cloud-director.html) as a Cloud Provider, by a user that has the rights as described in the sections below.
 
-**cloud-provider-for-cloud-director** is distributed as a container image hosted at [Distribution Harbor](https://projects.registry.vmware.com) as `projects.registry.vmware.com/vmware-cloud-director/cloud-provider-for-cloud-director:<CPI Version>`.
+**cloud-provider-for-cloud-director** is distributed as a container image hosted at [Distribution Harbor](https://projects.registry.vmware.com) as `projects.registry.vmware.com/vmware-cloud-director/cloud-provider-for-cloud-director:<CPI Version>.latest`.
 
 This cloud-provider is in a `GA` state and will be supported in production.
 
@@ -71,8 +72,17 @@ vcd cse cluster info <kubernetes cluster name>
 ```
 <cluster ID>-cert
 ```
+3. Add the following annotations to the ingress loadbalancer service. Depending on the installation method used (helm etc), the location of addition of these annotations may be different. The annotation mentions the ports that need SSL and the certificate to be used for it.
+```
+annotations:
+  service.beta.kubernetes.io/vcloud-avi-ssl-ports: "443"
+  service.beta.kubernetes.io/vcloud-avi-ssl-cert-alias: "<cluster ID>-cert"
+```
 
-This will enable all HTTPS ingresses of the Kubernetes cluster to use the same certificate that has been uploaded here.
+This will enable the HTTPS ingresses of the Kubernetes cluster to use the fore-mentioned certificate that has been uploaded here.
+
+**Note:**
+From v1.1.0 onwards, certificates can have user-defined names. Each service could use its own certificate and there does not need to be one common certificate used across services.
 
 ## Contributing
 Please see [CONTRIBUTING.md](CONTRIBUTING.md) for instructions on how to contribute.
