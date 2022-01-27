@@ -63,21 +63,17 @@ A ServiceEngineGroup needs to be added to the gateway of the OVDC within which t
 #### Creation of a LoadBalancer using a third-party ingress
 Any third party ingress such as Contour could be used with the CPI in order to create an L7 ingress and NSX Advanced Load Balancer with Avi will act as the L4 LoadBalancer.
 
-**Note**: In order to create a HTTPS Ingress using the Avi LoadBalancer, a certificate needs to be used. For Kubernetes clusters created using the Container Service Extension, the certificate needs to be named in a particular way as follows:
-1. Get the ID of the Kubernetes cluster using the following command. Let us name it `ClusterID`
-```
-vcd cse cluster info <kubernetes cluster name>
-```
-2. Upload a certificate into the Trusted Certificates of the Organization using the VCD UI. Name the certificate with the following format:
-```
-<cluster ID>-cert
-```
-3. Add the following annotations to the ingress loadbalancer service. Depending on the installation method used (helm etc), the location of addition of these annotations may be different. The annotation mentions the ports that need SSL and the certificate to be used for it.
+**Note**: In order to create a HTTPS Ingress using the Avi LoadBalancer, a certificate needs to be used. The following steps present an overview **from CPI 1.1.0 onwards**:
+1. As a user with OrgAdmin role, upload a certificate into the Trusted Certificates of the Organization using the VCD UI. Let this certificate be called `my-service-cert`.
+
+2. Add the following annotations to the ingress loadbalancer service. Depending on the installation method used (helm etc), the location of addition of these annotations may be different. The annotation mentions the _comma-separated list of ports_ that need SSL and the (single) certificate to be used for it.
 ```
 annotations:
   service.beta.kubernetes.io/vcloud-avi-ssl-ports: "443"
-  service.beta.kubernetes.io/vcloud-avi-ssl-cert-alias: "<cluster ID>-cert"
+  service.beta.kubernetes.io/vcloud-avi-ssl-cert-alias: "my-service-cert"
 ```
+
+3. Install the service
 
 This will enable the HTTPS ingresses of the Kubernetes cluster to use the fore-mentioned certificate that has been uploaded here.
 
