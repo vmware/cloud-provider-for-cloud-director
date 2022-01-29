@@ -47,6 +47,7 @@ func TestNewVCDAuthConfigFromSecrets(t *testing.T) {
 		"oneArm": nil,
 	})
 	assert.NoError(t, err, "There should be no error for missing OneArm")
+	assert.NotNil(t, vcdClient, "VCD Client should not be nil")
 
 	return
 }
