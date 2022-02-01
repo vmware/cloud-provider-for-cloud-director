@@ -52,10 +52,6 @@ func (config *VCDAuthConfig) GetBearerToken() (*govcd.VCDClient, *http.Response,
 			return nil, nil, fmt.Errorf("failed to set authorization header: [%v]", err)
 		}
 		config.IsSysAdmin = vcdClient.Client.IsSysAdmin
-		if err != nil {
-			return nil, nil, fmt.Errorf("failed to determine if the user is a system administrator: [%v]", err)
-		}
-		vcdClient.Client.IsSysAdmin = config.IsSysAdmin
 
 		klog.Infof("Running CPI as sysadmin [%v]", vcdClient.Client.IsSysAdmin)
 		return vcdClient, resp, nil
@@ -119,9 +115,4 @@ func NewVCDAuthConfigFromSecrets(host string, user string, secret string,
 		UserOrg:      userOrg,
 		Insecure:     insecure,
 	}
-}
-
-type currentSessionsResponse struct {
-	Id    string   `json:"id"`
-	Roles []string `json:"roles"`
 }
