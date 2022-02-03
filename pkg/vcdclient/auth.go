@@ -72,8 +72,7 @@ func (config *VCDAuthConfig) GetSwaggerClientFromSecrets() (*govcd.VCDClient, *s
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to get bearer token from secrets: [%v]", err)
 	}
-	var authHeader string
-	authHeader = fmt.Sprintf("Bearer %s", vcdClient.Client.VCDToken)
+	authHeader := fmt.Sprintf("Bearer %s", vcdClient.Client.VCDToken)
 
 	swaggerConfig := swaggerClient.NewConfiguration()
 	swaggerConfig.BasePath = fmt.Sprintf("%s/cloudapi", config.Host)
