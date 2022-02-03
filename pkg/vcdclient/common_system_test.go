@@ -108,6 +108,8 @@ func getTestVCDClient(inputMap map[string]interface{}) (*Client, error) {
 				getVdcClient = getBoolValStrict(val, false)
 			case "refreshToken":
 				cloudConfig.VCD.RefreshToken = getStrValStrict(val, cloudConfig.VCD.RefreshToken)
+			case "userOrg":
+				cloudConfig.VCD.UserOrg = getStrValStrict(val, cloudConfig.VCD.UserOrg)
 			}
 		}
 	}
