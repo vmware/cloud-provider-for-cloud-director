@@ -278,7 +278,17 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 		return nil, fmt.Errorf("unexpected error while querying for loadbalancer: [%v]", err)
 	}
 	if lbExists {
-		// Return existing LB. No need to update here as separate functions are called for Update.
+		// Update load balancer if there are changes in service properties
+		lbPoolNamePrefix := lb.getLBPoolNamePrefix(ctx, service)
+		typeToInternalPortMap := lb.getServicePortMap(service)
+		for portName, internalPort := range typeToInternalPortMap {
+			lbPoolName := fmt.Sprintf("%s-%s", lbPoolNamePrefix, portName)
+			klog.Infof("Updating pool [%s] with port [%s:%d]", lbPoolName, portName, internalPort)
+			if err := lb.vcdClient.UpdateLoadBalancer(ctx, lbPoolName, nodeIPs, internalPort); err != nil {
+				return nil, fmt.Errorf("unable to update pool [%s] with port [%s:%d]: [%v]", lbPoolName, portName,
+					internalPort, err)
+			}
+		}
 		return lbStatus, nil
 	}
 
