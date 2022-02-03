@@ -56,26 +56,13 @@ func (client *Client) RefreshBearerToken() error {
 	client.vcdClient.Client.APIVersion = VCloudApiVersion
 
 	klog.Infof("Is user sysadmin: [%v]", client.vcdClient.Client.IsSysAdmin)
-	var token string
 	if client.vcdAuthConfig.RefreshToken != "" {
 		// Refresh vcd client using refresh token
-		accessTokenResponse, _, err := client.vcdAuthConfig.getAccessTokenFromRefreshToken(
-			client.vcdClient.Client.IsSysAdmin)
+		err := client.vcdClient.SetToken(client.vcdAuthConfig.UserOrg,
+			govcd.ApiTokenHeader, client.vcdAuthConfig.RefreshToken)
 		if err != nil {
-			return fmt.Errorf(
-				"failed to get access token from refresh token for user [%s/%s] for url [%s]: [%v]",
-				client.vcdAuthConfig.UserOrg, client.vcdAuthConfig.User, href, err)
+			return fmt.Errorf("failed to refresh VCD client with the refresh token: [%v]", err)
 		}
-
-		err = client.vcdClient.SetToken(client.vcdAuthConfig.UserOrg,
-			"Authorization", fmt.Sprintf("Bearer %s", accessTokenResponse.AccessToken))
-		if err != nil {
-			return fmt.Errorf("failed to set authorization header: [%v]", err)
-		}
-		// The previous function call will unset IsSysAdmin boolean for administrator because govcd makes a hard check
-		// on org name. Set the boolean back
-		client.vcdClient.Client.IsSysAdmin = client.vcdAuthConfig.IsSysAdmin
-		token = accessTokenResponse.AccessToken
 	} else if client.vcdAuthConfig.User != "" && client.vcdAuthConfig.Password != "" {
 		// Refresh vcd client using username and password
 		resp, err := client.vcdClient.GetAuthResponse(client.vcdAuthConfig.User, client.vcdAuthConfig.Password,
@@ -84,7 +71,6 @@ func (client *Client) RefreshBearerToken() error {
 			return fmt.Errorf("unable to authenticate [%s/%s] for url [%s]: [%+v] : [%v]",
 				client.vcdAuthConfig.UserOrg, client.vcdAuthConfig.User, href, resp, err)
 		}
-		token = client.vcdClient.Client.VCDToken
 	} else {
 		return fmt.Errorf(
 			"unable to find refresh token or secret to refresh vcd client for user [%s/%s] and url [%s]",
@@ -108,7 +94,7 @@ func (client *Client) RefreshBearerToken() error {
 	// reset swagger client
 	swaggerConfig := swaggerClient.NewConfiguration()
 	swaggerConfig.BasePath = fmt.Sprintf("%s/cloudapi", client.vcdAuthConfig.Host)
-	swaggerConfig.AddDefaultHeader("Authorization", fmt.Sprintf("Bearer %s", token))
+	swaggerConfig.AddDefaultHeader("Authorization", fmt.Sprintf("Bearer %s", client.vcdClient.Client.VCDToken))
 	swaggerConfig.HTTPClient = &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: client.vcdAuthConfig.Insecure},
@@ -138,6 +124,7 @@ func NewVCDClientFromSecrets(host string, orgName string, vdcName string, vAppNa
 			clientSingleton.ClusterOrgName == orgName &&
 			clientSingleton.ClusterOVDCName == vdcName &&
 			clientSingleton.ClusterVAppName == vAppName &&
+			clientSingleton.networkName == networkName &&
 			clientSingleton.vcdAuthConfig.UserOrg == userOrg &&
 			clientSingleton.vcdAuthConfig.User == user &&
 			clientSingleton.vcdAuthConfig.Password == password &&
