@@ -758,8 +758,20 @@ func (client *Client) updateLoadBalancerPool(ctx context.Context, lbPoolName str
 		return nil, fmt.Errorf("no lb pool found with name [%s]: [%v]", lbPoolName, err)
 	}
 
-	lbPool, lbPoolMembers := client.formLoadBalancerPool(lbPoolName, ips, internalPort)
-	resp, err := client.apiClient.EdgeGatewayLoadBalancerPoolApi.UpdateLoadBalancerPool(ctx, lbPool, lbPoolRef.Id)
+	lbPool, resp, err := client.apiClient.EdgeGatewayLoadBalancerPoolApi.GetLoadBalancerPool(ctx, lbPoolRef.Id)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get loadbalancer pool with id [%s]: [%v]", lbPoolRef.Id, err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unable to get loadbalancer pool with id [%s], expected http response [%v], obtained [%v]", lbPoolRef.Id, http.StatusOK, resp.StatusCode)
+	}
+
+	if len(lbPool.Members) > 0 && len(lbPool.Members) == len(ips) && lbPool.Members[0].Port == internalPort {
+		klog.Infof("No updates needed for the loadbalancer pool [%s]", lbPool.Name)
+		return lbPoolRef, nil
+	}
+	updatedLBPool, lbPoolMembers := client.formLoadBalancerPool(lbPoolName, ips, internalPort)
+	resp, err = client.apiClient.EdgeGatewayLoadBalancerPoolApi.UpdateLoadBalancerPool(ctx, updatedLBPool, lbPoolRef.Id)
 	if err != nil {
 		return nil, fmt.Errorf("unable to update loadbalancer pool with name [%s], members [%+v]: resp [%+v]: [%v]",
 			lbPoolName, lbPoolMembers, resp, err)
@@ -838,6 +850,42 @@ func (client *Client) checkIfVirtualServiceIsPending(ctx context.Context, virtua
 
 	klog.Errorf("Virtual service [%s] is still pending. Virtual service status: [%s]", virtualServiceName, vsSummary.HealthStatus)
 	return NewVirtualServicePendingError(virtualServiceName)
+}
+
+func (client *Client) updateVirtualServicePort(ctx context.Context, virtualServiceName string, externalPort int32) error {
+	vsSummary, err := client.getVirtualService(ctx, virtualServiceName)
+	if err != nil {
+		return fmt.Errorf("failed to get virtual service summary for virtual service [%s]: [%v]", virtualServiceName, err)
+	}
+	if vsSummary == nil || len(vsSummary.ServicePorts) == 0 {
+		return fmt.Errorf("virtual service [%s] has no service ports", virtualServiceName)
+	}
+	if vsSummary.ServicePorts[0].PortStart == externalPort {
+		klog.Infof("virtual service [%s] is already configured with port [%d]", virtualServiceName, externalPort)
+		return nil
+	}
+	vs, _, err := client.apiClient.EdgeGatewayLoadBalancerVirtualServiceApi.GetVirtualService(ctx, vsSummary.Id)
+	if err != nil {
+		return fmt.Errorf("failed to get virtual service with ID [%s]", vsSummary.Id)
+	}
+	if externalPort != vsSummary.ServicePorts[0].PortStart {
+		// update both port start and port end to be the same.
+		vs.ServicePorts[0].PortStart = externalPort
+		vs.ServicePorts[0].PortEnd = externalPort
+	}
+	resp, err := client.apiClient.EdgeGatewayLoadBalancerVirtualServiceApi.UpdateVirtualService(ctx, vs, vsSummary.Id)
+	if resp != nil && resp.StatusCode != http.StatusAccepted {
+		var responseMessageBytes []byte
+		if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
+			responseMessageBytes = gsErr.Body()
+		}
+		return fmt.Errorf(
+			"unable to update virtual service; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]",
+			http.StatusAccepted, resp.StatusCode, string(responseMessageBytes), err)
+	} else if err != nil {
+		return fmt.Errorf("error while updating virtual service [%s]: [%v]", virtualServiceName, err)
+	}
+	return nil
 }
 
 func (client *Client) createVirtualService(ctx context.Context, virtualServiceName string,
@@ -1185,17 +1233,19 @@ func (client *Client) CreateLoadBalancer(ctx context.Context, virtualServiceName
 	return externalIP, nil
 }
 
-func (client *Client) UpdateLoadBalancer(ctx context.Context, lbPoolName string,
-	ips []string, internalPort int32) error {
+func (client *Client) UpdateLoadBalancer(ctx context.Context, lbPoolName string, virtualServiceName string,
+	ips []string, internalPort int32, externalPort int32) error {
 
 	client.rwLock.Lock()
 	defer client.rwLock.Unlock()
-
 	_, err := client.updateLoadBalancerPool(ctx, lbPoolName, ips, internalPort)
 	if err != nil {
 		return fmt.Errorf("unable to update load balancer pool [%s]: [%v]", lbPoolName, err)
 	}
-
+	err = client.updateVirtualServicePort(ctx, virtualServiceName, externalPort)
+	if err != nil {
+		return fmt.Errorf("unable to update virtual service [%s] with port [%d]: [%v]", virtualServiceName, externalPort, err)
+	}
 	return nil
 }
 
