@@ -457,36 +457,119 @@ func TestVirtualServiceHttpCRUDE(t *testing.T) {
 	require.NotNil(t, vsRef, "VirtualServiceRef should not be nil")
 	assert.Equal(t, virtualServiceName, vsRef.Name, "Virtual Service name should match")
 
-	err = vcdClient.updateVirtualServicePort(ctx, virtualServiceName, 8080)
+	for i := 0; i < BusyRetries ; i ++ {
+		err = vcdClient.updateVirtualServicePort(ctx, virtualServiceName, 8080)
+		if err != nil {
+			if _, ok := err.(*VirtualServiceBusyError); !ok {
+				break
+			}
+		} else {
+			break
+		}
+		// sleep for 2 seconds and retry
+		time.Sleep(2*time.Second)
+		fmt.Printf("virtual service is busy. remaining retry attempts: [%d]\n", BusyRetries- i - 1)
+	}
 	assert.NoError(t, err, "Unable to update external port")
 
 	// repeated update should not fail
-	// The sleep is needed because the below call fails if VCD is busy completing the previous update.
-	time.Sleep(5*time.Second)
-	err = vcdClient.updateVirtualServicePort(ctx, virtualServiceName, 8080)
+	// update and delete calls might error out if virtual services are busy. Retry if the error is caused by the busy virtual services
+	for i := 0; i < BusyRetries ; i ++ {
+		err = vcdClient.updateVirtualServicePort(ctx, virtualServiceName, 8080)
+		if err != nil {
+			if _, ok := err.(*VirtualServiceBusyError); !ok {
+				break
+			}
+		} else {
+			break
+		}
+		// sleep for 2 seconds and retry
+		time.Sleep(2*time.Second)
+		fmt.Printf("virtual service is busy. remaining retry attempts: [%d]\n", BusyRetries- i - 1)
+	}
 	assert.NoError(t, err, "Repeated update to external port should not fail")
 
-	err = vcdClient.updateVirtualServicePort(ctx, virtualServiceName+"-invalid", 8080)
+	for i := 0; i < BusyRetries ; i ++ {
+		err = vcdClient.updateVirtualServicePort(ctx, virtualServiceName+"-invalid", 8080)
+		if err != nil {
+			if _, ok := err.(*VirtualServiceBusyError); !ok {
+				break
+			}
+		} else {
+			break
+		}
+		// sleep for 2 seconds and retry
+		time.Sleep(2*time.Second)
+		fmt.Printf("virtual service is busy. remaining retry attempts: [%d]\n", BusyRetries- i - 1)
+	}
 	assert.Error(t, err, "Update virtual service on a non-existent virtual service should fail")
 
-	err = vcdClient.deleteVirtualService(ctx, virtualServiceName, true, externalIP)
+	for i := 0; i < BusyRetries ; i ++ {
+		err = vcdClient.deleteVirtualService(ctx, virtualServiceName, true, externalIP)
+		if err != nil {
+			if _, ok := err.(*VirtualServiceBusyError); !ok {
+				break
+			}
+		} else {
+			break
+		}
+		// sleep for 2 seconds and retry
+		time.Sleep(2*time.Second)
+		fmt.Printf("virtual service is busy. remaining retry attempts: [%d]\n", BusyRetries- i - 1)
+	}
 	assert.NoError(t, err, "Unable to delete Virtual Service")
 
 	rdeVips, _, _, err = vcdClient.GetRDEVirtualIps(ctx)
 	assert.NoError(t, err, "Unable to get vips from RDE after virtual service deletion")
 	assert.False(t, foundStringInSlice(externalIP, rdeVips), "external ip should not be found in RDE vips")
 
-	err = vcdClient.deleteVirtualService(ctx, virtualServiceName, true, externalIP)
+	for i := 0; i < BusyRetries ; i ++ {
+		err = vcdClient.deleteVirtualService(ctx, virtualServiceName, true, externalIP)
+		if err != nil {
+			if _, ok := err.(*VirtualServiceBusyError); !ok {
+				break
+			}
+		} else {
+			break
+		}
+		// sleep for 2 seconds and retry
+		time.Sleep(2*time.Second)
+		fmt.Printf("virtual service is busy. remaining retry attempts: [%d]\n", BusyRetries- i - 1)
+	}
 	assert.Error(t, err, "Should fail when deleting non-existing Virtual Service")
 
-	err = vcdClient.deleteVirtualService(ctx, virtualServiceName, false, externalIP)
+	for i := 0; i < BusyRetries ; i ++ {
+		err = vcdClient.deleteVirtualService(ctx, virtualServiceName, false, externalIP)
+		if err != nil {
+			if _, ok := err.(*VirtualServiceBusyError); !ok {
+				break
+			}
+		} else {
+			break
+		}
+		// sleep for 2 seconds and retry
+		time.Sleep(2*time.Second)
+		fmt.Printf("virtual service is busy. remaining retry attempts: [%d]\n", BusyRetries- i - 1)
+	}
 	assert.NoError(t, err, "Should not fail when deleting non-existing Virtual Service")
 
 	vsRefObtained, err = vcdClient.getVirtualService(ctx, virtualServiceName)
 	assert.NoError(t, err, "Get should not fail when Virtual Service is absent")
 	assert.Nil(t, vsRefObtained, "Deleted Virtual Service reference should be nil")
 
-	err = vcdClient.deleteLoadBalancerPool(ctx, lbPoolName, true)
+	for i := 0; i < BusyRetries ; i ++ {
+		err = vcdClient.deleteLoadBalancerPool(ctx, lbPoolName, true)
+		if err != nil {
+			if _, ok := err.(*LoadBalancerPoolBusyError); !ok {
+				break
+			}
+		} else {
+			break
+		}
+		// sleep for 2 seconds and retry
+		time.Sleep(2*time.Second)
+		fmt.Printf("loadbalancer pool is busy. remaining retry attempts: [%d]\n", BusyRetries- i - 1)
+	}
 	assert.NoError(t, err, "Should not fail when deleting lb pool")
 
 	return
