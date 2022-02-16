@@ -6,6 +6,10 @@ type VirtualServicePendingError struct {
 	VirtualServiceName string
 }
 
+type VirtualServiceBusyError struct {
+	VirtualServiceName string
+}
+
 type LoadBalancerPoolBusyError struct {
 	LBPoolName string
 }
@@ -16,6 +20,16 @@ func (vsError *VirtualServicePendingError) Error() string {
 
 func NewVirtualServicePendingError(virtualServiceName string) *VirtualServicePendingError {
 	return &VirtualServicePendingError{
+		VirtualServiceName: virtualServiceName,
+	}
+}
+
+func (vsError *VirtualServiceBusyError) Error() string {
+	return fmt.Sprintf("virtual service [%s] is busy", vsError.VirtualServiceName)
+}
+
+func NewVirtualServiceBusyError(virtualServiceName string) *VirtualServiceBusyError {
+	return &VirtualServiceBusyError{
 		VirtualServiceName: virtualServiceName,
 	}
 }

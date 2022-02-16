@@ -800,6 +800,10 @@ func (client *Client) deleteLoadBalancerPool(ctx context.Context, lbPoolName str
 		return nil
 	}
 
+	if err = client.checkIfLBPoolIsBusy(ctx, lbPoolName); err != nil {
+		return fmt.Errorf("unable to delete loadbalancer pool [%s]; loadbalancer pool is busy: [%v]", lbPoolName, err)
+	}
+
 	resp, err := client.apiClient.EdgeGatewayLoadBalancerPoolApi.DeleteLoadBalancerPool(ctx, lbPoolRef.Id)
 	if resp.StatusCode != http.StatusAccepted {
 		return fmt.Errorf("unable to delete lb pool; expected http response [%v], obtained [%v]",
@@ -839,6 +843,9 @@ func (client *Client) updateLoadBalancerPool(ctx context.Context, lbPoolName str
 	if len(lbPool.Members) > 0 && len(lbPool.Members) == len(ips) && lbPool.Members[0].Port == internalPort {
 		klog.Infof("No updates needed for the loadbalancer pool [%s]", lbPool.Name)
 		return lbPoolRef, nil
+	}
+	if err = client.checkIfLBPoolIsBusy(ctx, lbPoolName); err != nil {
+		return nil, fmt.Errorf("unable to update loadbalancer pool [%s]; loadbalancer pool is busy: [%v]",lbPoolName, err)
 	}
 	lbPool, resp, err = client.apiClient.EdgeGatewayLoadBalancerPoolApi.GetLoadBalancerPool(ctx, lbPoolRef.Id)
 	if err != nil {
@@ -929,6 +936,29 @@ func (client *Client) checkIfVirtualServiceIsPending(ctx context.Context, virtua
 	return NewVirtualServicePendingError(virtualServiceName)
 }
 
+func (client *Client) checkIfVirtualServiceIsBusy(ctx context.Context, virtualServiceName string) error {
+	if client.gatewayRef == nil {
+		return fmt.Errorf("gateway reference should not be nil")
+	}
+
+	klog.V(3).Infof("Checking if virtual service [%s] is busy", virtualServiceName)
+	vsSummary, err := client.getVirtualService(ctx, virtualServiceName)
+	if err != nil {
+		return fmt.Errorf("unable to get summary for LB VS [%s]: [%v]", virtualServiceName, err)
+	}
+	if vsSummary == nil {
+		return fmt.Errorf("unable to get summary of virtual service [%s]: [%v]", virtualServiceName, err)
+	}
+	if *vsSummary.Status != "CONFIGURING" {
+		klog.V(3).Infof("Completed waiting for [%s] to be configured since current status is [%s]",
+			virtualServiceName, *vsSummary.Status)
+		return nil
+	}
+
+	klog.Errorf("Virtual service [%s] is still being configured. Virtual service status: [%s]", virtualServiceName, *vsSummary.Status)
+	return NewVirtualServiceBusyError(virtualServiceName)
+}
+
 func (client *Client) checkIfLBPoolIsBusy(ctx context.Context, lbPoolName string) error {
 	if client.gatewayRef == nil {
 		return fmt.Errorf("gateway reference should not be nil")
@@ -942,14 +972,14 @@ func (client *Client) checkIfLBPoolIsBusy(ctx context.Context, lbPoolName string
 	if lbPoolSummary == nil {
 		return fmt.Errorf("unable to get summary of virtual service [%s]: [%v]", lbPoolName, err)
 	}
-	if *lbPoolSummary.Status != "PENDING" && *lbPoolSummary.Status != "REALIZING" {
-		klog.V(3).Infof("Completed waiting for [%s] since load balancer pool status is [%s]",
+	if *lbPoolSummary.Status != "CONFIGURING" {
+		klog.V(3).Infof("Completed waiting for [%s] to be configured since load balancer pool status is [%s]",
 			lbPoolName, *lbPoolSummary.Status)
 		return nil
 	}
 
-	klog.Errorf("Load balancer pool [%s] is busy. load balancer pool status: [%s]", lbPoolName, *lbPoolSummary.Status)
-	return NewVirtualServicePendingError(lbPoolName)
+	klog.Errorf("Load balancer pool [%s] is still being configured. load balancer pool status: [%s]", lbPoolName, *lbPoolSummary.Status)
+	return NewLBPoolBusyError(lbPoolName)
 }
 
 func (client *Client) updateVirtualServicePort(ctx context.Context, virtualServiceName string, externalPort int32) error {
@@ -964,9 +994,8 @@ func (client *Client) updateVirtualServicePort(ctx context.Context, virtualServi
 		klog.Infof("virtual service [%s] is already configured with port [%d]", virtualServiceName, externalPort)
 		return nil
 	}
-	if err = client.checkIfVirtualServiceIsPending(ctx, virtualServiceName); err != nil {
-		// virtual service is busy
-		return err
+	if err = client.checkIfVirtualServiceIsBusy(ctx, virtualServiceName); err != nil {
+		return fmt.Errorf("unable to update virtual service [%s]; virtual service is busy: [%v]", virtualServiceName, err)
 	}
 	vs, _, err := client.apiClient.EdgeGatewayLoadBalancerVirtualServiceApi.GetVirtualService(ctx, vsSummary.Id)
 	if err != nil {
@@ -1161,11 +1190,12 @@ func (client *Client) deleteVirtualService(ctx context.Context, virtualServiceNa
 
 		return nil
 	}
-	err = client.checkIfVirtualServiceIsPending(ctx, virtualServiceName)
+
+	err = client.checkIfVirtualServiceIsBusy(ctx, virtualServiceName)
 	if err != nil {
-		// virtual service is busy
-		return err
-	}
+			// virtual service is busy
+			return err
+		}
 
 	resp, err := client.apiClient.EdgeGatewayLoadBalancerVirtualServiceApi.DeleteVirtualService(
 		ctx, vsSummary.Id)

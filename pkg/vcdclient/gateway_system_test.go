@@ -420,8 +420,6 @@ func TestVirtualServiceHttpsCRUDE(t *testing.T) {
 	assert.NoError(t, err, "Unable to update external port")
 
 	// repeated update should not fail
-	// The sleep is needed because the below call fails if VCD is busy completing the previous update.
-	time.Sleep(5*time.Second)
 	err = vcdClient.updateVirtualServicePort(ctx, virtualServiceName, 8443)
 	assert.NoError(t, err, "Repeated update to external port should not fail")
 
