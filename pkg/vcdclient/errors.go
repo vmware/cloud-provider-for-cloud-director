@@ -14,6 +14,10 @@ type LoadBalancerPoolBusyError struct {
 	LBPoolName string
 }
 
+type GatewayBusyError struct {
+	GatewayName string
+}
+
 func (vsError *VirtualServicePendingError) Error() string {
 	return fmt.Sprintf("virtual service [%s] is in Pending state", vsError.VirtualServiceName)
 }
@@ -41,5 +45,15 @@ func (lbPoolError *LoadBalancerPoolBusyError) Error() string {
 func NewLBPoolBusyError(lbPoolName string) *LoadBalancerPoolBusyError {
 	return &LoadBalancerPoolBusyError{
 		LBPoolName: lbPoolName,
+	}
+}
+
+func (gatewayBusyError *GatewayBusyError) Error() string {
+	return fmt.Sprintf("gateway [%s] is busy", gatewayBusyError.GatewayName)
+}
+
+func NewGatewayBusyError(gatewayName string) *GatewayBusyError {
+	return &GatewayBusyError{
+		GatewayName: gatewayName,
 	}
 }

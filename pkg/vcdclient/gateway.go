@@ -543,6 +543,10 @@ func (client *Client) updateAppPortProfile(appPortProfileName string, externalPo
 }
 
 func (client *Client) updateDNATRule(ctx context.Context, dnatRuleName string, externalIP string, internalIP string, externalPort int32, internalPort int32) error {
+	if err := client.checkIfGatewayIsBusy(ctx); err != nil {
+		klog.Errorf("failed to update DNAT rule; gateway [%s] is busy", client.gatewayRef.Name)
+		return err
+	}
 	dnatRuleRef, err := client.getNATRuleRef(ctx, dnatRuleName)
 	if err != nil {
 		return fmt.Errorf("unexpected error while looking for nat rule [%s] in gateway [%s]: [%v]",
@@ -594,6 +598,11 @@ func (client *Client) updateDNATRule(ctx context.Context, dnatRuleName string, e
 func (client *Client) deleteDNATRule(ctx context.Context, dnatRuleName string,
 	failIfAbsent bool) error {
 
+	if err := client.checkIfGatewayIsBusy(ctx); err != nil {
+		klog.Errorf("failed to update DNAT rule; gateway [%s] is busy", client.gatewayRef.Name)
+		return err
+	}
+
 	if client.gatewayRef == nil {
 		return fmt.Errorf("gateway reference should not be nil")
 	}
@@ -612,8 +621,12 @@ func (client *Client) deleteDNATRule(ctx context.Context, dnatRuleName string,
 		resp, err := client.apiClient.EdgeGatewayNatRuleApi.DeleteNatRule(ctx,
 			client.gatewayRef.Id, dnatRuleRef.ID)
 		if resp.StatusCode != http.StatusAccepted {
-			return fmt.Errorf("unable to delete dnat rule [%s]: expected http response [%v], obtained [%v]",
-				dnatRuleName, http.StatusAccepted, resp.StatusCode)
+			var responseMessageBytes []byte
+			if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
+				responseMessageBytes = gsErr.Body()
+			}
+			return fmt.Errorf("unable to delete dnat rule [%s]: expected http response [%v], obtained [%v], response: [%v]",
+				dnatRuleName, http.StatusAccepted, resp.StatusCode, string(responseMessageBytes))
 		}
 
 		taskURL := resp.Header.Get("Location")
@@ -801,7 +814,7 @@ func (client *Client) deleteLoadBalancerPool(ctx context.Context, lbPoolName str
 	}
 
 	if err = client.checkIfLBPoolIsBusy(ctx, lbPoolName); err != nil {
-		return fmt.Errorf("unable to delete loadbalancer pool [%s]; loadbalancer pool is busy: [%v]", lbPoolName, err)
+		return err
 	}
 
 	resp, err := client.apiClient.EdgeGatewayLoadBalancerPoolApi.DeleteLoadBalancerPool(ctx, lbPoolRef.Id)
@@ -982,6 +995,28 @@ func (client *Client) checkIfLBPoolIsBusy(ctx context.Context, lbPoolName string
 	return NewLBPoolBusyError(lbPoolName)
 }
 
+func (client *Client) checkIfGatewayIsBusy(ctx context.Context) error {
+	edgeGateway, resp, err := client.apiClient.EdgeGatewayApi.GetEdgeGateway(ctx, client.gatewayRef.Id)
+	if resp != nil && resp.StatusCode != http.StatusOK {
+		var responseMessageBytes []byte
+		if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
+			responseMessageBytes = gsErr.Body()
+		}
+		return fmt.Errorf(
+			"unable to get gateway details; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]",
+			http.StatusOK, resp.StatusCode, string(responseMessageBytes), err)
+	} else if err != nil {
+		return fmt.Errorf("error while checking gateway status for [%s]: [%v]", client.gatewayRef.Name, err)
+	}
+	if *edgeGateway.Status != "CONFIGURING" && *edgeGateway.Status != "PENDING"{
+		klog.V(3).Infof("Completed waiting for [%s] to be configured since gateway status is [%s]",
+			client.gatewayRef.Name, *edgeGateway.Status)
+		return nil
+	}
+	klog.Errorf("gateway [%s] is still being configured. Gateway status: [%s]", client.gatewayRef.Name, *edgeGateway.Status)
+	return NewGatewayBusyError(client.gatewayRef.Name)
+}
+
 func (client *Client) updateVirtualServicePort(ctx context.Context, virtualServiceName string, externalPort int32) error {
 	vsSummary, err := client.getVirtualService(ctx, virtualServiceName)
 	if err != nil {
@@ -995,7 +1030,7 @@ func (client *Client) updateVirtualServicePort(ctx context.Context, virtualServi
 		return nil
 	}
 	if err = client.checkIfVirtualServiceIsBusy(ctx, virtualServiceName); err != nil {
-		return fmt.Errorf("unable to update virtual service [%s]; virtual service is busy: [%v]", virtualServiceName, err)
+		return err
 	}
 	vs, _, err := client.apiClient.EdgeGatewayLoadBalancerVirtualServiceApi.GetVirtualService(ctx, vsSummary.Id)
 	if err != nil {
@@ -1195,7 +1230,7 @@ func (client *Client) deleteVirtualService(ctx context.Context, virtualServiceNa
 	if err != nil {
 			// virtual service is busy
 			return err
-		}
+	}
 
 	resp, err := client.apiClient.EdgeGatewayLoadBalancerVirtualServiceApi.DeleteVirtualService(
 		ctx, vsSummary.Id)
@@ -1368,8 +1403,7 @@ func (client *Client) CreateLoadBalancer(ctx context.Context, virtualServiceName
 			virtualServiceIP, externalIP, portDetails.Protocol, portDetails.ExternalPort,
 			portDetails.UseSSL, portDetails.CertAlias)
 		if err != nil {
-			return "", fmt.Errorf("unable to create virtual service [%s] with address [%s:%d]: [%v]",
-				virtualServiceName, virtualServiceIP, portDetails.ExternalPort, err)
+			return "", err
 		}
 		klog.Infof("Created Load Balancer with virtual service [%v], pool [%v] on gateway [%s]\n",
 			virtualServiceRef, lbPoolRef, client.gatewayRef.Name)
@@ -1385,10 +1419,18 @@ func (client *Client) UpdateLoadBalancer(ctx context.Context, lbPoolName string,
 	defer client.rwLock.Unlock()
 	_, err := client.updateLoadBalancerPool(ctx, lbPoolName, ips, internalPort)
 	if err != nil {
+		if lbPoolBusyErr, ok := err.(*LoadBalancerPoolBusyError); ok {
+			klog.Errorf("update loadbalancer pool failed; loadbalancer pool [%s] is busy: [%v]", lbPoolName, err)
+			return lbPoolBusyErr
+		}
 		return fmt.Errorf("unable to update load balancer pool [%s]: [%v]", lbPoolName, err)
 	}
 	err = client.updateVirtualServicePort(ctx, virtualServiceName, externalPort)
 	if err != nil {
+		if vsBusyErr, ok := err.(*VirtualServiceBusyError); ok {
+			klog.Errorf("update virtual service failed; virtual service [%s] is busy: [%v]", virtualServiceName, err)
+			return vsBusyErr
+		}
 		return fmt.Errorf("unable to update virtual service [%s] with port [%d]: [%v]", virtualServiceName, externalPort, err)
 	}
 	// update app port profile
@@ -1459,11 +1501,19 @@ func (client *Client) DeleteLoadBalancer(ctx context.Context, virtualServiceName
 
 		err = client.deleteVirtualService(ctx, virtualServiceName, false, rdeVIP)
 		if err != nil {
+			if vsBusyErr, ok := err.(*VirtualServiceBusyError); ok {
+				klog.Errorf("delete virtual service failed; virtual service [%s] is busy: [%v]", virtualServiceName, err)
+				return vsBusyErr
+			}
 			return fmt.Errorf("unable to delete virtual service [%s]: [%v]", virtualServiceName, err)
 		}
 
 		err = client.deleteLoadBalancerPool(ctx, lbPoolName, false)
 		if err != nil {
+			if lbPoolBusyErr, ok := err.(*LoadBalancerPoolBusyError); ok {
+				klog.Errorf("delete loadbalancer pool failed; loadbalancer pool [%s] is busy: [%v]", lbPoolName, err)
+				return lbPoolBusyErr
+			}
 			return fmt.Errorf("unable to delete load balancer pool [%s]: [%v]", lbPoolName, err)
 		}
 
