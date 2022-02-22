@@ -253,7 +253,7 @@ func TestLBPoolCRUDE(t *testing.T) {
 		time.Sleep(2*time.Second)
 		fmt.Printf("load balancer pool is busy. remaining retry attempts: [%d]\n", BusyRetries- i - 1)
 	}
-	assert.NoError(t, err, "No lbPool ref for updated lbPool on repeated update")
+	assert.NoError(t, err, "There should be no error on repeated LB pool update")
 	require.NotNil(t, lbPoolRefUpdated, "LB Pool reference should not be nil on repeated update")
 	assert.Equal(t, lbPoolRefUpdated.Name, lbPoolRef.Name, "LB Pool name should match on repeated update")
 	assert.NotEmpty(t, lbPoolRefUpdated.Id, "LB Pool ID should not be empty on repeated update")
