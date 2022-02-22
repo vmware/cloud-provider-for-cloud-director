@@ -531,18 +531,16 @@ func (client *Client) updateAppPortProfile(appPortProfileName string, externalPo
 	if len(appPortProfile.NsxtAppPortProfile.ApplicationPorts) == 0 || len(appPortProfile.NsxtAppPortProfile.ApplicationPorts[0].DestinationPorts) == 0  {
 		return fmt.Errorf("invalid app port profile [%s]", appPortProfileName)
 	}
-	if appPortProfile.NsxtAppPortProfile.ApplicationPorts[0].DestinationPorts[0] == fmt.Sprintf("%d", externalPort) {
-		klog.Infof("Update to application port profile [%s] is not necessary", appPortProfileName)
-	}
 	updatedAppPortProfileConfig.ApplicationPorts[0].DestinationPorts[0] = fmt.Sprintf("%d", externalPort)
 	_, err = appPortProfile.Update(&updatedAppPortProfileConfig)
 	if err != nil {
 		return fmt.Errorf("failed to update application port profile")
 	}
+	klog.Infof("successfully updated app port profile [%s]", appPortProfileName)
 	return nil
 }
 
-func (client *Client) updateDNATRule(ctx context.Context, dnatRuleName string, externalIP string, internalIP string, externalPort int32, internalPort int32) error {
+func (client *Client) updateDNATRule(ctx context.Context, dnatRuleName string, externalIP string, internalIP string, externalPort int32) error {
 	if err := client.checkIfGatewayIsBusy(ctx); err != nil {
 		klog.Errorf("failed to update DNAT rule; gateway [%s] is busy", client.gatewayRef.Name)
 		return err
@@ -569,9 +567,6 @@ func (client *Client) updateDNATRule(ctx context.Context, dnatRuleName string, e
 	}
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("failed to get DNAT rule with ID [%s] from gateway with ID [%s]; unexpected status code [%d]. Expected status code: [%d]", dnatRuleRef.ID, client.gatewayRef.Id, resp.StatusCode, http.StatusOK)
-	}
-	if dnatRule.ExternalAddresses == externalIP && dnatRule.InternalAddresses == internalIP && dnatRule.DnatExternalPort == strconv.FormatInt(int64(externalPort), 10) && dnatRule.InternalPort == strconv.FormatInt(int64(internalPort), 10) {
-		klog.Infof("No need to update DNAT rule [%s]", dnatRuleRef.Name)
 	}
 	// update DNAT rule
 	dnatRule.ExternalAddresses = externalIP
@@ -1446,7 +1441,7 @@ func (client *Client) UpdateLoadBalancer(ctx context.Context, lbPoolName string,
 	if err != nil {
 		return fmt.Errorf("unable to retrieve created dnat rule [%s]: [%v]", dnatRuleName, err)
 	}
-	err = client.updateDNATRule(ctx, dnatRuleName, dnatRuleRef.ExternalIP, dnatRuleRef.InternalIP, internalPort, externalPort)
+	err = client.updateDNATRule(ctx, dnatRuleName, dnatRuleRef.ExternalIP, dnatRuleRef.InternalIP, externalPort)
 	if err != nil {
 		return fmt.Errorf("unable to update DNAT rule [%s]: [%v]", dnatRuleName, err)
 	}

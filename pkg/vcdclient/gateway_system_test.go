@@ -98,7 +98,7 @@ func TestDNATRuleCRUDE(t *testing.T) {
 
 	// update and delete calls might error out if the gateway is busy. Retry if the error is caused by the busy gateway
 	for i := 0; i < BusyRetries ; i ++ {
-		err = vcdClient.updateDNATRule(ctx, dnatRuleName, "2.3.4.5", "2.3.4.5", 8080, 30123)
+		err = vcdClient.updateDNATRule(ctx, dnatRuleName, "2.3.4.5", "2.3.4.5", 8080)
 		if err != nil {
 			if _, ok := err.(*GatewayBusyError); !ok {
 				break
@@ -113,7 +113,7 @@ func TestDNATRuleCRUDE(t *testing.T) {
 	assert.NoError(t, err, "Unable to update dnat rule")
 
 	for i := 0; i < BusyRetries ; i ++ {
-		err = vcdClient.updateDNATRule(ctx, dnatRuleName, "2.3.4.5", "2.3.4.5", 8080, 30123)
+		err = vcdClient.updateDNATRule(ctx, dnatRuleName, "2.3.4.5", "2.3.4.5", 8080)
 		if err != nil {
 			if _, ok := err.(*GatewayBusyError); !ok {
 				break
