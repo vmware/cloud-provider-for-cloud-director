@@ -85,12 +85,14 @@ func (lb *LBManager) getNodeInternalIps(nodes []*v1.Node) []string {
 	return nodeIps
 }
 
-func (lb *LBManager) getServicePortMap(service *v1.Service) map[string]int32 {
+func (lb *LBManager) getServicePortMap(service *v1.Service) (map[string]int32, map[string]int32) {
 	typeToInternalPort := make(map[string]int32)
+	typeToExternalPort := make(map[string]int32)
 	for _, port := range service.Spec.Ports {
 		typeToInternalPort[strings.ToLower(port.Name)] = port.NodePort
+		typeToExternalPort[strings.ToLower(port.Name)] = port.Port
 	}
-	return typeToInternalPort
+	return typeToInternalPort, typeToExternalPort
 }
 
 // UpdateLoadBalancer updates hosts under the specified load balancer.
@@ -108,11 +110,14 @@ func (lb *LBManager) UpdateLoadBalancer(ctx context.Context, clusterName string,
 	klog.Infof("UpdateLoadBalancer Node Ips: %v", nodeIps)
 
 	lbPoolNamePrefix := lb.getLBPoolNamePrefix(ctx, service)
-	typeToInternalPortMap := lb.getServicePortMap(service)
+	virtualServiceNamePrefix := lb.getVirtualServicePrefix(ctx, service)
+	typeToInternalPortMap, typeToExternalPort := lb.getServicePortMap(service)
 	for portName, internalPort := range typeToInternalPortMap {
 		lbPoolName := fmt.Sprintf("%s-%s", lbPoolNamePrefix, portName)
+		virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, portName)
+		externalPort := typeToExternalPort[portName]
 		klog.Infof("Updating pool [%s] with port [%s:%d]", lbPoolName, portName, internalPort)
-		if err := lb.vcdClient.UpdateLoadBalancer(ctx, lbPoolName, nodeIps, internalPort); err != nil {
+		if err := lb.vcdClient.UpdateLoadBalancer(ctx, lbPoolName, virtualServiceName, nodeIps, internalPort, externalPort); err != nil {
 			return fmt.Errorf("unable to update pool [%s] with port [%s:%d]: [%v]", lbPoolName, portName,
 				internalPort, err)
 		}
@@ -273,27 +278,27 @@ func getSSLCertAlias(service *v1.Service) string {
 func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service,
 	nodeIPs []string) (*v1.LoadBalancerStatus, error) {
 
+	lbPoolNamePrefix := lb.getLBPoolNamePrefix(ctx, service)
+	virtualServiceNamePrefix := lb.getVirtualServicePrefix(ctx, service)
 	lbStatus, lbExists, err := lb.getLoadBalancer(ctx, service)
 	if err != nil {
 		return nil, fmt.Errorf("unexpected error while querying for loadbalancer: [%v]", err)
 	}
 	if lbExists {
 		// Update load balancer if there are changes in service properties
-		lbPoolNamePrefix := lb.getLBPoolNamePrefix(ctx, service)
-		typeToInternalPortMap := lb.getServicePortMap(service)
+		typeToInternalPortMap, typeToExternalPortMap := lb.getServicePortMap(service)
 		for portName, internalPort := range typeToInternalPortMap {
 			lbPoolName := fmt.Sprintf("%s-%s", lbPoolNamePrefix, portName)
-			klog.Infof("Updating pool [%s] with port [%s:%d]", lbPoolName, portName, internalPort)
-			if err := lb.vcdClient.UpdateLoadBalancer(ctx, lbPoolName, nodeIPs, internalPort); err != nil {
-				return nil, fmt.Errorf("unable to update pool [%s] with port [%s:%d]: [%v]", lbPoolName, portName,
-					internalPort, err)
+			virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, portName)
+			externalPort := typeToExternalPortMap[portName]
+			klog.Infof("Updating pool [%s] with port [%s:%d:%d]", lbPoolName, portName, internalPort, externalPort)
+			if err := lb.vcdClient.UpdateLoadBalancer(ctx, lbPoolName, virtualServiceName, nodeIPs, internalPort, externalPort); err != nil {
+				return nil, fmt.Errorf("unable to update pool [%s] with port [%s:%d:%d]: [%v]", lbPoolName, portName,
+					internalPort, externalPort, err)
 			}
 		}
 		return lbStatus, nil
 	}
-
-	virtualServiceName := lb.getVirtualServicePrefix(ctx, service)
-	lbPoolNamePrefix := lb.getLBPoolNamePrefix(ctx, service)
 
 	// While creating the lb, even if only one of http/https is remaining and the other is completed,
 	// ask for both to be created. The already created one will silently pass.
@@ -337,7 +342,7 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 	klog.Infof("Creating loadbalancer for ports [%#v]\n", portDetailsList)
 
 	// Create using VCD API
-	lbIP, err := lb.vcdClient.CreateLoadBalancer(ctx, virtualServiceName, lbPoolNamePrefix, nodeIPs, portDetailsList)
+	lbIP, err := lb.vcdClient.CreateLoadBalancer(ctx, virtualServiceNamePrefix, lbPoolNamePrefix, nodeIPs, portDetailsList)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create loadbalancer for ports [%#v]: [%v]", portDetailsList, err)
 	}

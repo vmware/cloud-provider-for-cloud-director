@@ -6,8 +6,8 @@
 package vcdclient
 
 import (
-	"io/ioutil"
 	"gopkg.in/yaml.v2"
+	"io/ioutil"
 	"path/filepath"
 	"testing"
 
@@ -110,5 +110,7 @@ func TestNewVCDAuthConfigFromSecrets(t *testing.T) {
 		"refreshToken": authDetails.SystemUserRefreshToken,
 		"userOrg": "system",
 	})
+	assert.NoError(t, err, "Unable to get VCD client for system administrator")
+	assert.NotNil(t, vcdClient, "VCD Client should not be nil")
 	return
 }
