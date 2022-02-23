@@ -527,12 +527,11 @@ func (client *Client) updateAppPortProfile(appPortProfileName string, externalPo
 	if err != nil {
 		return fmt.Errorf("failed to get application port profile by name [%s]: [%v]", appPortProfileName, err)
 	}
-	updatedAppPortProfileConfig := *appPortProfile.NsxtAppPortProfile
-	if len(appPortProfile.NsxtAppPortProfile.ApplicationPorts) == 0 || len(appPortProfile.NsxtAppPortProfile.ApplicationPorts[0].DestinationPorts) == 0  {
+	if appPortProfile == nil || appPortProfile.NsxtAppPortProfile == nil || len(appPortProfile.NsxtAppPortProfile.ApplicationPorts) == 0 || len(appPortProfile.NsxtAppPortProfile.ApplicationPorts[0].DestinationPorts) == 0  {
 		return fmt.Errorf("invalid app port profile [%s]", appPortProfileName)
 	}
-	updatedAppPortProfileConfig.ApplicationPorts[0].DestinationPorts[0] = fmt.Sprintf("%d", externalPort)
-	_, err = appPortProfile.Update(&updatedAppPortProfileConfig)
+	appPortProfile.NsxtAppPortProfile.ApplicationPorts[0].DestinationPorts[0] = fmt.Sprintf("%d", externalPort)
+	_, err = appPortProfile.Update(appPortProfile.NsxtAppPortProfile)
 	if err != nil {
 		return fmt.Errorf("failed to update application port profile")
 	}
@@ -541,7 +540,7 @@ func (client *Client) updateAppPortProfile(appPortProfileName string, externalPo
 }
 
 func (client *Client) updateDNATRule(ctx context.Context, dnatRuleName string, externalIP string, internalIP string, externalPort int32) error {
-	if err := client.checkIfGatewayIsBusy(ctx); err != nil {
+	if err := client.checkIfGatewayIsReady(ctx); err != nil {
 		klog.Errorf("failed to update DNAT rule; gateway [%s] is busy", client.gatewayRef.Name)
 		return err
 	}
@@ -593,7 +592,7 @@ func (client *Client) updateDNATRule(ctx context.Context, dnatRuleName string, e
 func (client *Client) deleteDNATRule(ctx context.Context, dnatRuleName string,
 	failIfAbsent bool) error {
 
-	if err := client.checkIfGatewayIsBusy(ctx); err != nil {
+	if err := client.checkIfGatewayIsReady(ctx); err != nil {
 		klog.Errorf("failed to update DNAT rule; gateway [%s] is busy", client.gatewayRef.Name)
 		return err
 	}
@@ -808,7 +807,7 @@ func (client *Client) deleteLoadBalancerPool(ctx context.Context, lbPoolName str
 		return nil
 	}
 
-	if err = client.checkIfLBPoolIsBusy(ctx, lbPoolName); err != nil {
+	if err = client.checkIfLBPoolIsReady(ctx, lbPoolName); err != nil {
 		return err
 	}
 
@@ -830,6 +829,22 @@ func (client *Client) deleteLoadBalancerPool(ctx context.Context, lbPoolName str
 	return nil
 }
 
+func hasSameLBPoolMembers(array1 []swaggerClient.EdgeLoadBalancerPoolMember, array2 []string) bool {
+	if array1 == nil || array2 == nil || len(array1) != len(array2) {
+		return false
+	}
+	elementsMap := make(map[string]int)
+	for _, e := range array1 {
+		elementsMap[e.IpAddress] = 1
+	}
+	for _, e := range array2 {
+		if _, ok := elementsMap[e]; !ok {
+			return false
+		}
+	}
+	return false
+}
+
 func (client *Client) updateLoadBalancerPool(ctx context.Context, lbPoolName string, ips []string,
 	internalPort int32) (*swaggerClient.EntityReference, error) {
 	lbPoolRef, err := client.getLoadBalancerPool(ctx, lbPoolName)
@@ -848,11 +863,11 @@ func (client *Client) updateLoadBalancerPool(ctx context.Context, lbPoolName str
 		return nil, fmt.Errorf("unable to get loadbalancer pool with id [%s], expected http response [%v], obtained [%v]", lbPoolRef.Id, http.StatusOK, resp.StatusCode)
 	}
 
-	if len(lbPool.Members) > 0 && len(lbPool.Members) == len(ips) && lbPool.Members[0].Port == internalPort {
+	if hasSameLBPoolMembers(lbPool.Members, ips) && lbPool.Members[0].Port == internalPort {
 		klog.Infof("No updates needed for the loadbalancer pool [%s]", lbPool.Name)
 		return lbPoolRef, nil
 	}
-	if err = client.checkIfLBPoolIsBusy(ctx, lbPoolName); err != nil {
+	if err = client.checkIfLBPoolIsReady(ctx, lbPoolName); err != nil {
 		return nil, fmt.Errorf("unable to update loadbalancer pool [%s]; loadbalancer pool is busy: [%v]",lbPoolName, err)
 	}
 	lbPool, resp, err = client.apiClient.EdgeGatewayLoadBalancerPoolApi.GetLoadBalancerPool(ctx, lbPoolRef.Id)
@@ -944,7 +959,7 @@ func (client *Client) checkIfVirtualServiceIsPending(ctx context.Context, virtua
 	return NewVirtualServicePendingError(virtualServiceName)
 }
 
-func (client *Client) checkIfVirtualServiceIsBusy(ctx context.Context, virtualServiceName string) error {
+func (client *Client) checkIfVirtualServiceIsReady(ctx context.Context, virtualServiceName string) error {
 	if client.gatewayRef == nil {
 		return fmt.Errorf("gateway reference should not be nil")
 	}
@@ -957,7 +972,7 @@ func (client *Client) checkIfVirtualServiceIsBusy(ctx context.Context, virtualSe
 	if vsSummary == nil {
 		return fmt.Errorf("unable to get summary of virtual service [%s]: [%v]", virtualServiceName, err)
 	}
-	if *vsSummary.Status != "CONFIGURING" {
+	if *vsSummary.Status == "REALIZED" {
 		klog.V(3).Infof("Completed waiting for [%s] to be configured since current status is [%s]",
 			virtualServiceName, *vsSummary.Status)
 		return nil
@@ -967,7 +982,7 @@ func (client *Client) checkIfVirtualServiceIsBusy(ctx context.Context, virtualSe
 	return NewVirtualServiceBusyError(virtualServiceName)
 }
 
-func (client *Client) checkIfLBPoolIsBusy(ctx context.Context, lbPoolName string) error {
+func (client *Client) checkIfLBPoolIsReady(ctx context.Context, lbPoolName string) error {
 	if client.gatewayRef == nil {
 		return fmt.Errorf("gateway reference should not be nil")
 	}
@@ -980,7 +995,7 @@ func (client *Client) checkIfLBPoolIsBusy(ctx context.Context, lbPoolName string
 	if lbPoolSummary == nil {
 		return fmt.Errorf("unable to get summary of virtual service [%s]: [%v]", lbPoolName, err)
 	}
-	if *lbPoolSummary.Status != "CONFIGURING" {
+	if *lbPoolSummary.Status == "REALIZED" {
 		klog.V(3).Infof("Completed waiting for [%s] to be configured since load balancer pool status is [%s]",
 			lbPoolName, *lbPoolSummary.Status)
 		return nil
@@ -990,7 +1005,7 @@ func (client *Client) checkIfLBPoolIsBusy(ctx context.Context, lbPoolName string
 	return NewLBPoolBusyError(lbPoolName)
 }
 
-func (client *Client) checkIfGatewayIsBusy(ctx context.Context) error {
+func (client *Client) checkIfGatewayIsReady(ctx context.Context) error {
 	edgeGateway, resp, err := client.apiClient.EdgeGatewayApi.GetEdgeGateway(ctx, client.gatewayRef.Id)
 	if resp != nil && resp.StatusCode != http.StatusOK {
 		var responseMessageBytes []byte
@@ -1003,7 +1018,7 @@ func (client *Client) checkIfGatewayIsBusy(ctx context.Context) error {
 	} else if err != nil {
 		return fmt.Errorf("error while checking gateway status for [%s]: [%v]", client.gatewayRef.Name, err)
 	}
-	if *edgeGateway.Status != "CONFIGURING" && *edgeGateway.Status != "PENDING"{
+	if *edgeGateway.Status == "REALIZED" {
 		klog.V(3).Infof("Completed waiting for [%s] to be configured since gateway status is [%s]",
 			client.gatewayRef.Name, *edgeGateway.Status)
 		return nil
@@ -1017,14 +1032,17 @@ func (client *Client) updateVirtualServicePort(ctx context.Context, virtualServi
 	if err != nil {
 		return fmt.Errorf("failed to get virtual service summary for virtual service [%s]: [%v]", virtualServiceName, err)
 	}
-	if vsSummary == nil || len(vsSummary.ServicePorts) == 0 {
+	if vsSummary == nil {
+		return fmt.Errorf("virtual service [%s] doesn't exist", virtualServiceName)
+	}
+	if len(vsSummary.ServicePorts) == 0 {
 		return fmt.Errorf("virtual service [%s] has no service ports", virtualServiceName)
 	}
 	if vsSummary.ServicePorts[0].PortStart == externalPort {
 		klog.Infof("virtual service [%s] is already configured with port [%d]", virtualServiceName, externalPort)
 		return nil
 	}
-	if err = client.checkIfVirtualServiceIsBusy(ctx, virtualServiceName); err != nil {
+	if err = client.checkIfVirtualServiceIsReady(ctx, virtualServiceName); err != nil {
 		return err
 	}
 	vs, _, err := client.apiClient.EdgeGatewayLoadBalancerVirtualServiceApi.GetVirtualService(ctx, vsSummary.Id)
@@ -1221,7 +1239,7 @@ func (client *Client) deleteVirtualService(ctx context.Context, virtualServiceNa
 		return nil
 	}
 
-	err = client.checkIfVirtualServiceIsBusy(ctx, virtualServiceName)
+	err = client.checkIfVirtualServiceIsReady(ctx, virtualServiceName)
 	if err != nil {
 			// virtual service is busy
 			return err

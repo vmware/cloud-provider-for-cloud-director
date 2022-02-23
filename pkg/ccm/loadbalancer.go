@@ -115,9 +115,9 @@ func (lb *LBManager) UpdateLoadBalancer(ctx context.Context, clusterName string,
 	for portName, internalPort := range typeToInternalPortMap {
 		lbPoolName := fmt.Sprintf("%s-%s", lbPoolNamePrefix, portName)
 		virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, portName)
-		port := typeToExternalPort[portName]
+		externalPort := typeToExternalPort[portName]
 		klog.Infof("Updating pool [%s] with port [%s:%d]", lbPoolName, portName, internalPort)
-		if err := lb.vcdClient.UpdateLoadBalancer(ctx, lbPoolName, virtualServiceName, nodeIps, internalPort, port); err != nil {
+		if err := lb.vcdClient.UpdateLoadBalancer(ctx, lbPoolName, virtualServiceName, nodeIps, internalPort, externalPort); err != nil {
 			return fmt.Errorf("unable to update pool [%s] with port [%s:%d]: [%v]", lbPoolName, portName,
 				internalPort, err)
 		}
