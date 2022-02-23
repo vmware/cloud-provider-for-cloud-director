@@ -11,6 +11,8 @@ import (
 	"github.com/antihax/optional"
 	"github.com/apparentlymart/go-cidr/cidr"
 	"github.com/peterhellberg/link"
+	swaggerClient "github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdswaggerclient"
+	"github.com/vmware/go-vcloud-director/v2/govcd"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"k8s.io/klog"
 	"net"
@@ -18,9 +20,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-
-	swaggerClient "github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdswaggerclient"
-	"github.com/vmware/go-vcloud-director/v2/govcd"
 )
 
 func (client *Client) getOVDCNetwork(ctx context.Context, networkName string) (*swaggerClient.VdcNetwork, error) {
@@ -519,10 +518,84 @@ func (client *Client) createDNATRule(ctx context.Context, dnatRuleName string,
 	return nil
 }
 
+func (client *Client) updateAppPortProfile(appPortProfileName string, externalPort int32) error {
+	org, err := client.vcdClient.GetOrgByName(client.ClusterOrgName)
+	if err != nil {
+		return fmt.Errorf("unable to find org [%s] by name: [%v]", client.ClusterOrgName, err)
+	}
+	appPortProfile, err := org.GetNsxtAppPortProfileByName(appPortProfileName, types.ApplicationPortProfileScopeTenant)
+	if err != nil {
+		return fmt.Errorf("failed to get application port profile by name [%s]: [%v]", appPortProfileName, err)
+	}
+	if appPortProfile == nil || appPortProfile.NsxtAppPortProfile == nil || len(appPortProfile.NsxtAppPortProfile.ApplicationPorts) == 0 || len(appPortProfile.NsxtAppPortProfile.ApplicationPorts[0].DestinationPorts) == 0  {
+		return fmt.Errorf("invalid app port profile [%s]", appPortProfileName)
+	}
+	appPortProfile.NsxtAppPortProfile.ApplicationPorts[0].DestinationPorts[0] = fmt.Sprintf("%d", externalPort)
+	_, err = appPortProfile.Update(appPortProfile.NsxtAppPortProfile)
+	if err != nil {
+		return fmt.Errorf("failed to update application port profile")
+	}
+	klog.Infof("successfully updated app port profile [%s]", appPortProfileName)
+	return nil
+}
+
+func (client *Client) updateDNATRule(ctx context.Context, dnatRuleName string, externalIP string, internalIP string, externalPort int32) error {
+	if err := client.checkIfGatewayIsReady(ctx); err != nil {
+		klog.Errorf("failed to update DNAT rule; gateway [%s] is busy", client.gatewayRef.Name)
+		return err
+	}
+	dnatRuleRef, err := client.getNATRuleRef(ctx, dnatRuleName)
+	if err != nil {
+		return fmt.Errorf("unexpected error while looking for nat rule [%s] in gateway [%s]: [%v]",
+			dnatRuleName, client.gatewayRef.Name, err)
+	}
+	if dnatRuleRef == nil {
+		return fmt.Errorf("failed to get DNAT rule name [%s]", dnatRuleName)
+	}
+	dnatRule, resp, err := client.apiClient.EdgeGatewayNatRuleApi.GetNatRule(ctx, client.gatewayRef.Id, dnatRuleRef.ID)
+	if resp != nil && resp.StatusCode != http.StatusOK {
+		var responseMessageBytes []byte
+		if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
+			responseMessageBytes = gsErr.Body()
+		}
+		return fmt.Errorf(
+			"unable to get DNAT rule [%s]; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]",
+			dnatRuleRef.Name, http.StatusOK, resp.StatusCode, string(responseMessageBytes), err)
+	} else if err != nil {
+		return fmt.Errorf("error while getting DNAT rule [%s]: [%v]", dnatRuleRef.Name, err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to get DNAT rule with ID [%s] from gateway with ID [%s]; unexpected status code [%d]. Expected status code: [%d]", dnatRuleRef.ID, client.gatewayRef.Id, resp.StatusCode, http.StatusOK)
+	}
+	// update DNAT rule
+	dnatRule.ExternalAddresses = externalIP
+	dnatRule.InternalAddresses = internalIP
+	dnatRule.DnatExternalPort = fmt.Sprintf("%d", externalPort)
+	resp, err = client.apiClient.EdgeGatewayNatRuleApi.UpdateNatRule(ctx, dnatRule, client.gatewayRef.Id, dnatRuleRef.ID)
+	if resp != nil && resp.StatusCode != http.StatusAccepted {
+		var responseMessageBytes []byte
+		if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
+			responseMessageBytes = gsErr.Body()
+		}
+		return fmt.Errorf(
+			"unable to update DNAT rule [%s]; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]",
+			dnatRuleRef.Name, http.StatusAccepted, resp.StatusCode, string(responseMessageBytes), err)
+	} else if err != nil {
+		return fmt.Errorf("error while updating DNAT rule [%s]: [%v]", dnatRuleRef.Name, err)
+	}
+	klog.Infof("successfully updated DNAT rule [%s]", dnatRuleRef.Name)
+	return nil
+}
+
 // Note that this also deletes App Port Profile Config. So we always need to call this
 // even if we don't find a DNAT rule, to ensure that everything is cleaned up.
 func (client *Client) deleteDNATRule(ctx context.Context, dnatRuleName string,
 	failIfAbsent bool) error {
+
+	if err := client.checkIfGatewayIsReady(ctx); err != nil {
+		klog.Errorf("failed to update DNAT rule; gateway [%s] is busy", client.gatewayRef.Name)
+		return err
+	}
 
 	if client.gatewayRef == nil {
 		return fmt.Errorf("gateway reference should not be nil")
@@ -542,8 +615,12 @@ func (client *Client) deleteDNATRule(ctx context.Context, dnatRuleName string,
 		resp, err := client.apiClient.EdgeGatewayNatRuleApi.DeleteNatRule(ctx,
 			client.gatewayRef.Id, dnatRuleRef.ID)
 		if resp.StatusCode != http.StatusAccepted {
-			return fmt.Errorf("unable to delete dnat rule [%s]: expected http response [%v], obtained [%v]",
-				dnatRuleName, http.StatusAccepted, resp.StatusCode)
+			var responseMessageBytes []byte
+			if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
+				responseMessageBytes = gsErr.Body()
+			}
+			return fmt.Errorf("unable to delete dnat rule [%s]: expected http response [%v], obtained [%v], response: [%v]",
+				dnatRuleName, http.StatusAccepted, resp.StatusCode, string(responseMessageBytes))
 		}
 
 		taskURL := resp.Header.Get("Location")
@@ -730,6 +807,10 @@ func (client *Client) deleteLoadBalancerPool(ctx context.Context, lbPoolName str
 		return nil
 	}
 
+	if err = client.checkIfLBPoolIsReady(ctx, lbPoolName); err != nil {
+		return err
+	}
+
 	resp, err := client.apiClient.EdgeGatewayLoadBalancerPoolApi.DeleteLoadBalancerPool(ctx, lbPoolRef.Id)
 	if resp.StatusCode != http.StatusAccepted {
 		return fmt.Errorf("unable to delete lb pool; expected http response [%v], obtained [%v]",
@@ -748,6 +829,22 @@ func (client *Client) deleteLoadBalancerPool(ctx context.Context, lbPoolName str
 	return nil
 }
 
+func hasSameLBPoolMembers(array1 []swaggerClient.EdgeLoadBalancerPoolMember, array2 []string) bool {
+	if array1 == nil || array2 == nil || len(array1) != len(array2) {
+		return false
+	}
+	elementsMap := make(map[string]int)
+	for _, e := range array1 {
+		elementsMap[e.IpAddress] = 1
+	}
+	for _, e := range array2 {
+		if _, ok := elementsMap[e]; !ok {
+			return false
+		}
+	}
+	return false
+}
+
 func (client *Client) updateLoadBalancerPool(ctx context.Context, lbPoolName string, ips []string,
 	internalPort int32) (*swaggerClient.EntityReference, error) {
 	lbPoolRef, err := client.getLoadBalancerPool(ctx, lbPoolName)
@@ -758,8 +855,30 @@ func (client *Client) updateLoadBalancerPool(ctx context.Context, lbPoolName str
 		return nil, fmt.Errorf("no lb pool found with name [%s]: [%v]", lbPoolName, err)
 	}
 
-	lbPool, lbPoolMembers := client.formLoadBalancerPool(lbPoolName, ips, internalPort)
-	resp, err := client.apiClient.EdgeGatewayLoadBalancerPoolApi.UpdateLoadBalancerPool(ctx, lbPool, lbPoolRef.Id)
+	lbPool, resp, err := client.apiClient.EdgeGatewayLoadBalancerPoolApi.GetLoadBalancerPool(ctx, lbPoolRef.Id)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get loadbalancer pool with id [%s]: [%v]", lbPoolRef.Id, err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unable to get loadbalancer pool with id [%s], expected http response [%v], obtained [%v]", lbPoolRef.Id, http.StatusOK, resp.StatusCode)
+	}
+
+	if hasSameLBPoolMembers(lbPool.Members, ips) && lbPool.Members[0].Port == internalPort {
+		klog.Infof("No updates needed for the loadbalancer pool [%s]", lbPool.Name)
+		return lbPoolRef, nil
+	}
+	if err = client.checkIfLBPoolIsReady(ctx, lbPoolName); err != nil {
+		return nil, fmt.Errorf("unable to update loadbalancer pool [%s]; loadbalancer pool is busy: [%v]",lbPoolName, err)
+	}
+	lbPool, resp, err = client.apiClient.EdgeGatewayLoadBalancerPoolApi.GetLoadBalancerPool(ctx, lbPoolRef.Id)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get loadbalancer pool with id [%s]: [%v]", lbPoolRef.Id, err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unable to get loadbalancer pool with id [%s], expected http response [%v], obtained [%v]", lbPoolRef.Id, http.StatusOK, resp.StatusCode)
+	}
+	updatedLBPool, lbPoolMembers := client.formLoadBalancerPool(lbPoolName, ips, internalPort)
+	resp, err = client.apiClient.EdgeGatewayLoadBalancerPoolApi.UpdateLoadBalancerPool(ctx, updatedLBPool, lbPoolRef.Id)
 	if err != nil {
 		return nil, fmt.Errorf("unable to update loadbalancer pool with name [%s], members [%+v]: resp [%+v]: [%v]",
 			lbPoolName, lbPoolMembers, resp, err)
@@ -838,6 +957,116 @@ func (client *Client) checkIfVirtualServiceIsPending(ctx context.Context, virtua
 
 	klog.Errorf("Virtual service [%s] is still pending. Virtual service status: [%s]", virtualServiceName, vsSummary.HealthStatus)
 	return NewVirtualServicePendingError(virtualServiceName)
+}
+
+func (client *Client) checkIfVirtualServiceIsReady(ctx context.Context, virtualServiceName string) error {
+	if client.gatewayRef == nil {
+		return fmt.Errorf("gateway reference should not be nil")
+	}
+
+	klog.V(3).Infof("Checking if virtual service [%s] is busy", virtualServiceName)
+	vsSummary, err := client.getVirtualService(ctx, virtualServiceName)
+	if err != nil {
+		return fmt.Errorf("unable to get summary for LB VS [%s]: [%v]", virtualServiceName, err)
+	}
+	if vsSummary == nil {
+		return fmt.Errorf("unable to get summary of virtual service [%s]: [%v]", virtualServiceName, err)
+	}
+	if *vsSummary.Status == "REALIZED" {
+		klog.V(3).Infof("Completed waiting for [%s] to be configured since current status is [%s]",
+			virtualServiceName, *vsSummary.Status)
+		return nil
+	}
+
+	klog.Errorf("Virtual service [%s] is still being configured. Virtual service status: [%s]", virtualServiceName, *vsSummary.Status)
+	return NewVirtualServiceBusyError(virtualServiceName)
+}
+
+func (client *Client) checkIfLBPoolIsReady(ctx context.Context, lbPoolName string) error {
+	if client.gatewayRef == nil {
+		return fmt.Errorf("gateway reference should not be nil")
+	}
+
+	klog.V(3).Infof("Checking if loadbalancer pool [%s] is busy", lbPoolName)
+	lbPoolSummary, err := client.getLoadBalancerPoolSummary(ctx, lbPoolName)
+	if err != nil {
+		return fmt.Errorf("unable to get summary for LB VS [%s]: [%v]", lbPoolName, err)
+	}
+	if lbPoolSummary == nil {
+		return fmt.Errorf("unable to get summary of virtual service [%s]: [%v]", lbPoolName, err)
+	}
+	if *lbPoolSummary.Status == "REALIZED" {
+		klog.V(3).Infof("Completed waiting for [%s] to be configured since load balancer pool status is [%s]",
+			lbPoolName, *lbPoolSummary.Status)
+		return nil
+	}
+
+	klog.Errorf("Load balancer pool [%s] is still being configured. load balancer pool status: [%s]", lbPoolName, *lbPoolSummary.Status)
+	return NewLBPoolBusyError(lbPoolName)
+}
+
+func (client *Client) checkIfGatewayIsReady(ctx context.Context) error {
+	edgeGateway, resp, err := client.apiClient.EdgeGatewayApi.GetEdgeGateway(ctx, client.gatewayRef.Id)
+	if resp != nil && resp.StatusCode != http.StatusOK {
+		var responseMessageBytes []byte
+		if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
+			responseMessageBytes = gsErr.Body()
+		}
+		return fmt.Errorf(
+			"unable to get gateway details; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]",
+			http.StatusOK, resp.StatusCode, string(responseMessageBytes), err)
+	} else if err != nil {
+		return fmt.Errorf("error while checking gateway status for [%s]: [%v]", client.gatewayRef.Name, err)
+	}
+	if *edgeGateway.Status == "REALIZED" {
+		klog.V(3).Infof("Completed waiting for [%s] to be configured since gateway status is [%s]",
+			client.gatewayRef.Name, *edgeGateway.Status)
+		return nil
+	}
+	klog.Errorf("gateway [%s] is still being configured. Gateway status: [%s]", client.gatewayRef.Name, *edgeGateway.Status)
+	return NewGatewayBusyError(client.gatewayRef.Name)
+}
+
+func (client *Client) updateVirtualServicePort(ctx context.Context, virtualServiceName string, externalPort int32) error {
+	vsSummary, err := client.getVirtualService(ctx, virtualServiceName)
+	if err != nil {
+		return fmt.Errorf("failed to get virtual service summary for virtual service [%s]: [%v]", virtualServiceName, err)
+	}
+	if vsSummary == nil {
+		return fmt.Errorf("virtual service [%s] doesn't exist", virtualServiceName)
+	}
+	if len(vsSummary.ServicePorts) == 0 {
+		return fmt.Errorf("virtual service [%s] has no service ports", virtualServiceName)
+	}
+	if vsSummary.ServicePorts[0].PortStart == externalPort {
+		klog.Infof("virtual service [%s] is already configured with port [%d]", virtualServiceName, externalPort)
+		return nil
+	}
+	if err = client.checkIfVirtualServiceIsReady(ctx, virtualServiceName); err != nil {
+		return err
+	}
+	vs, _, err := client.apiClient.EdgeGatewayLoadBalancerVirtualServiceApi.GetVirtualService(ctx, vsSummary.Id)
+	if err != nil {
+		return fmt.Errorf("failed to get virtual service with ID [%s]", vsSummary.Id)
+	}
+	if externalPort != vsSummary.ServicePorts[0].PortStart {
+		// update both port start and port end to be the same.
+		vs.ServicePorts[0].PortStart = externalPort
+		vs.ServicePorts[0].PortEnd = externalPort
+	}
+	resp, err := client.apiClient.EdgeGatewayLoadBalancerVirtualServiceApi.UpdateVirtualService(ctx, vs, vsSummary.Id)
+	if resp != nil && resp.StatusCode != http.StatusAccepted {
+		var responseMessageBytes []byte
+		if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
+			responseMessageBytes = gsErr.Body()
+		}
+		return fmt.Errorf(
+			"unable to update virtual service; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]",
+			http.StatusAccepted, resp.StatusCode, string(responseMessageBytes), err)
+	} else if err != nil {
+		return fmt.Errorf("error while updating virtual service [%s]: [%v]", virtualServiceName, err)
+	}
+	return nil
 }
 
 func (client *Client) createVirtualService(ctx context.Context, virtualServiceName string,
@@ -1010,11 +1239,23 @@ func (client *Client) deleteVirtualService(ctx context.Context, virtualServiceNa
 		return nil
 	}
 
+	err = client.checkIfVirtualServiceIsReady(ctx, virtualServiceName)
+	if err != nil {
+			// virtual service is busy
+			return err
+	}
+
 	resp, err := client.apiClient.EdgeGatewayLoadBalancerVirtualServiceApi.DeleteVirtualService(
 		ctx, vsSummary.Id)
-	if resp.StatusCode != http.StatusAccepted {
-		return fmt.Errorf("unable to delete virtual service [%s]; expected http response [%v], obtained [%v]",
-			vsSummary.Name, http.StatusAccepted, resp.StatusCode)
+	if resp != nil && resp.StatusCode != http.StatusAccepted {
+		var responseMessageBytes []byte
+		if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
+			responseMessageBytes = gsErr.Body()
+		}
+		return fmt.Errorf("unable to delete virtual service [%s]; expected http response [%v], obtained [%v] with response [%v]",
+			vsSummary.Name, http.StatusAccepted, resp.StatusCode, string(responseMessageBytes))
+	} else if err != nil {
+		return fmt.Errorf("failed to delete virtual service [%s]: [%v]", vsSummary.Name, err)
 	}
 
 	taskURL := resp.Header.Get("Location")
@@ -1175,8 +1416,7 @@ func (client *Client) CreateLoadBalancer(ctx context.Context, virtualServiceName
 			virtualServiceIP, externalIP, portDetails.Protocol, portDetails.ExternalPort,
 			portDetails.UseSSL, portDetails.CertAlias)
 		if err != nil {
-			return "", fmt.Errorf("unable to create virtual service [%s] with address [%s:%d]: [%v]",
-				virtualServiceName, virtualServiceIP, portDetails.ExternalPort, err)
+			return "", err
 		}
 		klog.Infof("Created Load Balancer with virtual service [%v], pool [%v] on gateway [%s]\n",
 			virtualServiceRef, lbPoolRef, client.gatewayRef.Name)
@@ -1185,17 +1425,44 @@ func (client *Client) CreateLoadBalancer(ctx context.Context, virtualServiceName
 	return externalIP, nil
 }
 
-func (client *Client) UpdateLoadBalancer(ctx context.Context, lbPoolName string,
-	ips []string, internalPort int32) error {
+func (client *Client) UpdateLoadBalancer(ctx context.Context, lbPoolName string, virtualServiceName string,
+	ips []string, internalPort int32, externalPort int32) error {
 
 	client.rwLock.Lock()
 	defer client.rwLock.Unlock()
-
 	_, err := client.updateLoadBalancerPool(ctx, lbPoolName, ips, internalPort)
 	if err != nil {
+		if lbPoolBusyErr, ok := err.(*LoadBalancerPoolBusyError); ok {
+			klog.Errorf("update loadbalancer pool failed; loadbalancer pool [%s] is busy: [%v]", lbPoolName, err)
+			return lbPoolBusyErr
+		}
 		return fmt.Errorf("unable to update load balancer pool [%s]: [%v]", lbPoolName, err)
 	}
+	err = client.updateVirtualServicePort(ctx, virtualServiceName, externalPort)
+	if err != nil {
+		if vsBusyErr, ok := err.(*VirtualServiceBusyError); ok {
+			klog.Errorf("update virtual service failed; virtual service [%s] is busy: [%v]", virtualServiceName, err)
+			return vsBusyErr
+		}
+		return fmt.Errorf("unable to update virtual service [%s] with port [%d]: [%v]", virtualServiceName, externalPort, err)
+	}
+	// update app port profile
+	dnatRuleName := getDNATRuleName(virtualServiceName)
+	appPortProfileName := getAppPortProfileName(dnatRuleName)
+	err = client.updateAppPortProfile(appPortProfileName, externalPort)
+	if err != nil {
+		return fmt.Errorf("unable to update application port profile [%s] with external port [%d]: [%v]", appPortProfileName, externalPort, err)
+	}
 
+	// update DNAT rule
+	dnatRuleRef, err := client.getNATRuleRef(ctx, dnatRuleName)
+	if err != nil {
+		return fmt.Errorf("unable to retrieve created dnat rule [%s]: [%v]", dnatRuleName, err)
+	}
+	err = client.updateDNATRule(ctx, dnatRuleName, dnatRuleRef.ExternalIP, dnatRuleRef.InternalIP, externalPort)
+	if err != nil {
+		return fmt.Errorf("unable to update DNAT rule [%s]: [%v]", dnatRuleName, err)
+	}
 	return nil
 }
 
@@ -1247,11 +1514,19 @@ func (client *Client) DeleteLoadBalancer(ctx context.Context, virtualServiceName
 
 		err = client.deleteVirtualService(ctx, virtualServiceName, false, rdeVIP)
 		if err != nil {
+			if vsBusyErr, ok := err.(*VirtualServiceBusyError); ok {
+				klog.Errorf("delete virtual service failed; virtual service [%s] is busy: [%v]", virtualServiceName, err)
+				return vsBusyErr
+			}
 			return fmt.Errorf("unable to delete virtual service [%s]: [%v]", virtualServiceName, err)
 		}
 
 		err = client.deleteLoadBalancerPool(ctx, lbPoolName, false)
 		if err != nil {
+			if lbPoolBusyErr, ok := err.(*LoadBalancerPoolBusyError); ok {
+				klog.Errorf("delete loadbalancer pool failed; loadbalancer pool [%s] is busy: [%v]", lbPoolName, err)
+				return lbPoolBusyErr
+			}
 			return fmt.Errorf("unable to delete load balancer pool [%s]: [%v]", lbPoolName, err)
 		}
 
