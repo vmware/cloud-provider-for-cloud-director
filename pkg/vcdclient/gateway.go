@@ -27,7 +27,7 @@ func (client *Client) getOVDCNetwork(ctx context.Context, networkName string) (*
 		return nil, fmt.Errorf("network name should not be empty")
 	}
 
-	ovdcNetworksAPI := client.apiClient.OrgVdcNetworksApi
+	ovdcNetworksAPI := client.APIClient.OrgVdcNetworksApi
 	pageNum := int32(1)
 	ovdcNetworkID := ""
 	for {
@@ -58,7 +58,7 @@ func (client *Client) getOVDCNetwork(ctx context.Context, networkName string) (*
 			client.networkName)
 	}
 
-	ovdcNetworkAPI := client.apiClient.OrgVdcNetworkApi
+	ovdcNetworkAPI := client.APIClient.OrgVdcNetworkApi
 	ovdcNetwork, resp, err := ovdcNetworkAPI.GetOrgVdcNetwork(ctx, ovdcNetworkID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get network for id [%s]: [%+v]: [%v]", ovdcNetworkID, resp, err)
@@ -134,7 +134,7 @@ func (client *Client) getUnusedInternalIPAddress(ctx context.Context) (string, e
 	usedIPAddress := make(map[string]bool)
 	pageNum := int32(1)
 	for {
-		lbVSSummaries, resp, err := client.apiClient.EdgeGatewayLoadBalancerVirtualServicesApi.GetVirtualServiceSummariesForGateway(
+		lbVSSummaries, resp, err := client.APIClient.EdgeGatewayLoadBalancerVirtualServicesApi.GetVirtualServiceSummariesForGateway(
 			ctx, pageNum, 25, client.gatewayRef.Id, nil)
 		if err != nil {
 			return "", fmt.Errorf("unable to get virtual service summaries for gateway [%s]: resp: [%v]: [%v]",
@@ -167,8 +167,8 @@ func (client *Client) getUnusedExternalIPAddress(ctx context.Context, ipamSubnet
 		return "", fmt.Errorf("gateway reference should not be nil")
 	}
 
-	// First, get list of ip ranges for the ipamSubnet subnet mask
-	edgeGW, resp, err := client.apiClient.EdgeGatewayApi.GetEdgeGateway(ctx, client.gatewayRef.Id)
+	// First, get list of ip ranges for the IPAMSubnet subnet mask
+	edgeGW, resp, err := client.APIClient.EdgeGatewayApi.GetEdgeGateway(ctx, client.gatewayRef.Id)
 	if err != nil {
 		return "", fmt.Errorf("unable to retrieve edge gateway details for [%s]: resp [%+v]: [%v]",
 			client.gatewayRef.Name, resp, err)
@@ -197,7 +197,7 @@ func (client *Client) getUnusedExternalIPAddress(ctx context.Context, ipamSubnet
 	usedIPs := make(map[string]bool)
 	pageNum := int32(1)
 	for {
-		gwUsedIPAddresses, resp, err := client.apiClient.EdgeGatewayApi.GetUsedIpAddresses(ctx, pageNum, 25,
+		gwUsedIPAddresses, resp, err := client.APIClient.EdgeGatewayApi.GetUsedIpAddresses(ctx, pageNum, 25,
 			client.gatewayRef.Id, nil)
 		if err != nil {
 			return "", fmt.Errorf("unable to get used IP addresses of gateway [%s]: [%+v]: [%v]",
@@ -243,7 +243,7 @@ func (client *Client) getLoadBalancerSEG(ctx context.Context) (*swaggerClient.En
 	pageNum := int32(1)
 	var chosenSEGAssignment *swaggerClient.LoadBalancerServiceEngineGroupAssignment = nil
 	for {
-		segAssignments, resp, err := client.apiClient.LoadBalancerServiceEngineGroupAssignmentsApi.GetServiceEngineGroupAssignments(
+		segAssignments, resp, err := client.APIClient.LoadBalancerServiceEngineGroupAssignmentsApi.GetServiceEngineGroupAssignments(
 			ctx, pageNum, 25,
 			&swaggerClient.LoadBalancerServiceEngineGroupAssignmentsApiGetServiceEngineGroupAssignmentsOpts{
 				Filter: optional.NewString(fmt.Sprintf("gatewayRef.id==%s", client.gatewayRef.Id)),
@@ -333,7 +333,7 @@ func (client *Client) getNATRuleRef(ctx context.Context, natRuleName string) (*N
 	var natRuleRef *NatRuleRef = nil
 	cursor := optional.EmptyString()
 	for {
-		natRules, resp, err := client.apiClient.EdgeGatewayNatRulesApi.GetNatRules(
+		natRules, resp, err := client.APIClient.EdgeGatewayNatRulesApi.GetNatRules(
 			ctx, 128, client.gatewayRef.Id,
 			&swaggerClient.EdgeGatewayNatRulesApiGetNatRulesOpts{
 				Cursor: cursor,
@@ -422,7 +422,7 @@ func (client *Client) createDNATRule(ctx context.Context, dnatRuleName string,
 		return nil
 	}
 
-	org, err := client.vcdClient.GetOrgByName(client.ClusterOrgName)
+	org, err := client.VCDClient.GetOrgByName(client.ClusterOrgName)
 	if err != nil {
 		return fmt.Errorf("unable to find org [%s] by name: [%v]", client.ClusterOrgName, err)
 	}
@@ -431,7 +431,7 @@ func (client *Client) createDNATRule(ctx context.Context, dnatRuleName string,
 	klog.Infof("Verifying if app port profile [%s] exists in org [%s]...", appPortProfileName,
 		client.ClusterOrgName)
 	// we always use tenant scoped profiles
-	contextEntityID := client.vdc.Vdc.ID
+	contextEntityID := client.VDC.Vdc.ID
 	scope := types.ApplicationPortProfileScopeTenant
 	appPortProfile, err := org.GetNsxtAppPortProfileByName(appPortProfileName, scope)
 	if err != nil && !strings.Contains(err.Error(), govcd.ErrorEntityNotFound.Error()) {
@@ -490,7 +490,7 @@ func (client *Client) createDNATRule(ctx context.Context, dnatRuleName string,
 			Id:   appPortProfile.NsxtAppPortProfile.ID,
 		},
 	}
-	resp, err := client.apiClient.EdgeGatewayNatRulesApi.CreateNatRule(ctx, edgeNatRule, client.gatewayRef.Id)
+	resp, err := client.APIClient.EdgeGatewayNatRulesApi.CreateNatRule(ctx, edgeNatRule, client.gatewayRef.Id)
 	if err != nil {
 		return fmt.Errorf("unable to create dnat rule [%s]: [%s:%d]=>[%s:%d]: [%v]", dnatRuleName,
 			externalIP, externalPort, internalIP, internalPort, err)
@@ -505,7 +505,7 @@ func (client *Client) createDNATRule(ctx context.Context, dnatRuleName string,
 	}
 
 	taskURL := resp.Header.Get("Location")
-	task := govcd.NewTask(&client.vcdClient.Client)
+	task := govcd.NewTask(&client.VCDClient.Client)
 	task.Task.HREF = taskURL
 	if err = task.WaitTaskCompletion(); err != nil {
 		return fmt.Errorf("unable to create dnat rule [%s]: [%s]=>[%s]; creation task [%s] did not complete: [%v]",
@@ -519,7 +519,7 @@ func (client *Client) createDNATRule(ctx context.Context, dnatRuleName string,
 }
 
 func (client *Client) updateAppPortProfile(appPortProfileName string, externalPort int32) error {
-	org, err := client.vcdClient.GetOrgByName(client.ClusterOrgName)
+	org, err := client.VCDClient.GetOrgByName(client.ClusterOrgName)
 	if err != nil {
 		return fmt.Errorf("unable to find org [%s] by name: [%v]", client.ClusterOrgName, err)
 	}
@@ -552,7 +552,7 @@ func (client *Client) updateDNATRule(ctx context.Context, dnatRuleName string, e
 	if dnatRuleRef == nil {
 		return fmt.Errorf("failed to get DNAT rule name [%s]", dnatRuleName)
 	}
-	dnatRule, resp, err := client.apiClient.EdgeGatewayNatRuleApi.GetNatRule(ctx, client.gatewayRef.Id, dnatRuleRef.ID)
+	dnatRule, resp, err := client.APIClient.EdgeGatewayNatRuleApi.GetNatRule(ctx, client.gatewayRef.Id, dnatRuleRef.ID)
 	if resp != nil && resp.StatusCode != http.StatusOK {
 		var responseMessageBytes []byte
 		if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
@@ -571,7 +571,7 @@ func (client *Client) updateDNATRule(ctx context.Context, dnatRuleName string, e
 	dnatRule.ExternalAddresses = externalIP
 	dnatRule.InternalAddresses = internalIP
 	dnatRule.DnatExternalPort = fmt.Sprintf("%d", externalPort)
-	resp, err = client.apiClient.EdgeGatewayNatRuleApi.UpdateNatRule(ctx, dnatRule, client.gatewayRef.Id, dnatRuleRef.ID)
+	resp, err = client.APIClient.EdgeGatewayNatRuleApi.UpdateNatRule(ctx, dnatRule, client.gatewayRef.Id, dnatRuleRef.ID)
 	if resp != nil && resp.StatusCode != http.StatusAccepted {
 		var responseMessageBytes []byte
 		if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
@@ -612,7 +612,7 @@ func (client *Client) deleteDNATRule(ctx context.Context, dnatRuleName string,
 
 		klog.Infof("DNAT rule [%s] does not exist", dnatRuleName)
 	} else {
-		resp, err := client.apiClient.EdgeGatewayNatRuleApi.DeleteNatRule(ctx,
+		resp, err := client.APIClient.EdgeGatewayNatRuleApi.DeleteNatRule(ctx,
 			client.gatewayRef.Id, dnatRuleRef.ID)
 		if resp.StatusCode != http.StatusAccepted {
 			var responseMessageBytes []byte
@@ -624,7 +624,7 @@ func (client *Client) deleteDNATRule(ctx context.Context, dnatRuleName string,
 		}
 
 		taskURL := resp.Header.Get("Location")
-		task := govcd.NewTask(&client.vcdClient.Client)
+		task := govcd.NewTask(&client.VCDClient.Client)
 		task.Task.HREF = taskURL
 		if err = task.WaitTaskCompletion(); err != nil {
 			return fmt.Errorf("unable to delete dnat rule [%s]: deletion task [%s] did not complete: [%v]",
@@ -637,7 +637,7 @@ func (client *Client) deleteDNATRule(ctx context.Context, dnatRuleName string,
 	klog.Infof("Checking if App Port Profile [%s] in org [%s] exists", appPortProfileName,
 		client.ClusterOrgName)
 
-	org, err := client.vcdClient.GetOrgByName(client.ClusterOrgName)
+	org, err := client.VCDClient.GetOrgByName(client.ClusterOrgName)
 	if err != nil {
 		return fmt.Errorf("unable to find org [%s] by name: [%v]", client.ClusterOrgName, err)
 	}
@@ -681,7 +681,7 @@ func (client *Client) getLoadBalancerPoolSummary(ctx context.Context,
 	}
 
 	// This should return exactly one result, so no need to accumulate results
-	lbPoolSummaries, resp, err := client.apiClient.EdgeGatewayLoadBalancerPoolsApi.GetPoolSummariesForGateway(
+	lbPoolSummaries, resp, err := client.APIClient.EdgeGatewayLoadBalancerPoolsApi.GetPoolSummariesForGateway(
 		ctx, 1, 25, client.gatewayRef.Id,
 		&swaggerClient.EdgeGatewayLoadBalancerPoolsApiGetPoolSummariesForGatewayOpts{
 			Filter: optional.NewString(fmt.Sprintf("name==%s", lbPoolName)),
@@ -754,7 +754,7 @@ func (client *Client) createLoadBalancerPool(ctx context.Context, lbPoolName str
 	}
 
 	lbPool, lbPoolMembers := client.formLoadBalancerPool(lbPoolName, ips, internalPort)
-	resp, err := client.apiClient.EdgeGatewayLoadBalancerPoolsApi.CreateLoadBalancerPool(ctx, lbPool)
+	resp, err := client.APIClient.EdgeGatewayLoadBalancerPoolsApi.CreateLoadBalancerPool(ctx, lbPool)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create loadbalancer pool with name [%s], members [%+v]: resp [%+v]: [%v]",
 			lbPoolName, lbPoolMembers, resp, err)
@@ -765,7 +765,7 @@ func (client *Client) createLoadBalancerPool(ctx context.Context, lbPoolName str
 	}
 
 	taskURL := resp.Header.Get("Location")
-	task := govcd.NewTask(&client.vcdClient.Client)
+	task := govcd.NewTask(&client.VCDClient.Client)
 	task.Task.HREF = taskURL
 	if err = task.WaitTaskCompletion(); err != nil {
 		return nil, fmt.Errorf("unable to create loadbalancer pool; creation task [%s] did not complete: [%v]",
@@ -811,14 +811,14 @@ func (client *Client) deleteLoadBalancerPool(ctx context.Context, lbPoolName str
 		return err
 	}
 
-	resp, err := client.apiClient.EdgeGatewayLoadBalancerPoolApi.DeleteLoadBalancerPool(ctx, lbPoolRef.Id)
+	resp, err := client.APIClient.EdgeGatewayLoadBalancerPoolApi.DeleteLoadBalancerPool(ctx, lbPoolRef.Id)
 	if resp.StatusCode != http.StatusAccepted {
 		return fmt.Errorf("unable to delete lb pool; expected http response [%v], obtained [%v]",
 			http.StatusAccepted, resp.StatusCode)
 	}
 
 	taskURL := resp.Header.Get("Location")
-	task := govcd.NewTask(&client.vcdClient.Client)
+	task := govcd.NewTask(&client.VCDClient.Client)
 	task.Task.HREF = taskURL
 	if err = task.WaitTaskCompletion(); err != nil {
 		return fmt.Errorf("unable to delete lb pool; deletion task [%s] did not complete: [%v]",
@@ -855,7 +855,7 @@ func (client *Client) updateLoadBalancerPool(ctx context.Context, lbPoolName str
 		return nil, fmt.Errorf("no lb pool found with name [%s]: [%v]", lbPoolName, err)
 	}
 
-	lbPool, resp, err := client.apiClient.EdgeGatewayLoadBalancerPoolApi.GetLoadBalancerPool(ctx, lbPoolRef.Id)
+	lbPool, resp, err := client.APIClient.EdgeGatewayLoadBalancerPoolApi.GetLoadBalancerPool(ctx, lbPoolRef.Id)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get loadbalancer pool with id [%s]: [%v]", lbPoolRef.Id, err)
 	}
@@ -870,7 +870,7 @@ func (client *Client) updateLoadBalancerPool(ctx context.Context, lbPoolName str
 	if err = client.checkIfLBPoolIsReady(ctx, lbPoolName); err != nil {
 		return nil, fmt.Errorf("unable to update loadbalancer pool [%s]; loadbalancer pool is busy: [%v]",lbPoolName, err)
 	}
-	lbPool, resp, err = client.apiClient.EdgeGatewayLoadBalancerPoolApi.GetLoadBalancerPool(ctx, lbPoolRef.Id)
+	lbPool, resp, err = client.APIClient.EdgeGatewayLoadBalancerPoolApi.GetLoadBalancerPool(ctx, lbPoolRef.Id)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get loadbalancer pool with id [%s]: [%v]", lbPoolRef.Id, err)
 	}
@@ -878,7 +878,7 @@ func (client *Client) updateLoadBalancerPool(ctx context.Context, lbPoolName str
 		return nil, fmt.Errorf("unable to get loadbalancer pool with id [%s], expected http response [%v], obtained [%v]", lbPoolRef.Id, http.StatusOK, resp.StatusCode)
 	}
 	updatedLBPool, lbPoolMembers := client.formLoadBalancerPool(lbPoolName, ips, internalPort)
-	resp, err = client.apiClient.EdgeGatewayLoadBalancerPoolApi.UpdateLoadBalancerPool(ctx, updatedLBPool, lbPoolRef.Id)
+	resp, err = client.APIClient.EdgeGatewayLoadBalancerPoolApi.UpdateLoadBalancerPool(ctx, updatedLBPool, lbPoolRef.Id)
 	if err != nil {
 		return nil, fmt.Errorf("unable to update loadbalancer pool with name [%s], members [%+v]: resp [%+v]: [%v]",
 			lbPoolName, lbPoolMembers, resp, err)
@@ -889,7 +889,7 @@ func (client *Client) updateLoadBalancerPool(ctx context.Context, lbPoolName str
 	}
 
 	taskURL := resp.Header.Get("Location")
-	task := govcd.NewTask(&client.vcdClient.Client)
+	task := govcd.NewTask(&client.VCDClient.Client)
 	task.Task.HREF = taskURL
 	if err = task.WaitTaskCompletion(); err != nil {
 		return nil, fmt.Errorf("unable to update loadbalancer pool; update task [%s] did not complete: [%v]",
@@ -919,7 +919,7 @@ func (client *Client) getVirtualService(ctx context.Context,
 	}
 
 	// This should return exactly one result, so no need to accumulate results
-	lbVSSummaries, resp, err := client.apiClient.EdgeGatewayLoadBalancerVirtualServicesApi.GetVirtualServiceSummariesForGateway(
+	lbVSSummaries, resp, err := client.APIClient.EdgeGatewayLoadBalancerVirtualServicesApi.GetVirtualServiceSummariesForGateway(
 		ctx, 1, 25, client.gatewayRef.Id,
 		&swaggerClient.EdgeGatewayLoadBalancerVirtualServicesApiGetVirtualServiceSummariesForGatewayOpts{
 			Filter: optional.NewString(fmt.Sprintf("name==%s", virtualServiceName)),
@@ -1006,7 +1006,7 @@ func (client *Client) checkIfLBPoolIsReady(ctx context.Context, lbPoolName strin
 }
 
 func (client *Client) checkIfGatewayIsReady(ctx context.Context) error {
-	edgeGateway, resp, err := client.apiClient.EdgeGatewayApi.GetEdgeGateway(ctx, client.gatewayRef.Id)
+	edgeGateway, resp, err := client.APIClient.EdgeGatewayApi.GetEdgeGateway(ctx, client.gatewayRef.Id)
 	if resp != nil && resp.StatusCode != http.StatusOK {
 		var responseMessageBytes []byte
 		if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
@@ -1045,7 +1045,7 @@ func (client *Client) updateVirtualServicePort(ctx context.Context, virtualServi
 	if err = client.checkIfVirtualServiceIsReady(ctx, virtualServiceName); err != nil {
 		return err
 	}
-	vs, _, err := client.apiClient.EdgeGatewayLoadBalancerVirtualServiceApi.GetVirtualService(ctx, vsSummary.Id)
+	vs, _, err := client.APIClient.EdgeGatewayLoadBalancerVirtualServiceApi.GetVirtualService(ctx, vsSummary.Id)
 	if err != nil {
 		return fmt.Errorf("failed to get virtual service with ID [%s]", vsSummary.Id)
 	}
@@ -1054,7 +1054,7 @@ func (client *Client) updateVirtualServicePort(ctx context.Context, virtualServi
 		vs.ServicePorts[0].PortStart = externalPort
 		vs.ServicePorts[0].PortEnd = externalPort
 	}
-	resp, err := client.apiClient.EdgeGatewayLoadBalancerVirtualServiceApi.UpdateVirtualService(ctx, vs, vsSummary.Id)
+	resp, err := client.APIClient.EdgeGatewayLoadBalancerVirtualServiceApi.UpdateVirtualService(ctx, vs, vsSummary.Id)
 	if resp != nil && resp.StatusCode != http.StatusAccepted {
 		var responseMessageBytes []byte
 		if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
@@ -1144,7 +1144,7 @@ func (client *Client) createVirtualService(ctx context.Context, virtualServiceNa
 	}
 
 	if useSSL {
-		clusterOrg, err := client.vcdClient.GetOrgByName(client.ClusterOrgName)
+		clusterOrg, err := client.VCDClient.GetOrgByName(client.ClusterOrgName)
 		if err != nil {
 			return nil, fmt.Errorf("unable to get org for org [%s]: [%v]", client.ClusterOrgName, err)
 		}
@@ -1152,7 +1152,7 @@ func (client *Client) createVirtualService(ctx context.Context, virtualServiceNa
 			return nil, fmt.Errorf("obtained nil org for name [%s]", client.ClusterOrgName)
 		}
 
-		certLibItems, resp, err := client.apiClient.CertificateLibraryApi.QueryCertificateLibrary(ctx,
+		certLibItems, resp, err := client.APIClient.CertificateLibraryApi.QueryCertificateLibrary(ctx,
 			1, 128,
 			&swaggerClient.CertificateLibraryApiQueryCertificateLibraryOpts{
 				Filter: optional.NewString(fmt.Sprintf("alias==%s", certificateAlias)),
@@ -1173,7 +1173,7 @@ func (client *Client) createVirtualService(ctx context.Context, virtualServiceNa
 		}
 	}
 
-	resp, gsErr := client.apiClient.EdgeGatewayLoadBalancerVirtualServicesApi.CreateVirtualService(ctx, *virtualServiceConfig)
+	resp, gsErr := client.APIClient.EdgeGatewayLoadBalancerVirtualServicesApi.CreateVirtualService(ctx, *virtualServiceConfig)
 	if resp != nil && resp.StatusCode != http.StatusAccepted {
 		return nil, fmt.Errorf(
 			"unable to create virtual service; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]: [%v]",
@@ -1183,7 +1183,7 @@ func (client *Client) createVirtualService(ctx context.Context, virtualServiceNa
 	}
 
 	taskURL := resp.Header.Get("Location")
-	task := govcd.NewTask(&client.vcdClient.Client)
+	task := govcd.NewTask(&client.VCDClient.Client)
 	task.Task.HREF = taskURL
 	if err = task.WaitTaskCompletion(); err != nil {
 		return nil, fmt.Errorf("unable to create virtual service; creation task [%s] did not complete: [%v]",
@@ -1245,7 +1245,7 @@ func (client *Client) deleteVirtualService(ctx context.Context, virtualServiceNa
 			return err
 	}
 
-	resp, err := client.apiClient.EdgeGatewayLoadBalancerVirtualServiceApi.DeleteVirtualService(
+	resp, err := client.APIClient.EdgeGatewayLoadBalancerVirtualServiceApi.DeleteVirtualService(
 		ctx, vsSummary.Id)
 	if resp != nil && resp.StatusCode != http.StatusAccepted {
 		var responseMessageBytes []byte
@@ -1259,7 +1259,7 @@ func (client *Client) deleteVirtualService(ctx context.Context, virtualServiceNa
 	}
 
 	taskURL := resp.Header.Get("Location")
-	task := govcd.NewTask(&client.vcdClient.Client)
+	task := govcd.NewTask(&client.VCDClient.Client)
 	task.Task.HREF = taskURL
 	if err = task.WaitTaskCompletion(); err != nil {
 		return fmt.Errorf("unable to delete virtual service; deletion task [%s] did not complete: [%v]",
@@ -1289,8 +1289,8 @@ type PortDetails struct {
 func (client *Client) CreateLoadBalancer(ctx context.Context, virtualServiceNamePrefix string,
 	lbPoolNamePrefix string, ips []string, portDetailsList []PortDetails) (string, error) {
 
-	client.rwLock.Lock()
-	defer client.rwLock.Unlock()
+	client.RWLock.Lock()
+	defer client.RWLock.Unlock()
 
 	if len(portDetailsList) == 0 {
 		// nothing to do here
@@ -1332,10 +1332,10 @@ func (client *Client) CreateLoadBalancer(ctx context.Context, virtualServiceName
 	}
 
 	if externalIP == "" {
-		externalIP, err = client.getUnusedExternalIPAddress(ctx, client.ipamSubnet)
+		externalIP, err = client.getUnusedExternalIPAddress(ctx, client.IPAMSubnet)
 		if err != nil {
 			return "", fmt.Errorf("unable to get unused IP address from subnet [%s]: [%v]",
-				client.ipamSubnet, err)
+				client.IPAMSubnet, err)
 		}
 	}
 	klog.Infof("Using external IP [%s] for virtual service\n", externalIP)
@@ -1428,8 +1428,8 @@ func (client *Client) CreateLoadBalancer(ctx context.Context, virtualServiceName
 func (client *Client) UpdateLoadBalancer(ctx context.Context, lbPoolName string, virtualServiceName string,
 	ips []string, internalPort int32, externalPort int32) error {
 
-	client.rwLock.Lock()
-	defer client.rwLock.Unlock()
+	client.RWLock.Lock()
+	defer client.RWLock.Unlock()
 	_, err := client.updateLoadBalancerPool(ctx, lbPoolName, ips, internalPort)
 	if err != nil {
 		if lbPoolBusyErr, ok := err.(*LoadBalancerPoolBusyError); ok {
@@ -1470,8 +1470,8 @@ func (client *Client) UpdateLoadBalancer(ctx context.Context, lbPoolName string,
 func (client *Client) DeleteLoadBalancer(ctx context.Context, virtualServiceNamePrefix string,
 	lbPoolNamePrefix string, portDetailsList []PortDetails) error {
 
-	client.rwLock.Lock()
-	defer client.rwLock.Unlock()
+	client.RWLock.Lock()
+	defer client.RWLock.Unlock()
 
 	// TODO: try to continue in case of errors
 	var err error
