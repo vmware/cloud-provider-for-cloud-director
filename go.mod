@@ -1,4 +1,4 @@
-module github.com/arunmk/cloud-provider-for-cloud-director
+module github.com/vmware/cloud-provider-for-cloud-director
 
 go 1.16
 
