@@ -30,55 +30,55 @@ type OneArm struct {
 
 // Client :
 type Client struct {
-	vcdAuthConfig      *VCDAuthConfig
-	ClusterOrgName     string
+	VCDAuthConfig  *VCDAuthConfig
+	ClusterOrgName string
 	ClusterOVDCName    string
-	ClusterVAppName    string
-	vcdClient          *govcd.VCDClient
-	vdc                *govcd.Vdc
-	apiClient          *swaggerClient.APIClient
-	networkName        string
-	ipamSubnet         string
-	gatewayRef         *swaggerClient.EntityReference
+	ClusterVAppName string
+	VCDClient *govcd.VCDClient
+	VDC         *govcd.Vdc
+	APIClient   *swaggerClient.APIClient
+	networkName string
+	IPAMSubnet  string
+	gatewayRef  *swaggerClient.EntityReference
 	networkBackingType swaggerClient.BackingNetworkType
 	ClusterID          string
 	OneArm             *OneArm
 	HTTPPort           int32
 	HTTPSPort          int32
-	CertificateAlias   string
-	rwLock             sync.RWMutex
+	CertificateAlias string
+	RWLock           sync.RWMutex
 }
 
 func (client *Client) RefreshBearerToken() error {
 	klog.Infof("Refreshing vcd client")
 
-	href := fmt.Sprintf("%s/api", client.vcdAuthConfig.Host)
-	client.vcdClient.Client.APIVersion = VCloudApiVersion
+	href := fmt.Sprintf("%s/api", client.VCDAuthConfig.Host)
+	client.VCDClient.Client.APIVersion = VCloudApiVersion
 
-	klog.Infof("Is user sysadmin: [%v]", client.vcdClient.Client.IsSysAdmin)
-	if client.vcdAuthConfig.RefreshToken != "" {
+	klog.Infof("Is user sysadmin: [%v]", client.VCDClient.Client.IsSysAdmin)
+	if client.VCDAuthConfig.RefreshToken != "" {
 		// Refresh vcd client using refresh token
-		err := client.vcdClient.SetToken(client.vcdAuthConfig.UserOrg,
-			govcd.ApiTokenHeader, client.vcdAuthConfig.RefreshToken)
+		err := client.VCDClient.SetToken(client.VCDAuthConfig.UserOrg,
+			govcd.ApiTokenHeader, client.VCDAuthConfig.RefreshToken)
 		if err != nil {
 			return fmt.Errorf("failed to refresh VCD client with the refresh token: [%v]", err)
 		}
-	} else if client.vcdAuthConfig.User != "" && client.vcdAuthConfig.Password != "" {
+	} else if client.VCDAuthConfig.User != "" && client.VCDAuthConfig.Password != "" {
 		// Refresh vcd client using username and password
-		resp, err := client.vcdClient.GetAuthResponse(client.vcdAuthConfig.User, client.vcdAuthConfig.Password,
-			client.vcdAuthConfig.UserOrg)
+		resp, err := client.VCDClient.GetAuthResponse(client.VCDAuthConfig.User, client.VCDAuthConfig.Password,
+			client.VCDAuthConfig.UserOrg)
 		if err != nil {
 			return fmt.Errorf("unable to authenticate [%s/%s] for url [%s]: [%+v] : [%v]",
-				client.vcdAuthConfig.UserOrg, client.vcdAuthConfig.User, href, resp, err)
+				client.VCDAuthConfig.UserOrg, client.VCDAuthConfig.User, href, resp, err)
 		}
 	} else {
 		return fmt.Errorf(
 			"unable to find refresh token or secret to refresh vcd client for user [%s/%s] and url [%s]",
-			client.vcdAuthConfig.UserOrg, client.vcdAuthConfig.User, href)
+			client.VCDAuthConfig.UserOrg, client.VCDAuthConfig.User, href)
 	}
 
 	// reset legacy client
-	org, err := client.vcdClient.GetOrgByNameOrId(client.ClusterOrgName)
+	org, err := client.VCDClient.GetOrgByNameOrId(client.ClusterOrgName)
 	if err != nil {
 		return fmt.Errorf("unable to get vcd organization [%s]: [%v]",
 			client.ClusterOrgName, err)
@@ -86,21 +86,21 @@ func (client *Client) RefreshBearerToken() error {
 
 	vdc, err := org.GetVDCByName(client.ClusterOVDCName, true)
 	if err != nil {
-		return fmt.Errorf("unable to get vdc from org [%s], vdc [%s]: [%v]",
-			client.ClusterOrgName, client.vcdAuthConfig.VDC, err)
+		return fmt.Errorf("unable to get VDC from org [%s], VDC [%s]: [%v]",
+			client.ClusterOrgName, client.VCDAuthConfig.VDC, err)
 	}
-	client.vdc = vdc
+	client.VDC = vdc
 
 	// reset swagger client
 	swaggerConfig := swaggerClient.NewConfiguration()
-	swaggerConfig.BasePath = fmt.Sprintf("%s/cloudapi", client.vcdAuthConfig.Host)
-	swaggerConfig.AddDefaultHeader("Authorization", fmt.Sprintf("Bearer %s", client.vcdClient.Client.VCDToken))
+	swaggerConfig.BasePath = fmt.Sprintf("%s/cloudapi", client.VCDAuthConfig.Host)
+	swaggerConfig.AddDefaultHeader("Authorization", fmt.Sprintf("Bearer %s", client.VCDClient.Client.VCDToken))
 	swaggerConfig.HTTPClient = &http.Client{
 		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: client.vcdAuthConfig.Insecure},
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: client.VCDAuthConfig.Insecure},
 		},
 	}
-	client.apiClient = swaggerClient.NewAPIClient(swaggerConfig)
+	client.APIClient = swaggerClient.NewAPIClient(swaggerConfig)
 
 	klog.Info("successfully refreshed all clients")
 	return nil
@@ -120,16 +120,16 @@ func NewVCDClientFromSecrets(host string, orgName string, vdcName string, vAppNa
 	// Return old client if everything matches. Else create new one and cache it.
 	// This is suboptimal but is not a common case.
 	if clientSingleton != nil {
-		if clientSingleton.vcdAuthConfig.Host == host &&
+		if clientSingleton.VCDAuthConfig.Host == host &&
 			clientSingleton.ClusterOrgName == orgName &&
 			clientSingleton.ClusterOVDCName == vdcName &&
 			clientSingleton.ClusterVAppName == vAppName &&
 			clientSingleton.networkName == networkName &&
-			clientSingleton.vcdAuthConfig.UserOrg == userOrg &&
-			clientSingleton.vcdAuthConfig.User == user &&
-			clientSingleton.vcdAuthConfig.Password == password &&
-			clientSingleton.vcdAuthConfig.RefreshToken == refreshToken &&
-			clientSingleton.vcdAuthConfig.Insecure == insecure {
+			clientSingleton.VCDAuthConfig.UserOrg == userOrg &&
+			clientSingleton.VCDAuthConfig.User == user &&
+			clientSingleton.VCDAuthConfig.Password == password &&
+			clientSingleton.VCDAuthConfig.RefreshToken == refreshToken &&
+			clientSingleton.VCDAuthConfig.Insecure == insecure {
 			return clientSingleton, nil
 		}
 	}
@@ -142,14 +142,14 @@ func NewVCDClientFromSecrets(host string, orgName string, vdcName string, vAppNa
 	}
 
 	client := &Client{
-		vcdAuthConfig:    vcdAuthConfig,
+		VCDAuthConfig:    vcdAuthConfig,
 		ClusterOrgName:   orgName,
 		ClusterOVDCName:  vdcName,
 		ClusterVAppName:  vAppName,
-		vcdClient:        vcdClient,
-		apiClient:        apiClient,
+		VCDClient:        vcdClient,
+		APIClient:        apiClient,
 		networkName:      networkName,
-		ipamSubnet:       ipamSubnet,
+		IPAMSubnet:       ipamSubnet,
 		gatewayRef:       nil,
 		ClusterID:        clusterID,
 		OneArm:           oneArm,
@@ -164,12 +164,12 @@ func NewVCDClientFromSecrets(host string, orgName string, vdcName string, vAppNa
 			return nil, fmt.Errorf("unable to get org from name [%s]: [%v]", orgName, err)
 		}
 
-		client.vdc, err = org.GetVDCByName(vdcName, true)
+		client.VDC, err = org.GetVDCByName(vdcName, true)
 		if err != nil {
-			return nil, fmt.Errorf("unable to get vdc [%s] from org [%s]: [%v]", vdcName, orgName, err)
+			return nil, fmt.Errorf("unable to get VDC [%s] from org [%s]: [%v]", vdcName, orgName, err)
 		}
 	}
-	client.vcdClient = vcdClient
+	client.VCDClient = vcdClient
 	// We will specifically cache the gateway ID that corresponds to the
 	// network name since it is used frequently in the loadbalancer context.
 	ctx := context.Background()
@@ -179,6 +179,6 @@ func NewVCDClientFromSecrets(host string, orgName string, vdcName string, vAppNa
 	}
 	clientSingleton = client
 
-	klog.Infof("Client singleton is sysadmin: [%v]", clientSingleton.vcdClient.Client.IsSysAdmin)
+	klog.Infof("Client singleton is sysadmin: [%v]", clientSingleton.VCDClient.Client.IsSysAdmin)
 	return clientSingleton, nil
 }

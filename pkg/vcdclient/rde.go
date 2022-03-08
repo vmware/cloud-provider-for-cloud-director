@@ -20,7 +20,7 @@ func (client *Client) GetRDEVirtualIps(ctx context.Context) ([]string, string, *
 		return nil, "", nil, nil
 	}
 
-	defEnt, _, etag, err := client.apiClient.DefinedEntityApi.GetDefinedEntity(ctx, client.ClusterID)
+	defEnt, _, etag, err := client.APIClient.DefinedEntityApi.GetDefinedEntity(ctx, client.ClusterID)
 	if err != nil {
 		return nil, "", nil, fmt.Errorf("error when getting defined entity: [%v]", err)
 	}
@@ -41,7 +41,7 @@ func (client *Client) updateRDEVirtualIps(ctx context.Context, updatedIps []stri
 		return nil, fmt.Errorf("failed to locally edit RDE with ID [%s] with virtual IPs: [%v]", client.ClusterID, err)
 	}
 	// can pass invokeHooks
-	_, httpResponse, err := client.apiClient.DefinedEntityApi.UpdateDefinedEntity(ctx, *defEnt, etag, client.ClusterID, nil)
+	_, httpResponse, err := client.APIClient.DefinedEntityApi.UpdateDefinedEntity(ctx, *defEnt, etag, client.ClusterID, nil)
 	if err != nil {
 		return httpResponse, fmt.Errorf("error when updating defined entity [%s]: [%v]", client.ClusterID, err)
 	}
