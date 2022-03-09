@@ -74,14 +74,6 @@ func TestNewVCDAuthConfigFromSecrets(t *testing.T) {
 	assert.Error(t, err, "Error should be obtained for url [https://some-random-address]")
 
 	vcdClient, err = getTestVCDClient(map[string]interface{}{
-		"network": "",
-		"user": authDetails.Username,
-		"secret": authDetails.Password,
-		"userOrg": authDetails.UserOrg,
-	})
-	assert.Error(t, err, "Error should be obtained for missing network")
-
-	vcdClient, err = getTestVCDClient(map[string]interface{}{
 		"oneArm": nil,
 		"user": authDetails.Username,
 		"secret": authDetails.Password,
@@ -97,14 +89,6 @@ func TestNewVCDAuthConfigFromSecrets(t *testing.T) {
 	})
 	assert.NoError(t, err, "Unable to get VCD client for system administrator")
 	assert.NotNil(t, vcdClient, "VCD Client should not be nil")
-
-	vcdClient, err = getTestVCDClient(map[string]interface{}{
-		"user": authDetails.SystemUser,
-		"secret": authDetails.SystemUserPassword,
-		"userOrg": "system",
-		"network": "",
-	})
-	assert.Error(t, err, "Error should be obtained for missing network")
 
 	vcdClient, err = getTestVCDClient(map[string]interface{}{
 		"refreshToken": authDetails.SystemUserRefreshToken,
