@@ -567,6 +567,10 @@ func (client *Client) updateDNATRule(ctx context.Context, dnatRuleName string, e
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("failed to get DNAT rule with ID [%s] from gateway with ID [%s]; unexpected status code [%d]. Expected status code: [%d]", dnatRuleRef.ID, client.gatewayRef.Id, resp.StatusCode, http.StatusOK)
 	}
+	if dnatRule.ExternalAddresses == externalIP && dnatRule.InternalAddresses == internalIP && dnatRule.DnatExternalPort == strconv.FormatInt(int64(externalPort), 10) {
+		klog.Infof("No need to update DNAT rule [%s]", dnatRuleRef.Name)
+		return nil
+	}
 	// update DNAT rule
 	dnatRule.ExternalAddresses = externalIP
 	dnatRule.InternalAddresses = internalIP
@@ -842,7 +846,7 @@ func hasSameLBPoolMembers(array1 []swaggerClient.EdgeLoadBalancerPoolMember, arr
 			return false
 		}
 	}
-	return false
+	return true
 }
 
 func (client *Client) updateLoadBalancerPool(ctx context.Context, lbPoolName string, ips []string,
@@ -870,6 +874,10 @@ func (client *Client) updateLoadBalancerPool(ctx context.Context, lbPoolName str
 	if err = client.checkIfLBPoolIsReady(ctx, lbPoolName); err != nil {
 		return nil, fmt.Errorf("unable to update loadbalancer pool [%s]; loadbalancer pool is busy: [%v]",lbPoolName, err)
 	}
+	if err := client.checkIfGatewayIsReady(ctx); err != nil {
+		klog.Errorf("failed to update DNAT rule; gateway [%s] is busy", client.gatewayRef.Name)
+		return nil, fmt.Errorf("unable to update loadbalancer pool [%s]; gateway is busy: [%s]", lbPoolName, err)
+	}
 	lbPool, resp, err = client.APIClient.EdgeGatewayLoadBalancerPoolApi.GetLoadBalancerPool(ctx, lbPoolRef.Id)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get loadbalancer pool with id [%s]: [%v]", lbPoolRef.Id, err)
@@ -879,13 +887,17 @@ func (client *Client) updateLoadBalancerPool(ctx context.Context, lbPoolName str
 	}
 	updatedLBPool, lbPoolMembers := client.formLoadBalancerPool(lbPoolName, ips, internalPort)
 	resp, err = client.APIClient.EdgeGatewayLoadBalancerPoolApi.UpdateLoadBalancerPool(ctx, updatedLBPool, lbPoolRef.Id)
-	if err != nil {
-		return nil, fmt.Errorf("unable to update loadbalancer pool with name [%s], members [%+v]: resp [%+v]: [%v]",
+	if resp != nil && resp.StatusCode != http.StatusAccepted {
+		var responseMessageBytes []byte
+		if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
+			responseMessageBytes = gsErr.Body()
+		}
+		return nil, fmt.Errorf(
+			"unable to update loadblanacer pool [%s] having members [%+v]; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]",
+			lbPoolName, lbPoolMembers, http.StatusAccepted, resp.StatusCode, string(responseMessageBytes), err)
+	} else if err != nil {
+		return nil, fmt.Errorf("unable to update loadbalancer pool having name [%s], members [%+v]: resp [%+v]: [%v]",
 			lbPoolName, lbPoolMembers, resp, err)
-	}
-	if resp.StatusCode != http.StatusAccepted {
-		return nil, fmt.Errorf("unable to update loadbalancer pool; expected http response [%v], obtained [%v]",
-			http.StatusAccepted, resp.StatusCode)
 	}
 
 	taskURL := resp.Header.Get("Location")
