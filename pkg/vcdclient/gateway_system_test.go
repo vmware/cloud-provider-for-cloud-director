@@ -8,17 +8,14 @@ package vcdclient
 import (
 	"context"
 	"fmt"
-	swagger "github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdswaggerclient"
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
 	"testing"
-	"time"
-
-	"github.com/google/uuid"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 const BusyRetries = 5
@@ -96,80 +93,19 @@ func TestDNATRuleCRUDE(t *testing.T) {
 	assert.Equal(t, dnatRuleName, natRuleRef.Name, "Nat Rule name should match")
 	assert.NotEmpty(t, natRuleRef.ID, "Nat Rule ID should not be empty")
 
-	// update and delete calls might error out if the gateway is busy. Retry if the error is caused by the busy gateway
-	for i := 0; i < BusyRetries ; i ++ {
-		err = vcdClient.updateDNATRule(ctx, dnatRuleName, "2.3.4.5", "2.3.4.5", 8080)
-		if err != nil {
-			if _, ok := err.(*GatewayBusyError); !ok {
-				break
-			}
-		} else {
-			break
-		}
-		// sleep for 2 seconds and retry
-		time.Sleep(2*time.Second)
-		fmt.Printf("gateway is busy. remaining retry attempts: [%d]\n", BusyRetries- i - 1)
-	}
+	err = vcdClient.updateDNATRule(ctx, dnatRuleName, "2.3.4.5", "2.3.4.5", 8080)
 	assert.NoError(t, err, "Unable to update dnat rule")
 
-	for i := 0; i < BusyRetries ; i ++ {
-		err = vcdClient.updateDNATRule(ctx, dnatRuleName, "2.3.4.5", "2.3.4.5", 8080)
-		if err != nil {
-			if _, ok := err.(*GatewayBusyError); !ok {
-				break
-			}
-		} else {
-			break
-		}
-		// sleep for 2 seconds and retry
-		time.Sleep(2*time.Second)
-		fmt.Printf("gateway is busy. remaining retry attempts: [%d]\n", BusyRetries- i - 1)
-	}
+	err = vcdClient.updateDNATRule(ctx, dnatRuleName, "2.3.4.5", "2.3.4.5", 8080)
 	assert.NoError(t, err, "repeated updates to dnat rule should not fail")
 
-	for i := 0; i < BusyRetries ; i ++ {
-		err = vcdClient.deleteDNATRule(ctx, dnatRuleName, true)
-		if err != nil {
-			if _, ok := err.(*GatewayBusyError); !ok {
-				break
-			}
-		} else {
-			break
-		}
-		// sleep for 2 seconds and retry
-		time.Sleep(2*time.Second)
-		fmt.Printf("gateway is busy. remaining retry attempts: [%d]\n", BusyRetries- i - 1)
-	}
+	err = vcdClient.deleteDNATRule(ctx, dnatRuleName, true)
 	assert.NoError(t, err, "Unable to delete dnat rule")
 
-	for i := 0; i < BusyRetries ; i ++ {
-		err = vcdClient.deleteDNATRule(ctx, dnatRuleName, true)
-		if err != nil {
-			if _, ok := err.(*GatewayBusyError); !ok {
-				break
-			}
-		} else {
-			break
-		}
-		// sleep for 2 seconds and retry
-		time.Sleep(2*time.Second)
-		fmt.Printf("gateway is busy. remaining retry attempts: [%d]\n", BusyRetries- i - 1)
-	}
+	err = vcdClient.deleteDNATRule(ctx, dnatRuleName, true)
 	assert.Error(t, err, "Should fail when deleting non-existing dnat rule")
 
-	for i := 0; i < BusyRetries ; i ++ {
-		err = vcdClient.deleteDNATRule(ctx, dnatRuleName, false)
-		if err != nil {
-			if _, ok := err.(*GatewayBusyError); !ok {
-				break
-			}
-		} else {
-			break
-		}
-		// sleep for 2 seconds and retry
-		time.Sleep(2*time.Second)
-		fmt.Printf("gateway is busy. remaining retry attempts: [%d]\n", BusyRetries- i - 1)
-	}
+	err = vcdClient.deleteDNATRule(ctx, dnatRuleName, false)
 	assert.NoError(t, err, "Should not fail when deleting non-existing dnat rule")
 
 	natRuleRef, err = vcdClient.getNATRuleRef(ctx, dnatRuleName)
@@ -219,40 +155,14 @@ func TestLBPoolCRUDE(t *testing.T) {
 	assert.NotEmpty(t, lbPoolRefObtained.Id, "LB Pool ID should not be empty")
 
 	updatedIps := []string{"5.5.5.5"}
-	// update and delete calls might error out if the loadbalancer pool is busy. Retry if the error is caused by the busy loadbalancer pool
-	var lbPoolRefUpdated *swagger.EntityReference
-	for i := 0; i < BusyRetries ; i ++ {
-		lbPoolRefUpdated, err = vcdClient.updateLoadBalancerPool(ctx, lbPoolName, updatedIps, 55555)
-		if err != nil {
-			if _, ok := err.(*LoadBalancerPoolBusyError); !ok {
-				break
-			}
-		} else {
-			break
-		}
-		// sleep for 2 seconds and retry
-		time.Sleep(2*time.Second)
-		fmt.Printf("load balancer pool is busy. remaining retry attempts: [%d]\n", BusyRetries- i - 1)
-	}
+	lbPoolRefUpdated, err := vcdClient.updateLoadBalancerPool(ctx, lbPoolName, updatedIps, 55555)
 	assert.NoError(t, err, "No lbPool ref for updated lbPool")
 	require.NotNil(t, lbPoolRefUpdated, "LB Pool reference should not be nil")
 	assert.Equal(t, lbPoolRefUpdated.Name, lbPoolRef.Name, "LB Pool name should match")
 	assert.NotEmpty(t, lbPoolRefUpdated.Id, "LB Pool ID should not be empty")
 
 	// repeated update should work
-	for i := 0; i < BusyRetries ; i ++ {
-		lbPoolRefUpdated, err = vcdClient.updateLoadBalancerPool(ctx, lbPoolName, updatedIps, 55555)
-		if err != nil {
-			if _, ok := err.(*LoadBalancerPoolBusyError); !ok {
-				break
-			}
-		} else {
-			break
-		}
-		// sleep for 2 seconds and retry
-		time.Sleep(2*time.Second)
-		fmt.Printf("load balancer pool is busy. remaining retry attempts: [%d]\n", BusyRetries- i - 1)
-	}
+	lbPoolRefUpdated, err = vcdClient.updateLoadBalancerPool(ctx, lbPoolName, updatedIps, 55555)
 	assert.NoError(t, err, "There should be no error on repeated LB pool update")
 	require.NotNil(t, lbPoolRefUpdated, "LB Pool reference should not be nil on repeated update")
 	assert.Equal(t, lbPoolRefUpdated.Name, lbPoolRef.Name, "LB Pool name should match on repeated update")
@@ -264,68 +174,20 @@ func TestLBPoolCRUDE(t *testing.T) {
 	require.NotNil(t, lbPoolSummaryUpdated, "LB Pool summary reference should not be nil")
 	assert.Equal(t, lbPoolSummaryUpdated.MemberCount, int32(len(updatedIps)), "LB Pool should have updated size %d", len(updatedIps))
 
-	for i := 0; i < BusyRetries ; i ++ {
-		err = vcdClient.deleteLoadBalancerPool(ctx, lbPoolName, true)
-		if err != nil {
-			if _, ok := err.(*LoadBalancerPoolBusyError); !ok {
-				break
-			}
-		} else {
-			break
-		}
-		// sleep for 2 seconds and retry
-		time.Sleep(2*time.Second)
-		fmt.Printf("load balancer pool is busy. remaining retry attempts: [%d]\n", BusyRetries- i - 1)
-	}
+	err = vcdClient.deleteLoadBalancerPool(ctx, lbPoolName, true)
 	assert.NoError(t, err, "Unable to delete LB Pool")
 
-	for i := 0; i < BusyRetries ; i ++ {
-		err = vcdClient.deleteLoadBalancerPool(ctx, lbPoolName, true)
-		if err != nil {
-			if _, ok := err.(*LoadBalancerPoolBusyError); !ok {
-				break
-			}
-		} else {
-			break
-		}
-		// sleep for 2 seconds and retry
-		time.Sleep(2*time.Second)
-		fmt.Printf("load balancer pool is busy. remaining retry attempts: [%d]\n", BusyRetries- i - 1)
-	}
+	err = vcdClient.deleteLoadBalancerPool(ctx, lbPoolName, true)
 	assert.Error(t, err, "Should fail when deleting non-existing lb pool")
 
-	for i := 0; i < BusyRetries ; i ++ {
-		err = vcdClient.deleteLoadBalancerPool(ctx, lbPoolName, false)
-		if err != nil {
-			if _, ok := err.(*LoadBalancerPoolBusyError); !ok {
-				break
-			}
-		} else {
-			break
-		}
-		// sleep for 2 seconds and retry
-		time.Sleep(2*time.Second)
-		fmt.Printf("load balancer pool is busy. remaining retry attempts: [%d]\n", BusyRetries- i - 1)
-	}
+	err = vcdClient.deleteLoadBalancerPool(ctx, lbPoolName, false)
 	assert.NoError(t, err, "Should not fail when deleting non-existing lb pool")
 
 	lbPoolRef, err = vcdClient.getLoadBalancerPool(ctx, lbPoolName)
 	assert.NoError(t, err, "Get should not fail when lb pool is absent")
 	assert.Nil(t, lbPoolRef, "Deleted lb pool reference should be nil")
 
-	for i := 0; i < BusyRetries ; i ++ {
-		lbPoolRef, err = vcdClient.updateLoadBalancerPool(ctx, lbPoolName, updatedIps, 55555)
-		if err != nil {
-			if _, ok := err.(*LoadBalancerPoolBusyError); !ok {
-				break
-			}
-		} else {
-			break
-		}
-		// sleep for 2 seconds and retry
-		time.Sleep(2*time.Second)
-		fmt.Printf("load balancer pool is busy. remaining retry attempts: [%d]\n", BusyRetries- i - 1)
-	}
+	lbPoolRef, err = vcdClient.updateLoadBalancerPool(ctx, lbPoolName, updatedIps, 55555)
 	assert.Error(t, err, "Updating deleted lb pool should fail")
 	assert.Nil(t, lbPoolRef, "Deleted lb pool reference should be nil")
 
@@ -457,119 +319,34 @@ func TestVirtualServiceHttpCRUDE(t *testing.T) {
 	require.NotNil(t, vsRef, "VirtualServiceRef should not be nil")
 	assert.Equal(t, virtualServiceName, vsRef.Name, "Virtual Service name should match")
 
-	for i := 0; i < BusyRetries ; i ++ {
-		err = vcdClient.updateVirtualServicePort(ctx, virtualServiceName, 8080)
-		if err != nil {
-			if _, ok := err.(*VirtualServiceBusyError); !ok {
-				break
-			}
-		} else {
-			break
-		}
-		// sleep for 2 seconds and retry
-		time.Sleep(2*time.Second)
-		fmt.Printf("virtual service is busy. remaining retry attempts: [%d]\n", BusyRetries- i - 1)
-	}
+	err = vcdClient.updateVirtualServicePort(ctx, virtualServiceName, 8080)
 	assert.NoError(t, err, "Unable to update external port")
 
 	// repeated update should not fail
-	// update and delete calls might error out if virtual services are busy. Retry if the error is caused by the busy virtual services
-	for i := 0; i < BusyRetries ; i ++ {
-		err = vcdClient.updateVirtualServicePort(ctx, virtualServiceName, 8080)
-		if err != nil {
-			if _, ok := err.(*VirtualServiceBusyError); !ok {
-				break
-			}
-		} else {
-			break
-		}
-		// sleep for 2 seconds and retry
-		time.Sleep(2*time.Second)
-		fmt.Printf("virtual service is busy. remaining retry attempts: [%d]\n", BusyRetries- i - 1)
-	}
+	err = vcdClient.updateVirtualServicePort(ctx, virtualServiceName, 8080)
 	assert.NoError(t, err, "Repeated update to external port should not fail")
 
-	for i := 0; i < BusyRetries ; i ++ {
-		err = vcdClient.updateVirtualServicePort(ctx, virtualServiceName+"-invalid", 8080)
-		if err != nil {
-			if _, ok := err.(*VirtualServiceBusyError); !ok {
-				break
-			}
-		} else {
-			break
-		}
-		// sleep for 2 seconds and retry
-		time.Sleep(2*time.Second)
-		fmt.Printf("virtual service is busy. remaining retry attempts: [%d]\n", BusyRetries- i - 1)
-	}
+	err = vcdClient.updateVirtualServicePort(ctx, virtualServiceName+"-invalid", 8080)
 	assert.Error(t, err, "Update virtual service on a non-existent virtual service should fail")
 
-	for i := 0; i < BusyRetries ; i ++ {
-		err = vcdClient.deleteVirtualService(ctx, virtualServiceName, true, externalIP)
-		if err != nil {
-			if _, ok := err.(*VirtualServiceBusyError); !ok {
-				break
-			}
-		} else {
-			break
-		}
-		// sleep for 2 seconds and retry
-		time.Sleep(2*time.Second)
-		fmt.Printf("virtual service is busy. remaining retry attempts: [%d]\n", BusyRetries- i - 1)
-	}
+	err = vcdClient.deleteVirtualService(ctx, virtualServiceName, true, externalIP)
 	assert.NoError(t, err, "Unable to delete Virtual Service")
 
 	rdeVips, _, _, err = vcdClient.GetRDEVirtualIps(ctx)
 	assert.NoError(t, err, "Unable to get vips from RDE after virtual service deletion")
 	assert.False(t, foundStringInSlice(externalIP, rdeVips), "external ip should not be found in RDE vips")
 
-	for i := 0; i < BusyRetries ; i ++ {
-		err = vcdClient.deleteVirtualService(ctx, virtualServiceName, true, externalIP)
-		if err != nil {
-			if _, ok := err.(*VirtualServiceBusyError); !ok {
-				break
-			}
-		} else {
-			break
-		}
-		// sleep for 2 seconds and retry
-		time.Sleep(2*time.Second)
-		fmt.Printf("virtual service is busy. remaining retry attempts: [%d]\n", BusyRetries- i - 1)
-	}
+	err = vcdClient.deleteVirtualService(ctx, virtualServiceName, true, externalIP)
 	assert.Error(t, err, "Should fail when deleting non-existing Virtual Service")
 
-	for i := 0; i < BusyRetries ; i ++ {
-		err = vcdClient.deleteVirtualService(ctx, virtualServiceName, false, externalIP)
-		if err != nil {
-			if _, ok := err.(*VirtualServiceBusyError); !ok {
-				break
-			}
-		} else {
-			break
-		}
-		// sleep for 2 seconds and retry
-		time.Sleep(2*time.Second)
-		fmt.Printf("virtual service is busy. remaining retry attempts: [%d]\n", BusyRetries- i - 1)
-	}
+	err = vcdClient.deleteVirtualService(ctx, virtualServiceName, false, externalIP)
 	assert.NoError(t, err, "Should not fail when deleting non-existing Virtual Service")
 
 	vsRefObtained, err = vcdClient.getVirtualService(ctx, virtualServiceName)
 	assert.NoError(t, err, "Get should not fail when Virtual Service is absent")
 	assert.Nil(t, vsRefObtained, "Deleted Virtual Service reference should be nil")
 
-	for i := 0; i < BusyRetries ; i ++ {
-		err = vcdClient.deleteLoadBalancerPool(ctx, lbPoolName, true)
-		if err != nil {
-			if _, ok := err.(*LoadBalancerPoolBusyError); !ok {
-				break
-			}
-		} else {
-			break
-		}
-		// sleep for 2 seconds and retry
-		time.Sleep(2*time.Second)
-		fmt.Printf("loadbalancer pool is busy. remaining retry attempts: [%d]\n", BusyRetries- i - 1)
-	}
+	err = vcdClient.deleteLoadBalancerPool(ctx, lbPoolName, true)
 	assert.NoError(t, err, "Should not fail when deleting lb pool")
 
 	return
@@ -644,119 +421,35 @@ func TestVirtualServiceHttpsCRUDE(t *testing.T) {
 	assert.Equal(t, virtualServiceName, vsRef.Name, "Virtual Service name should match")
 
 	// update and delete calls might error out if virtual services are busy. Retry if the error is caused by the busy virtual services
-	for i := 0; i < BusyRetries ; i ++ {
-		err = vcdClient.updateVirtualServicePort(ctx, virtualServiceName, 8443)
-		if err != nil {
-			if _, ok := err.(*VirtualServiceBusyError); !ok {
-				break
-			}
-		} else {
-			break
-		}
-		// sleep for 2 seconds and retry
-		time.Sleep(2*time.Second)
-		fmt.Printf("virtual service is busy. remaining retry attempts: [%d]\n", BusyRetries- i - 1)
-	}
+	err = vcdClient.updateVirtualServicePort(ctx, virtualServiceName, 8443)
 	assert.NoError(t, err, "Unable to update external port")
 
 	// repeated update should not fail
-	for i := 0 ; i < BusyRetries; i ++ {
-		err = vcdClient.updateVirtualServicePort(ctx, virtualServiceName, 8443)
-		if err != nil {
-			if _, ok := err.(*VirtualServiceBusyError); !ok {
-				break
-			}
-		} else {
-			break
-		}
-		fmt.Printf("virtual service is busy. remaining retry attempts: [%d]\n", BusyRetries- i - 1)
-		// sleep for 2 seconds and retry
-		time.Sleep(2*time.Second)
-	}
+	err = vcdClient.updateVirtualServicePort(ctx, virtualServiceName, 8443)
 	assert.NoError(t, err, "Repeated update to external port should not fail")
 
 	// update of invalid virtual service
-	for i := 0 ; i < BusyRetries; i ++ {
-		err = vcdClient.updateVirtualServicePort(ctx, virtualServiceName+"-invalid\n", 8443)
-		if err != nil {
-			if _, ok := err.(*VirtualServiceBusyError); !ok {
-				break
-			}
-		} else {
-			break
-		}
-		fmt.Printf("virtual service is busy. remaining retry attempts: [%d]\n", BusyRetries- i - 1)
-		// sleep for 2 seconds and retry
-		time.Sleep(2*time.Second)
-	}
+	err = vcdClient.updateVirtualServicePort(ctx, virtualServiceName+"-invalid\n", 8443)
 	assert.Error(t, err, "Update virtual service on a non-existent virtual service should fail")
 
-	for i := 0 ; i < BusyRetries; i ++ {
-		err = vcdClient.deleteVirtualService(ctx, virtualServiceName, true, externalIP)
-		if err != nil {
-			if _, ok := err.(*VirtualServiceBusyError); !ok {
-				break
-			}
-		} else {
-			break
-		}
-		fmt.Printf("virtual service is busy. remaining retry attempts: [%d]\n", BusyRetries- i - 1)
-		// sleep for 2 seconds and retry
-		time.Sleep(2*time.Second)
-	}
+	err = vcdClient.deleteVirtualService(ctx, virtualServiceName, true, externalIP)
 	assert.NoError(t, err, "Unable to delete Virtual Service")
 
 	rdeVips, _, _, err = vcdClient.GetRDEVirtualIps(ctx)
 	assert.NoError(t, err, "Unable to get vips from RDE after virtual service deletion")
 	assert.False(t, foundStringInSlice(externalIP, rdeVips), "external ip should not be found in RDE vips")
 
-	for i := 0 ; i < BusyRetries; i ++ {
-		err = vcdClient.deleteVirtualService(ctx, virtualServiceName, true, externalIP)
-		if err != nil {
-			if _, ok := err.(*VirtualServiceBusyError); !ok {
-				break
-			}
-		} else {
-			break
-		}
-		fmt.Printf("virtual service is busy. remaining retry attempts: [%d]\n", BusyRetries- i - 1)
-		// sleep for 2 seconds and retry
-		time.Sleep(2*time.Second)
-	}
+	err = vcdClient.deleteVirtualService(ctx, virtualServiceName, true, externalIP)
 	assert.Error(t, err, "Should fail when deleting non-existing Virtual Service")
 
-	for i := 0 ; i < BusyRetries; i ++ {
-		err = vcdClient.deleteVirtualService(ctx, virtualServiceName, false, externalIP)
-		if err != nil {
-			if _, ok := err.(*VirtualServiceBusyError); !ok {
-				break
-			}
-		} else {
-			break
-		}
-		fmt.Printf("virtual service is busy. remaining retry attempts: [%d]\n", BusyRetries- i - 1)
-		// sleep for 2 seconds and retry
-		time.Sleep(2*time.Second)
-	}
+	err = vcdClient.deleteVirtualService(ctx, virtualServiceName, false, externalIP)
 	assert.NoError(t, err, "Should not fail when deleting non-existing Virtual Service")
 
 	vsRefObtained, err = vcdClient.getVirtualService(ctx, virtualServiceName)
 	assert.NoError(t, err, "Get should not fail when Virtual Service is absent")
 	assert.Nil(t, vsRefObtained, "Deleted Virtual Service reference should be nil")
 
-	for i := 0 ; i < BusyRetries; i ++ {
-		err = vcdClient.deleteLoadBalancerPool(ctx, lbPoolName, true)
-		if err != nil {
-			if _, ok := err.(*LoadBalancerPoolBusyError); !ok {
-				break
-			}
-		} else {
-			break
-		}
-		fmt.Printf("virtual service is busy. remaining retry attempts: [%d]\n", BusyRetries- i - 1)
-		// sleep for 2 seconds and retry
-		time.Sleep(2*time.Second)
-	}
+	err = vcdClient.deleteLoadBalancerPool(ctx, lbPoolName, true)
 	assert.NoError(t, err, "Should not fail when deleting lb pool")
 
 	return
@@ -807,21 +500,8 @@ func TestLoadBalancerCRUDE(t *testing.T) {
 		},
 	}
 	freeIP := ""
-	for i := 0 ; i < BusyRetries; i ++ {
-		freeIP, err = vcdClient.CreateLoadBalancer(ctx, virtualServiceNamePrefix,
-			lbPoolNamePrefix, []string{"1.2.3.4", "1.2.3.5"}, portDetailsList)
-		if err != nil {
-			_, isVsPendingErr := err.(*VirtualServicePendingError)
-			if isVsPendingErr {
-				break
-			}
-		} else {
-			break
-		}
-		fmt.Printf("virtual service is pending. remaining retry attempts: [%d]\n", BusyRetries- i - 1)
-		// sleep for 2 seconds and retry
-		time.Sleep(2*time.Second)
-	}
+	freeIP, err = vcdClient.CreateLoadBalancer(ctx, virtualServiceNamePrefix,
+		lbPoolNamePrefix, []string{"1.2.3.4", "1.2.3.5"}, portDetailsList)
 	assert.NoError(t, err, "Load Balancer should be created")
 	assert.NotEmpty(t, freeIP, "There should be a non-empty IP returned")
 
@@ -835,145 +515,37 @@ func TestLoadBalancerCRUDE(t *testing.T) {
 	assert.NoError(t, err, "Load Balancer should be found")
 	assert.Equal(t, freeIP, freeIPObtained, "The IPs should match")
 
-	for i := 0 ; i < BusyRetries; i ++ {
-		freeIP, err = vcdClient.CreateLoadBalancer(ctx, virtualServiceNamePrefix,
-			lbPoolNamePrefix, []string{"1.2.3.4", "1.2.3.5"}, portDetailsList)
-		if err != nil {
-			_, isVsPendingErr := err.(*VirtualServicePendingError)
-			if isVsPendingErr {
-				break
-			}
-		} else {
-			break
-		}
-		fmt.Printf("virtual service is pending. remaining retry attempts: [%d]\n", BusyRetries- i - 1)
-		// sleep for 2 seconds and retry
-		time.Sleep(2*time.Second)
-	}
+	freeIP, err = vcdClient.CreateLoadBalancer(ctx, virtualServiceNamePrefix,
+		lbPoolNamePrefix, []string{"1.2.3.4", "1.2.3.5"}, portDetailsList)
 	assert.NoError(t, err, "Load Balancer should be created even on second attempt")
 	assert.NotEmpty(t, freeIP, "There should be a non-empty IP returned")
 
 	updatedIps := []string{"5.5.5.5"}
 	updatedInternalPort := int32(55555)
 	// update IPs and internal port
-	for i := 0 ; i < BusyRetries; i ++ {
-		err = vcdClient.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-http", virtualServiceNamePrefix+"-http", updatedIps, updatedInternalPort, 80)
-		if err != nil {
-			_, isVsBusyErr := err.(*VirtualServiceBusyError)
-			_, isLBpoolBusyErr := err.(*LoadBalancerPoolBusyError)
-			if isVsBusyErr || isLBpoolBusyErr {
-				break
-			}
-		} else {
-			break
-		}
-		fmt.Printf("virtual service or loadbalancer pool is busy. remaining retry attempts: [%d]\n", BusyRetries- i - 1)
-		// sleep for 2 seconds and retry
-		time.Sleep(2*time.Second)
-	}
+	err = vcdClient.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-http", virtualServiceNamePrefix+"-http", updatedIps, updatedInternalPort, 80)
 	assert.NoError(t, err, "HTTP Load Balancer should be updated")
-	for i := 0 ; i < BusyRetries; i ++ {
-		err = vcdClient.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-https", virtualServiceNamePrefix+"-https", updatedIps, updatedInternalPort, 443)
-		if err != nil {
-			_, isVsBusyErr := err.(*VirtualServiceBusyError)
-			_, isLBpoolBusyErr := err.(*LoadBalancerPoolBusyError)
-			if isVsBusyErr || isLBpoolBusyErr {
-				break
-			}
-		} else {
-			break
-		}
-		fmt.Printf("virtual service or loadbalancer pool is busy. remaining retry attempts: [%d]\n", BusyRetries- i - 1)
-		// sleep for 2 seconds and retry
-		time.Sleep(2*time.Second)
-	}
+
+	err = vcdClient.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-https", virtualServiceNamePrefix+"-https", updatedIps, updatedInternalPort, 443)
 	assert.NoError(t, err, "HTTPS Load Balancer should be updated")
 
 	// update external port only
 	updatedExternalPortHttp := int32(8080)
 	updatedExternalPortHttps := int32(8443)
-	for i := 0 ; i < BusyRetries; i ++ {
-		err = vcdClient.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-http", virtualServiceNamePrefix+"-http", updatedIps, updatedInternalPort, updatedExternalPortHttp)
-		if err != nil {
-			_, isVsBusyErr := err.(*VirtualServiceBusyError)
-			_, isLBpoolBusyErr := err.(*LoadBalancerPoolBusyError)
-			if isVsBusyErr || isLBpoolBusyErr {
-				break
-			}
-		} else {
-			break
-		}
-		fmt.Printf("virtual service or loadbalancer pool is busy. remaining retry attempts: [%d]\n", BusyRetries- i - 1)
-		// sleep for 2 seconds and retry
-		time.Sleep(2*time.Second)
-	}
+	err = vcdClient.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-http", virtualServiceNamePrefix+"-http", updatedIps, updatedInternalPort, updatedExternalPortHttp)
 	assert.NoError(t, err, "HTTP Load Balancer should be updated")
-	for i := 0 ; i < BusyRetries; i ++ {
-		err = vcdClient.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-https", virtualServiceNamePrefix+"-https", updatedIps, updatedInternalPort, updatedExternalPortHttps)
-		if err != nil {
-			_, isVsBusyErr := err.(*VirtualServiceBusyError)
-			_, isLBpoolBusyErr := err.(*LoadBalancerPoolBusyError)
-			if isVsBusyErr || isLBpoolBusyErr {
-				break
-			}
-		} else {
-			break
-		}
-		fmt.Printf("virtual service or loadbalancer pool is busy. remaining retry attempts: [%d]\n", BusyRetries- i - 1)
-		// sleep for 2 seconds and retry
-		time.Sleep(2*time.Second)
-	}
+
+	err = vcdClient.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-https", virtualServiceNamePrefix+"-https", updatedIps, updatedInternalPort, updatedExternalPortHttps)
 	assert.NoError(t, err, "HTTPS Load Balancer should be updated")
 
 	// No error on repeated update
-	for i := 0 ; i < BusyRetries; i ++ {
-		err = vcdClient.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-http", virtualServiceNamePrefix+"-http", updatedIps, updatedInternalPort, updatedExternalPortHttp)
-		if err != nil {
-			_, isVsBusyErr := err.(*VirtualServiceBusyError)
-			_, isLBpoolBusyErr := err.(*LoadBalancerPoolBusyError)
-			if isVsBusyErr || isLBpoolBusyErr {
-				break
-			}
-		} else {
-			break
-		}
-		fmt.Printf("virtual service or loadbalancer pool is busy. remaining retry attempts: [%d]\n", BusyRetries- i - 1)
-		// sleep for 2 seconds and retry
-		time.Sleep(2*time.Second)
-	}
+	err = vcdClient.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-http", virtualServiceNamePrefix+"-http", updatedIps, updatedInternalPort, updatedExternalPortHttp)
 	assert.NoError(t, err, "HTTP Load Balancer should be updated")
-	for i := 0 ; i < BusyRetries; i ++ {
-		err = vcdClient.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-https", virtualServiceNamePrefix+"-https", updatedIps, updatedInternalPort, updatedExternalPortHttps)
-		if err != nil {
-			_, isVsBusyErr := err.(*VirtualServiceBusyError)
-			_, isLBpoolBusyErr := err.(*LoadBalancerPoolBusyError)
-			if isVsBusyErr || isLBpoolBusyErr {
-				break
-			}
-		} else {
-			break
-		}
-		fmt.Printf("virtual service or loadbalancer pool is busy. remaining retry attempts: [%d]\n", BusyRetries- i - 1)
-		// sleep for 2 seconds and retry
-		time.Sleep(2*time.Second)
-	}
+
+	err = vcdClient.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-https", virtualServiceNamePrefix+"-https", updatedIps, updatedInternalPort, updatedExternalPortHttps)
 	assert.NoError(t, err, "HTTPS Load Balancer should be updated")
 
-	for i := 0 ; i < BusyRetries; i ++ {
-		err = vcdClient.DeleteLoadBalancer(ctx, virtualServiceNamePrefix, lbPoolNamePrefix, portDetailsList)
-		if err != nil {
-			_, isVsBusyErr := err.(*VirtualServiceBusyError)
-			_, isLBpoolBusyErr := err.(*LoadBalancerPoolBusyError)
-			if isVsBusyErr || isLBpoolBusyErr {
-				break
-			}
-		} else {
-			break
-		}
-		fmt.Printf("virtual service or loadbalancer pool is busy. remaining retry attempts: [%d]\n", BusyRetries- i - 1)
-		// sleep for 2 seconds and retry
-		time.Sleep(2*time.Second)
-	}
+	err = vcdClient.DeleteLoadBalancer(ctx, virtualServiceNamePrefix, lbPoolNamePrefix, portDetailsList)
 	assert.NoError(t, err, "Load Balancer should be deleted")
 
 	freeIPObtained, err = vcdClient.GetLoadBalancer(ctx, virtualServiceNameHttp)
@@ -984,21 +556,7 @@ func TestLoadBalancerCRUDE(t *testing.T) {
 	assert.NoError(t, err, "Load Balancer should not be found")
 	assert.Empty(t, freeIPObtained, "The VIP should not be found")
 
-	for i := 0 ; i < BusyRetries; i ++ {
-		err = vcdClient.DeleteLoadBalancer(ctx, virtualServiceNamePrefix, lbPoolNamePrefix, portDetailsList)
-		if err != nil {
-			_, isVsBusyErr := err.(*VirtualServiceBusyError)
-			_, isLBpoolBusyErr := err.(*LoadBalancerPoolBusyError)
-			if isVsBusyErr || isLBpoolBusyErr {
-				break
-			}
-		} else {
-			break
-		}
-		fmt.Printf("virtual service or loadbalancer pool is busy. remaining retry attempts: [%d]\n", BusyRetries- i - 1)
-		// sleep for 2 seconds and retry
-		time.Sleep(2*time.Second)
-	}
+	err = vcdClient.DeleteLoadBalancer(ctx, virtualServiceNamePrefix, lbPoolNamePrefix, portDetailsList)
 	err = vcdClient.DeleteLoadBalancer(ctx, virtualServiceNamePrefix, lbPoolNamePrefix, portDetailsList)
 	assert.NoError(t, err, "Repeated deletion of Load Balancer should not fail")
 

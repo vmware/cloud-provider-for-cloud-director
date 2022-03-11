@@ -591,7 +591,14 @@ func (client *Client) updateDNATRule(ctx context.Context, dnatRuleName string, e
 	} else if err != nil {
 		return fmt.Errorf("error while updating DNAT rule [%s]: [%v]", dnatRuleRef.Name, err)
 	}
-	klog.Infof("successfully updated DNAT rule [%s]", dnatRuleRef.Name)
+	taskURL := resp.Header.Get("Location")
+	task := govcd.NewTask(&client.VCDClient.Client)
+	task.Task.HREF = taskURL
+	if err = task.WaitTaskCompletion(); err != nil {
+		return fmt.Errorf("unable to delete dnat rule [%s]: deletion task [%s] did not complete: [%v]",
+			dnatRuleName, taskURL, err)
+	}
+	klog.Infof("successfully updated DNAT rule [%s] on gateway [%s]", dnatRuleRef.Name, client.gatewayRef.Name)
 	return nil
 }
 
@@ -1082,6 +1089,14 @@ func (client *Client) updateVirtualServicePort(ctx context.Context, virtualServi
 	} else if err != nil {
 		return fmt.Errorf("error while updating virtual service [%s]: [%v]", virtualServiceName, err)
 	}
+	taskURL := resp.Header.Get("Location")
+	task := govcd.NewTask(&client.VCDClient.Client)
+	task.Task.HREF = taskURL
+	if err = task.WaitTaskCompletion(); err != nil {
+		return fmt.Errorf("unable to update virtual service; update task [%s] did not complete: [%v]",
+			taskURL, err)
+	}
+	klog.Errorf("successfully updated virtual service [%s] on gateway [%s]", virtualServiceName, client.gatewayRef.Name)
 	return nil
 }
 
