@@ -55,13 +55,22 @@ func (client *Client) RefreshBearerToken() error {
 	href := fmt.Sprintf("%s/api", client.VCDAuthConfig.Host)
 	client.VCDClient.Client.APIVersion = VCloudApiVersion
 
-	klog.Infof("Is user sysadmin: [%v]", client.VCDClient.Client.IsSysAdmin)
+	klog.Infof("Is user sysadmin: [%v]", client.VCDAuthConfig.IsSysAdmin)
 	if client.VCDAuthConfig.RefreshToken != "" {
-		// Refresh vcd client using refresh token
-		err := client.VCDClient.SetToken(client.VCDAuthConfig.UserOrg,
-			govcd.ApiTokenHeader, client.VCDAuthConfig.RefreshToken)
-		if err != nil {
-			return fmt.Errorf("failed to refresh VCD client with the refresh token: [%v]", err)
+		if client.VCDAuthConfig.IsSysAdmin {
+			// Refresh vcd client using refresh token as system org user
+			err := client.VCDClient.SetToken("system",
+				govcd.ApiTokenHeader, client.VCDAuthConfig.RefreshToken)
+			if err != nil {
+				return fmt.Errorf("failed to refresh VCD client with the refresh token: [%v]", err)
+			}
+		} else {
+			// Refresh vcd client using refresh token as tenant org user
+			err := client.VCDClient.SetToken(client.VCDAuthConfig.UserOrg,
+				govcd.ApiTokenHeader, client.VCDAuthConfig.RefreshToken)
+			if err != nil {
+				return fmt.Errorf("failed to refresh VCD client with the refresh token: [%v]", err)
+			}
 		}
 	} else if client.VCDAuthConfig.User != "" && client.VCDAuthConfig.Password != "" {
 		// Refresh vcd client using username and password
