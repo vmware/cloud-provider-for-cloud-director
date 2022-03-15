@@ -530,6 +530,10 @@ func (client *Client) updateAppPortProfile(appPortProfileName string, externalPo
 	if appPortProfile == nil || appPortProfile.NsxtAppPortProfile == nil || len(appPortProfile.NsxtAppPortProfile.ApplicationPorts) == 0 || len(appPortProfile.NsxtAppPortProfile.ApplicationPorts[0].DestinationPorts) == 0  {
 		return fmt.Errorf("invalid app port profile [%s]", appPortProfileName)
 	}
+	if appPortProfile.NsxtAppPortProfile.ApplicationPorts[0].DestinationPorts[0] == fmt.Sprintf("%d", externalPort) {
+		klog.Infof("Update to application port profile [%s] is not required", appPortProfileName)
+		return nil
+	}
 	appPortProfile.NsxtAppPortProfile.ApplicationPorts[0].DestinationPorts[0] = fmt.Sprintf("%d", externalPort)
 	_, err = appPortProfile.Update(appPortProfile.NsxtAppPortProfile)
 	if err != nil {
@@ -567,6 +571,10 @@ func (client *Client) updateDNATRule(ctx context.Context, dnatRuleName string, e
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("failed to get DNAT rule with ID [%s] from gateway with ID [%s]; unexpected status code [%d]. Expected status code: [%d]", dnatRuleRef.ID, client.gatewayRef.Id, resp.StatusCode, http.StatusOK)
 	}
+	if dnatRule.ExternalAddresses == externalIP && dnatRule.InternalAddresses == internalIP && dnatRule.DnatExternalPort == strconv.FormatInt(int64(externalPort), 10) {
+		klog.Infof("Update to DNAT rule [%s] not required", dnatRuleRef.Name)
+		return nil
+	}
 	// update DNAT rule
 	dnatRule.ExternalAddresses = externalIP
 	dnatRule.InternalAddresses = internalIP
@@ -583,7 +591,14 @@ func (client *Client) updateDNATRule(ctx context.Context, dnatRuleName string, e
 	} else if err != nil {
 		return fmt.Errorf("error while updating DNAT rule [%s]: [%v]", dnatRuleRef.Name, err)
 	}
-	klog.Infof("successfully updated DNAT rule [%s]", dnatRuleRef.Name)
+	taskURL := resp.Header.Get("Location")
+	task := govcd.NewTask(&client.vcdClient.Client)
+	task.Task.HREF = taskURL
+	if err = task.WaitTaskCompletion(); err != nil {
+		return fmt.Errorf("unable to delete dnat rule [%s]: deletion task [%s] did not complete: [%v]",
+			dnatRuleName, taskURL, err)
+	}
+	klog.Infof("successfully updated DNAT rule [%s] on gateway [%s]", dnatRuleRef.Name, client.gatewayRef.Name)
 	return nil
 }
 
@@ -842,7 +857,7 @@ func hasSameLBPoolMembers(array1 []swaggerClient.EdgeLoadBalancerPoolMember, arr
 			return false
 		}
 	}
-	return false
+	return true
 }
 
 func (client *Client) updateLoadBalancerPool(ctx context.Context, lbPoolName string, ips []string,
@@ -870,6 +885,10 @@ func (client *Client) updateLoadBalancerPool(ctx context.Context, lbPoolName str
 	if err = client.checkIfLBPoolIsReady(ctx, lbPoolName); err != nil {
 		return nil, fmt.Errorf("unable to update loadbalancer pool [%s]; loadbalancer pool is busy: [%v]",lbPoolName, err)
 	}
+	if err := client.checkIfGatewayIsReady(ctx); err != nil {
+		klog.Errorf("failed to update DNAT rule; gateway [%s] is busy", client.gatewayRef.Name)
+		return nil, fmt.Errorf("unable to update loadbalancer pool [%s]; gateway is busy: [%s]", lbPoolName, err)
+	}
 	lbPool, resp, err = client.apiClient.EdgeGatewayLoadBalancerPoolApi.GetLoadBalancerPool(ctx, lbPoolRef.Id)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get loadbalancer pool with id [%s]: [%v]", lbPoolRef.Id, err)
@@ -879,13 +898,17 @@ func (client *Client) updateLoadBalancerPool(ctx context.Context, lbPoolName str
 	}
 	updatedLBPool, lbPoolMembers := client.formLoadBalancerPool(lbPoolName, ips, internalPort)
 	resp, err = client.apiClient.EdgeGatewayLoadBalancerPoolApi.UpdateLoadBalancerPool(ctx, updatedLBPool, lbPoolRef.Id)
-	if err != nil {
-		return nil, fmt.Errorf("unable to update loadbalancer pool with name [%s], members [%+v]: resp [%+v]: [%v]",
+	if resp != nil && resp.StatusCode != http.StatusAccepted {
+		var responseMessageBytes []byte
+		if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
+			responseMessageBytes = gsErr.Body()
+		}
+		return nil, fmt.Errorf(
+			"unable to update loadblanacer pool [%s] having members [%+v]; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]",
+			lbPoolName, lbPoolMembers, http.StatusAccepted, resp.StatusCode, string(responseMessageBytes), err)
+	} else if err != nil {
+		return nil, fmt.Errorf("unable to update loadbalancer pool having name [%s], members [%+v]: resp [%+v]: [%v]",
 			lbPoolName, lbPoolMembers, resp, err)
-	}
-	if resp.StatusCode != http.StatusAccepted {
-		return nil, fmt.Errorf("unable to update loadbalancer pool; expected http response [%v], obtained [%v]",
-			http.StatusAccepted, resp.StatusCode)
 	}
 
 	taskURL := resp.Header.Get("Location")
@@ -1066,6 +1089,14 @@ func (client *Client) updateVirtualServicePort(ctx context.Context, virtualServi
 	} else if err != nil {
 		return fmt.Errorf("error while updating virtual service [%s]: [%v]", virtualServiceName, err)
 	}
+	taskURL := resp.Header.Get("Location")
+	task := govcd.NewTask(&client.vcdClient.Client)
+	task.Task.HREF = taskURL
+	if err = task.WaitTaskCompletion(); err != nil {
+		return fmt.Errorf("unable to update virtual service; update task [%s] did not complete: [%v]",
+			taskURL, err)
+	}
+	klog.Errorf("successfully updated virtual service [%s] on gateway [%s]", virtualServiceName, client.gatewayRef.Name)
 	return nil
 }
 
