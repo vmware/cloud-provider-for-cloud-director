@@ -9,7 +9,7 @@ The version of the VMware Cloud Director API and Installation that are compatibl
 | 1.0.1 | 36.0+ | 10.3.1+ <br/>(10.3.1 needs hot-patch to prevent VCD cell crashes in multi-cell environments) | <ul><li>Some resiliency added when VCD cells are restarted (34c1689)</li><li>Added Org ID to cert query so that `system/administrator` can also create https load balancers (44c72ab)</li></ul> |<ul><li>1.21</li><li>1.20</li><li>1.19</li></ul>|
 | 1.0.2 | 36.0+ | 10.3.1+ <br/>(10.3.1 needs hot-patch to prevent VCD cell crashes in multi-cell environments) | <ul><li>Added fix to allow multiple http and https ports to be allowed in load-balancer (d67c19b)</li></ul> |<ul><li>1.21</li><li>1.20</li><li>1.19</li></ul>|
 | 1.1.0 | 36.0+ | 10.3.1+ <br/>(10.3.1 needs hot-patch to prevent VCD cell crashes in multi-cell environments) | <ul><li>Remove legacy Kubernetes dependencies.</li><li>Application port profiles added to DNAT rules (Fixes #43)</li><li>L4, HTTP and HTTPS services supported using `appProtocol` and annotations (Fixes #44).</li><li>Allow per-service certificates.</li><li>Multiple(>2) service fixes within the same LoadBalancer service</li><li>Support for CAPVCD RDEs.</li><li>Detect and handle `PENDING` Avi LoadBalancer state to allow better controller functionality.</li></ul> |<ul><li>1.21</li><li>1.20</li><li>1.19</li></ul>|
-| 1.1.1 | 36.0+ | 10.3.1+ <br/>(10.3.1 needs hot-patch to prevent VCD cell crashes in multi-cell environments) | <ul><li>Fixed refresh token based authentication issue observed when VCD cells are fronted by a load balancer.</li><li>Updates nodePort and port of LoadBalancer services are now supported.</li></ul> |<ul><li>1.21</li><li>1.20</li><li>1.19</li></ul>|
+| 1.1.1 | 36.0+ | 10.3.1+ <br/>(10.3.1 needs hot-patch to prevent VCD cell crashes in multi-cell environments) | <ul><li>Fixed refresh-token based authentication issue observed when VCD cells are fronted by a load balancer (Fixes #37).</li><li>Updates to nodePort and port of LoadBalancer services are now supported (Fixes #49).</li></ul> |<ul><li>1.21</li><li>1.20</li><li>1.19</li></ul>|
 
 This extension is intended to be installed into a Kubernetes cluster installed with [VMware Cloud Director](https://www.vmware.com/products/cloud-director.html) as a Cloud Provider, by a user that has the rights as described in the sections below.
 
@@ -22,9 +22,9 @@ Note: The cloud-provider is not impacted by the Apache Log4j open source compone
 ## Terminology
 1. VCD: VMware Cloud Director
 2. ClusterAdminRole: This is the role that has enough rights to create and administer a Kubernetes Cluster in VCD. This role can be created by cloning the [vApp Author Role](https://docs.vmware.com/en/VMware-Cloud-Director/10.3/VMware-Cloud-Director-Tenant-Portal-Guide/GUID-BC504F6B-3D38-4F25-AACF-ED584063754F.html) and then adding the following rights (details on adding the rights below can be found in the [CSE docs](https://github.com/rocknes/container-service-extension/blob/cse_3_1_docs/docs/cse3_1/RBAC.md#additional-required-rights)):
-    1. Full Control: CSE:NATIVECLUSTER
-    2. Edit: CSE:NATIVECLUSTER
-    3. View: CSE:NATIVECLUSTER
+   1. Full Control: CSE:NATIVECLUSTER
+   2. Edit: CSE:NATIVECLUSTER
+   3. View: CSE:NATIVECLUSTER
 3. ClusterAdminUser: For CPI functionality, there needs to be a set of additional rights added to the `ClusterAdminRole` as described in the "Additional Rights for CPI" section below. The Kubernetes Cluster needs to be **created** by a user belonging to this **enhanced** `ClusterAdminRole`. For convenience, let us term this user as the `ClusterAdminUser`.
 
 ## VMware Cloud Director Configuration
@@ -37,12 +37,12 @@ The `ClusterAdminUser` should have view access to the vApp containing the Kubern
 This `ClusterAdminUser` needs to be created from a `ClusterAdminRole` with the following additional rights:
 
 1. Gateway =>
-    1. View Gateway
+   1. View Gateway
 2. Gateway Services =>
-    1. NAT Configure (adds NAT View)
-    2. LoadBalancer Configure (adds LoadBalancer View)
+   1. NAT Configure (adds NAT View)
+   2. LoadBalancer Configure (adds LoadBalancer View)
 3. Access Control =>
-    1. User => Manage user's own API TOKEN
+   1. User => Manage user's own API TOKEN
 
 The `Access Control` right is needed in order to generate refresh tokens for the `ClusterAdminUser`.
 
@@ -84,7 +84,7 @@ From v1.1.0 onwards, certificates can have user-defined names. Each service coul
 ## Upgrade CPI
 To upgrade CPI to v1.1.1, please execute the following command
 ```shell
-kubectl patch deployment -n kube-system vmware-cloud-director-ccm --type='json' -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/image", "value": "projects.registry.vmware.com/vmware-cloud-director/cloud-provider-for-cloud-director:1.1.1.latest"}]'
+kubectl patch deployment -n kube-system vmware-cloud-director-ccm -p '{"spec": {"template": {"spec": {"containers": [{"name": "vmware-cloud-director-ccm", "image": "projects.registry.vmware.com/vmware-cloud-director/cloud-provider-for-cloud-director:1.1.1.latest"}]}}}}'
 ```
 
 ## Contributing
