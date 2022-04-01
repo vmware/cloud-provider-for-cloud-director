@@ -58,11 +58,11 @@ func GetVirtualIPsFromRDE(rde *swaggerClient.DefinedEntity) ([]string, error) {
 
 	var virtualIpInterfaces interface{}
 	if isCAPVCDEntityType(rde.EntityType) {
+		// TODO: upgrade existing RDEs to 1.1.0 version
 		cpiStatusInterface, ok := statusMap["cpi"]
 		if !ok {
 			return nil, fmt.Errorf("CAPVCD entity [%s] is missing CPI status", rde.Id)
 		}
-		// TODO: upgrade existing RDEs to 1.1.0 version
 		cpiStatusMap, ok := cpiStatusInterface.(map[string]interface{})
 		if !ok {
 			return nil, fmt.Errorf("failed to convert value for CPI in RDE status to map[string]interface{}")
@@ -106,6 +106,7 @@ func ReplaceVirtualIPsInRDE(rde *swaggerClient.DefinedEntity, updatedIps []strin
 		return nil, fmt.Errorf("unable to convert [%T] to map", statusEntry)
 	}
 	if isCAPVCDEntityType(rde.EntityType) {
+		// TODO: upgrade existing entities to capvcdCluster 1.1.0
 		cpiStatusInterface, ok := statusMap["cpi"]
 		var cpiStatusMap map[string]interface{}
 		if !ok {
