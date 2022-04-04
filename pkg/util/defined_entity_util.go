@@ -22,13 +22,13 @@ type VCDResource struct {
 
 type CPIStatus struct {
 	Name           string        `json:"name,omitempty"`
-	Version        string        `json:"version:omitempty"`
+	Version        string        `json:"version,omitempty"`
 	VCDResourceSet []VCDResource `json:"vcdResourceSet,omitempty"`
 	Errors         []string      `json:"errors,omitempty"`
 	VirtualIPs     []string      `json:"virtualIPs,omitempty"`
 }
 
-func isCAPVCDEntityType(entityTypeID string) bool {
+func IsCAPVCDEntityType(entityTypeID string) bool {
 	entityTypeIDSplit := strings.Split(entityTypeID, ":")
 	// format is urn:vcloud:type:<vendor>:<nss>:<version>
 	if len(entityTypeIDSplit) != 6 {
@@ -37,7 +37,7 @@ func isCAPVCDEntityType(entityTypeID string) bool {
 	return entityTypeIDSplit[3] == CAPVCDEntityTypeVendor && entityTypeIDSplit[4] == CAPVCDEntityTypeNss
 }
 
-func isNativeClusterEntityType(entityTypeID string) bool {
+func IsNativeClusterEntityType(entityTypeID string) bool {
 	entityTypeIDSplit := strings.Split(entityTypeID, ":")
 	// format is urn:vcloud:type:<vendor>:<nss>:<version>
 	if len(entityTypeIDSplit) != 6 {
@@ -57,7 +57,7 @@ func GetVirtualIPsFromRDE(rde *swaggerClient.DefinedEntity) ([]string, error) {
 	}
 
 	var virtualIpInterfaces interface{}
-	if isCAPVCDEntityType(rde.EntityType) {
+	if IsCAPVCDEntityType(rde.EntityType) {
 		// TODO: upgrade existing RDEs to 1.1.0 version
 		cpiStatusInterface, ok := statusMap["cpi"]
 		if !ok {
@@ -68,8 +68,7 @@ func GetVirtualIPsFromRDE(rde *swaggerClient.DefinedEntity) ([]string, error) {
 			return nil, fmt.Errorf("failed to convert value for CPI in RDE status to map[string]interface{}")
 		}
 		virtualIpInterfaces = cpiStatusMap["virtualIPs"]
-	}
-	if isNativeClusterEntityType(rde.EntityType) {
+	} else if IsNativeClusterEntityType(rde.EntityType) {
 		virtualIpInterfaces = statusMap["virtual_IPs"]
 	} else {
 		return nil, fmt.Errorf("entity type %s not supported by CPI", rde.EntityType)
@@ -105,7 +104,7 @@ func ReplaceVirtualIPsInRDE(rde *swaggerClient.DefinedEntity, updatedIps []strin
 	if !ok {
 		return nil, fmt.Errorf("unable to convert [%T] to map", statusEntry)
 	}
-	if isCAPVCDEntityType(rde.EntityType) {
+	if IsCAPVCDEntityType(rde.EntityType) {
 		// TODO: upgrade existing entities to capvcdCluster 1.1.0
 		cpiStatusInterface, ok := statusMap["cpi"]
 		var cpiStatusMap map[string]interface{}
@@ -120,7 +119,7 @@ func ReplaceVirtualIPsInRDE(rde *swaggerClient.DefinedEntity, updatedIps []strin
 			cpiStatusMap["virtualIPs"] = updatedIps
 		}
 		statusMap["cpi"] = cpiStatusMap
-	} else if isNativeClusterEntityType(rde.EntityType) {
+	} else if IsNativeClusterEntityType(rde.EntityType) {
 		statusMap["virtual_IPs"] = updatedIps
 	}
 	return rde, nil

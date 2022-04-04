@@ -1096,6 +1096,12 @@ func (client *Client) updateVirtualServicePort(ctx context.Context, virtualServi
 		return fmt.Errorf("unable to update virtual service; update task [%s] did not complete: [%v]",
 			taskURL, err)
 	}
+	err = client.AddVirtualServiceToVCDResourceSet(ctx, vsSummary.Name, vsSummary.Id)
+	if err != nil {
+		klog.Errorf("failed to update Virtual Service [%s] details in RDE [%s]", vsSummary.Name, client.ClusterID)
+	} else {
+		klog.Infof("successfully updated virtual service details in RDE [%s]", client.ClusterID)
+	}
 	klog.Errorf("successfully updated virtual service [%s] on gateway [%s]", virtualServiceName, client.gatewayRef.Name)
 	return nil
 }
@@ -1245,6 +1251,12 @@ func (client *Client) createVirtualService(ctx context.Context, virtualServiceNa
 		Name: vsSummary.Name,
 		Id:   vsSummary.Id,
 	}
+	err = client.AddVirtualServiceToVCDResourceSet(ctx, vsSummary.Name, vsSummary.Id)
+	if err != nil {
+		klog.Errorf("failed to update Virtual Service [%s] details in RDE [%s]", vsSummary.Name, client.ClusterID)
+	} else {
+		klog.Infof("successfully updated virtual service details in RDE [%s]", client.ClusterID)
+	}
 	klog.Infof("Created virtual service [%v] on gateway [%v]\n", virtualServiceRef, client.gatewayRef.Name)
 
 	return virtualServiceRef, nil
@@ -1298,6 +1310,12 @@ func (client *Client) deleteVirtualService(ctx context.Context, virtualServiceNa
 	}
 	klog.Infof("Deleted virtual service [%s]\n", virtualServiceName)
 
+	err = client.RemoveVirtualServiceFromVCDResourceSet(ctx, vsSummary.Id)
+	if err != nil {
+		klog.Errorf("failed to remove virtual service from VCDResourceSet: [%v]", err)
+	} else {
+		klog.Infof("successfully updated virtual service [%s] details to VCDResourceSet of RDE [%s]", vsSummary.Name, client.ClusterID)
+	}
 	// remove virtual ip from RDE
 	err = client.removeVirtualIpFromRDE(ctx, rdeVIP)
 	if err != nil {

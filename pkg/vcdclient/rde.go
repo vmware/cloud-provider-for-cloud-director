@@ -2,6 +2,7 @@ package vcdclient
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/util"
 	swaggerClient "github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdswaggerclient"
@@ -12,6 +13,12 @@ import (
 
 const (
 	NoRdePrefix = `NO_RDE_`
+
+	CloudControllerManagerName    = "cloud-controller-manager"
+	CloudControllerManagerVersion = "1.1.2"
+
+	// VcdResourceVirtualService defines the type Virtual Service in the VCDResourceSet
+	VcdResourceVirtualService = "virtual-service"
 )
 
 func (client *Client) GetRDEVirtualIps(ctx context.Context) ([]string, string, *swaggerClient.DefinedEntity, error) {
@@ -143,4 +150,256 @@ func (client *Client) removeVirtualIpFromRDE(ctx context.Context, removeIp strin
 	}
 
 	return fmt.Errorf("unable to update rde due to incorrect etag after [%d] tries", numRetries)
+}
+
+func convertCPIStatusToMap(cpiStatus util.CPIStatus) (map[string]interface{}, error) {
+	cpiStatusBytes, err := json.Marshal(&cpiStatus)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert CPI status to byte array: [%v]", err)
+	}
+	var cpiStatusMap map[string]interface{}
+	err = json.Unmarshal(cpiStatusBytes, &cpiStatusMap)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert CPI status bytes to map[string]interface{}: [%v]", err)
+	}
+	return cpiStatusMap, nil
+}
+
+func convertMapToCPIStatus(cpiStatusMap map[string]interface{}) (*util.CPIStatus, error) {
+	cpiStatusMapBytes, err := json.Marshal(&cpiStatusMap)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert CPI status map to byte array: [%v]", err)
+	}
+	var cpiStatus util.CPIStatus
+	err = json.Unmarshal(cpiStatusMapBytes, &cpiStatus)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert CPI status bytes to CPIStatus: [%v]", err)
+	}
+	return &cpiStatus, nil
+}
+
+func (client *Client) CreateOrUpdateCPIStatusInRDE(ctx context.Context, rdeId string) error {
+	rde, resp, etag, err := client.APIClient.DefinedEntityApi.GetDefinedEntity(ctx, rdeId)
+	if resp != nil && resp.StatusCode != http.StatusOK {
+		var responseMessageBytes []byte
+		if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
+			responseMessageBytes = gsErr.Body()
+		}
+		return fmt.Errorf(
+			"failed to get RDE with id [%s]; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]",
+			rdeId, http.StatusOK, resp.StatusCode, string(responseMessageBytes), err)
+	} else if err != nil {
+		return fmt.Errorf("error while getting the RDE [%s]: [%v]", rdeId, err)
+	}
+	if !util.IsCAPVCDEntityType(rde.EntityType) {
+		return fmt.Errorf("unable to update RDE as the RDE entity type is not [%v]", rde.EntityType)
+	}
+	statusEntity, ok := rde.Entity["status"]
+	if !ok {
+		return fmt.Errorf("failed to fetch RDE status for RDE [%s]", rdeId)
+	}
+	statusMap, ok := statusEntity.(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("failed to convert status of RDE [%s] to map[string]interface{}", rdeId)
+	}
+	cpiStatus := &util.CPIStatus{
+		VCDResourceSet: nil,
+		Errors:         nil,
+		VirtualIPs:     nil,
+	}
+	cpiStatusEntity, ok := statusMap["cpi"]
+	if ok {
+		cpiStatusMap, ok := cpiStatusEntity.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("failed to convert CPI status entity to map[string]interface{}")
+		}
+		cpiStatus, err = convertMapToCPIStatus(cpiStatusMap)
+		if err != nil {
+			return fmt.Errorf("failed to convert CPI status map to CPI status object: [%v]", err)
+		}
+	}
+	cpiStatus.Name = CloudControllerManagerName
+	cpiStatus.Version = CloudControllerManagerVersion
+	// CPI section is missing from the RDE status. Create a new CPI status and update the RDE.
+	cpiStatusMap, err := convertCPIStatusToMap(*cpiStatus)
+	if err != nil {
+		return fmt.Errorf("failed to convert CPI status [%v] to map[string]interface{}: [%v]", cpiStatus, err)
+	}
+	statusMap["cpi"] = cpiStatusMap
+
+	_, resp, err = client.APIClient.DefinedEntityApi.UpdateDefinedEntity(ctx, rde, etag, rdeId, nil)
+	if resp != nil && resp.StatusCode != http.StatusOK {
+		var responseMessageBytes []byte
+		if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
+			responseMessageBytes = gsErr.Body()
+		}
+		return fmt.Errorf(
+			"failed to create CPI status for RDE [%s]; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]",
+			rdeId, http.StatusOK, resp.StatusCode, string(responseMessageBytes), err)
+	} else if err != nil {
+		return fmt.Errorf("error while getting the RDE [%s]: [%v]", rdeId, err)
+	}
+	return nil
+}
+
+func (client *Client) AddVirtualServiceToVCDResourceSet(ctx context.Context, vsName, vsID string) error {
+	rde, resp, etag, err := client.APIClient.DefinedEntityApi.GetDefinedEntity(ctx, client.ClusterID)
+	if resp != nil && resp.StatusCode != http.StatusOK {
+		var responseMessageBytes []byte
+		if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
+			responseMessageBytes = gsErr.Body()
+		}
+		return fmt.Errorf(
+			"failed to get RDE with id [%s]; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]",
+			client.ClusterID, http.StatusOK, resp.StatusCode, string(responseMessageBytes), err)
+	} else if err != nil {
+		return fmt.Errorf("error while updating the RDE [%s]: [%v]", client.ClusterID, err)
+	}
+
+	if !util.IsCAPVCDEntityType(rde.EntityType) {
+		return fmt.Errorf("unable to update RDE as the RDE entity type is not [%v]", rde.EntityType)
+	}
+
+	statusEntity, ok := rde.Entity["status"]
+	if !ok {
+		return fmt.Errorf("failed to fetch RDE status for RDE [%s]", client.ClusterID)
+	}
+	statusMap, ok := statusEntity.(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("failed to convert status of RDE [%s] to map[string]interface{}", client.ClusterID)
+	}
+	cpiStatusEntity, ok := statusMap["cpi"]
+	var cpiStatus *util.CPIStatus
+	if !ok {
+		// need to create cpi section if absent
+		cpiStatus = &util.CPIStatus{
+			Name:    CloudControllerManagerName,
+			Version: CloudControllerManagerVersion,
+			VCDResourceSet: []util.VCDResource{
+				{
+					Type: VcdResourceVirtualService,
+					ID:   vsID,
+					Name: vsName,
+				},
+			},
+		}
+	} else {
+		cpiStatusMap, ok := cpiStatusEntity.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("failed to parse CPI status entry in the RDE status")
+		}
+		cpiStatus, err = convertMapToCPIStatus(cpiStatusMap)
+		if err != nil {
+			return fmt.Errorf("failed to convert map[string]interface{} to CPIStatus object: [%v]", err)
+		}
+		for _, vcdResource := range cpiStatus.VCDResourceSet {
+			if vcdResource.Type == VcdResourceVirtualService && vcdResource.ID == vsID {
+				// VCDResource already present in the VCDResourceSet
+				return nil
+			}
+		}
+		vsResource := util.VCDResource{
+			Type: VcdResourceVirtualService,
+			Name: vsName,
+			ID:   vsID,
+		}
+		// virtual service not present in the RDE
+		cpiStatus.VCDResourceSet = append(cpiStatus.VCDResourceSet, vsResource)
+	}
+	cpiStatusMap, err := convertCPIStatusToMap(*cpiStatus)
+	if err != nil {
+		return fmt.Errorf("failed to update CPI status with virtual service [%s]: [%v]", vsName, err)
+	}
+	statusMap["cpi"] = cpiStatusMap
+
+	_, resp, err = client.APIClient.DefinedEntityApi.UpdateDefinedEntity(ctx, rde, etag, client.ClusterID, nil)
+	if resp != nil && resp.StatusCode != http.StatusOK {
+		var responseMessageBytes []byte
+		if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
+			responseMessageBytes = gsErr.Body()
+		}
+		return fmt.Errorf(
+			"failed to update CPI status for RDE [%s]; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]",
+			client.ClusterID, http.StatusOK, resp.StatusCode, string(responseMessageBytes), err)
+	} else if err != nil {
+		return fmt.Errorf("error while updating the RDE [%s]: [%v]", client.ClusterID, err)
+	}
+	return nil
+}
+
+func (client *Client) RemoveVirtualServiceFromVCDResourceSet(ctx context.Context, vsID string) error {
+	rde, resp, etag, err := client.APIClient.DefinedEntityApi.GetDefinedEntity(ctx, client.ClusterID)
+	if resp != nil && resp.StatusCode != http.StatusOK {
+		var responseMessageBytes []byte
+		if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
+			responseMessageBytes = gsErr.Body()
+		}
+		return fmt.Errorf(
+			"failed to get RDE with id [%s]; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]",
+			client.ClusterID, http.StatusOK, resp.StatusCode, string(responseMessageBytes), err)
+	} else if err != nil {
+		return fmt.Errorf("error while updating the RDE [%s]: [%v]", client.ClusterID, err)
+	}
+
+	if !util.IsCAPVCDEntityType(rde.EntityType) {
+		return fmt.Errorf("unable to update RDE as the RDE entity type is not [%v]", rde.EntityType)
+	}
+
+	statusEntity, ok := rde.Entity["status"]
+	if !ok {
+		return fmt.Errorf("failed to fetch RDE status for RDE [%s]", client.ClusterID)
+	}
+	statusMap, ok := statusEntity.(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("failed to convert status of RDE [%s] to map[string]interface{}", client.ClusterID)
+	}
+	var cpiStatus *util.CPIStatus
+	cpiStatusEntity, ok := statusMap["cpi"]
+	if !ok {
+		// need to create cpi section if absent
+		cpiStatus = &util.CPIStatus{
+			Name:           CloudControllerManagerName,
+			Version:        CloudControllerManagerVersion,
+			VCDResourceSet: nil,
+		}
+	} else {
+		cpiStatusMap, ok := cpiStatusEntity.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("failed to parse CPI status entry in the RDE status")
+		}
+		cpiStatus, err = convertMapToCPIStatus(cpiStatusMap)
+		if err != nil {
+			return fmt.Errorf("failed to convert map[string]interface{} to CPIStatus object: [%v]", err)
+		}
+		updatedVCDResourceSet := make([]util.VCDResource, 0)
+		i := 0
+		for _, vcdResource := range cpiStatus.VCDResourceSet {
+			if vcdResource.Type == VcdResourceVirtualService && vcdResource.ID == vsID {
+				// remove vcdResource from vcdResourceSet
+				continue
+			}
+			updatedVCDResourceSet[i] = vcdResource
+			i++
+		}
+		cpiStatus.VCDResourceSet = updatedVCDResourceSet
+	}
+	cpiStatusMap, err := convertCPIStatusToMap(*cpiStatus)
+	if err != nil {
+		return fmt.Errorf("failed to convert CPIStatus object to map[string]interface{} to remove virtual service [%s]: [%v]", vsID, err)
+	}
+	statusMap["cpi"] = cpiStatusMap
+
+	_, resp, err = client.APIClient.DefinedEntityApi.UpdateDefinedEntity(ctx, rde, etag, client.ClusterID, nil)
+	if resp != nil && resp.StatusCode != http.StatusOK {
+		var responseMessageBytes []byte
+		if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
+			responseMessageBytes = gsErr.Body()
+		}
+		return fmt.Errorf(
+			"failed to update CPI status for RDE [%s]; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]",
+			client.ClusterID, http.StatusOK, resp.StatusCode, string(responseMessageBytes), err)
+	} else if err != nil {
+		return fmt.Errorf("error while updating the RDE [%s]: [%v]", client.ClusterID, err)
+	}
+	return nil
 }
