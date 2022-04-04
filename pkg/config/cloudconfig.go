@@ -16,10 +16,10 @@ import (
 
 // VCDConfig :
 type VCDConfig struct {
-	Host string `yaml:"host"`
-	VDC  string `yaml:"vdc"`
-	Org  string `yaml:"org"`
-	UserOrg      string // this defaults to Org or a prefix of User
+	Host    string `yaml:"host"`
+	VDC     string `yaml:"vdc"`
+	Org     string `yaml:"org"`
+	UserOrg string // this defaults to Org or a prefix of User
 
 	// It is allowed to pass the following variables using the config. However,
 	// that is unsafe security practice. However there can be user scenarios and
@@ -35,7 +35,7 @@ type VCDConfig struct {
 
 	VDCNetwork string `yaml:"network"`
 	VIPSubnet  string `yaml:"vipSubnet"`
-	VAppName  string  `yaml:"vAppName"`
+	VAppName   string `yaml:"vAppName"`
 }
 
 // Ports :
@@ -98,8 +98,12 @@ func ParseCloudConfig(configReader io.Reader) (*CloudConfig, error) {
 	if err = decoder.Decode(&config); err != nil {
 		return nil, fmt.Errorf("unable to decode yaml file: [%v]", err)
 	}
-
+	trimSlashFromHost(config)
 	return config, nil
+}
+
+func trimSlashFromHost(cloudConfig *CloudConfig) {
+	cloudConfig.VCD.Host = strings.TrimRight(cloudConfig.VCD.Host, "/")
 }
 
 func SetAuthorization(config *CloudConfig) error {
