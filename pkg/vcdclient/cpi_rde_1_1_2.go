@@ -100,7 +100,7 @@ func (client *Client) UpgradeCPIStatusOfExistingRDE(ctx context.Context, rdeId s
 	// CPI section is missing from the RDE status. Create a new CPI status and update the RDE.
 	cpiStatusMap, err := convertCPIStatusToMap(*cpiStatus)
 	if err != nil {
-		return fmt.Errorf("failed to convert CPI status [%v] in RDE [%s] to map[string]interface{} when upgrading CPI status section: [%v]", cpiStatus, rdeId err)
+		return fmt.Errorf("failed to convert CPI status [%v] in RDE [%s] to map[string]interface{} when upgrading CPI status section: [%v]", cpiStatus, rdeId, err)
 	}
 	statusMap["cpi"] = cpiStatusMap
 
