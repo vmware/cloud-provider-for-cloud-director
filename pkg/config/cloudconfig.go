@@ -98,12 +98,8 @@ func ParseCloudConfig(configReader io.Reader) (*CloudConfig, error) {
 	if err = decoder.Decode(&config); err != nil {
 		return nil, fmt.Errorf("unable to decode yaml file: [%v]", err)
 	}
-	trimSlashFromHost(config)
+	config.VCD.Host = strings.TrimRight(config.VCD.Host, "/")
 	return config, nil
-}
-
-func trimSlashFromHost(cloudConfig *CloudConfig) {
-	cloudConfig.VCD.Host = strings.TrimRight(cloudConfig.VCD.Host, "/")
 }
 
 func SetAuthorization(config *CloudConfig) error {
