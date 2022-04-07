@@ -27,6 +27,10 @@ func (client *Client) GetRDEVirtualIps(ctx context.Context) ([]string, string, *
 
 	virtualIpStrs, err := util.GetVirtualIPsFromRDE(&defEnt)
 	if err != nil {
+		capvcdEntityFoundErr, ok := err.(util.CapvdRdeFoundError)
+		if ok {
+			return nil, "", nil, capvcdEntityFoundErr
+		}
 		return nil, "", nil, fmt.Errorf("failed to retrieve Virtual IPs from RDE [%s]: [%v]",
 			client.ClusterID, err)
 	}
@@ -38,6 +42,9 @@ func (client *Client) updateRDEVirtualIps(ctx context.Context, updatedIps []stri
 	defEnt *swaggerClient.DefinedEntity) (*http.Response, error) {
 	defEnt, err := util.ReplaceVirtualIPsInRDE(defEnt, updatedIps)
 	if err != nil {
+		if capvcdEntityFoundErr, ok := err.(util.CapvdRdeFoundError); ok {
+			return nil, capvcdEntityFoundErr
+		}
 		return nil, fmt.Errorf("failed to locally edit RDE with ID [%s] with virtual IPs: [%v]", client.ClusterID, err)
 	}
 	// can pass invokeHooks
@@ -63,6 +70,10 @@ func (client *Client) addVirtualIpToRDE(ctx context.Context, addIp string) error
 	for i := 0; i < numRetries; i++ {
 		currIps, etag, defEnt, err := client.GetRDEVirtualIps(ctx)
 		if err != nil {
+			if _, ok := err.(util.CapvdRdeFoundError); ok {
+				klog.Infof("CAPVCD entity type found. Skipping adding RDE VIPs to status")
+				return nil
+			}
 			return fmt.Errorf("error getting current vips: [%v]", err)
 		}
 
@@ -81,6 +92,9 @@ func (client *Client) addVirtualIpToRDE(ctx context.Context, addIp string) error
 		updatedIps := append(currIps, addIp)
 		httpResponse, err := client.updateRDEVirtualIps(ctx, updatedIps, etag, defEnt)
 		if err != nil {
+			if capvcdEntityFoundErr, ok := err.(util.CapvdRdeFoundError); ok {
+				return capvcdEntityFoundErr
+			}
 			if httpResponse.StatusCode == http.StatusPreconditionFailed {
 				klog.Infof("Wrong ETag while adding virtual IP [%s]", addIp)
 				continue
@@ -109,6 +123,10 @@ func (client *Client) removeVirtualIpFromRDE(ctx context.Context, removeIp strin
 	for i := 0; i < numRetries; i++ {
 		currIps, etag, defEnt, err := client.GetRDEVirtualIps(ctx)
 		if err != nil {
+			if _, ok := err.(util.CapvdRdeFoundError); ok {
+				klog.Infof("CAPVCD entity found. Skip removing VIPs from RDE in the status")
+				return nil
+			}
 			return fmt.Errorf("error getting current vips: [%v]", err)
 		}
 		// currIps is guaranteed not to be nil by GetRDEVirtualIps
@@ -132,6 +150,9 @@ func (client *Client) removeVirtualIpFromRDE(ctx context.Context, removeIp strin
 
 		httpResponse, err := client.updateRDEVirtualIps(ctx, updatedIps, etag, defEnt)
 		if err != nil {
+			if capvcdEntityFoundErr, ok := err.(util.CapvdRdeFoundError); ok {
+				return capvcdEntityFoundErr
+			}
 			if httpResponse.StatusCode == http.StatusPreconditionFailed {
 				klog.Infof("Wrong ETag while removing virtual IP [%s]", removeIp)
 				continue

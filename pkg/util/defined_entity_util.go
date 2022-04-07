@@ -14,10 +14,19 @@ const (
 	NativeClusterEntityTypeNss    = "nativeCluster"
 )
 
+type CapvdRdeFoundError struct {
+	EntityType string
+}
+
+func (e CapvdRdeFoundError) Error() string {
+	return fmt.Sprintf("found entity of type [%s]", e.EntityType)
+}
+
 type VCDResource struct {
 	Type string `json:"type,omitempty"`
 	ID   string `json:"id,omitempty"`
 	Name string `json:"name,omitempty"`
+	AdditionalDetails map[string]interface{} `json:"additionalDetails,omitempty"`
 }
 
 type CPIStatus struct {
@@ -58,16 +67,10 @@ func GetVirtualIPsFromRDE(rde *swaggerClient.DefinedEntity) ([]string, error) {
 
 	var virtualIpInterfaces interface{}
 	if IsCAPVCDEntityType(rde.EntityType) {
-		// TODO: upgrade existing RDEs to 1.1.0 version
-		cpiStatusInterface, ok := statusMap["cpi"]
-		if !ok {
-			return nil, fmt.Errorf("CAPVCD entity [%s] is missing CPI status", rde.Id)
+		capvcdEntityFoundErr := CapvdRdeFoundError{
+			EntityType: rde.EntityType,
 		}
-		cpiStatusMap, ok := cpiStatusInterface.(map[string]interface{})
-		if !ok {
-			return nil, fmt.Errorf("failed to convert value for CPI in RDE status to map[string]interface{}")
-		}
-		virtualIpInterfaces = cpiStatusMap["virtualIPs"]
+		return nil, capvcdEntityFoundErr
 	} else if IsNativeClusterEntityType(rde.EntityType) {
 		virtualIpInterfaces = statusMap["virtual_IPs"]
 	} else {
@@ -105,20 +108,10 @@ func ReplaceVirtualIPsInRDE(rde *swaggerClient.DefinedEntity, updatedIps []strin
 		return nil, fmt.Errorf("unable to convert [%T] to map", statusEntry)
 	}
 	if IsCAPVCDEntityType(rde.EntityType) {
-		// TODO: upgrade existing entities to capvcdCluster 1.1.0
-		cpiStatusInterface, ok := statusMap["cpi"]
-		var cpiStatusMap map[string]interface{}
-		if !ok {
-			cpiStatusMap = make(map[string]interface{})
-			cpiStatusMap["virtualIPs"] = updatedIps
-		} else {
-			cpiStatusMap, ok = cpiStatusInterface.(map[string]interface{})
-			if !ok {
-				return nil, fmt.Errorf("failed to parse CPI status")
-			}
-			cpiStatusMap["virtualIPs"] = updatedIps
+		capvcdEntityFoundErr := CapvdRdeFoundError{
+			EntityType: rde.EntityType,
 		}
-		statusMap["cpi"] = cpiStatusMap
+		return nil, capvcdEntityFoundErr
 	} else if IsNativeClusterEntityType(rde.EntityType) {
 		statusMap["virtual_IPs"] = updatedIps
 	}
