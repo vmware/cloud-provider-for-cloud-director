@@ -173,7 +173,6 @@ func AddToVCDResourceSet(statusMap map[string]interface{}, vcdResource util.VCDR
 	if err != nil {
 		return nil, fmt.Errorf("failed to add VCDResource [%s] of type [%s] to CPI status: [%v]", vcdResource.ID, vcdResource.Type, err)
 	}
-	klog.Infof("***DEBUG - input status map: [%#v]", statusMap)
 	resourceFound := false
 	for _, r := range cpiStatus.VCDResourceSet {
 		if r.Type == vcdResource.Type && r.ID == vcdResource.ID {
@@ -189,7 +188,6 @@ func AddToVCDResourceSet(statusMap map[string]interface{}, vcdResource util.VCDR
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert CPI status object to map[string]interface{} to add [%v] to VCDResourceSet: [%v]", vcdResource, err)
 	}
-	klog.Infof("***DEBUG - updated status map: [%#v]", updatedCPIMap)
 	statusMap["cpi"] = updatedCPIMap
 	return statusMap, nil
 }
