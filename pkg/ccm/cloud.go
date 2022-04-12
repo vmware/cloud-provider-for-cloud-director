@@ -3,8 +3,6 @@
    SPDX-License-Identifier: Apache-2.0
 */
 
-// +build !testing
-
 package ccm
 
 import (
@@ -80,9 +78,6 @@ func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error
 			true,
 			cloudConfig.ClusterID,
 			oneArm,
-			cloudConfig.LB.Ports.HTTP,
-			cloudConfig.LB.Ports.HTTPS,
-			cloudConfig.LB.CertificateAlias,
 			true,
 		)
 		if err == nil {
@@ -99,7 +94,7 @@ func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error
 		klog.Infof("Gateway of network [%s] not backed by NSX-T. Hence LB will not be initialized.",
 			cloudConfig.VCD.VDCNetwork)
 	} else {
-		lb = newLoadBalancer(vcdClient)
+		lb = newLoadBalancer(vcdClient, cloudConfig.LB.CertificateAlias)
 	}
 
 	// cache for VM Info with an refresh of elements needed after 1 minute

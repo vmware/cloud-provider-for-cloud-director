@@ -30,23 +30,20 @@ type OneArm struct {
 
 // Client :
 type Client struct {
-	VCDAuthConfig  *VCDAuthConfig
-	ClusterOrgName string
+	VCDAuthConfig      *VCDAuthConfig
+	ClusterOrgName     string
 	ClusterOVDCName    string
-	ClusterVAppName string
-	VCDClient *govcd.VCDClient
-	VDC         *govcd.Vdc
-	APIClient   *swaggerClient.APIClient
-	networkName string
-	IPAMSubnet  string
-	gatewayRef  *swaggerClient.EntityReference
+	ClusterVAppName    string
+	VCDClient          *govcd.VCDClient
+	VDC                *govcd.Vdc
+	APIClient          *swaggerClient.APIClient
+	networkName        string
+	IPAMSubnet         string
+	gatewayRef         *swaggerClient.EntityReference
 	networkBackingType swaggerClient.BackingNetworkType
 	ClusterID          string
-	OneArm             *OneArm
-	HTTPPort           int32
-	HTTPSPort          int32
-	CertificateAlias string
-	RWLock           sync.RWMutex
+	OneArm             *OneArm // TODO: Move out of client
+	RWLock             sync.RWMutex
 }
 
 func (client *Client) RefreshBearerToken() error {
@@ -113,8 +110,7 @@ func (client *Client) RefreshBearerToken() error {
 // NewVCDClientFromSecrets :
 func NewVCDClientFromSecrets(host string, orgName string, vdcName string, vAppName string,
 	networkName string, ipamSubnet string, userOrg string, user string, password string,
-	refreshToken string, insecure bool, clusterID string, oneArm *OneArm,
-	httpPort int32, httpsPort int32, certAlias string, getVdcClient bool) (*Client, error) {
+	refreshToken string, insecure bool, clusterID string, oneArm *OneArm, getVdcClient bool) (*Client, error) {
 
 	// TODO: validation of parameters
 
@@ -146,20 +142,17 @@ func NewVCDClientFromSecrets(host string, orgName string, vdcName string, vAppNa
 	}
 
 	client := &Client{
-		VCDAuthConfig:    vcdAuthConfig,
-		ClusterOrgName:   orgName,
-		ClusterOVDCName:  vdcName,
-		ClusterVAppName:  vAppName,
-		VCDClient:        vcdClient,
-		APIClient:        apiClient,
-		networkName:      networkName,
-		IPAMSubnet:       ipamSubnet,
-		gatewayRef:       nil,
-		ClusterID:        clusterID,
-		OneArm:           oneArm,
-		HTTPPort:         httpPort,
-		HTTPSPort:        httpsPort,
-		CertificateAlias: certAlias,
+		VCDAuthConfig:   vcdAuthConfig,
+		ClusterOrgName:  orgName,
+		ClusterOVDCName: vdcName,
+		ClusterVAppName: vAppName,
+		VCDClient:       vcdClient,
+		APIClient:       apiClient,
+		networkName:     networkName,
+		IPAMSubnet:      ipamSubnet,
+		gatewayRef:      nil,
+		ClusterID:       clusterID,
+		OneArm:          oneArm,
 	}
 
 	if getVdcClient {

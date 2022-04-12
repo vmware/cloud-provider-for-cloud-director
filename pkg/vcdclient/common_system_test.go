@@ -128,9 +128,6 @@ func getTestVCDClient(inputMap map[string]interface{}) (*Client, error) {
 		insecure,
 		cloudConfig.ClusterID,
 		oneArm,
-		cloudConfig.LB.Ports.HTTP,
-		cloudConfig.LB.Ports.HTTPS,
-		cloudConfig.LB.CertificateAlias,
 		getVdcClient,
 	)
 }

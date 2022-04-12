@@ -3,8 +3,6 @@
    SPDX-License-Identifier: Apache-2.0
 */
 
-// +build !testing
-
 package ccm
 
 import (
@@ -21,22 +19,24 @@ import (
 )
 
 const (
-	sslPortsAnnotation = `service.beta.kubernetes.io/vcloud-avi-ssl-ports`
+	sslPortsAnnotation     = `service.beta.kubernetes.io/vcloud-avi-ssl-ports`
 	sslCertAliasAnnotation = `service.beta.kubernetes.io/vcloud-avi-ssl-cert-alias`
 )
 
 //LBManager -
 type LBManager struct {
-	vcdClient  *vcdclient.Client
-	kubeClient *kubernetes.Clientset
-	namespace  string
+	vcdClient        *vcdclient.Client
+	kubeClient       *kubernetes.Clientset
+	namespace        string
+	CertificateAlias string
 }
 
-func newLoadBalancer(vcdClient *vcdclient.Client) cloudProvider.LoadBalancer {
+func newLoadBalancer(vcdClient *vcdclient.Client, certAlias string) cloudProvider.LoadBalancer {
 	return &LBManager{
-		vcdClient:  vcdClient,
-		kubeClient: GetK8SClient(),
-		namespace:  "default",
+		vcdClient:        vcdClient,
+		kubeClient:       GetK8SClient(),
+		namespace:        "default",
+		CertificateAlias: certAlias,
 	}
 }
 
@@ -228,10 +228,10 @@ func (lb *LBManager) deleteLoadBalancer(ctx context.Context, service *v1.Service
 	portDetailsList := make([]vcdclient.PortDetails, len(service.Spec.Ports))
 	for idx, port := range service.Spec.Ports {
 		portDetailsList[idx] = vcdclient.PortDetails{
-			PortSuffix: port.Name,
+			PortSuffix:   port.Name,
 			ExternalPort: port.Port,
 			InternalPort: port.NodePort,
-			Protocol: string(port.Protocol),
+			Protocol:     string(port.Protocol),
 			// no need to set UseSSL for deletion
 		}
 	}
@@ -254,7 +254,7 @@ func getSSLPorts(service *v1.Service) ([]int32, error) {
 
 	portStrings := strings.Split(sslPortsString, ",")
 	ports := make([]int32, len(portStrings))
-	for idx, portStr := range(portStrings) {
+	for idx, portStr := range portStrings {
 		port, err := strconv.ParseInt(portStr, 10, 32)
 		if err != nil {
 			return nil, fmt.Errorf("unable to convert [%s] to int32: [%v]", portStr, err)
@@ -312,7 +312,7 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 
 	certAlias := getSSLCertAlias(service)
 	if certAlias == "" {
-		certAlias = lb.vcdClient.CertificateAlias
+		certAlias = lb.CertificateAlias
 	}
 
 	// golang doesn't have the set data structure
@@ -322,10 +322,10 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 	}
 	for idx, port := range service.Spec.Ports {
 		portDetailsList[idx] = vcdclient.PortDetails{
-			PortSuffix: port.Name,
+			PortSuffix:   port.Name,
 			ExternalPort: port.Port,
 			InternalPort: port.NodePort,
-			Protocol: strings.ToUpper(string(port.Protocol)),
+			Protocol:     strings.ToUpper(string(port.Protocol)),
 		}
 		if port.AppProtocol != nil && *port.AppProtocol != "" {
 			portDetailsList[idx].Protocol = strings.ToUpper(*port.AppProtocol)
