@@ -88,7 +88,10 @@ func UpgradeCPISectionInStatus(statusMap map[string]interface{}) (map[string]int
 }
 
 // UpgradeCPIStatusOfExistingRDE Creates an empty cpi section with just the name and version populated if CPI status
-// section is missing from CAPVCD RDE
+// section is missing from CAPVCD RDE. This method is intended to be called when CPI is started up.
+// EnsureLoadBalancer function, which is called for every instance of load balancer type service during start up,
+// will take care of lazily updating rest of the information related to CPI.
+// For future CPI upgrades, this method may become a factory of converters (ConvertFrom()).
 func (client *Client) UpgradeCPIStatusOfExistingRDE(ctx context.Context, rdeId string) error {
 	klog.Infof("upgrading CPI section in RDE")
 	rde, resp, etag, err := client.APIClient.DefinedEntityApi.GetDefinedEntity(ctx, rdeId)

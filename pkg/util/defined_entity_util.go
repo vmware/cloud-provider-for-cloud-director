@@ -14,11 +14,11 @@ const (
 	NativeClusterEntityTypeNss    = "nativeCluster"
 )
 
-type CapvdRdeFoundError struct {
+type CapvcdRdeFoundError struct {
 	EntityType string
 }
 
-func (e CapvdRdeFoundError) Error() string {
+func (e CapvcdRdeFoundError) Error() string {
 	return fmt.Sprintf("found entity of type [%s]", e.EntityType)
 }
 
@@ -67,7 +67,7 @@ func GetVirtualIPsFromRDE(rde *swaggerClient.DefinedEntity) ([]string, error) {
 
 	var virtualIpInterfaces interface{}
 	if IsCAPVCDEntityType(rde.EntityType) {
-		capvcdEntityFoundErr := CapvdRdeFoundError{
+		capvcdEntityFoundErr := CapvcdRdeFoundError{
 			EntityType: rde.EntityType,
 		}
 		return nil, capvcdEntityFoundErr
@@ -108,7 +108,7 @@ func ReplaceVirtualIPsInRDE(rde *swaggerClient.DefinedEntity, updatedIps []strin
 		return nil, fmt.Errorf("unable to convert [%T] to map", statusEntry)
 	}
 	if IsCAPVCDEntityType(rde.EntityType) {
-		capvcdEntityFoundErr := CapvdRdeFoundError{
+		capvcdEntityFoundErr := CapvcdRdeFoundError{
 			EntityType: rde.EntityType,
 		}
 		return nil, capvcdEntityFoundErr

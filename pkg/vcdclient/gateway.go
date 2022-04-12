@@ -1241,6 +1241,20 @@ func (client *Client) createVirtualService(ctx context.Context, virtualServiceNa
 			return nil, err
 		}
 
+		virtualIPDetails := map[string]interface{}{
+			"virtualIP": rdeVIP,
+		}
+		if err := client.AddToVCDResourceSet(ctx, VcdResourceVirtualService, virtualServiceName, vsSummary.Id, virtualIPDetails); err != nil {
+			if _, ok := err.(NonCAPVCDEntityError); ok {
+				klog.Infof("Skipped updating CPI VCDResourceSet as non CAPVCD RDE is detected")
+			} else {
+				return nil, fmt.Errorf("failed to add virtual service [%s] to CPI VCDResourceSet in RDE [%s]: [%v]", virtualServiceName, client.ClusterID, err)
+			}
+		} else {
+			klog.Infof("successfully added virtual service having name [%s], ID [%s] and VIP [%s] to CPI VCDResourceSet in RDE [%s]",
+				virtualServiceName, vsSummary.Id, vsSummary.VirtualIpAddress, client.ClusterID)
+		}
+
 		return &swaggerClient.EntityReference{
 			Name: vsSummary.Name,
 			Id:   vsSummary.Id,
