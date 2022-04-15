@@ -1170,10 +1170,10 @@ func (client *Client) updateVirtualServicePort(ctx context.Context, virtualServi
 	}
 
 	// update RDE
-	virtualIPDetails := map[string]interface{}{
+	err = client.AddToVCDResourceSet(ctx, VcdResourceVirtualService, virtualServiceName, vsSummary.Id, map[string]interface{}{
 		"virtualIP": rdeVIP,
-	}
-	if err := client.AddToVCDResourceSet(ctx, VcdResourceVirtualService, virtualServiceName, vsSummary.Id, virtualIPDetails); err != nil {
+	})
+	if err != nil {
 		if _, ok := err.(NonCAPVCDEntityError); ok {
 			klog.Infof("Skipped updating CPI VCDResourceSet as non CAPVCD RDE is detected")
 		} else {
