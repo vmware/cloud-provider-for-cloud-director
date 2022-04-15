@@ -8,6 +8,7 @@
 package ccm
 
 import (
+	"context"
 	"fmt"
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/config"
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdclient"
@@ -104,6 +105,15 @@ func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error
 
 	// cache for VM Info with an refresh of elements needed after 1 minute
 	vmInfoCache := newVmInfoCache(vcdClient, time.Minute)
+
+	// TODO: upgrade all CAPVCD RDEs here
+
+	err = vcdClient.UpgradeCPIStatusOfExistingRDE(context.Background(), cloudConfig.ClusterID)
+	if err != nil {
+		klog.Errorf("failed to create CPI status in the RDE [%s]: [%v]", cloudConfig.ClusterID, err)
+	} else {
+		klog.Infof("successfully created CPI status in RDE [%s]", cloudConfig.ClusterID)
+	}
 
 	return &VCDCloudProvider{
 		vcdClient: vcdClient,

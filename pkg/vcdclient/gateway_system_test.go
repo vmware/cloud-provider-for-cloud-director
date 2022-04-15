@@ -319,14 +319,14 @@ func TestVirtualServiceHttpCRUDE(t *testing.T) {
 	require.NotNil(t, vsRef, "VirtualServiceRef should not be nil")
 	assert.Equal(t, virtualServiceName, vsRef.Name, "Virtual Service name should match")
 
-	err = vcdClient.updateVirtualServicePort(ctx, virtualServiceName, 8080)
+	err = vcdClient.updateVirtualServicePort(ctx, virtualServiceName, 8080, "1.2.3.4")
 	assert.NoError(t, err, "Unable to update external port")
 
 	// repeated update should not fail
-	err = vcdClient.updateVirtualServicePort(ctx, virtualServiceName, 8080)
+	err = vcdClient.updateVirtualServicePort(ctx, virtualServiceName, 8080, "1.2.3.4")
 	assert.NoError(t, err, "Repeated update to external port should not fail")
 
-	err = vcdClient.updateVirtualServicePort(ctx, virtualServiceName+"-invalid", 8080)
+	err = vcdClient.updateVirtualServicePort(ctx, virtualServiceName+"-invalid", 8080, "1.2.3.4")
 	assert.Error(t, err, "Update virtual service on a non-existent virtual service should fail")
 
 	err = vcdClient.deleteVirtualService(ctx, virtualServiceName, true, externalIP)
@@ -421,15 +421,15 @@ func TestVirtualServiceHttpsCRUDE(t *testing.T) {
 	assert.Equal(t, virtualServiceName, vsRef.Name, "Virtual Service name should match")
 
 	// update and delete calls might error out if virtual services are busy. Retry if the error is caused by the busy virtual services
-	err = vcdClient.updateVirtualServicePort(ctx, virtualServiceName, 8443)
+	err = vcdClient.updateVirtualServicePort(ctx, virtualServiceName, 8443, "1.2.3.4")
 	assert.NoError(t, err, "Unable to update external port")
 
 	// repeated update should not fail
-	err = vcdClient.updateVirtualServicePort(ctx, virtualServiceName, 8443)
+	err = vcdClient.updateVirtualServicePort(ctx, virtualServiceName, 8443, "1.2.3.4")
 	assert.NoError(t, err, "Repeated update to external port should not fail")
 
 	// update of invalid virtual service
-	err = vcdClient.updateVirtualServicePort(ctx, virtualServiceName+"-invalid\n", 8443)
+	err = vcdClient.updateVirtualServicePort(ctx, virtualServiceName+"-invalid\n", 8443, "1.2.3.4")
 	assert.Error(t, err, "Update virtual service on a non-existent virtual service should fail")
 
 	err = vcdClient.deleteVirtualService(ctx, virtualServiceName, true, externalIP)

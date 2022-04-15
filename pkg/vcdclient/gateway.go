@@ -448,8 +448,8 @@ func (client *Client) createDNATRule(ctx context.Context, dnatRuleName string,
 			client.ClusterOrgName)
 
 		appPortProfileConfig := &types.NsxtAppPortProfile{
-			Name:             appPortProfileName,
-			Description:      fmt.Sprintf("App Port Profile for DNAT rule [%s]", dnatRuleName),
+			Name:        appPortProfileName,
+			Description: fmt.Sprintf("App Port Profile for DNAT rule [%s]", dnatRuleName),
 			ApplicationPorts: []types.NsxtAppPortProfilePort{
 				{
 					Protocol: "TCP",
@@ -458,12 +458,12 @@ func (client *Client) createDNATRule(ctx context.Context, dnatRuleName string,
 					DestinationPorts: []string{fmt.Sprintf("%d", externalPort)},
 				},
 			},
-			OrgRef:           &types.OpenApiReference{
+			OrgRef: &types.OpenApiReference{
 				Name: org.Org.Name,
 				ID:   org.Org.ID,
 			},
-			ContextEntityId:  contextEntityID,
-			Scope:            scope,
+			ContextEntityId: contextEntityID,
+			Scope:           scope,
 		}
 
 		klog.Infof("Creating App Port Profile [%s] in org [%s]...", appPortProfileName,
@@ -472,6 +472,17 @@ func (client *Client) createDNATRule(ctx context.Context, dnatRuleName string,
 		if err != nil {
 			return fmt.Errorf("unable to create nsxt app port profile with config [%#v]: [%v]",
 				appPortProfileConfig, err)
+		}
+		// update RDE with app port profile
+		err = client.AddToVCDResourceSet(ctx, VcdResourceAppPortProfile, appPortProfile.NsxtAppPortProfile.Name, appPortProfile.NsxtAppPortProfile.ID, nil)
+		if err != nil {
+			if _, ok := err.(NonCAPVCDEntityError); ok {
+				klog.Infof("Skipped updating CPI VCDResourceSet as non CAPVCD RDE is detected")
+			} else {
+				return fmt.Errorf("failed to update CPI VCDResourceSet in RDE [%s] with app port profile [%s]", client.ClusterID, appPortProfileName)
+			}
+		} else {
+			klog.Infof("successfully added app port profile having name [%s] and ID [%s] to CPI VCDResourceSet in RDE [%s]", appPortProfile.NsxtAppPortProfile.Name, appPortProfile.NsxtAppPortProfile.ID, client.ClusterID)
 		}
 		klog.Infof("Created App Port Profile [%s] in org [%s].", appPortProfileName,
 			client.ClusterOrgName)
@@ -512,13 +523,32 @@ func (client *Client) createDNATRule(ctx context.Context, dnatRuleName string,
 			dnatRuleName, externalIP, internalIP, taskURL, err)
 	}
 
+	dnatRuleRef, err = client.getNATRuleRef(ctx, dnatRuleName)
+	if err != nil {
+		return fmt.Errorf("unexpected error while looking for nat rule [%s] after creating it in gateway [%s]: [%v]",
+			dnatRuleName, client.gatewayRef.Name, err)
+	}
+	if dnatRuleRef == nil {
+		return fmt.Errorf("could not find the created DNAT rule [%s] in gateway: [%v]", dnatRuleName, err)
+	}
+	// update RDE
+	if err := client.AddToVCDResourceSet(ctx, VcdResourceDNATRule, dnatRuleRef.Name, dnatRuleRef.ID, nil); err != nil {
+		if _, ok := err.(NonCAPVCDEntityError); ok {
+			klog.Infof("Skipped updating CPI VCDResourceSet as non CAPVCD RDE is detected")
+		} else {
+			return fmt.Errorf("failed to add DNAT rule [%s] to CPI VCDResourceSet: [%v]", dnatRuleName, err)
+		}
+	} else {
+		klog.Infof("successfully added DNAT rule having name [%s] and ID [%s] to CPI VCDResourceSet in RDE [%s]", dnatRuleRef.Name, dnatRuleRef.ID, client.ClusterID)
+	}
+
 	klog.Infof("Created DNAT rule [%s]: [%s:%d] => [%s:%d] on gateway [%s]\n", dnatRuleName,
 		externalIP, externalPort, internalIP, internalPort, client.gatewayRef.Name)
 
 	return nil
 }
 
-func (client *Client) updateAppPortProfile(appPortProfileName string, externalPort int32) error {
+func (client *Client) updateAppPortProfile(ctx context.Context, appPortProfileName string, externalPort int32) error {
 	org, err := client.VCDClient.GetOrgByName(client.ClusterOrgName)
 	if err != nil {
 		return fmt.Errorf("unable to find org [%s] by name: [%v]", client.ClusterOrgName, err)
@@ -527,9 +557,21 @@ func (client *Client) updateAppPortProfile(appPortProfileName string, externalPo
 	if err != nil {
 		return fmt.Errorf("failed to get application port profile by name [%s]: [%v]", appPortProfileName, err)
 	}
-	if appPortProfile == nil || appPortProfile.NsxtAppPortProfile == nil || len(appPortProfile.NsxtAppPortProfile.ApplicationPorts) == 0 || len(appPortProfile.NsxtAppPortProfile.ApplicationPorts[0].DestinationPorts) == 0  {
+	if appPortProfile == nil || appPortProfile.NsxtAppPortProfile == nil || len(appPortProfile.NsxtAppPortProfile.ApplicationPorts) == 0 || len(appPortProfile.NsxtAppPortProfile.ApplicationPorts[0].DestinationPorts) == 0 {
 		return fmt.Errorf("invalid app port profile [%s]", appPortProfileName)
 	}
+
+	// update RDE
+	if err := client.AddToVCDResourceSet(ctx, VcdResourceAppPortProfile, appPortProfile.NsxtAppPortProfile.Name, appPortProfile.NsxtAppPortProfile.ID, nil); err != nil {
+		if _, ok := err.(NonCAPVCDEntityError); ok {
+			klog.Infof("Skipped updating CPI VCDResourceSet as non CAPVCD RDE is detected")
+		} else {
+			return fmt.Errorf("failed to add app port profile [%s] to CPI VCDResourceSet in RDE [%s]: [%v]", appPortProfileName, client.ClusterID, err)
+		}
+	} else {
+		klog.Infof("successfully added app port profile having name [%s] and ID [%s] to CPI VCDResourceSet in RDE [%s]", appPortProfile.NsxtAppPortProfile.Name, appPortProfile.NsxtAppPortProfile.ID, client.ClusterID)
+	}
+
 	if appPortProfile.NsxtAppPortProfile.ApplicationPorts[0].DestinationPorts[0] == fmt.Sprintf("%d", externalPort) {
 		klog.Infof("Update to application port profile [%s] is not required", appPortProfileName)
 		return nil
@@ -568,9 +610,18 @@ func (client *Client) updateDNATRule(ctx context.Context, dnatRuleName string, e
 	} else if err != nil {
 		return fmt.Errorf("error while getting DNAT rule [%s]: [%v]", dnatRuleRef.Name, err)
 	}
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("failed to get DNAT rule with ID [%s] from gateway with ID [%s]; unexpected status code [%d]. Expected status code: [%d]", dnatRuleRef.ID, client.gatewayRef.Id, resp.StatusCode, http.StatusOK)
+
+	// update RDE
+	if err := client.AddToVCDResourceSet(ctx, VcdResourceDNATRule, dnatRuleRef.Name, dnatRuleRef.ID, nil); err != nil {
+		if _, ok := err.(NonCAPVCDEntityError); ok {
+			klog.Infof("Skipped updating CPI VCDResourceSet as non CAPVCD RDE is detected")
+		} else {
+			return fmt.Errorf("failed to add DNAT rule [%s] details to CPI VCDResourceSet in RDE [%s]: [%v]", dnatRuleName, client.ClusterID, err)
+		}
+	} else {
+		klog.Infof("successfully added DNAT rule having name [%s] and ID [%s] to CPI VCDResourceSet in RDE [%s]", dnatRuleRef.Name, dnatRuleRef.ID, client.ClusterID)
 	}
+
 	if dnatRule.ExternalAddresses == externalIP && dnatRule.InternalAddresses == internalIP && dnatRule.DnatExternalPort == strconv.FormatInt(int64(externalPort), 10) {
 		klog.Infof("Update to DNAT rule [%s] not required", dnatRuleRef.Name)
 		return nil
@@ -645,6 +696,17 @@ func (client *Client) deleteDNATRule(ctx context.Context, dnatRuleName string,
 			return fmt.Errorf("unable to delete dnat rule [%s]: deletion task [%s] did not complete: [%v]",
 				dnatRuleName, taskURL, err)
 		}
+		err = client.RemoveFromVCDResourceSet(ctx, VcdResourceDNATRule, dnatRuleRef.ID)
+		// remove from RDE in CPI VCDResourceSet
+		if err != nil {
+			if _, ok := err.(NonCAPVCDEntityError); ok {
+				klog.Infof("Skipped updating CPI VCDResourceSet as non CAPVCD RDE is detected")
+			} else {
+				return fmt.Errorf("failed to delete DNAT rule [%s] from CPI VCDResourceSet in RDE [%s]: [%v]", dnatRuleRef.Name, client.ClusterID, err)
+			}
+		} else {
+			klog.Infof("deleted DNAT rule [%s] from CPI VCDResourceSet in RDE", dnatRuleRef.Name)
+		}
 		klog.Infof("Deleted DNAT rule [%s] on gateway [%s]\n", dnatRuleName, client.gatewayRef.Name)
 	}
 
@@ -683,8 +745,18 @@ func (client *Client) deleteDNATRule(ctx context.Context, dnatRuleName string,
 		if err = appPortProfile.Delete(); err != nil {
 			return fmt.Errorf("unable to delete application port profile [%s]: [%v]", appPortProfileName, err)
 		}
+		err = client.RemoveFromVCDResourceSet(ctx, VcdResourceAppPortProfile, appPortProfile.NsxtAppPortProfile.ID)
+		// remove from RDE in CPI VCDResourceSet
+		if err != nil {
+			if _, ok := err.(NonCAPVCDEntityError); ok {
+				klog.Infof("Skipped updating CPI VCDResourceSet as non CAPVCD RDE is detected")
+			} else {
+				return fmt.Errorf("failed to delete application port profile [%s] from CPI VCDResourceSet in RDE [%s]: [%v]", appPortProfileName, client.ClusterID, err)
+			}
+		} else {
+			klog.Infof("deleted application port profile [%s] from CPI VCDResourceSet in RDE", appPortProfileName)
+		}
 	}
-
 
 	return nil
 }
@@ -797,6 +869,18 @@ func (client *Client) createLoadBalancerPool(ctx context.Context, lbPoolName str
 		return nil, fmt.Errorf("unable to query for loadbalancer pool [%s] that was freshly created: [%v]",
 			lbPoolName, err)
 	}
+
+	// update RDE
+	if err := client.AddToVCDResourceSet(ctx, VcdResourceLoadBalancerPool, lbPoolRef.Name, lbPoolRef.Id, nil); err != nil {
+		if _, ok := err.(NonCAPVCDEntityError); ok {
+			klog.Infof("Skipped updating CPI VCDResourceSet as non CAPVCD RDE is detected")
+		} else {
+			return nil, fmt.Errorf("failed to add lb pool [%s] to CPI VCDResourceSet in RDE [%s]: [%v]", lbPoolRef.Name, client.ClusterID, err)
+		}
+	} else {
+		klog.Infof("successfully added load balancer pool having name [%s] and ID [%s] to CPI VCDResourceSet in RDE [%s]", lbPoolRef.Name, lbPoolRef.Id, client.ClusterID)
+	}
+
 	klog.Infof("Created lb pool [%v] on gateway [%v]\n", lbPoolRef, client.gatewayRef.Name)
 
 	return lbPoolRef, nil
@@ -830,6 +914,18 @@ func (client *Client) deleteLoadBalancerPool(ctx context.Context, lbPoolName str
 	if resp.StatusCode != http.StatusAccepted {
 		return fmt.Errorf("unable to delete lb pool; expected http response [%v], obtained [%v]",
 			http.StatusAccepted, resp.StatusCode)
+	}
+
+	// remove lb pool from VCDResourceSet
+	err = client.RemoveFromVCDResourceSet(ctx, VcdResourceLoadBalancerPool, lbPoolRef.Id)
+	if err != nil {
+		if _, ok := err.(NonCAPVCDEntityError); ok {
+			klog.Infof("Skipped updating CPI VCDResourceSet as non CAPVCD RDE is detected")
+		} else {
+			return fmt.Errorf("failed to remove LoadBalancer pool [%s] from CPI VCDResourceSet in RDE [%s]: [%v]", lbPoolRef.Name, client.ClusterID, err)
+		}
+	} else {
+		klog.Errorf("removed LoadBalancer pool [%s] from CPI VCDResourceSet: [%v]", lbPoolRef.Name, err)
 	}
 
 	taskURL := resp.Header.Get("Location")
@@ -878,12 +974,23 @@ func (client *Client) updateLoadBalancerPool(ctx context.Context, lbPoolName str
 		return nil, fmt.Errorf("unable to get loadbalancer pool with id [%s], expected http response [%v], obtained [%v]", lbPoolRef.Id, http.StatusOK, resp.StatusCode)
 	}
 
+	// update RDE
+	if err := client.AddToVCDResourceSet(ctx, VcdResourceLoadBalancerPool, lbPool.Name, lbPool.Id, nil); err != nil {
+		if _, ok := err.(NonCAPVCDEntityError); ok {
+			klog.Infof("Skipped updating CPI VCDResourceSet as non CAPVCD RDE is detected")
+		} else {
+			return nil, fmt.Errorf("failed to add lb pool [%s] to CPI VCDResourceSet in RDE [%s]: [%v]", lbPool.Name, client.ClusterID, err)
+		}
+	} else {
+		klog.Infof("successfully added load balancer pool having name [%s] and ID [%s] to CPI VCDResourceSet in RDE [%s]", lbPool.Name, lbPool.Id, client.ClusterID)
+	}
+
 	if hasSameLBPoolMembers(lbPool.Members, ips) && lbPool.Members[0].Port == internalPort {
 		klog.Infof("No updates needed for the loadbalancer pool [%s]", lbPool.Name)
 		return lbPoolRef, nil
 	}
 	if err = client.checkIfLBPoolIsReady(ctx, lbPoolName); err != nil {
-		return nil, fmt.Errorf("unable to update loadbalancer pool [%s]; loadbalancer pool is busy: [%v]",lbPoolName, err)
+		return nil, fmt.Errorf("unable to update loadbalancer pool [%s]; loadbalancer pool is busy: [%v]", lbPoolName, err)
 	}
 	if err := client.checkIfGatewayIsReady(ctx); err != nil {
 		klog.Errorf("failed to update DNAT rule; gateway [%s] is busy", client.gatewayRef.Name)
@@ -1050,7 +1157,7 @@ func (client *Client) checkIfGatewayIsReady(ctx context.Context) error {
 	return NewGatewayBusyError(client.gatewayRef.Name)
 }
 
-func (client *Client) updateVirtualServicePort(ctx context.Context, virtualServiceName string, externalPort int32) error {
+func (client *Client) updateVirtualServicePort(ctx context.Context, virtualServiceName string, externalPort int32, rdeVIP string) error {
 	vsSummary, err := client.getVirtualService(ctx, virtualServiceName)
 	if err != nil {
 		return fmt.Errorf("failed to get virtual service summary for virtual service [%s]: [%v]", virtualServiceName, err)
@@ -1061,6 +1168,22 @@ func (client *Client) updateVirtualServicePort(ctx context.Context, virtualServi
 	if len(vsSummary.ServicePorts) == 0 {
 		return fmt.Errorf("virtual service [%s] has no service ports", virtualServiceName)
 	}
+
+	// update RDE
+	err = client.AddToVCDResourceSet(ctx, VcdResourceVirtualService, virtualServiceName, vsSummary.Id, map[string]interface{}{
+		"virtualIP": rdeVIP,
+	})
+	if err != nil {
+		if _, ok := err.(NonCAPVCDEntityError); ok {
+			klog.Infof("Skipped updating CPI VCDResourceSet as non CAPVCD RDE is detected")
+		} else {
+			return fmt.Errorf("failed to add virtual service [%s] to CPI VCDResourceSet in RDE [%s]: [%v]", virtualServiceName, client.ClusterID, err)
+		}
+	} else {
+		klog.Infof("successfully added virtual service having name [%s], ID [%s] and VIP [%s] to CPI VCDResourceSet in RDE [%s]",
+			virtualServiceName, vsSummary.Id, vsSummary.VirtualIpAddress, client.ClusterID)
+	}
+
 	if vsSummary.ServicePorts[0].PortStart == externalPort {
 		klog.Infof("virtual service [%s] is already configured with port [%d]", virtualServiceName, externalPort)
 		return nil
@@ -1118,6 +1241,20 @@ func (client *Client) createVirtualService(ctx context.Context, virtualServiceNa
 		klog.V(3).Infof("LoadBalancer Virtual Service [%s] already exists", virtualServiceName)
 		if err = client.checkIfVirtualServiceIsPending(ctx, virtualServiceName); err != nil {
 			return nil, err
+		}
+
+		virtualIPDetails := map[string]interface{}{
+			"virtualIP": rdeVIP,
+		}
+		if err := client.AddToVCDResourceSet(ctx, VcdResourceVirtualService, virtualServiceName, vsSummary.Id, virtualIPDetails); err != nil {
+			if _, ok := err.(NonCAPVCDEntityError); ok {
+				klog.Infof("Skipped updating CPI VCDResourceSet as non CAPVCD RDE is detected")
+			} else {
+				return nil, fmt.Errorf("failed to add virtual service [%s] to CPI VCDResourceSet in RDE [%s]: [%v]", virtualServiceName, client.ClusterID, err)
+			}
+		} else {
+			klog.Infof("successfully added virtual service having name [%s], ID [%s] and VIP [%s] to CPI VCDResourceSet in RDE [%s]",
+				virtualServiceName, vsSummary.Id, vsSummary.VirtualIpAddress, client.ClusterID)
 		}
 
 		return &swaggerClient.EntityReference{
@@ -1198,7 +1335,7 @@ func (client *Client) createVirtualService(ctx context.Context, virtualServiceNa
 			return nil, fmt.Errorf("expected 1 cert with alias [%s], obtained [%d]",
 				certificateAlias, len(certLibItems.Values))
 		}
-		virtualServiceConfig.CertificateRef =  &swaggerClient.EntityReference{
+		virtualServiceConfig.CertificateRef = &swaggerClient.EntityReference{
 			Name: certLibItems.Values[0].Alias,
 			Id:   certLibItems.Values[0].Id,
 		}
@@ -1224,7 +1361,7 @@ func (client *Client) createVirtualService(ctx context.Context, virtualServiceNa
 	// update RDE with freeIp
 	err = client.addVirtualIpToRDE(ctx, rdeVIP)
 	if err != nil {
-		klog.Errorf("error when adding virtual IP to RDE: [%v]", err)
+		return nil, fmt.Errorf("error when adding virtual IP to RDE: [%v]", err)
 	}
 
 	vsSummary, err = client.getVirtualService(ctx, virtualServiceName)
@@ -1245,6 +1382,20 @@ func (client *Client) createVirtualService(ctx context.Context, virtualServiceNa
 		Name: vsSummary.Name,
 		Id:   vsSummary.Id,
 	}
+	virtualIPDetails := map[string]interface{}{
+		"virtualIP": rdeVIP,
+	}
+	if err := client.AddToVCDResourceSet(ctx, VcdResourceVirtualService, virtualServiceName, vsSummary.Id, virtualIPDetails); err != nil {
+		if _, ok := err.(NonCAPVCDEntityError); ok {
+			klog.Infof("Skipped updating CPI VCDResourceSet as non CAPVCD RDE is detected")
+		} else {
+			return nil, fmt.Errorf("failed to add virtual service [%s] to CPI VCDResourceSet in RDE [%s]: [%v]", virtualServiceName, client.ClusterID, err)
+		}
+	} else {
+		klog.Infof("successfully added virtual service having name [%s], ID [%s] and VIP [%s] to CPI VCDResourceSet in RDE [%s]",
+			virtualServiceName, vsSummary.Id, vsSummary.VirtualIpAddress, client.ClusterID)
+	}
+
 	klog.Infof("Created virtual service [%v] on gateway [%v]\n", virtualServiceRef, client.gatewayRef.Name)
 
 	return virtualServiceRef, nil
@@ -1272,8 +1423,8 @@ func (client *Client) deleteVirtualService(ctx context.Context, virtualServiceNa
 
 	err = client.checkIfVirtualServiceIsReady(ctx, virtualServiceName)
 	if err != nil {
-			// virtual service is busy
-			return err
+		// virtual service is busy
+		return err
 	}
 
 	resp, err := client.APIClient.EdgeGatewayLoadBalancerVirtualServiceApi.DeleteVirtualService(
@@ -1298,11 +1449,15 @@ func (client *Client) deleteVirtualService(ctx context.Context, virtualServiceNa
 	}
 	klog.Infof("Deleted virtual service [%s]\n", virtualServiceName)
 
-	// remove virtual ip from RDE
-	err = client.removeVirtualIpFromRDE(ctx, rdeVIP)
+	err = client.RemoveFromVCDResourceSet(ctx, VcdResourceVirtualService, vsSummary.Id)
 	if err != nil {
-		return fmt.Errorf("error when removing vip from RDE: [%v]", err)
+		if _, ok := err.(NonCAPVCDEntityError); ok {
+			klog.Infof("Skipped updating CPI VCDResourceSet as non CAPVCD RDE is detected")
+		} else {
+			return fmt.Errorf("failed to remove virtual service [%s] from VCDResourceSet: [%v]", vsSummary.Name, err)
+		}
 	}
+	klog.Infof("successfully deleted virtual service [%s] from RDE VCDResourceSet.", vsSummary.Id)
 
 	return nil
 }
@@ -1381,25 +1536,6 @@ func (client *Client) CreateLoadBalancer(ctx context.Context, virtualServiceName
 		virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, portDetails.PortSuffix)
 		lbPoolName := fmt.Sprintf("%s-%s", lbPoolNamePrefix, portDetails.PortSuffix)
 
-		vsSummary, err := client.getVirtualService(ctx, virtualServiceName)
-		if err != nil {
-			return "", fmt.Errorf("unexpected error while querying for virtual service [%s]: [%v]",
-				virtualServiceName, err)
-		}
-		if vsSummary != nil {
-			if vsSummary.LoadBalancerPoolRef.Name != lbPoolName {
-				return "", fmt.Errorf("virtual Service [%s] found with unexpected loadbalancer pool [%s]",
-					virtualServiceName, lbPoolName)
-			}
-
-			klog.V(3).Infof("LoadBalancer Virtual Service [%s] already exists", virtualServiceName)
-			if err = client.checkIfVirtualServiceIsPending(ctx, virtualServiceName); err != nil {
-				return "", err
-			}
-
-			continue
-		}
-
 		virtualServiceIP := externalIP
 		if client.OneArm != nil {
 			internalIP, err := client.getUnusedInternalIPAddress(ctx)
@@ -1461,15 +1597,26 @@ func (client *Client) UpdateLoadBalancer(ctx context.Context, lbPoolName string,
 
 	client.RWLock.Lock()
 	defer client.RWLock.Unlock()
-	_, err := client.updateLoadBalancerPool(ctx, lbPoolName, ips, internalPort)
+	// update DNAT rule
+	dnatRuleName := getDNATRuleName(virtualServiceName)
+	dnatRuleRef, err := client.getNATRuleRef(ctx, dnatRuleName)
+	if err != nil {
+		return fmt.Errorf("unable to retrieve created dnat rule [%s]: [%v]", dnatRuleName, err)
+	}
+	err = client.updateDNATRule(ctx, dnatRuleName, dnatRuleRef.ExternalIP, dnatRuleRef.InternalIP, externalPort)
+	if err != nil {
+		return fmt.Errorf("unable to update DNAT rule [%s]: [%v]", dnatRuleName, err)
+	}
+
+	_, err = client.updateLoadBalancerPool(ctx, lbPoolName, ips, internalPort)
 	if err != nil {
 		if lbPoolBusyErr, ok := err.(*LoadBalancerPoolBusyError); ok {
-			klog.Errorf("update loadbalancer pool failed; loadbalancer pool [%s] is busy: [%v]", lbPoolName, err)
+			klog.Errorf("update load balancer pool failed; load balancer pool [%s] is busy: [%v]", lbPoolName, err)
 			return lbPoolBusyErr
 		}
 		return fmt.Errorf("unable to update load balancer pool [%s]: [%v]", lbPoolName, err)
 	}
-	err = client.updateVirtualServicePort(ctx, virtualServiceName, externalPort)
+	err = client.updateVirtualServicePort(ctx, virtualServiceName, externalPort, dnatRuleRef.ExternalIP)
 	if err != nil {
 		if vsBusyErr, ok := err.(*VirtualServiceBusyError); ok {
 			klog.Errorf("update virtual service failed; virtual service [%s] is busy: [%v]", virtualServiceName, err)
@@ -1478,21 +1625,10 @@ func (client *Client) UpdateLoadBalancer(ctx context.Context, lbPoolName string,
 		return fmt.Errorf("unable to update virtual service [%s] with port [%d]: [%v]", virtualServiceName, externalPort, err)
 	}
 	// update app port profile
-	dnatRuleName := getDNATRuleName(virtualServiceName)
 	appPortProfileName := getAppPortProfileName(dnatRuleName)
-	err = client.updateAppPortProfile(appPortProfileName, externalPort)
+	err = client.updateAppPortProfile(ctx, appPortProfileName, externalPort)
 	if err != nil {
 		return fmt.Errorf("unable to update application port profile [%s] with external port [%d]: [%v]", appPortProfileName, externalPort, err)
-	}
-
-	// update DNAT rule
-	dnatRuleRef, err := client.getNATRuleRef(ctx, dnatRuleName)
-	if err != nil {
-		return fmt.Errorf("unable to retrieve created dnat rule [%s]: [%v]", dnatRuleName, err)
-	}
-	err = client.updateDNATRule(ctx, dnatRuleName, dnatRuleRef.ExternalIP, dnatRuleRef.InternalIP, externalPort)
-	if err != nil {
-		return fmt.Errorf("unable to update DNAT rule [%s]: [%v]", dnatRuleName, err)
 	}
 	return nil
 }
