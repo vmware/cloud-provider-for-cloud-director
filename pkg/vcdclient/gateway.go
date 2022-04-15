@@ -696,8 +696,9 @@ func (client *Client) deleteDNATRule(ctx context.Context, dnatRuleName string,
 			return fmt.Errorf("unable to delete dnat rule [%s]: deletion task [%s] did not complete: [%v]",
 				dnatRuleName, taskURL, err)
 		}
+		err = client.RemoveFromVCDResourceSet(ctx, VcdResourceDNATRule, dnatRuleRef.ID)
 		// remove from RDE in CPI VCDResourceSet
-		if err := client.RemoveFromVCDResourceSet(ctx, dnatRuleRef.ID); err != nil {
+		if err != nil {
 			if _, ok := err.(NonCAPVCDEntityError); ok {
 				klog.Infof("Skipped updating CPI VCDResourceSet as non CAPVCD RDE is detected")
 			} else {
@@ -744,8 +745,9 @@ func (client *Client) deleteDNATRule(ctx context.Context, dnatRuleName string,
 		if err = appPortProfile.Delete(); err != nil {
 			return fmt.Errorf("unable to delete application port profile [%s]: [%v]", appPortProfileName, err)
 		}
+		err = client.RemoveFromVCDResourceSet(ctx, VcdResourceAppPortProfile, appPortProfile.NsxtAppPortProfile.ID)
 		// remove from RDE in CPI VCDResourceSet
-		if err := client.RemoveFromVCDResourceSet(ctx, appPortProfile.NsxtAppPortProfile.ID); err != nil {
+		if err != nil {
 			if _, ok := err.(NonCAPVCDEntityError); ok {
 				klog.Infof("Skipped updating CPI VCDResourceSet as non CAPVCD RDE is detected")
 			} else {
@@ -915,7 +917,7 @@ func (client *Client) deleteLoadBalancerPool(ctx context.Context, lbPoolName str
 	}
 
 	// remove lb pool from VCDResourceSet
-	err = client.RemoveFromVCDResourceSet(ctx, lbPoolRef.Id)
+	err = client.RemoveFromVCDResourceSet(ctx, VcdResourceLoadBalancerPool, lbPoolRef.Id)
 	if err != nil {
 		if _, ok := err.(NonCAPVCDEntityError); ok {
 			klog.Infof("Skipped updating CPI VCDResourceSet as non CAPVCD RDE is detected")
@@ -1447,7 +1449,7 @@ func (client *Client) deleteVirtualService(ctx context.Context, virtualServiceNa
 	}
 	klog.Infof("Deleted virtual service [%s]\n", virtualServiceName)
 
-	err = client.RemoveFromVCDResourceSet(ctx, vsSummary.Id)
+	err = client.RemoveFromVCDResourceSet(ctx, VcdResourceVirtualService, vsSummary.Id)
 	if err != nil {
 		if _, ok := err.(NonCAPVCDEntityError); ok {
 			klog.Infof("Skipped updating CPI VCDResourceSet as non CAPVCD RDE is detected")
@@ -1533,25 +1535,6 @@ func (client *Client) CreateLoadBalancer(ctx context.Context, virtualServiceName
 
 		virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, portDetails.PortSuffix)
 		lbPoolName := fmt.Sprintf("%s-%s", lbPoolNamePrefix, portDetails.PortSuffix)
-
-		vsSummary, err := client.getVirtualService(ctx, virtualServiceName)
-		if err != nil {
-			return "", fmt.Errorf("unexpected error while querying for virtual service [%s]: [%v]",
-				virtualServiceName, err)
-		}
-		if vsSummary != nil {
-			if vsSummary.LoadBalancerPoolRef.Name != lbPoolName {
-				return "", fmt.Errorf("virtual Service [%s] found with unexpected loadbalancer pool [%s]",
-					virtualServiceName, lbPoolName)
-			}
-
-			klog.V(3).Infof("LoadBalancer Virtual Service [%s] already exists", virtualServiceName)
-			if err = client.checkIfVirtualServiceIsPending(ctx, virtualServiceName); err != nil {
-				return "", err
-			}
-
-			continue
-		}
 
 		virtualServiceIP := externalIP
 		if client.OneArm != nil {

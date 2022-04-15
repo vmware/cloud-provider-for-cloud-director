@@ -67,10 +67,9 @@ func GetVirtualIPsFromRDE(rde *swaggerClient.DefinedEntity) ([]string, error) {
 
 	var virtualIpInterfaces interface{}
 	if IsCAPVCDEntityType(rde.EntityType) {
-		capvcdEntityFoundErr := CapvcdRdeFoundError{
+		return nil, CapvcdRdeFoundError{
 			EntityType: rde.EntityType,
 		}
-		return nil, capvcdEntityFoundErr
 	} else if IsNativeClusterEntityType(rde.EntityType) {
 		virtualIpInterfaces = statusMap["virtual_IPs"]
 	} else {

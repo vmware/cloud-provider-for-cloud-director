@@ -8,11 +8,14 @@ import (
 	swaggerClient "github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdswaggerclient"
 	"k8s.io/klog"
 	"net/http"
+	"strings"
 )
 
 const (
 	CloudControllerManagerName    = "cloud-controller-manager"
-	CloudControllerManagerVersion = "1.1.2"
+	CloudControllerManagerVersion = "1.2.0"
+
+	MaxRDEUpdateRetries = 10
 
 	// VCD resource types in VCDResourceSet
 	VcdResourceVirtualService = "virtual-service"
@@ -196,66 +199,80 @@ func AddToVCDResourceSet(statusMap map[string]interface{}, vcdResource util.VCDR
 }
 
 func (client *Client) AddToVCDResourceSet(ctx context.Context, resourceType string, resourceName string, resourceId string, additionalDetails map[string]interface{}) error {
-	rde, resp, etag, err := client.APIClient.DefinedEntityApi.GetDefinedEntity(ctx, client.ClusterID)
-	if resp != nil && resp.StatusCode != http.StatusOK {
-		var responseMessageBytes []byte
-		if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
-			responseMessageBytes = gsErr.Body()
+	if client.ClusterID == "" || strings.HasPrefix(client.ClusterID, NoRdePrefix) {
+		klog.Infof("ClusterID [%s] is empty or generated, hence not removing VCDResource [%s:%s] from RDE",
+			client.ClusterID, resourceType, resourceId)
+		return nil
+	}
+	for i := MaxRDEUpdateRetries ; i > 1 ; i -- {
+		rde, resp, etag, err := client.APIClient.DefinedEntityApi.GetDefinedEntity(ctx, client.ClusterID)
+		if resp != nil && resp.StatusCode != http.StatusOK {
+			var responseMessageBytes []byte
+			if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
+				responseMessageBytes = gsErr.Body()
+			}
+			return fmt.Errorf(
+				"failed to get RDE [%s] when adding virtual service to VCD resource set ; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]",
+				client.ClusterID, http.StatusOK, resp.StatusCode, string(responseMessageBytes), err)
+		} else if err != nil {
+			return fmt.Errorf("error while updating the RDE [%s]: [%v]", client.ClusterID, err)
 		}
-		return fmt.Errorf(
-			"failed to get RDE [%s] when adding virtual service to VCD resource set ; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]",
-			client.ClusterID, http.StatusOK, resp.StatusCode, string(responseMessageBytes), err)
-	} else if err != nil {
-		return fmt.Errorf("error while updating the RDE [%s]: [%v]", client.ClusterID, err)
-	}
-	if !util.IsCAPVCDEntityType(rde.EntityType) {
-		nonCapvcdEntityError := NonCAPVCDEntityError{
-			EntityTypeID: rde.EntityType,
+		if !util.IsCAPVCDEntityType(rde.EntityType) {
+			nonCapvcdEntityError := NonCAPVCDEntityError{
+				EntityTypeID: rde.EntityType,
+			}
+			return nonCapvcdEntityError
 		}
-		return nonCapvcdEntityError
-	}
-	statusIf, ok := rde.Entity["status"]
-	if !ok {
-		return fmt.Errorf("failed to update RDE [%s] with virtual status information", client.ClusterID)
-	}
-	statusMap, ok := statusIf.(map[string]interface{})
-	if !ok {
-		return fmt.Errorf("failed to convert RDE status [%s] to map[string]interface{}", client.ClusterID)
-	}
-	vcdResource := util.VCDResource{
-		Type: resourceType,
-		ID: resourceId,
-		Name: resourceName,
-		AdditionalDetails: additionalDetails,
-	}
-	updatedStatusMap, err := AddToVCDResourceSet(statusMap, vcdResource)
-	if err != nil {
-		return fmt.Errorf("error occurred when updating VCDResource set of CPI status in RDE [%s]: [%v]", client.ClusterID, err)
-	}
-	rde.Entity["status"] = updatedStatusMap
-	_, resp, err = client.APIClient.DefinedEntityApi.UpdateDefinedEntity(ctx, rde, etag, client.ClusterID, nil)
-	if resp != nil && resp.StatusCode != http.StatusOK {
-		var responseMessageBytes []byte
-		if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
-			responseMessageBytes = gsErr.Body()
+		statusIf, ok := rde.Entity["status"]
+		if !ok {
+			return fmt.Errorf("failed to update RDE [%s] with virtual status information", client.ClusterID)
 		}
-		return fmt.Errorf(
-			"failed to add resource [%s] having ID [%s] to VCDResourseSet of CPI in RDE [%s]; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]",
-			vcdResource.Name, vcdResource.ID, client.ClusterID, http.StatusOK, resp.StatusCode, string(responseMessageBytes), err)
-	} else if err != nil {
-		return fmt.Errorf("error while updating the RDE [%s]: [%v]", client.ClusterID, err)
+		statusMap, ok := statusIf.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("failed to convert RDE status [%s] to map[string]interface{}", client.ClusterID)
+		}
+		vcdResource := util.VCDResource{
+			Type:              resourceType,
+			ID:                resourceId,
+			Name:              resourceName,
+			AdditionalDetails: additionalDetails,
+		}
+		updatedStatusMap, err := AddToVCDResourceSet(statusMap, vcdResource)
+		if err != nil {
+			return fmt.Errorf("error occurred when updating VCDResource set of CPI status in RDE [%s]: [%v]", client.ClusterID, err)
+		}
+		rde.Entity["status"] = updatedStatusMap
+		_, resp, err = client.APIClient.DefinedEntityApi.UpdateDefinedEntity(ctx, rde, etag, client.ClusterID, nil)
+		if resp != nil {
+			if resp.StatusCode == http.StatusPreconditionFailed {
+				klog.Errorf("wrong etag while adding [%v] to VCDResourceSet in RDE [%s]. Retry attempts remaining: [%d]", vcdResource, client.ClusterID, i - 1)
+				continue
+			} else if resp.StatusCode != http.StatusOK {
+				var responseMessageBytes []byte
+				if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
+					responseMessageBytes = gsErr.Body()
+				}
+				return fmt.Errorf(
+					"failed to add resource [%s] having ID [%s] to VCDResourseSet of CPI in RDE [%s]; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]",
+					vcdResource.Name, vcdResource.ID, client.ClusterID, http.StatusOK, resp.StatusCode, string(responseMessageBytes), err)
+			}
+		} else if err != nil {
+			return fmt.Errorf("error while updating the RDE [%s]: [%v]", client.ClusterID, err)
+		} else {
+			return fmt.Errorf("invalid response obtained when updating VCDResoruceSet of CPI in RDE [%s]", client.ClusterID)
+		}
 	}
 	return nil
 }
 
-func RemoveFromCPIVCDResourceSet(statusMap map[string]interface{}, vcdResourceID string) (map[string]interface{}, error) {
+func RemoveFromCPIVCDResourceSet(statusMap map[string]interface{}, vcdResource util.VCDResource) (map[string]interface{}, error) {
 	cpiStatus, err := extractCPIStatus(statusMap)
 	if err != nil {
-		return nil, fmt.Errorf("failed to remove VCDResource [%s] to CPI status: [%v]", vcdResourceID, err)
+		return nil, fmt.Errorf("failed to remove VCDResource [%s] to CPI status: [%v]", vcdResource.ID, err)
 	}
 	updatedVcdResourceSet := make([]util.VCDResource, 0)
 	for _, r := range cpiStatus.VCDResourceSet {
-		if r.ID == vcdResourceID {
+		if r.Type == vcdResource.Type && r.ID == vcdResource.ID {
 			continue
 		}
 		updatedVcdResourceSet = append(updatedVcdResourceSet, r)
@@ -263,58 +280,75 @@ func RemoveFromCPIVCDResourceSet(statusMap map[string]interface{}, vcdResourceID
 	cpiStatus.VCDResourceSet = updatedVcdResourceSet
 	updatedCPIMap, err := convertCPIStatusToMap(*cpiStatus)
 	if err != nil {
-		return nil, fmt.Errorf("failed to convert CPI status object to map[string]interface{} to remove [%s] from VCDResourceSet: [%v]", vcdResourceID, err)
+		return nil, fmt.Errorf("failed to convert CPI status object to map[string]interface{} to remove [%s] from VCDResourceSet: [%v]", vcdResource.ID, err)
 	}
 	statusMap["cpi"] = updatedCPIMap
 	return statusMap, nil
 }
 
-func (client *Client) RemoveFromVCDResourceSet(ctx context.Context, vcdResourceID string) error {
-	rde, resp, etag, err := client.APIClient.DefinedEntityApi.GetDefinedEntity(ctx, client.ClusterID)
-	if resp != nil && resp.StatusCode != http.StatusOK {
-		var responseMessageBytes []byte
-		if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
-			responseMessageBytes = gsErr.Body()
+func (client *Client) RemoveFromVCDResourceSet(ctx context.Context, resourceType, resourceId string) error {
+	if client.ClusterID == "" || strings.HasPrefix(client.ClusterID, NoRdePrefix) {
+		klog.Infof("ClusterID [%s] is empty or generated, hence not removing VCDResource [%s:%s] from RDE",
+			client.ClusterID, resourceType, resourceId)
+		return nil
+	}
+	for i := MaxRDEUpdateRetries ; i > 1 ; i -- {
+		rde, resp, etag, err := client.APIClient.DefinedEntityApi.GetDefinedEntity(ctx, client.ClusterID)
+		if resp != nil && resp.StatusCode != http.StatusOK {
+			var responseMessageBytes []byte
+			if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
+				responseMessageBytes = gsErr.Body()
+			}
+			return fmt.Errorf(
+				"failed to get RDE with id [%s]; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]",
+				client.ClusterID, http.StatusOK, resp.StatusCode, string(responseMessageBytes), err)
+		} else if err != nil {
+			return fmt.Errorf("error while updating the RDE [%s]: [%v]", client.ClusterID, err)
 		}
-		return fmt.Errorf(
-			"failed to get RDE with id [%s]; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]",
-			client.ClusterID, http.StatusOK, resp.StatusCode, string(responseMessageBytes), err)
-	} else if err != nil {
-		return fmt.Errorf("error while updating the RDE [%s]: [%v]", client.ClusterID, err)
-	}
 
-	if !util.IsCAPVCDEntityType(rde.EntityType) {
-		nonCapvcdEntityError := NonCAPVCDEntityError{
-			EntityTypeID: rde.EntityType,
+		if !util.IsCAPVCDEntityType(rde.EntityType) {
+			nonCapvcdEntityError := NonCAPVCDEntityError{
+				EntityTypeID: rde.EntityType,
+			}
+			return nonCapvcdEntityError
 		}
-		return nonCapvcdEntityError
-	}
 
-	statusEntity, ok := rde.Entity["status"]
-	if !ok {
-		return fmt.Errorf("failed to parse status in RDE [%s] to remove virtual service [%s] from CPI status", client.ClusterID, vcdResourceID)
-	}
-	statusMap, ok := statusEntity.(map[string]interface{})
-	if !ok {
-		return fmt.Errorf("failed to parse status in RDE [%s] into map[string]interface{} to remove virtual service [%s] from CPI status", client.ClusterID, vcdResourceID)
-	}
-	updatedStatus, err := RemoveFromCPIVCDResourceSet(statusMap, vcdResourceID)
-	if err != nil{
-		return fmt.Errorf("failed to remove resource [%s] from VCDResourceSet in CPI status section of RDE [%s]: [%v]", vcdResourceID, client.ClusterID, err)
-	}
-	rde.Entity["status"] = updatedStatus
-
-	_, resp, err = client.APIClient.DefinedEntityApi.UpdateDefinedEntity(ctx, rde, etag, client.ClusterID, nil)
-	if resp != nil && resp.StatusCode != http.StatusOK {
-		var responseMessageBytes []byte
-		if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
-			responseMessageBytes = gsErr.Body()
+		statusEntity, ok := rde.Entity["status"]
+		if !ok {
+			return fmt.Errorf("failed to parse status in RDE [%s] to remove virtual service [%s] from CPI status", client.ClusterID, resourceId)
 		}
-		return fmt.Errorf(
-			"failed to update CPI status for RDE [%s]; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]",
-			client.ClusterID, http.StatusOK, resp.StatusCode, string(responseMessageBytes), err)
-	} else if err != nil {
-		return fmt.Errorf("error while removing virtual service [%s] from the RDE [%s]: [%v]", vcdResourceID, client.ClusterID, err)
+		statusMap, ok := statusEntity.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("failed to parse status in RDE [%s] into map[string]interface{} to remove virtual service [%s] from CPI status", client.ClusterID, resourceId)
+		}
+		updatedStatus, err := RemoveFromCPIVCDResourceSet(statusMap, util.VCDResource{
+			Type: resourceType,
+			ID: resourceId,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to remove resource [%s] from VCDResourceSet in CPI status section of RDE [%s]: [%v]",resourceId, client.ClusterID, err)
+		}
+		rde.Entity["status"] = updatedStatus
+
+		_, resp, err = client.APIClient.DefinedEntityApi.UpdateDefinedEntity(ctx, rde, etag, client.ClusterID, nil)
+		if resp != nil {
+			if resp.StatusCode == http.StatusPreconditionFailed {
+				klog.Errorf("wrong etag while removing [%v] from VCDResourceSet in RDE [%s]. Retry attempts remaining: [%d]", resourceId, client.ClusterID, i - 1)
+				continue
+			} else if resp.StatusCode != http.StatusOK {
+				var responseMessageBytes []byte
+				if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
+					responseMessageBytes = gsErr.Body()
+				}
+				return fmt.Errorf(
+					"failed to update CPI status for RDE [%s]; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]",
+					client.ClusterID, http.StatusOK, resp.StatusCode, string(responseMessageBytes), err)
+			}
+		} else if err != nil {
+			return fmt.Errorf("error while removing virtual service [%s] from the RDE [%s]: [%v]", resourceId, client.ClusterID, err)
+		} else {
+			return fmt.Errorf("invalid response obtained when updating VCDResoruceSet of CPI in RDE [%s]", client.ClusterID)
+		}
 	}
 	return nil
 }

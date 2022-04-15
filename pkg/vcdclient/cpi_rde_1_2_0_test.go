@@ -234,6 +234,7 @@ func TestRemoveFromCPIVCDResourceSet(t *testing.T) {
 	type TestCase struct {
 		StatusMap map[string]interface{}
 		VCDResourceID string
+		VCDResourceType string
 		ExpectedStatus map[string]interface{}
 		Message string
 	}
@@ -261,6 +262,7 @@ func TestRemoveFromCPIVCDResourceSet(t *testing.T) {
 				},
 			},
 			VCDResourceID: idToBeRemoved,
+			VCDResourceType: VcdResourceVirtualService,
 			ExpectedStatus: map[string]interface{}{
 				"cpi": map[string]interface{}{
 					"name": CloudControllerManagerName,
@@ -290,6 +292,7 @@ func TestRemoveFromCPIVCDResourceSet(t *testing.T) {
 				},
 			},
 			VCDResourceID: idToBeRemoved,
+			VCDResourceType: VcdResourceVirtualService,
 			ExpectedStatus: map[string]interface{}{
 				"cpi": map[string]interface{}{
 					"name": CloudControllerManagerName,
@@ -319,6 +322,7 @@ func TestRemoveFromCPIVCDResourceSet(t *testing.T) {
 				},
 			},
 			VCDResourceID: idToBeRemoved,
+			VCDResourceType: VcdResourceVirtualService,
 			ExpectedStatus: map[string]interface{}{
 				"cpi": map[string]interface{}{
 					"name": CloudControllerManagerName,
@@ -334,7 +338,10 @@ func TestRemoveFromCPIVCDResourceSet(t *testing.T) {
 		},
 	}
 	for _, tc := range testCaseList {
-		updatedStatusMap, err := RemoveFromCPIVCDResourceSet(tc.StatusMap, tc.VCDResourceID)
+		updatedStatusMap, err := RemoveFromCPIVCDResourceSet(tc.StatusMap, util.VCDResource{
+			Type: tc.VCDResourceType,
+			ID: tc.VCDResourceID,
+		})
 		assert.NoError(t, err, "error executing test: ", tc.Message)
 		assert.Equal(t, updatedStatusMap, tc.ExpectedStatus, "updated status map doesn't match expected status map: ", tc.Message)
 	}
