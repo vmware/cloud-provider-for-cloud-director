@@ -22,30 +22,26 @@ var (
 	clientSingleton   *Client = nil
 )
 
-// OneArm : internal struct representing OneArm config details
-type OneArm struct {
-	StartIPAddress string
-	EndIPAddress   string
-}
-
 // Client :
 type Client struct {
-	VCDAuthConfig      *VCDAuthConfig
+	VCDAuthConfig      *VCDAuthConfig // s
 	ClusterOrgName     string
 	ClusterOVDCName    string
-	ClusterVAppName    string
+	ClusterVAppName    string /// out
 	VCDClient          *govcd.VCDClient
-	VDC                *govcd.Vdc
+	VDC                *govcd.Vdc // TODO: Incrementally remove and test in tests
 	APIClient          *swaggerClient.APIClient
-	networkName        string
-	IPAMSubnet         string
-	gatewayRef         *swaggerClient.EntityReference
-	networkBackingType swaggerClient.BackingNetworkType
-	ClusterID          string
-	OneArm             *OneArm // TODO: Move out of client
+	networkName        string // out
+	IPAMSubnet         string // out
+	gatewayRef         *swaggerClient.EntityReference // out
+	networkBackingType swaggerClient.BackingNetworkType // out; break fix from vapp and gateway from CAPVCD
+	ClusterID          string // out; will break CSI and CPI
+	//OneArm             *OneArm
+	//CertificateAlias   string
 	RWLock             sync.RWMutex
 }
 
+//  TODO: Make sure this function still works properly with no issues after refactor
 func (client *Client) RefreshBearerToken() error {
 	klog.Infof("Refreshing vcd client")
 
@@ -108,9 +104,12 @@ func (client *Client) RefreshBearerToken() error {
 }
 
 // NewVCDClientFromSecrets :
+// host, orgName, userOrg, refreshToken, insecure, user, password
+
+// New method from (vdcClient, vdcName) return *govcd.Vdc
 func NewVCDClientFromSecrets(host string, orgName string, vdcName string, vAppName string,
 	networkName string, ipamSubnet string, userOrg string, user string, password string,
-	refreshToken string, insecure bool, clusterID string, oneArm *OneArm, getVdcClient bool) (*Client, error) {
+	refreshToken string, insecure bool, clusterID string, getVdcClient bool) (*Client, error) {
 
 	// TODO: validation of parameters
 
@@ -134,7 +133,7 @@ func NewVCDClientFromSecrets(host string, orgName string, vdcName string, vAppNa
 		}
 	}
 
-	vcdAuthConfig := NewVCDAuthConfigFromSecrets(host, user, password, refreshToken, userOrg, insecure)
+	vcdAuthConfig := NewVCDAuthConfigFromSecrets(host, user, password, refreshToken, userOrg, insecure) //
 
 	vcdClient, apiClient, err := vcdAuthConfig.GetSwaggerClientFromSecrets()
 	if err != nil {
@@ -152,7 +151,6 @@ func NewVCDClientFromSecrets(host string, orgName string, vdcName string, vAppNa
 		IPAMSubnet:      ipamSubnet,
 		gatewayRef:      nil,
 		ClusterID:       clusterID,
-		OneArm:          oneArm,
 	}
 
 	if getVdcClient {

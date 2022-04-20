@@ -11,6 +11,7 @@ import (
 	"github.com/antihax/optional"
 	"github.com/apparentlymart/go-cidr/cidr"
 	"github.com/peterhellberg/link"
+	"github.com/vmware/cloud-provider-for-cloud-director/pkg/config"
 	swaggerClient "github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdswaggerclient"
 	"github.com/vmware/go-vcloud-director/v2/govcd"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
@@ -125,7 +126,7 @@ func getUnusedIPAddressInRange(startIPAddress string, endIPAddress string,
 	return freeIP
 }
 
-func (client *Client) getUnusedInternalIPAddress(ctx context.Context) (string, error) {
+func (client *Client) getUnusedInternalIPAddress(ctx context.Context, oneArm *config.OneArm) (string, error) {
 
 	if client.gatewayRef == nil {
 		return "", fmt.Errorf("gateway reference should not be nil")
@@ -150,11 +151,11 @@ func (client *Client) getUnusedInternalIPAddress(ctx context.Context) (string, e
 		pageNum++
 	}
 
-	freeIP := getUnusedIPAddressInRange(client.OneArm.StartIPAddress,
-		client.OneArm.EndIPAddress, usedIPAddress)
+	freeIP := getUnusedIPAddressInRange(oneArm.StartIP,
+		oneArm.EndIP, usedIPAddress)
 	if freeIP == "" {
 		return "", fmt.Errorf("unable to find unused IP address in range [%s-%s]",
-			client.OneArm.StartIPAddress, client.OneArm.EndIPAddress)
+			oneArm.StartIP, oneArm.EndIP)
 	}
 
 	return freeIP, nil
@@ -1318,7 +1319,7 @@ type PortDetails struct {
 
 // CreateLoadBalancer : create a new load balancer pool and virtual service pointing to it
 func (client *Client) CreateLoadBalancer(ctx context.Context, virtualServiceNamePrefix string,
-	lbPoolNamePrefix string, ips []string, portDetailsList []PortDetails) (string, error) {
+	lbPoolNamePrefix string, ips []string, portDetailsList []PortDetails, oneArm *config.OneArm) (string, error) {
 
 	client.RWLock.Lock()
 	defer client.RWLock.Unlock()
@@ -1337,7 +1338,7 @@ func (client *Client) CreateLoadBalancer(ctx context.Context, virtualServiceName
 	// partial creation of load-balancer is continued and an externalIP was claimed earlier by a dnat rule
 	externalIP := ""
 	var err error
-	if client.OneArm != nil {
+	if oneArm != nil {
 		for _, portDetails := range portDetailsList {
 			if portDetails.InternalPort == 0 {
 				continue
@@ -1401,8 +1402,8 @@ func (client *Client) CreateLoadBalancer(ctx context.Context, virtualServiceName
 		}
 
 		virtualServiceIP := externalIP
-		if client.OneArm != nil {
-			internalIP, err := client.getUnusedInternalIPAddress(ctx)
+		if oneArm != nil {
+			internalIP, err := client.getUnusedInternalIPAddress(ctx, oneArm)
 			if err != nil {
 				return "", fmt.Errorf("unable to get internal IP address for one-arm mode: [%v]", err)
 			}
@@ -1499,7 +1500,7 @@ func (client *Client) UpdateLoadBalancer(ctx context.Context, lbPoolName string,
 
 // DeleteLoadBalancer : create a new load balancer pool and virtual service pointing to it
 func (client *Client) DeleteLoadBalancer(ctx context.Context, virtualServiceNamePrefix string,
-	lbPoolNamePrefix string, portDetailsList []PortDetails) error {
+	lbPoolNamePrefix string, portDetailsList []PortDetails, oneArm *config.OneArm) error {
 
 	client.RWLock.Lock()
 	defer client.RWLock.Unlock()
@@ -1523,7 +1524,7 @@ func (client *Client) DeleteLoadBalancer(ctx context.Context, virtualServiceName
 		// get external IP
 		rdeVIP := ""
 		dnatRuleName := ""
-		if client.OneArm != nil {
+		if oneArm != nil {
 			dnatRuleName = getDNATRuleName(virtualServiceName)
 			dnatRuleRef, err := client.getNATRuleRef(ctx, dnatRuleName)
 			if err != nil {
@@ -1561,7 +1562,7 @@ func (client *Client) DeleteLoadBalancer(ctx context.Context, virtualServiceName
 			return fmt.Errorf("unable to delete load balancer pool [%s]: [%v]", lbPoolName, err)
 		}
 
-		if client.OneArm != nil {
+		if oneArm != nil {
 			err = client.deleteDNATRule(ctx, dnatRuleName, false)
 			if err != nil {
 				return fmt.Errorf("unable to delete dnat rule [%s]: [%v]", dnatRuleName, err)
@@ -1573,7 +1574,7 @@ func (client *Client) DeleteLoadBalancer(ctx context.Context, virtualServiceName
 }
 
 // GetLoadBalancer :
-func (client *Client) GetLoadBalancer(ctx context.Context, virtualServiceName string) (string, error) {
+func (client *Client) GetLoadBalancer(ctx context.Context, virtualServiceName string, oneArm *config.OneArm) (string, error) {
 
 	vsSummary, err := client.getVirtualService(ctx, virtualServiceName)
 	if err != nil {
@@ -1589,7 +1590,7 @@ func (client *Client) GetLoadBalancer(ctx context.Context, virtualServiceName st
 		return "", err
 	}
 
-	if client.OneArm == nil {
+	if oneArm == nil {
 		return vsSummary.VirtualIpAddress, nil
 	}
 

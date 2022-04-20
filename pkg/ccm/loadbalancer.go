@@ -10,6 +10,7 @@ package ccm
 import (
 	"context"
 	"fmt"
+	"github.com/vmware/cloud-provider-for-cloud-director/pkg/config"
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdclient"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -31,14 +32,16 @@ type LBManager struct {
 	kubeClient       *kubernetes.Clientset
 	namespace        string
 	CertificateAlias string
+	OneArm 			 *config.OneArm
 }
 
-func newLoadBalancer(vcdClient *vcdclient.Client, certAlias string) cloudProvider.LoadBalancer {
+func newLoadBalancer(vcdClient *vcdclient.Client, certAlias string, oneArm *config.OneArm) cloudProvider.LoadBalancer {
 	return &LBManager{
 		vcdClient:        vcdClient,
 		kubeClient:       GetK8SClient(),
 		namespace:        "default",
 		CertificateAlias: certAlias,
+		OneArm: 		  oneArm,
 	}
 }
 
@@ -151,7 +154,7 @@ func (lb *LBManager) getLoadBalancer(ctx context.Context,
 	virtualIP := ""
 	for _, port := range service.Spec.Ports {
 		virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, port.Name)
-		virtualIP, err = lb.vcdClient.GetLoadBalancer(ctx, virtualServiceName)
+		virtualIP, err = lb.vcdClient.GetLoadBalancer(ctx, virtualServiceName, lb.OneArm)
 		if err != nil {
 			return nil, false,
 				fmt.Errorf("unable to get virtual service summary for [%s]: [%v]",
@@ -239,7 +242,7 @@ func (lb *LBManager) deleteLoadBalancer(ctx context.Context, service *v1.Service
 	}
 	klog.Infof("Deleting loadbalancer for ports [%#v]\n", portDetailsList)
 
-	err := lb.vcdClient.DeleteLoadBalancer(ctx, virtualServiceName, lbPoolNamePrefix, portDetailsList)
+	err := lb.vcdClient.DeleteLoadBalancer(ctx, virtualServiceName, lbPoolNamePrefix, portDetailsList, lb.OneArm)
 	if err != nil {
 		return fmt.Errorf("Unable to delete load balancer for virtual-service [%s] and lb pool [%s]: [%v]",
 			virtualServiceName, lbPoolNamePrefix, err)
@@ -343,7 +346,7 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 	klog.Infof("Creating loadbalancer for ports [%#v]\n", portDetailsList)
 
 	// Create using VCD API
-	lbIP, err := lb.vcdClient.CreateLoadBalancer(ctx, virtualServiceNamePrefix, lbPoolNamePrefix, nodeIPs, portDetailsList)
+	lbIP, err := lb.vcdClient.CreateLoadBalancer(ctx, virtualServiceNamePrefix, lbPoolNamePrefix, nodeIPs, portDetailsList, lb.OneArm)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create loadbalancer for ports [%#v]: [%v]", portDetailsList, err)
 	}

@@ -39,7 +39,6 @@ func init() {
 
 func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error) {
 	var vcdClient *vcdclient.Client = nil
-	var oneArm *vcdclient.OneArm = nil
 	var cloudConfig *config.CloudConfig = nil
 	cloudConfig, err := config.ParseCloudConfig(configReader)
 	if err != nil {
@@ -60,12 +59,6 @@ func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error
 			continue
 		}
 
-		if cloudConfig.LB.OneArm != nil {
-			oneArm = &vcdclient.OneArm{
-				StartIPAddress: cloudConfig.LB.OneArm.StartIP,
-				EndIPAddress:   cloudConfig.LB.OneArm.EndIP,
-			}
-		}
 		vcdClient, err = vcdclient.NewVCDClientFromSecrets(
 			cloudConfig.VCD.Host,
 			cloudConfig.VCD.Org,
@@ -79,7 +72,6 @@ func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error
 			cloudConfig.VCD.RefreshToken,
 			true,
 			cloudConfig.ClusterID,
-			oneArm,
 			true,
 		)
 		if err == nil {
@@ -96,7 +88,7 @@ func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error
 		klog.Infof("Gateway of network [%s] not backed by NSX-T. Hence LB will not be initialized.",
 			cloudConfig.VCD.VDCNetwork)
 	} else {
-		lb = newLoadBalancer(vcdClient, cloudConfig.LB.CertificateAlias)
+		lb = newLoadBalancer(vcdClient, cloudConfig.LB.CertificateAlias, cloudConfig.LB.OneArm)
 	}
 
 	// cache for VM Info with an refresh of elements needed after 1 minute
