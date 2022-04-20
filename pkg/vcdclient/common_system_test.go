@@ -41,24 +41,23 @@ func getBoolValStrict(val interface{}, defaultVal bool) bool {
 	return defaultVal
 }
 
-func getOneArmValStrict(val interface{}, defaultVal *OneArm) *OneArm {
-	if oneArmVal, ok := val.(*OneArm); ok {
-		return oneArmVal
-	}
+//func getOneArmValStrict(val interface{}, defaultVal *config.OneArm) *config.OneArm {
+//	if oneArmVal, ok := val.(*config.OneArm); ok {
+//		return oneArmVal
+//	}
+//
+//	return defaultVal
+//}
+//
+//func getInt32ValStrict(val interface{}, defaultVal int32) int32 {
+//	if int32Val, ok := val.(int32); ok {
+//		return int32Val
+//	}
+//
+//	return defaultVal
+//}
 
-	return defaultVal
-}
-
-func getInt32ValStrict(val interface{}, defaultVal int32) int32 {
-	if int32Val, ok := val.(int32); ok {
-		return int32Val
-	}
-
-	return defaultVal
-}
-
-func getTestVCDClient(inputMap map[string]interface{}) (*Client, error) {
-
+func getTestConfig() (*config.CloudConfig, error) {
 	testConfigFilePath := filepath.Join(gitRoot, "testdata/config_test.yaml")
 	configReader, err := os.Open(testConfigFilePath)
 	if err != nil {
@@ -70,12 +69,13 @@ func getTestVCDClient(inputMap map[string]interface{}) (*Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Unable to parse cloud config file [%s]: [%v]", testConfigFilePath, err)
 	}
+	return cloudConfig, nil
+}
 
+// config will be passed in from getTestConfig() and error checked in unit test
+func getTestVCDClient(config *config.CloudConfig, inputMap map[string]interface{}) (*Client, error) {
+	cloudConfig := *config // Make a copy of cloudConfig so modified inputs don't carry over to next test
 	insecure := true
-	oneArm := &OneArm{
-		StartIPAddress: cloudConfig.LB.OneArm.StartIP,
-		EndIPAddress:   cloudConfig.LB.OneArm.EndIP,
-	}
 	getVdcClient := false
 	if inputMap != nil {
 		for key, val := range inputMap {
@@ -96,14 +96,14 @@ func getTestVCDClient(inputMap map[string]interface{}) (*Client, error) {
 				insecure = getBoolValStrict(val, true)
 			case "clusterID":
 				cloudConfig.ClusterID = getStrValStrict(val, cloudConfig.ClusterID)
-			case "oneArm":
-				oneArm = getOneArmValStrict(val, oneArm)
-			case "httpPort":
-				cloudConfig.LB.Ports.HTTP = getInt32ValStrict(val, cloudConfig.LB.Ports.HTTP)
-			case "httpsPort":
-				cloudConfig.LB.Ports.HTTPS = getInt32ValStrict(val, cloudConfig.LB.Ports.HTTPS)
-			case "certAlias":
-				cloudConfig.LB.CertificateAlias = getStrValStrict(val, cloudConfig.LB.CertificateAlias)
+			//case "oneArm":
+			//	cloudConfig.LB.OneArm = getOneArmValStrict(val, cloudConfig.LB.OneArm)
+			//case "httpPort":
+			//	cloudConfig.LB.Ports.HTTP = getInt32ValStrict(val, cloudConfig.LB.Ports.HTTP)
+			//case "httpsPort":
+			//	cloudConfig.LB.Ports.HTTPS = getInt32ValStrict(val, cloudConfig.LB.Ports.HTTPS)
+			//case "certAlias":
+			//	cloudConfig.LB.CertificateAlias = getStrValStrict(val, cloudConfig.LB.CertificateAlias)
 			case "getVdcClient":
 				getVdcClient = getBoolValStrict(val, false)
 			case "refreshToken":
@@ -127,7 +127,6 @@ func getTestVCDClient(inputMap map[string]interface{}) (*Client, error) {
 		cloudConfig.VCD.RefreshToken,
 		insecure,
 		cloudConfig.ClusterID,
-		oneArm,
 		getVdcClient,
 	)
 }

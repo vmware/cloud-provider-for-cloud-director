@@ -30,7 +30,10 @@ func TestCacheGatewayDetails(t *testing.T) {
 	err = yaml.Unmarshal(authFileContent, &authDetails)
 	assert.NoError(t, err, "There should be no error parsing auth file content.")
 
-	vcdClient, err := getTestVCDClient(map[string]interface{}{
+	cloudConfig, err := getTestConfig()
+	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
+
+	vcdClient, err := getTestVCDClient(cloudConfig, map[string]interface{}{
 		"user": authDetails.Username,
 		"secret": authDetails.Password,
 		"userOrg": authDetails.UserOrg,
@@ -49,7 +52,7 @@ func TestCacheGatewayDetails(t *testing.T) {
 	assert.NotEmpty(t, vcdClient.gatewayRef.Id, "Gateway Id should not be empty")
 
 	// Missing network name should be reported
-	vcdClient, err = getTestVCDClient(map[string]interface{}{
+	vcdClient, err = getTestVCDClient(cloudConfig, map[string]interface{}{
 		"network": "",
 	})
 	assert.Error(t, err, "Should get error for unknown network")
@@ -68,7 +71,10 @@ func TestDNATRuleCRUDE(t *testing.T) {
 	err = yaml.Unmarshal(authFileContent, &authDetails)
 	assert.NoError(t, err, "There should be no error parsing auth file content.")
 
-	vcdClient, err := getTestVCDClient(map[string]interface{}{
+	cloudConfig, err := getTestConfig()
+	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
+
+	vcdClient, err := getTestVCDClient(cloudConfig, map[string]interface{}{
 		"user": authDetails.Username,
 		"secret": authDetails.Password,
 		"userOrg": authDetails.UserOrg,
@@ -125,7 +131,10 @@ func TestLBPoolCRUDE(t *testing.T) {
 	err = yaml.Unmarshal(authFileContent, &authDetails)
 	assert.NoError(t, err, "There should be no error parsing auth file content.")
 
-	vcdClient, err := getTestVCDClient(map[string]interface{}{
+	cloudConfig, err := getTestConfig()
+	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
+
+	vcdClient, err := getTestVCDClient(cloudConfig, map[string]interface{}{
 		"user": authDetails.Username,
 		"secret": authDetails.Password,
 		"userOrg": authDetails.UserOrg,
@@ -204,7 +213,10 @@ func TestGetLoadBalancerSEG(t *testing.T) {
 	err = yaml.Unmarshal(authFileContent, &authDetails)
 	assert.NoError(t, err, "There should be no error parsing auth file content.")
 
-	vcdClient, err := getTestVCDClient(map[string]interface{}{
+	cloudConfig, err := getTestConfig()
+	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
+
+	vcdClient, err := getTestVCDClient(cloudConfig, map[string]interface{}{
 		"user": authDetails.Username,
 		"secret": authDetails.Password,
 		"userOrg": authDetails.UserOrg,
@@ -234,7 +246,10 @@ func TestGetUnusedGatewayIP(t *testing.T) {
 	err = yaml.Unmarshal(authFileContent, &authDetails)
 	assert.NoError(t, err, "There should be no error parsing auth file content.")
 
-	vcdClient, err := getTestVCDClient(map[string]interface{}{
+	cloudConfig, err := getTestConfig()
+	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
+
+	vcdClient, err := getTestVCDClient(cloudConfig, map[string]interface{}{
 		"user": authDetails.Username,
 		"secret": authDetails.Password,
 		"userOrg": authDetails.UserOrg,
@@ -274,7 +289,10 @@ func TestVirtualServiceHttpCRUDE(t *testing.T) {
 	err = yaml.Unmarshal(authFileContent, &authDetails)
 	assert.NoError(t, err, "There should be no error parsing auth file content.")
 
-	vcdClient, err := getTestVCDClient(map[string]interface{}{
+	cloudConfig, err := getTestConfig()
+	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
+
+	vcdClient, err := getTestVCDClient(cloudConfig, map[string]interface{}{
 		"user": authDetails.Username,
 		"secret": authDetails.Password,
 		"userOrg": authDetails.UserOrg,
@@ -371,7 +389,10 @@ func TestVirtualServiceHttpsCRUDE(t *testing.T) {
 	err = yaml.Unmarshal(authFileContent, &authDetails)
 	assert.NoError(t, err, "There should be no error parsing auth file content.")
 
-	vcdClient, err := getTestVCDClient(map[string]interface{}{
+	cloudConfig, err := getTestConfig()
+	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
+
+	vcdClient, err := getTestVCDClient(cloudConfig, map[string]interface{}{
 		"user": authDetails.Username,
 		"secret": authDetails.Password,
 		"userOrg": authDetails.UserOrg,
@@ -392,7 +413,7 @@ func TestVirtualServiceHttpsCRUDE(t *testing.T) {
 	externalIP := "11.12.13.14"
 	internalIP := "3.4.5.6"
 	virtualServiceName := fmt.Sprintf("test-virtual-service-https-%s", uuid.New().String())
-	certName := vcdClient.CertificateAlias
+	certName := cloudConfig.LB.CertificateAlias
 	if certName == "" {
 		certName = fmt.Sprintf("%s-cert", vcdClient.ClusterID)
 	}
@@ -465,7 +486,10 @@ func TestLoadBalancerCRUDE(t *testing.T) {
 	err = yaml.Unmarshal(authFileContent, &authDetails)
 	assert.NoError(t, err, "There should be no error parsing auth file content.")
 
-	vcdClient, err := getTestVCDClient(map[string]interface{}{
+	cloudConfig, err := getTestConfig()
+	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
+
+	vcdClient, err := getTestVCDClient(cloudConfig, map[string]interface{}{
 		"user": authDetails.Username,
 		"secret": authDetails.Password,
 		"userOrg": authDetails.UserOrg,
@@ -478,7 +502,7 @@ func TestLoadBalancerCRUDE(t *testing.T) {
 
 	virtualServiceNamePrefix := fmt.Sprintf("test-virtual-service-https-%s", uuid.New().String())
 	lbPoolNamePrefix := fmt.Sprintf("test-lb-pool-%s", uuid.New().String())
-	certName := vcdClient.CertificateAlias
+	certName := cloudConfig.LB.CertificateAlias
 	if certName == "" {
 		certName = fmt.Sprintf("%s-cert", vcdClient.ClusterID)
 	}
@@ -501,22 +525,22 @@ func TestLoadBalancerCRUDE(t *testing.T) {
 	}
 	freeIP := ""
 	freeIP, err = vcdClient.CreateLoadBalancer(ctx, virtualServiceNamePrefix,
-		lbPoolNamePrefix, []string{"1.2.3.4", "1.2.3.5"}, portDetailsList)
+		lbPoolNamePrefix, []string{"1.2.3.4", "1.2.3.5"}, portDetailsList, cloudConfig.LB.OneArm)
 	assert.NoError(t, err, "Load Balancer should be created")
 	assert.NotEmpty(t, freeIP, "There should be a non-empty IP returned")
 
 	virtualServiceNameHttp := fmt.Sprintf("%s-http", virtualServiceNamePrefix)
-	freeIPObtained, err := vcdClient.GetLoadBalancer(ctx, virtualServiceNameHttp)
+	freeIPObtained, err := vcdClient.GetLoadBalancer(ctx, virtualServiceNameHttp, cloudConfig.LB.OneArm)
 	assert.NoError(t, err, "Load Balancer should be found")
 	assert.Equal(t, freeIP, freeIPObtained, "The IPs should match")
 
 	virtualServiceNameHttps := fmt.Sprintf("%s-https", virtualServiceNamePrefix)
-	freeIPObtained, err = vcdClient.GetLoadBalancer(ctx, virtualServiceNameHttps)
+	freeIPObtained, err = vcdClient.GetLoadBalancer(ctx, virtualServiceNameHttps, cloudConfig.LB.OneArm)
 	assert.NoError(t, err, "Load Balancer should be found")
 	assert.Equal(t, freeIP, freeIPObtained, "The IPs should match")
 
 	freeIP, err = vcdClient.CreateLoadBalancer(ctx, virtualServiceNamePrefix,
-		lbPoolNamePrefix, []string{"1.2.3.4", "1.2.3.5"}, portDetailsList)
+		lbPoolNamePrefix, []string{"1.2.3.4", "1.2.3.5"}, portDetailsList, cloudConfig.LB.OneArm)
 	assert.NoError(t, err, "Load Balancer should be created even on second attempt")
 	assert.NotEmpty(t, freeIP, "There should be a non-empty IP returned")
 
@@ -545,19 +569,19 @@ func TestLoadBalancerCRUDE(t *testing.T) {
 	err = vcdClient.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-https", virtualServiceNamePrefix+"-https", updatedIps, updatedInternalPort, updatedExternalPortHttps)
 	assert.NoError(t, err, "HTTPS Load Balancer should be updated")
 
-	err = vcdClient.DeleteLoadBalancer(ctx, virtualServiceNamePrefix, lbPoolNamePrefix, portDetailsList)
+	err = vcdClient.DeleteLoadBalancer(ctx, virtualServiceNamePrefix, lbPoolNamePrefix, portDetailsList, cloudConfig.LB.OneArm)
 	assert.NoError(t, err, "Load Balancer should be deleted")
 
-	freeIPObtained, err = vcdClient.GetLoadBalancer(ctx, virtualServiceNameHttp)
+	freeIPObtained, err = vcdClient.GetLoadBalancer(ctx, virtualServiceNameHttp, cloudConfig.LB.OneArm)
 	assert.NoError(t, err, "Load Balancer should not be found")
 	assert.Empty(t, freeIPObtained, "The VIP should not be found")
 
-	freeIPObtained, err = vcdClient.GetLoadBalancer(ctx, virtualServiceNameHttps)
+	freeIPObtained, err = vcdClient.GetLoadBalancer(ctx, virtualServiceNameHttps, cloudConfig.LB.OneArm)
 	assert.NoError(t, err, "Load Balancer should not be found")
 	assert.Empty(t, freeIPObtained, "The VIP should not be found")
 
-	err = vcdClient.DeleteLoadBalancer(ctx, virtualServiceNamePrefix, lbPoolNamePrefix, portDetailsList)
-	err = vcdClient.DeleteLoadBalancer(ctx, virtualServiceNamePrefix, lbPoolNamePrefix, portDetailsList)
+	err = vcdClient.DeleteLoadBalancer(ctx, virtualServiceNamePrefix, lbPoolNamePrefix, portDetailsList, cloudConfig.LB.OneArm)
+	err = vcdClient.DeleteLoadBalancer(ctx, virtualServiceNamePrefix, lbPoolNamePrefix, portDetailsList, cloudConfig.LB.OneArm)
 	assert.NoError(t, err, "Repeated deletion of Load Balancer should not fail")
 
 	err = vcdClient.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-http", virtualServiceNamePrefix+"-http", updatedIps, updatedInternalPort, 80)
@@ -569,7 +593,27 @@ func TestLoadBalancerCRUDE(t *testing.T) {
 }
 
 func TestUpdateRDEUsingEtag(t *testing.T) {
-	vcdClient, err := getTestVCDClient(nil)
+	// TODO: This test will currently fail unless the code below is uncommented. Refer to VCDA-3600
+
+	//cloudConfig, err := getTestConfig()
+	//assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
+	//
+	//authFile := filepath.Join(gitRoot, "testdata/auth_test.yaml")
+	//authFileContent, err := ioutil.ReadFile(authFile)
+	//assert.NoError(t, err, "There should be no error reading the auth file contents.")
+	//
+	//var authDetails authorizationDetails
+	//err = yaml.Unmarshal(authFileContent, &authDetails)
+	//assert.NoError(t, err, "There should be no error parsing auth file content.")
+	//
+	//vcdClient, err := getTestVCDClient(cloudConfig, map[string]interface{}{
+	//	"user": authDetails.Username,
+	//	"secret": authDetails.Password,
+	//	"userOrg": authDetails.UserOrg,
+	//})
+	//
+
+	vcdClient, err := getTestVCDClient(nil, nil)
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
 
