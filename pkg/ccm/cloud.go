@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/config"
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdclient"
+	"golang.org/x/net/context"
 	"io"
 	"k8s.io/client-go/informers"
 	_ "k8s.io/client-go/tools/clientcmd"
@@ -63,15 +64,11 @@ func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error
 			cloudConfig.VCD.Host,
 			cloudConfig.VCD.Org,
 			cloudConfig.VCD.VDC,
-			cloudConfig.VCD.VAppName,
-			cloudConfig.VCD.VDCNetwork,
-			cloudConfig.VCD.VIPSubnet,
 			cloudConfig.VCD.UserOrg,
 			cloudConfig.VCD.User,
 			cloudConfig.VCD.Secret,
 			cloudConfig.VCD.RefreshToken,
 			true,
-			cloudConfig.ClusterID,
 			true,
 		)
 		if err == nil {
@@ -84,15 +81,17 @@ func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error
 
 	// setup LB only if the gateway is not NSX-T
 	var lb cloudProvider.LoadBalancer = nil
-	if !vcdClient.IsNSXTBackedGateway() {
+	gm, err := vcdclient.NewGatewayManager(context.Background(), vcdClient, cloudConfig.VCD.VDCNetwork, cloudConfig.VCD.VIPSubnet)
+	if !gm.IsNSXTBackedGateway() {
 		klog.Infof("Gateway of network [%s] not backed by NSX-T. Hence LB will not be initialized.",
 			cloudConfig.VCD.VDCNetwork)
 	} else {
-		lb = newLoadBalancer(vcdClient, cloudConfig.LB.CertificateAlias, cloudConfig.LB.OneArm)
+		lb = newLoadBalancer(vcdClient, cloudConfig.LB.CertificateAlias, cloudConfig.LB.OneArm,
+			cloudConfig.VCD.VDCNetwork, cloudConfig.VCD.VIPSubnet, cloudConfig.ClusterID)
 	}
 
 	// cache for VM Info with an refresh of elements needed after 1 minute
-	vmInfoCache := newVmInfoCache(vcdClient, time.Minute)
+	vmInfoCache := newVmInfoCache(vcdClient, cloudConfig.VCD.VAppName, time.Minute)
 
 	return &VCDCloudProvider{
 		vcdClient: vcdClient,

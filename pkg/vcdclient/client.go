@@ -6,7 +6,6 @@
 package vcdclient
 
 import (
-	"context"
 	"crypto/tls"
 	"fmt"
 	"k8s.io/klog"
@@ -24,21 +23,21 @@ var (
 
 // Client :
 type Client struct {
-	VCDAuthConfig      *VCDAuthConfig // s
-	ClusterOrgName     string
-	ClusterOVDCName    string
-	ClusterVAppName    string /// out
-	VCDClient          *govcd.VCDClient
-	VDC                *govcd.Vdc // TODO: Incrementally remove and test in tests
-	APIClient          *swaggerClient.APIClient
-	networkName        string // out
-	IPAMSubnet         string // out
-	gatewayRef         *swaggerClient.EntityReference // out
-	networkBackingType swaggerClient.BackingNetworkType // out; break fix from vapp and gateway from CAPVCD
-	ClusterID          string // out; will break CSI and CPI
+	VCDAuthConfig   *VCDAuthConfig // s
+	ClusterOrgName  string
+	ClusterOVDCName string
+	//ClusterVAppName    string /// out
+	VCDClient *govcd.VCDClient
+	VDC       *govcd.Vdc // TODO: Incrementally remove and test in tests
+	APIClient *swaggerClient.APIClient
+	//networkName        string // out
+	//IPAMSubnet         string // out
+	//gatewayRef         *swaggerClient.EntityReference // out
+	//networkBackingType swaggerClient.BackingNetworkType // out; break fix from vapp and gateway from CAPVCD
+	//ClusterID          string // out; will break CSI and CPI
 	//OneArm             *OneArm
 	//CertificateAlias   string
-	RWLock             sync.RWMutex
+	RWLock sync.RWMutex
 }
 
 //  TODO: Make sure this function still works properly with no issues after refactor
@@ -107,9 +106,8 @@ func (client *Client) RefreshBearerToken() error {
 // host, orgName, userOrg, refreshToken, insecure, user, password
 
 // New method from (vdcClient, vdcName) return *govcd.Vdc
-func NewVCDClientFromSecrets(host string, orgName string, vdcName string, vAppName string,
-	networkName string, ipamSubnet string, userOrg string, user string, password string,
-	refreshToken string, insecure bool, clusterID string, getVdcClient bool) (*Client, error) {
+func NewVCDClientFromSecrets(host string, orgName string, vdcName string, userOrg string,
+	user string, password string, refreshToken string, insecure bool, getVdcClient bool) (*Client, error) {
 
 	// TODO: validation of parameters
 
@@ -122,8 +120,6 @@ func NewVCDClientFromSecrets(host string, orgName string, vdcName string, vAppNa
 		if clientSingleton.VCDAuthConfig.Host == host &&
 			clientSingleton.ClusterOrgName == orgName &&
 			clientSingleton.ClusterOVDCName == vdcName &&
-			clientSingleton.ClusterVAppName == vAppName &&
-			clientSingleton.networkName == networkName &&
 			clientSingleton.VCDAuthConfig.UserOrg == userOrg &&
 			clientSingleton.VCDAuthConfig.User == user &&
 			clientSingleton.VCDAuthConfig.Password == password &&
@@ -144,13 +140,8 @@ func NewVCDClientFromSecrets(host string, orgName string, vdcName string, vAppNa
 		VCDAuthConfig:   vcdAuthConfig,
 		ClusterOrgName:  orgName,
 		ClusterOVDCName: vdcName,
-		ClusterVAppName: vAppName,
 		VCDClient:       vcdClient,
 		APIClient:       apiClient,
-		networkName:     networkName,
-		IPAMSubnet:      ipamSubnet,
-		gatewayRef:      nil,
-		ClusterID:       clusterID,
 	}
 
 	if getVdcClient {
@@ -165,15 +156,6 @@ func NewVCDClientFromSecrets(host string, orgName string, vdcName string, vAppNa
 		}
 	}
 	client.VCDClient = vcdClient
-	// We will specifically cache the gateway ID that corresponds to the
-	// network name since it is used frequently in the loadbalancer context.
-	if networkName != "" {
-		ctx := context.Background()
-		if err = client.CacheGatewayDetails(ctx); err != nil {
-			return nil, fmt.Errorf("unable to get gateway edge from network name [%s]: [%v]",
-				client.networkName, err)
-		}
-	}
 	clientSingleton = client
 
 	klog.Infof("Client singleton is sysadmin: [%v]", clientSingleton.VCDClient.Client.IsSysAdmin)

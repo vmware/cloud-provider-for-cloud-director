@@ -8,10 +8,10 @@ import (
 
 const (
 	CAPVCDEntityTypeVendor = "vmware"
-	CAPVCDEntityTypeNss = "capvcdCluster"
+	CAPVCDEntityTypeNss    = "capvcdCluster"
 
 	NativeClusterEntityTypeVendor = "cse"
-	NativeClusterEntityTypeNss = "nativeCluster"
+	NativeClusterEntityTypeNss    = "nativeCluster"
 )
 
 func isCAPVCDEntityType(entityTypeID string) bool {
@@ -32,7 +32,7 @@ func isNativeClusterEntityType(entityTypeID string) bool {
 	return entityTypeIDSplit[3] == NativeClusterEntityTypeVendor && entityTypeIDSplit[4] == NativeClusterEntityTypeNss
 }
 
-func GetVirtualIPsFromRDE(rde  *swaggerClient.DefinedEntity) ([]string, error) {
+func GetVirtualIPsFromRDE(rde *swaggerClient.DefinedEntity) ([]string, error) {
 	statusEntry, ok := rde.Entity["status"]
 	if !ok {
 		return nil, fmt.Errorf("could not find 'status' entry in defined entity")

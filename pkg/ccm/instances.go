@@ -8,6 +8,7 @@ package ccm
 import (
 	"context"
 	"fmt"
+	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdclient"
 	"github.com/vmware/go-vcloud-director/v2/govcd"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -182,7 +183,8 @@ func (i *instances) InstanceShutdownByProviderID(ctx context.Context, providerID
 
 	status, err := vmInfo.vm.GetStatus()
 	if err != nil {
-		if i.vmInfoCache.vcdClient.IsVmNotAvailable(err) {
+		vmm := vcdclient.NewVMManager(i.vmInfoCache.client, i.vmInfoCache.clusterVAppName)
+		if vmm.IsVmNotAvailable(err) {
 			return true, nil
 		}
 

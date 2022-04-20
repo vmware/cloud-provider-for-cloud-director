@@ -28,20 +28,29 @@ const (
 
 //LBManager -
 type LBManager struct {
+	gatewayManager   *vcdclient.GatewayManager
 	vcdClient        *vcdclient.Client
 	kubeClient       *kubernetes.Clientset
 	namespace        string
 	CertificateAlias string
-	OneArm 			 *config.OneArm
+	OneArm           *config.OneArm
+	ovdcNetworkName  string
+	ipamSubnet       string
+	clusterID        string
 }
 
-func newLoadBalancer(vcdClient *vcdclient.Client, certAlias string, oneArm *config.OneArm) cloudProvider.LoadBalancer {
+func newLoadBalancer(vcdClient *vcdclient.Client, certAlias string, oneArm *config.OneArm,
+	ovdcNetworkName string, ipamSubnet string, clusterID string) cloudProvider.LoadBalancer {
+
 	return &LBManager{
 		vcdClient:        vcdClient,
 		kubeClient:       GetK8SClient(),
 		namespace:        "default",
 		CertificateAlias: certAlias,
-		OneArm: 		  oneArm,
+		OneArm:           oneArm,
+		ovdcNetworkName:  ovdcNetworkName,
+		ipamSubnet:       ipamSubnet,
+		clusterID:        clusterID,
 	}
 }
 
@@ -120,8 +129,12 @@ func (lb *LBManager) UpdateLoadBalancer(ctx context.Context, clusterName string,
 		lbPoolName := fmt.Sprintf("%s-%s", lbPoolNamePrefix, portName)
 		virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, portName)
 		externalPort := typeToExternalPort[portName]
+		gm, err := vcdclient.NewGatewayManager(ctx, lb.vcdClient, lb.ovdcNetworkName, lb.ipamSubnet)
+		if err != nil {
+			return fmt.Errorf("failed to create gateway manager: [%v]", err)
+		}
 		klog.Infof("Updating pool [%s] with port [%s:%d]", lbPoolName, portName, internalPort)
-		if err := lb.vcdClient.UpdateLoadBalancer(ctx, lbPoolName, virtualServiceName, nodeIps, internalPort, externalPort); err != nil {
+		if err := gm.UpdateLoadBalancer(ctx, lbPoolName, virtualServiceName, nodeIps, internalPort, externalPort); err != nil {
 			return fmt.Errorf("unable to update pool [%s] with port [%s:%d]: [%v]", lbPoolName, portName,
 				internalPort, err)
 		}
@@ -152,9 +165,10 @@ func (lb *LBManager) getLoadBalancer(ctx context.Context,
 
 	virtualServiceNamePrefix := lb.getLoadBalancerPrefix(ctx, service)
 	virtualIP := ""
+	gm, err := vcdclient.NewGatewayManager(ctx, lb.vcdClient, lb.ovdcNetworkName, lb.ipamSubnet)
 	for _, port := range service.Spec.Ports {
 		virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, port.Name)
-		virtualIP, err = lb.vcdClient.GetLoadBalancer(ctx, virtualServiceName, lb.OneArm)
+		virtualIP, err = gm.GetLoadBalancer(ctx, virtualServiceName, lb.OneArm)
 		if err != nil {
 			return nil, false,
 				fmt.Errorf("unable to get virtual service summary for [%s]: [%v]",
@@ -196,7 +210,7 @@ func (lb *LBManager) GetLoadBalancer(ctx context.Context, clusterName string,
 // getTrimmedClusterID: this is a mitigation to not overflow VCD name length limits. There is a clearer
 // fix needed in the future. Cover all cluster prefixes.
 func (lb *LBManager) getTrimmedClusterID() string {
-	clusterID := lb.vcdClient.ClusterID
+	clusterID := lb.clusterID
 	for _, prefix := range []string{
 		"urn:vcloud:entity:vmware:",
 		"urn:vcloud:entity:cse:nativeCluster:",
@@ -242,7 +256,11 @@ func (lb *LBManager) deleteLoadBalancer(ctx context.Context, service *v1.Service
 	}
 	klog.Infof("Deleting loadbalancer for ports [%#v]\n", portDetailsList)
 
-	err := lb.vcdClient.DeleteLoadBalancer(ctx, virtualServiceName, lbPoolNamePrefix, portDetailsList, lb.OneArm)
+	gm, err := vcdclient.NewGatewayManager(ctx, lb.vcdClient, lb.ovdcNetworkName, lb.ipamSubnet)
+	if err != nil {
+		return fmt.Errorf("failed to create GatewayMangaer object: [%v]", err)
+	}
+	err = gm.DeleteLoadBalancer(ctx, virtualServiceName, lbPoolNamePrefix, portDetailsList, lb.OneArm, lb.clusterID)
 	if err != nil {
 		return fmt.Errorf("Unable to delete load balancer for virtual-service [%s] and lb pool [%s]: [%v]",
 			virtualServiceName, lbPoolNamePrefix, err)
@@ -285,6 +303,10 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 	lbPoolNamePrefix := lb.getLBPoolNamePrefix(ctx, service)
 	virtualServiceNamePrefix := lb.getVirtualServicePrefix(ctx, service)
 	lbStatus, lbExists, err := lb.getLoadBalancer(ctx, service)
+	gm, err := vcdclient.NewGatewayManager(ctx, lb.vcdClient, lb.ovdcNetworkName, lb.ipamSubnet)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create GatewayMangaer object: [%v]", err)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("unexpected error while querying for loadbalancer: [%v]", err)
 	}
@@ -296,7 +318,7 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 			virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, portName)
 			externalPort := typeToExternalPortMap[portName]
 			klog.Infof("Updating pool [%s] with port [%s:%d:%d]", lbPoolName, portName, internalPort, externalPort)
-			if err := lb.vcdClient.UpdateLoadBalancer(ctx, lbPoolName, virtualServiceName, nodeIPs, internalPort, externalPort); err != nil {
+			if err := gm.UpdateLoadBalancer(ctx, lbPoolName, virtualServiceName, nodeIPs, internalPort, externalPort); err != nil {
 				return nil, fmt.Errorf("unable to update pool [%s] with port [%s:%d:%d]: [%v]", lbPoolName, portName,
 					internalPort, externalPort, err)
 			}
@@ -346,7 +368,7 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 	klog.Infof("Creating loadbalancer for ports [%#v]\n", portDetailsList)
 
 	// Create using VCD API
-	lbIP, err := lb.vcdClient.CreateLoadBalancer(ctx, virtualServiceNamePrefix, lbPoolNamePrefix, nodeIPs, portDetailsList, lb.OneArm)
+	lbIP, err := gm.CreateLoadBalancer(ctx, virtualServiceNamePrefix, lbPoolNamePrefix, nodeIPs, portDetailsList, lb.OneArm, lb.clusterID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create loadbalancer for ports [%#v]: [%v]", portDetailsList, err)
 	}
