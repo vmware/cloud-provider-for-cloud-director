@@ -27,9 +27,8 @@ type VCDAuthConfig struct {
 	UserOrg      string `json:"org"`
 	Host         string `json:"host"`
 	CloudAPIHref string `json:"cloudapihref"`
-	VDC          string `json:"vdc"`
+	VDC          string `json:"vdc"` // TODO: Get rid of
 	Insecure     bool   `json:"insecure"`
-	Token        string `json:"token"`
 	IsSysAdmin   bool   // will be set by GetBearerToken()
 }
 
