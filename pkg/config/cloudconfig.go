@@ -32,10 +32,6 @@ type VCDConfig struct {
 	User         string
 	Secret       string
 	RefreshToken string
-
-	VDCNetwork string `yaml:"network"`
-	VIPSubnet  string `yaml:"vipSubnet"`
-	VAppName   string `yaml:"vAppName"`
 }
 
 // Ports :
@@ -55,6 +51,8 @@ type LBConfig struct {
 	OneArm           *OneArm `yaml:"oneArm,omitempty"`
 	Ports            Ports   `yaml:"ports"`
 	CertificateAlias string  `yaml:"certAlias"`
+	VDCNetwork       string  `yaml:"network"`
+	VIPSubnet        string  `yaml:"vipSubnet"`
 }
 
 // CloudConfig contains the config that will be read from the secret
@@ -62,6 +60,7 @@ type CloudConfig struct {
 	VCD       VCDConfig `yaml:"vcd"`
 	LB        LBConfig  `yaml:"loadbalancer"`
 	ClusterID string    `yaml:"clusterid"`
+	VAppName  string    `yaml:"vAppName"`
 }
 
 func getUserAndOrg(fullUserName string, clusterOrg string) (userOrg string, userName string, err error) {
@@ -154,10 +153,10 @@ func ValidateCloudConfig(config *CloudConfig) error {
 	if config.VCD.Host == "" {
 		return fmt.Errorf("need a valid vCloud Host")
 	}
-	if config.VCD.VDCNetwork == "" {
+	if config.LB.VDCNetwork == "" {
 		return fmt.Errorf("need a valid ovdc network name")
 	}
-	if config.VCD.VAppName == "" {
+	if config.VAppName == "" {
 		return fmt.Errorf("need a valid vApp name")
 	}
 

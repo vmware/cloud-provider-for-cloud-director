@@ -84,18 +84,12 @@ func getTestVCDClient(config *config.CloudConfig, inputMap map[string]interface{
 				cloudConfig.VCD.Host = getStrValStrict(val, cloudConfig.VCD.Host)
 			case "org":
 				cloudConfig.VCD.Org = getStrValStrict(val, cloudConfig.VCD.Org)
-			case "network":
-				cloudConfig.VCD.VDCNetwork = getStrValStrict(val, cloudConfig.VCD.VDCNetwork)
-			case "subnet":
-				cloudConfig.VCD.VIPSubnet = getStrValStrict(val, cloudConfig.VCD.VIPSubnet)
 			case "user":
 				cloudConfig.VCD.User = getStrValStrict(val, cloudConfig.VCD.User)
 			case "secret":
 				cloudConfig.VCD.Secret = getStrValStrict(val, cloudConfig.VCD.Secret)
 			case "insecure":
 				insecure = getBoolValStrict(val, true)
-			case "clusterID":
-				cloudConfig.ClusterID = getStrValStrict(val, cloudConfig.ClusterID)
 			case "getVdcClient":
 				getVdcClient = getBoolValStrict(val, false)
 			case "refreshToken":

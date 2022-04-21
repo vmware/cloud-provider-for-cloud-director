@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	swagger "github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdswaggerclient"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"net/http"
@@ -44,7 +45,7 @@ func TestCacheGatewayDetails(t *testing.T) {
 
 	ctx := context.Background()
 
-	gm, err := NewGatewayManager(ctx, vcdClient, cloudConfig.VCD.VDCNetwork, cloudConfig.VCD.VIPSubnet)
+	gm, err := NewGatewayManager(ctx, vcdClient, cloudConfig.LB.VDCNetwork, cloudConfig.LB.VIPSubnet)
 	assert.NoError(t, err, "gateway manager should be created without error")
 
 	err = gm.CacheGatewayDetails(ctx)
@@ -88,7 +89,7 @@ func TestDNATRuleCRUDE(t *testing.T) {
 
 	ctx := context.Background()
 
-	gm, err := NewGatewayManager(ctx, vcdClient, cloudConfig.VCD.VDCNetwork, cloudConfig.VCD.VIPSubnet)
+	gm, err := NewGatewayManager(ctx, vcdClient, cloudConfig.LB.VDCNetwork, cloudConfig.LB.VIPSubnet)
 	assert.NoError(t, err, "gateway manager should be created without error")
 
 	dnatRuleName := fmt.Sprintf("test-dnat-rule-%s", uuid.New().String())
@@ -151,7 +152,7 @@ func TestLBPoolCRUDE(t *testing.T) {
 
 	ctx := context.Background()
 
-	gm, err := NewGatewayManager(ctx, vcdClient, cloudConfig.VCD.VDCNetwork, cloudConfig.VCD.VIPSubnet)
+	gm, err := NewGatewayManager(ctx, vcdClient, cloudConfig.LB.VDCNetwork, cloudConfig.LB.VIPSubnet)
 	assert.NoError(t, err, "gateway manager should be created without error")
 
 	lbPoolName := fmt.Sprintf("test-lb-pool-%s", uuid.New().String())
@@ -235,7 +236,7 @@ func TestGetLoadBalancerSEG(t *testing.T) {
 
 	ctx := context.Background()
 
-	gm, err := NewGatewayManager(ctx, vcdClient, cloudConfig.VCD.VDCNetwork, cloudConfig.VCD.VIPSubnet)
+	gm, err := NewGatewayManager(ctx, vcdClient, cloudConfig.LB.VDCNetwork, cloudConfig.LB.VIPSubnet)
 	assert.NoError(t, err, "gateway manager should be created without error")
 
 	segRef, err := gm.getLoadBalancerSEG(ctx)
@@ -272,10 +273,10 @@ func TestGetUnusedGatewayIP(t *testing.T) {
 
 	ctx := context.Background()
 
-	gm, err := NewGatewayManager(ctx, vcdClient, cloudConfig.VCD.VDCNetwork, cloudConfig.VCD.VIPSubnet)
+	gm, err := NewGatewayManager(ctx, vcdClient, cloudConfig.LB.VDCNetwork, cloudConfig.LB.VIPSubnet)
 	assert.NoError(t, err, "gateway manager should be created without error")
 
-	validSubnet := "10.150.191.253/19"
+	validSubnet := cloudConfig.LB.VIPSubnet
 	externalIP, err := gm.getUnusedExternalIPAddress(ctx, validSubnet)
 	assert.NoError(t, err, "should not get an error for this range")
 	assert.NotEmpty(t, externalIP, "should get a valid IP address in the range [%s]", validSubnet)
@@ -317,7 +318,7 @@ func TestVirtualServiceHttpCRUDE(t *testing.T) {
 
 	ctx := context.Background()
 
-	gm, err := NewGatewayManager(ctx, vcdClient, cloudConfig.VCD.VDCNetwork, cloudConfig.VCD.VIPSubnet)
+	gm, err := NewGatewayManager(ctx, vcdClient, cloudConfig.LB.VDCNetwork, cloudConfig.LB.VIPSubnet)
 	assert.NoError(t, err, "gateway manager should be created without error")
 
 	lbPoolName := fmt.Sprintf("test-lb-pool-%s", uuid.New().String())
@@ -330,8 +331,16 @@ func TestVirtualServiceHttpCRUDE(t *testing.T) {
 	virtualServiceName := fmt.Sprintf("test-virtual-service-%s", uuid.New().String())
 	externalIP := "10.11.12.13"
 	internalIP := "2.3.4.5"
-	vsRef, err := gm.createVirtualService(ctx, virtualServiceName, lbPoolRef, segRef,
-		internalIP, externalIP, "HTTP", 80, false, "", cloudConfig.ClusterID)
+	var vsRef *swagger.EntityReference
+	for i := 0; i < BusyRetries; i ++ {
+		vsRef, err = gm.createVirtualService(ctx, virtualServiceName, lbPoolRef, segRef,
+			internalIP, externalIP, "HTTP", 80, false, "", cloudConfig.ClusterID)
+		if err != nil {
+			if _, ok := err.(*VirtualServicePendingError); !ok {
+				break
+			}
+		}
+	}
 	assert.NoError(t, err, "Unable to create virtual service")
 	require.NotNil(t, vsRef, "VirtualServiceRef should not be nil")
 	assert.Equal(t, virtualServiceName, vsRef.Name, "Virtual Service name should match")
@@ -421,7 +430,7 @@ func TestVirtualServiceHttpsCRUDE(t *testing.T) {
 
 	ctx := context.Background()
 
-	gm, err := NewGatewayManager(ctx, vcdClient, cloudConfig.VCD.VDCNetwork, cloudConfig.VCD.VIPSubnet)
+	gm, err := NewGatewayManager(ctx, vcdClient, cloudConfig.LB.VDCNetwork, cloudConfig.LB.VIPSubnet)
 	assert.NoError(t, err, "gateway manager should be created without error")
 
 	lbPoolName := fmt.Sprintf("test-lb-pool-%s", uuid.New().String())
@@ -522,7 +531,7 @@ func TestLoadBalancerCRUDE(t *testing.T) {
 
 	ctx := context.Background()
 
-	gm, err := NewGatewayManager(ctx, vcdClient, cloudConfig.VCD.VDCNetwork, cloudConfig.VCD.VIPSubnet)
+	gm, err := NewGatewayManager(ctx, vcdClient, cloudConfig.LB.VDCNetwork, cloudConfig.LB.VIPSubnet)
 	assert.NoError(t, err, "gateway manager should be created without error")
 
 	virtualServiceNamePrefix := fmt.Sprintf("test-virtual-service-https-%s", uuid.New().String())

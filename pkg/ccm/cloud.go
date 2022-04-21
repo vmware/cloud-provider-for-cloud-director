@@ -81,17 +81,17 @@ func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error
 
 	// setup LB only if the gateway is not NSX-T
 	var lb cloudProvider.LoadBalancer = nil
-	gm, err := vcdclient.NewGatewayManager(context.Background(), vcdClient, cloudConfig.VCD.VDCNetwork, cloudConfig.VCD.VIPSubnet)
+	gm, err := vcdclient.NewGatewayManager(context.Background(), vcdClient, cloudConfig.LB.VDCNetwork, cloudConfig.LB.VIPSubnet)
 	if !gm.IsNSXTBackedGateway() {
 		klog.Infof("Gateway of network [%s] not backed by NSX-T. Hence LB will not be initialized.",
-			cloudConfig.VCD.VDCNetwork)
+			cloudConfig.LB.VDCNetwork)
 	} else {
 		lb = newLoadBalancer(vcdClient, cloudConfig.LB.CertificateAlias, cloudConfig.LB.OneArm,
-			cloudConfig.VCD.VDCNetwork, cloudConfig.VCD.VIPSubnet, cloudConfig.ClusterID)
+			cloudConfig.LB.VDCNetwork, cloudConfig.LB.VIPSubnet, cloudConfig.ClusterID)
 	}
 
 	// cache for VM Info with an refresh of elements needed after 1 minute
-	vmInfoCache := newVmInfoCache(vcdClient, cloudConfig.VCD.VAppName, time.Minute)
+	vmInfoCache := newVmInfoCache(vcdClient, cloudConfig.VAppName, time.Minute)
 
 	return &VCDCloudProvider{
 		vcdClient: vcdClient,
