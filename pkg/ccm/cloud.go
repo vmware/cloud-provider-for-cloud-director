@@ -82,6 +82,9 @@ func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error
 	// setup LB only if the gateway is not NSX-T
 	var lb cloudProvider.LoadBalancer = nil
 	gm, err := vcdsdk.NewGatewayManager(context.Background(), vcdClient, cloudConfig.LB.VDCNetwork, cloudConfig.LB.VIPSubnet)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create GatewayManager: [%v]", err)
+	}
 	if !gm.IsNSXTBackedGateway() {
 		klog.Infof("Gateway of network [%s] not backed by NSX-T. Hence LB will not be initialized.",
 			cloudConfig.LB.VDCNetwork)
