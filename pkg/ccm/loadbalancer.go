@@ -131,6 +131,9 @@ func (lb *LBManager) UpdateLoadBalancer(ctx context.Context, clusterName string,
 		externalPort := typeToExternalPort[portName]
 		gm, err := vcdsdk.NewGatewayManager(ctx, lb.vcdClient, lb.ovdcNetworkName, lb.ipamSubnet)
 		if err != nil {
+			return fmt.Errorf("error while creating GatewayManager: [%v]", err)
+		}
+		if err != nil {
 			return fmt.Errorf("failed to create gateway manager: [%v]", err)
 		}
 		klog.Infof("Updating pool [%s] with port [%s:%d]", lbPoolName, portName, internalPort)
