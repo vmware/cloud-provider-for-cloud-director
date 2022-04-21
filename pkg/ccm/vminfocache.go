@@ -7,7 +7,7 @@ package ccm
 
 import (
 	"fmt"
-	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdclient"
+	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdsdk"
 	"k8s.io/klog"
 	"sync"
 	"time"
@@ -33,11 +33,11 @@ type VmInfoCache struct {
 	expiry          time.Duration
 	nameMap         map[string]*VmInfo
 	uuidMap         map[string]*VmInfo
-	client          *vcdclient.Client
+	client          *vcdsdk.Client
 	clusterVAppName string
 }
 
-func newVmInfoCache(client *vcdclient.Client, clusterVAppName string, expiry time.Duration) *VmInfoCache {
+func newVmInfoCache(client *vcdsdk.Client, clusterVAppName string, expiry time.Duration) *VmInfoCache {
 	return &VmInfoCache{
 		expiry:          expiry,
 		nameMap:         make(map[string]*VmInfo),
@@ -106,7 +106,7 @@ func (vmic *VmInfoCache) GetByName(vmName string) (*VmInfo, error) {
 	if err := vmic.client.RefreshBearerToken(); err != nil {
 		return nil, fmt.Errorf("error while obtaining access token: [%v]", err)
 	}
-	vmm := vcdclient.NewVMManager(vmic.client, vmic.clusterVAppName)
+	vmm := vcdsdk.NewVMManager(vmic.client, vmic.clusterVAppName)
 	vm, err := vmm.FindVMByName(vmName)
 	if err != nil {
 		if err == govcd.ErrorEntityNotFound {
@@ -150,7 +150,7 @@ func (vmic *VmInfoCache) GetByUUID(vmUUID string) (*VmInfo, error) {
 	if err := vmic.client.RefreshBearerToken(); err != nil {
 		return nil, fmt.Errorf("error while obtaining access token: [%v]", err)
 	}
-	vmm := vcdclient.NewVMManager(vmic.client, vmic.clusterVAppName)
+	vmm := vcdsdk.NewVMManager(vmic.client, vmic.clusterVAppName)
 	vm, err := vmm.FindVMByUUID(vmUUID)
 	if err != nil {
 		if err == govcd.ErrorEntityNotFound {

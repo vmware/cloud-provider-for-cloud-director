@@ -11,7 +11,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/config"
-	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdclient"
+	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdsdk"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -28,8 +28,8 @@ const (
 
 //LBManager -
 type LBManager struct {
-	gatewayManager   *vcdclient.GatewayManager
-	vcdClient        *vcdclient.Client
+	gatewayManager   *vcdsdk.GatewayManager
+	vcdClient        *vcdsdk.Client
 	kubeClient       *kubernetes.Clientset
 	namespace        string
 	CertificateAlias string
@@ -39,7 +39,7 @@ type LBManager struct {
 	clusterID        string
 }
 
-func newLoadBalancer(vcdClient *vcdclient.Client, certAlias string, oneArm *config.OneArm,
+func newLoadBalancer(vcdClient *vcdsdk.Client, certAlias string, oneArm *config.OneArm,
 	ovdcNetworkName string, ipamSubnet string, clusterID string) cloudProvider.LoadBalancer {
 
 	return &LBManager{
@@ -129,7 +129,7 @@ func (lb *LBManager) UpdateLoadBalancer(ctx context.Context, clusterName string,
 		lbPoolName := fmt.Sprintf("%s-%s", lbPoolNamePrefix, portName)
 		virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, portName)
 		externalPort := typeToExternalPort[portName]
-		gm, err := vcdclient.NewGatewayManager(ctx, lb.vcdClient, lb.ovdcNetworkName, lb.ipamSubnet)
+		gm, err := vcdsdk.NewGatewayManager(ctx, lb.vcdClient, lb.ovdcNetworkName, lb.ipamSubnet)
 		if err != nil {
 			return fmt.Errorf("failed to create gateway manager: [%v]", err)
 		}
@@ -165,7 +165,7 @@ func (lb *LBManager) getLoadBalancer(ctx context.Context,
 
 	virtualServiceNamePrefix := lb.getLoadBalancerPrefix(ctx, service)
 	virtualIP := ""
-	gm, err := vcdclient.NewGatewayManager(ctx, lb.vcdClient, lb.ovdcNetworkName, lb.ipamSubnet)
+	gm, err := vcdsdk.NewGatewayManager(ctx, lb.vcdClient, lb.ovdcNetworkName, lb.ipamSubnet)
 	for _, port := range service.Spec.Ports {
 		virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, port.Name)
 		virtualIP, err = gm.GetLoadBalancer(ctx, virtualServiceName, lb.OneArm)
@@ -244,9 +244,9 @@ func (lb *LBManager) deleteLoadBalancer(ctx context.Context, service *v1.Service
 	lbPoolNamePrefix := lb.getLBPoolNamePrefix(ctx, service)
 	klog.Infof("Deleting virtual service [%s] and lb pool [%s]", virtualServiceName, lbPoolNamePrefix)
 
-	portDetailsList := make([]vcdclient.PortDetails, len(service.Spec.Ports))
+	portDetailsList := make([]vcdsdk.PortDetails, len(service.Spec.Ports))
 	for idx, port := range service.Spec.Ports {
-		portDetailsList[idx] = vcdclient.PortDetails{
+		portDetailsList[idx] = vcdsdk.PortDetails{
 			PortSuffix:   port.Name,
 			ExternalPort: port.Port,
 			InternalPort: port.NodePort,
@@ -256,7 +256,7 @@ func (lb *LBManager) deleteLoadBalancer(ctx context.Context, service *v1.Service
 	}
 	klog.Infof("Deleting loadbalancer for ports [%#v]\n", portDetailsList)
 
-	gm, err := vcdclient.NewGatewayManager(ctx, lb.vcdClient, lb.ovdcNetworkName, lb.ipamSubnet)
+	gm, err := vcdsdk.NewGatewayManager(ctx, lb.vcdClient, lb.ovdcNetworkName, lb.ipamSubnet)
 	if err != nil {
 		return fmt.Errorf("failed to create GatewayMangaer object: [%v]", err)
 	}
@@ -303,7 +303,7 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 	lbPoolNamePrefix := lb.getLBPoolNamePrefix(ctx, service)
 	virtualServiceNamePrefix := lb.getVirtualServicePrefix(ctx, service)
 	lbStatus, lbExists, err := lb.getLoadBalancer(ctx, service)
-	gm, err := vcdclient.NewGatewayManager(ctx, lb.vcdClient, lb.ovdcNetworkName, lb.ipamSubnet)
+	gm, err := vcdsdk.NewGatewayManager(ctx, lb.vcdClient, lb.ovdcNetworkName, lb.ipamSubnet)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create GatewayMangaer object: [%v]", err)
 	}
@@ -329,7 +329,7 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 	// While creating the lb, even if only one of http/https is remaining and the other is completed,
 	// ask for both to be created. The already created one will silently pass.
 
-	portDetailsList := make([]vcdclient.PortDetails, len(service.Spec.Ports))
+	portDetailsList := make([]vcdsdk.PortDetails, len(service.Spec.Ports))
 
 	ports, err := getSSLPorts(service)
 	if err != nil {
@@ -348,7 +348,7 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 		portsMap[port] = true
 	}
 	for idx, port := range service.Spec.Ports {
-		portDetailsList[idx] = vcdclient.PortDetails{
+		portDetailsList[idx] = vcdsdk.PortDetails{
 			PortSuffix:   port.Name,
 			ExternalPort: port.Port,
 			InternalPort: port.NodePort,

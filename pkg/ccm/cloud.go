@@ -10,7 +10,7 @@ package ccm
 import (
 	"fmt"
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/config"
-	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdclient"
+	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdsdk"
 	"golang.org/x/net/context"
 	"io"
 	"k8s.io/client-go/informers"
@@ -27,7 +27,7 @@ const (
 
 // VCDCloudProvider - contains all of the interfaces for our cloud provider
 type VCDCloudProvider struct {
-	vcdClient *vcdclient.Client
+	vcdClient *vcdsdk.Client
 	lb        cloudProvider.LoadBalancer
 	instances cloudProvider.Instances
 }
@@ -39,7 +39,7 @@ func init() {
 }
 
 func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error) {
-	var vcdClient *vcdclient.Client = nil
+	var vcdClient *vcdsdk.Client = nil
 	var cloudConfig *config.CloudConfig = nil
 	cloudConfig, err := config.ParseCloudConfig(configReader)
 	if err != nil {
@@ -60,7 +60,7 @@ func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error
 			continue
 		}
 
-		vcdClient, err = vcdclient.NewVCDClientFromSecrets(
+		vcdClient, err = vcdsdk.NewVCDClientFromSecrets(
 			cloudConfig.VCD.Host,
 			cloudConfig.VCD.Org,
 			cloudConfig.VCD.VDC,
@@ -81,7 +81,7 @@ func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error
 
 	// setup LB only if the gateway is not NSX-T
 	var lb cloudProvider.LoadBalancer = nil
-	gm, err := vcdclient.NewGatewayManager(context.Background(), vcdClient, cloudConfig.LB.VDCNetwork, cloudConfig.LB.VIPSubnet)
+	gm, err := vcdsdk.NewGatewayManager(context.Background(), vcdClient, cloudConfig.LB.VDCNetwork, cloudConfig.LB.VIPSubnet)
 	if !gm.IsNSXTBackedGateway() {
 		klog.Infof("Gateway of network [%s] not backed by NSX-T. Hence LB will not be initialized.",
 			cloudConfig.LB.VDCNetwork)

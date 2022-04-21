@@ -3,7 +3,7 @@
    SPDX-License-Identifier: Apache-2.0
 */
 
-package vcdclient
+package vcdsdk
 
 import (
 	"context"
@@ -358,8 +358,15 @@ func TestVirtualServiceHttpCRUDE(t *testing.T) {
 	assert.False(t, foundStringInSlice(internalIP, rdeVips), "internal ip should not be in rde vips")
 
 	// repeated creation should not fail
-	vsRef, err = gm.createVirtualService(ctx, virtualServiceName, lbPoolRef, segRef,
-		internalIP, externalIP, "HTTP", 80, false, "", cloudConfig.ClusterID)
+	for i := 0; i < BusyRetries; i ++ {
+		vsRef, err = gm.createVirtualService(ctx, virtualServiceName, lbPoolRef, segRef,
+			internalIP, externalIP, "HTTP", 80, false, "", cloudConfig.ClusterID)
+		if err != nil {
+			if _, ok := err.(*VirtualServicePendingError); !ok {
+				break
+			}
+		}
+	}
 	assert.NoError(t, err, "Unable to create virtual service for the second time")
 	require.NotNil(t, vsRef, "VirtualServiceRef should not be nil")
 	assert.Equal(t, virtualServiceName, vsRef.Name, "Virtual Service name should match")
@@ -447,8 +454,17 @@ func TestVirtualServiceHttpsCRUDE(t *testing.T) {
 	if certName == "" {
 		certName = fmt.Sprintf("%s-cert", cloudConfig.ClusterID)
 	}
-	vsRef, err := gm.createVirtualService(ctx, virtualServiceName, lbPoolRef, segRef,
-		internalIP, externalIP, "HTTPS", 443, true, certName, cloudConfig.ClusterID)
+
+	var vsRef *swagger.EntityReference
+	for i := 0; i < BusyRetries; i ++ {
+		vsRef, err = gm.createVirtualService(ctx, virtualServiceName, lbPoolRef, segRef,
+			internalIP, externalIP, "HTTP", 80, false, "", cloudConfig.ClusterID)
+		if err != nil {
+			if _, ok := err.(*VirtualServicePendingError); !ok {
+				break
+			}
+		}
+	}
 	assert.NoError(t, err, "Unable to create virtual service")
 	require.NotNil(t, vsRef, "VirtualServiceRef should not be nil")
 	assert.Equal(t, virtualServiceName, vsRef.Name, "Virtual Service name should match")

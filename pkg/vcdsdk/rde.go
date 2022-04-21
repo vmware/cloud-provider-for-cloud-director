@@ -1,4 +1,4 @@
-package vcdclient
+package vcdsdk
 
 import (
 	"context"
