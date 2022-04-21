@@ -10,7 +10,8 @@ package ccm
 import (
 	"fmt"
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/config"
-	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdclient"
+	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdsdk"
+	"golang.org/x/net/context"
 	"io"
 	"k8s.io/client-go/informers"
 	_ "k8s.io/client-go/tools/clientcmd"
@@ -26,7 +27,7 @@ const (
 
 // VCDCloudProvider - contains all of the interfaces for our cloud provider
 type VCDCloudProvider struct {
-	vcdClient *vcdclient.Client
+	vcdClient *vcdsdk.Client
 	lb        cloudProvider.LoadBalancer
 	instances cloudProvider.Instances
 }
@@ -38,8 +39,7 @@ func init() {
 }
 
 func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error) {
-	var vcdClient *vcdclient.Client = nil
-	var oneArm *vcdclient.OneArm = nil
+	var vcdClient *vcdsdk.Client = nil
 	var cloudConfig *config.CloudConfig = nil
 	cloudConfig, err := config.ParseCloudConfig(configReader)
 	if err != nil {
@@ -60,29 +60,15 @@ func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error
 			continue
 		}
 
-		if cloudConfig.LB.OneArm != nil {
-			oneArm = &vcdclient.OneArm{
-				StartIPAddress: cloudConfig.LB.OneArm.StartIP,
-				EndIPAddress:   cloudConfig.LB.OneArm.EndIP,
-			}
-		}
-		vcdClient, err = vcdclient.NewVCDClientFromSecrets(
+		vcdClient, err = vcdsdk.NewVCDClientFromSecrets(
 			cloudConfig.VCD.Host,
 			cloudConfig.VCD.Org,
 			cloudConfig.VCD.VDC,
-			cloudConfig.VCD.VAppName,
-			cloudConfig.VCD.VDCNetwork,
-			cloudConfig.VCD.VIPSubnet,
 			cloudConfig.VCD.UserOrg,
 			cloudConfig.VCD.User,
 			cloudConfig.VCD.Secret,
 			cloudConfig.VCD.RefreshToken,
 			true,
-			cloudConfig.ClusterID,
-			oneArm,
-			cloudConfig.LB.Ports.HTTP,
-			cloudConfig.LB.Ports.HTTPS,
-			cloudConfig.LB.CertificateAlias,
 			true,
 		)
 		if err == nil {
@@ -95,15 +81,20 @@ func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error
 
 	// setup LB only if the gateway is not NSX-T
 	var lb cloudProvider.LoadBalancer = nil
-	if !vcdClient.IsNSXTBackedGateway() {
+	gm, err := vcdsdk.NewGatewayManager(context.Background(), vcdClient, cloudConfig.LB.VDCNetwork, cloudConfig.LB.VIPSubnet)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create GatewayManager: [%v]", err)
+	}
+	if !gm.IsNSXTBackedGateway() {
 		klog.Infof("Gateway of network [%s] not backed by NSX-T. Hence LB will not be initialized.",
-			cloudConfig.VCD.VDCNetwork)
+			cloudConfig.LB.VDCNetwork)
 	} else {
-		lb = newLoadBalancer(vcdClient)
+		lb = newLoadBalancer(vcdClient, cloudConfig.LB.CertificateAlias, cloudConfig.LB.OneArm,
+			cloudConfig.LB.VDCNetwork, cloudConfig.LB.VIPSubnet, cloudConfig.ClusterID)
 	}
 
 	// cache for VM Info with an refresh of elements needed after 1 minute
-	vmInfoCache := newVmInfoCache(vcdClient, time.Minute)
+	vmInfoCache := newVmInfoCache(vcdClient, cloudConfig.VAppName, time.Minute)
 
 	return &VCDCloudProvider{
 		vcdClient: vcdClient,

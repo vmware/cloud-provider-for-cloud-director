@@ -7,7 +7,7 @@ package ccm
 
 import (
 	"fmt"
-	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdclient"
+	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdsdk"
 	"k8s.io/klog"
 	"sync"
 	"time"
@@ -29,19 +29,21 @@ type VmInfo struct {
 // VmInfoCache caches VM details. Ideally we need a LRU cache with ttl-based expiry. But since we have ~10k nodes
 // per cluster, we can ignore limits and expiry.
 type VmInfoCache struct {
-	rwLock    sync.RWMutex
-	expiry    time.Duration
-	nameMap   map[string]*VmInfo
-	uuidMap   map[string]*VmInfo
-	vcdClient *vcdclient.Client
+	rwLock          sync.RWMutex
+	expiry          time.Duration
+	nameMap         map[string]*VmInfo
+	uuidMap         map[string]*VmInfo
+	client          *vcdsdk.Client
+	clusterVAppName string
 }
 
-func newVmInfoCache(client *vcdclient.Client, expiry time.Duration) *VmInfoCache {
+func newVmInfoCache(client *vcdsdk.Client, clusterVAppName string, expiry time.Duration) *VmInfoCache {
 	return &VmInfoCache{
-		expiry:    expiry,
-		nameMap:   make(map[string]*VmInfo),
-		uuidMap:   make(map[string]*VmInfo),
-		vcdClient: client,
+		expiry:          expiry,
+		nameMap:         make(map[string]*VmInfo),
+		uuidMap:         make(map[string]*VmInfo),
+		client:          client,
+		clusterVAppName: clusterVAppName,
 	}
 }
 
@@ -101,16 +103,17 @@ func (vmic *VmInfoCache) GetByName(vmName string) (*VmInfo, error) {
 	}
 
 	captureTime := time.Now()
-	if err := vmic.vcdClient.RefreshBearerToken(); err != nil {
+	if err := vmic.client.RefreshBearerToken(); err != nil {
 		return nil, fmt.Errorf("error while obtaining access token: [%v]", err)
 	}
-	vm, err := vmic.vcdClient.FindVMByName(vmName)
+	vmm := vcdsdk.NewVMManager(vmic.client, vmic.clusterVAppName)
+	vm, err := vmm.FindVMByName(vmName)
 	if err != nil {
 		if err == govcd.ErrorEntityNotFound {
 			return nil, govcd.ErrorEntityNotFound
 		}
 
-		if vmic.vcdClient.IsVmNotAvailable(err) {
+		if vmm.IsVmNotAvailable(err) {
 			return nil, govcd.ErrorEntityNotFound
 		}
 
@@ -144,16 +147,17 @@ func (vmic *VmInfoCache) GetByUUID(vmUUID string) (*VmInfo, error) {
 	}
 
 	captureTime := time.Now()
-	if err := vmic.vcdClient.RefreshBearerToken(); err != nil {
+	if err := vmic.client.RefreshBearerToken(); err != nil {
 		return nil, fmt.Errorf("error while obtaining access token: [%v]", err)
 	}
-	vm, err := vmic.vcdClient.FindVMByUUID(vmUUID)
+	vmm := vcdsdk.NewVMManager(vmic.client, vmic.clusterVAppName)
+	vm, err := vmm.FindVMByUUID(vmUUID)
 	if err != nil {
 		if err == govcd.ErrorEntityNotFound {
 			return nil, govcd.ErrorEntityNotFound
 		}
 
-		if vmic.vcdClient.IsVmNotAvailable(err) {
+		if vmm.IsVmNotAvailable(err) {
 			return nil, govcd.ErrorEntityNotFound
 		}
 
