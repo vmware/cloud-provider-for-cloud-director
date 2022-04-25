@@ -3,6 +3,8 @@
    SPDX-License-Identifier: Apache-2.0
 */
 
+// TODO: log statements should change to klog.V(3)
+
 package vcdsdk
 
 import (
@@ -22,6 +24,11 @@ import (
 	"strconv"
 	"strings"
 )
+
+type OneArm struct {
+	StartIP string
+	EndIP string
+}
 
 type GatewayManager struct {
 	NetworkName        string
@@ -154,8 +161,11 @@ func getUnusedIPAddressInRange(startIPAddress string, endIPAddress string,
 	return freeIP
 }
 
-func (gm *GatewayManager) getUnusedInternalIPAddress(ctx context.Context, oneArm *config.OneArm) (string, error) {
+func (gm *GatewayManager) getUnusedInternalIPAddress(ctx context.Context, oneArm *OneArm) (string, error) {
 
+	if oneArm == nil {
+		return "", fmt.Errorf("unable to get unused external IP address as oneArm is nil")
+	}
 	client := gm.Client
 	if gm.GatewayRef == nil {
 		return "", fmt.Errorf("gateway reference should not be nil")
@@ -180,8 +190,7 @@ func (gm *GatewayManager) getUnusedInternalIPAddress(ctx context.Context, oneArm
 		pageNum++
 	}
 
-	freeIP := getUnusedIPAddressInRange(oneArm.StartIP,
-		oneArm.EndIP, usedIPAddress)
+	freeIP := getUnusedIPAddressInRange(oneArm.StartIP, oneArm.EndIP, usedIPAddress)
 	if freeIP == "" {
 		return "", fmt.Errorf("unable to find unused IP address in range [%s-%s]",
 			oneArm.StartIP, oneArm.EndIP)
@@ -1142,6 +1151,7 @@ func (gm *GatewayManager) updateVirtualServicePort(ctx context.Context, virtualS
 	return nil
 }
 
+// TODO: separate out rde operations: how?
 func (gm *GatewayManager) createVirtualService(ctx context.Context, virtualServiceName string,
 	lbPoolRef *swaggerClient.EntityReference, segRef *swaggerClient.EntityReference,
 	freeIP string, rdeVIP string, vsType string, externalPort int32,
@@ -1364,7 +1374,7 @@ type PortDetails struct {
 
 // CreateLoadBalancer : create a new load balancer pool and virtual service pointing to it
 func (gm *GatewayManager) CreateLoadBalancer(ctx context.Context, virtualServiceNamePrefix string,
-	lbPoolNamePrefix string, ips []string, portDetailsList []PortDetails, oneArm *config.OneArm, rdeID string) (string, error) {
+	lbPoolNamePrefix string, ips []string, portDetailsList []PortDetails, oneArm *OneArm, rdeID string) (string, error) {
 
 	client := gm.Client
 	client.RWLock.Lock()
@@ -1662,4 +1672,154 @@ func (gm *GatewayManager) IsNSXTBackedGateway() bool {
 			(gm.NetworkBackingType == swaggerClient.NSXT_FLEXIBLE_SEGMENT_BackingNetworkType)
 
 	return isNSXTBackedGateway
+}
+
+// CAPVCD code -------
+func (gateway *GatewayManager) GetLoadBalancerPool(ctx context.Context, lbPoolName string) (*swaggerClient.EntityReference, error) {
+	lbPoolRef, err := gateway.getLoadBalancerPool(ctx, lbPoolName)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get reference for LB pool [%s]: [%v]", lbPoolName, err)
+	}
+	if lbPoolRef == nil {
+		return nil, govcd.ErrorEntityNotFound
+	}
+	return lbPoolRef, nil
+}
+
+func (gateway *GatewayManager) GetLoadBalancerPoolMemberIPs(ctx context.Context, lbPoolRef *swaggerClient.EntityReference) ([]string, error) {
+	client := gateway.Client
+	if lbPoolRef == nil {
+		return nil, govcd.ErrorEntityNotFound
+	}
+	lbPool, resp, err := client.APIClient.EdgeGatewayLoadBalancerPoolApi.GetLoadBalancerPool(ctx, lbPoolRef.Id)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get the details for LB pool [%s]: [%+v]: [%v]",
+			lbPoolRef.Name, resp, err)
+	}
+
+	memberIPs := make([]string, lbPool.MemberCount)
+	members := lbPool.Members
+	for i, member := range members {
+		memberIPs[i] = member.IpAddress
+	}
+	return memberIPs, nil
+}
+
+func removeDuplicateStrings(arr []string) []string {
+	m := make(map[string]bool)
+	noDuplicateArr := make([]string, 0)
+	for _, str := range arr {
+		if _, exists := m[str]; exists == false {
+			m[str] = true
+			noDuplicateArr = append(noDuplicateArr, str)
+		}
+	}
+	return noDuplicateArr
+}
+
+func (gateway *GatewayManager) CreateL4LoadBalancer(ctx context.Context, virtualServiceNamePrefix string,
+	lbPoolNamePrefix string, ips []string, tcpInternalPort int32, tcpExternalPort int32, oneArm *OneArm) (string, error) {
+
+	gateway.Client.RWLock.Lock()
+	defer gateway.Client.RWLock.Unlock()
+
+	if tcpInternalPort == 0 {
+		// nothing to do here
+		klog.V(3).Infof("There is no tcp port specified. Cannot create L4 load balancer")
+		return "", fmt.Errorf("there is no tcp port specified. Cannot create L4 load balancer")
+	}
+
+	if gateway.GatewayRef == nil {
+		return "", fmt.Errorf("gateway reference should not be nil")
+	}
+
+	type PortDetails struct {
+		portSuffix       string
+		serviceType      string
+		externalPort     int32
+		internalPort     int32
+		certificateAlias string
+	}
+	portDetails := []PortDetails{
+		{
+			portSuffix:       "tcp",
+			serviceType:      "L4",
+			externalPort:     tcpExternalPort,
+			internalPort:     tcpInternalPort,
+			certificateAlias: "",
+		},
+	}
+
+	externalIP, err := gateway.getUnusedExternalIPAddress(ctx, gateway.IPAMSubnet)
+	if err != nil {
+		return "", fmt.Errorf("unable to get unused IP address from subnet [%s]: [%v]",
+			gateway.IPAMSubnet, err)
+	}
+	klog.V(3).Infof("Using external IP [%s] for virtual service\n", externalIP)
+
+	for _, portDetail := range portDetails {
+		if portDetail.internalPort == 0 {
+			klog.V(3).Infof("No internal port specified for [%s], hence loadbalancer not created\n", portDetail.portSuffix)
+			continue
+		}
+
+		virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, portDetail.portSuffix)
+		lbPoolName := fmt.Sprintf("%s-%s", lbPoolNamePrefix, portDetail.portSuffix)
+
+		vsSummary, err := gateway.getVirtualService(ctx, virtualServiceName)
+		if err != nil {
+			return "", fmt.Errorf("unexpected error while querying for virtual service [%s]: [%v]",
+				virtualServiceName, err)
+		}
+		if vsSummary != nil {
+			if vsSummary.LoadBalancerPoolRef.Name != lbPoolName {
+				return "", fmt.Errorf("virtual service [%s] found with unexpected loadbalancer pool [%s]",
+					virtualServiceName, lbPoolName)
+			}
+
+			klog.Infof("LoadBalancer Virtual Service [%s] already exists", virtualServiceName)
+			if err = gateway.checkIfVirtualServiceIsPending(ctx, virtualServiceName); err != nil {
+				return "", err
+			}
+			continue
+		}
+
+		virtualServiceIP := externalIP
+		if oneArm != nil {
+			internalIP, err := gateway.getUnusedInternalIPAddress(ctx, oneArm)
+			if err != nil {
+				return "", fmt.Errorf("unable to get internal IP address for one-arm mode: [%v]", err)
+			}
+
+			dnatRuleName := fmt.Sprintf("dnat-%s", virtualServiceName)
+			if err = gateway.createDNATRule(ctx, dnatRuleName, externalIP, internalIP, portDetail.externalPort, portDetail.internalPort); err != nil {
+				return "", fmt.Errorf("unable to create dnat rule [%s] => [%s]: [%v]",
+					externalIP, internalIP, err)
+			}
+			// use the internal IP to create virtual service
+			virtualServiceIP = internalIP
+		}
+
+		segRef, err := gateway.getLoadBalancerSEG(ctx)
+		if err != nil {
+			return "", fmt.Errorf("unable to get service engine group from edge [%s]: [%v]",
+				gateway.GatewayRef.Name, err)
+		}
+
+		lbPoolRef, err := gateway.createLoadBalancerPool(ctx, lbPoolName, ips, portDetail.internalPort)
+		if err != nil {
+			return "", fmt.Errorf("unable to create load balancer pool [%s]: [%v]", lbPoolName, err)
+		}
+
+		virtualServiceRef, err := gateway.createVirtualService(ctx, virtualServiceName, lbPoolRef, segRef,
+			virtualServiceIP, portDetail.serviceType, portDetail.externalPort, portDetail.certificateAlias)
+		if err != nil {
+			return "", fmt.Errorf("unable to create virtual service [%s] with address [%s:%d]: [%v]",
+				virtualServiceName, virtualServiceIP, portDetail.externalPort, err)
+		}
+		klog.V(3).Infof("Created Load Balancer with virtual service [%v], pool [%v] on gateway [%s]\n",
+			virtualServiceRef, lbPoolRef, gateway.GatewayRef.Name)
+	}
+
+	return externalIP, nil
 }
