@@ -89,8 +89,10 @@ func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error
 		klog.Infof("Gateway of network [%s] not backed by NSX-T. Hence LB will not be initialized.",
 			cloudConfig.LB.VDCNetwork)
 	} else {
-		lb = newLoadBalancer(vcdClient, cloudConfig.LB.CertificateAlias, cloudConfig.LB.OneArm,
-			cloudConfig.LB.VDCNetwork, cloudConfig.LB.VIPSubnet, cloudConfig.ClusterID)
+		lb = newLoadBalancer(vcdClient, cloudConfig.LB.CertificateAlias, &vcdsdk.OneArm{
+			StartIP: cloudConfig.LB.OneArm.StartIP,
+			EndIP:   cloudConfig.LB.OneArm.EndIP,
+		}, cloudConfig.LB.VDCNetwork, cloudConfig.LB.VIPSubnet, cloudConfig.ClusterID)
 	}
 
 	// cache for VM Info with an refresh of elements needed after 1 minute

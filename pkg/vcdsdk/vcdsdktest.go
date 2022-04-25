@@ -25,6 +25,16 @@ func init() {
 	}
 }
 
+type AuthorizationDetails struct {
+	Username               string `yaml:"username"`
+	Password               string `yaml:"password"`
+	RefreshToken           string `yaml:"refreshToken"`
+	UserOrg                string `yaml:"userOrg"`
+	SystemUser             string `yaml:"systemUser"`
+	SystemUserPassword     string `yaml:"systemUserPassword"`
+	SystemUserRefreshToken string `yaml:"systemUserRefreshToken"`
+}
+
 func getStrValStrict(val interface{}, defaultVal string) string {
 	if strVal, ok := val.(string); ok {
 		return strVal
@@ -57,7 +67,7 @@ func getBoolValStrict(val interface{}, defaultVal bool) bool {
 //	return defaultVal
 //}
 
-func getTestConfig() (*config.CloudConfig, error) {
+func GetTestConfig() (*config.CloudConfig, error) {
 	testConfigFilePath := filepath.Join(gitRoot, "testdata/config_test.yaml")
 	configReader, err := os.Open(testConfigFilePath)
 	if err != nil {
@@ -72,8 +82,8 @@ func getTestConfig() (*config.CloudConfig, error) {
 	return cloudConfig, nil
 }
 
-// config will be passed in from getTestConfig() and error checked in unit test
-func getTestVCDClient(config *config.CloudConfig, inputMap map[string]interface{}) (*Client, error) {
+// config will be passed in from GetTestConfig() and error checked in unit test
+func GetTestVCDClient(config *config.CloudConfig, inputMap map[string]interface{}) (*Client, error) {
 	cloudConfig := *config // Make a copy of cloudConfig so modified inputs don't carry over to next test
 	insecure := true
 	getVdcClient := false
