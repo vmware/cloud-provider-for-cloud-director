@@ -12,7 +12,6 @@ import (
 	"fmt"
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/config"
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdsdk"
-	"golang.org/x/net/context"
 	"io"
 	"k8s.io/client-go/informers"
 	_ "k8s.io/client-go/tools/clientcmd"
