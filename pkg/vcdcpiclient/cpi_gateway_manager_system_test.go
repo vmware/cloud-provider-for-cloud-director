@@ -10,37 +10,24 @@ import (
 	_ "github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdsdk"
 	"io/ioutil"
 	"k8s.io/apimachinery/pkg/util/yaml"
-	"os"
 	"path/filepath"
 	"testing"
 )
 
-var (
-	GitRoot string = ""
-)
-
-func init() {
-	GitRoot = os.Getenv("GITROOT")
-	if GitRoot == "" {
-		// It is okay to panic here as this will be caught during dev
-		panic("GITROOT should be set")
-	}
-}
-
 func TestLoadBalancerCRUDE(t *testing.T) {
 
-	authFile := filepath.Join(GitRoot, "testdata/auth_test.yaml")
+	authFile := filepath.Join(gitRoot, "testdata/auth_test.yaml")
 	authFileContent, err := ioutil.ReadFile(authFile)
 	assert.NoError(t, err, "There should be no error reading the auth file contents.")
 
-	var authDetails vcdsdk.AuthorizationDetails
+	var authDetails authorizationDetails
 	err = yaml.Unmarshal(authFileContent, &authDetails)
 	assert.NoError(t, err, "There should be no error parsing auth file content.")
 
-	cloudConfig, err := vcdsdk.GetTestConfig()
+	cloudConfig, err := getTestConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
-	vcdClient, err := vcdsdk.GetTestVCDClient(cloudConfig, map[string]interface{}{
+	vcdClient, err := getTestVCDClient(cloudConfig, map[string]interface{}{
 		"user":         authDetails.Username,
 		"secret":       authDetails.Password,
 		"userOrg":      authDetails.UserOrg,

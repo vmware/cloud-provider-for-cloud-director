@@ -12,7 +12,7 @@ import (
 
 func TestVApp(t *testing.T) {
 
-	cloudConfig, err := GetTestConfig()
+	cloudConfig, err := getTestConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
 	// get client
@@ -37,7 +37,7 @@ func TestVApp(t *testing.T) {
 }
 
 func TestDeleteVapp(t *testing.T) {
-	cloudConfig, err := GetTestConfig()
+	cloudConfig, err := getTestConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 	// get client
 	vcdClient, err := GetTestVCDClient(
@@ -60,7 +60,7 @@ func TestDeleteVapp(t *testing.T) {
 }
 
 func TestVdcManager_CacheVdcDetails(t *testing.T) {
-	cloudConfig, err := GetTestConfig()
+	cloudConfig, err := getTestConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
 	vcdClient, err := GetTestVCDClient(

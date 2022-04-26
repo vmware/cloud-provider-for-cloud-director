@@ -2,20 +2,33 @@
    Copyright 2021 VMware, Inc.
    SPDX-License-Identifier: Apache-2.0
 */
-
-package vcdsdk
+package vcdcpiclient
 
 import (
 	"fmt"
+	"github.com/vmware/cloud-provider-for-cloud-director/pkg/config"
+	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdsdk"
 	"os"
 	"path/filepath"
-
-	"github.com/vmware/cloud-provider-for-cloud-director/pkg/config"
 )
+
+// NOTE: The test util functions in vcdsdk/common_system_test.go are being replicated in this file
+// because it is not possible to import functions or variables declared in _test.go files belonging to
+// a different package
 
 var (
 	gitRoot string = ""
 )
+
+type authorizationDetails struct {
+	Username               string `yaml:"username"`
+	Password               string `yaml:"password"`
+	RefreshToken           string `yaml:"refreshToken"`
+	UserOrg                string `yaml:"userOrg"`
+	SystemUser             string `yaml:"systemUser"`
+	SystemUserPassword     string `yaml:"systemUserPassword"`
+	SystemUserRefreshToken string `yaml:"systemUserRefreshToken"`
+}
 
 func init() {
 	gitRoot = os.Getenv("GITROOT")
@@ -25,14 +38,19 @@ func init() {
 	}
 }
 
-type AuthorizationDetails struct {
-	Username               string `yaml:"username"`
-	Password               string `yaml:"password"`
-	RefreshToken           string `yaml:"refreshToken"`
-	UserOrg                string `yaml:"userOrg"`
-	SystemUser             string `yaml:"systemUser"`
-	SystemUserPassword     string `yaml:"systemUserPassword"`
-	SystemUserRefreshToken string `yaml:"systemUserRefreshToken"`
+func getTestConfig() (*config.CloudConfig, error) {
+	testConfigFilePath := filepath.Join(gitRoot, "testdata/config_test.yaml")
+	configReader, err := os.Open(testConfigFilePath)
+	if err != nil {
+		return nil, fmt.Errorf("Unable to open file [%s]: [%v]", testConfigFilePath, err)
+	}
+	defer configReader.Close()
+
+	cloudConfig, err := config.ParseCloudConfig(configReader)
+	if err != nil {
+		return nil, fmt.Errorf("Unable to parse cloud config file [%s]: [%v]", testConfigFilePath, err)
+	}
+	return cloudConfig, nil
 }
 
 func getStrValStrict(val interface{}, defaultVal string) string {
@@ -67,23 +85,8 @@ func getBoolValStrict(val interface{}, defaultVal bool) bool {
 //	return defaultVal
 //}
 
-func GetTestConfig() (*config.CloudConfig, error) {
-	testConfigFilePath := filepath.Join(gitRoot, "testdata/config_test.yaml")
-	configReader, err := os.Open(testConfigFilePath)
-	if err != nil {
-		return nil, fmt.Errorf("Unable to open file [%s]: [%v]", testConfigFilePath, err)
-	}
-	defer configReader.Close()
-
-	cloudConfig, err := config.ParseCloudConfig(configReader)
-	if err != nil {
-		return nil, fmt.Errorf("Unable to parse cloud config file [%s]: [%v]", testConfigFilePath, err)
-	}
-	return cloudConfig, nil
-}
-
-// config will be passed in from GetTestConfig() and error checked in unit test
-func GetTestVCDClient(config *config.CloudConfig, inputMap map[string]interface{}) (*Client, error) {
+// config will be passed in from getTestConfig() and error checked in unit test
+func getTestVCDClient(config *config.CloudConfig, inputMap map[string]interface{}) (*vcdsdk.Client, error) {
 	cloudConfig := *config // Make a copy of cloudConfig so modified inputs don't carry over to next test
 	insecure := true
 	getVdcClient := false
@@ -110,7 +113,7 @@ func GetTestVCDClient(config *config.CloudConfig, inputMap map[string]interface{
 		}
 	}
 
-	return NewVCDClientFromSecrets(
+	return vcdsdk.NewVCDClientFromSecrets(
 		cloudConfig.VCD.Host,
 		cloudConfig.VCD.Org,
 		cloudConfig.VCD.VDC,

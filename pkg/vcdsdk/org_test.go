@@ -15,12 +15,12 @@ func TestComputePolicy(t *testing.T) {
 	authFileContent, err := ioutil.ReadFile(authFile)
 	assert.NoError(t, err, "There should be no error reading the auth file contents.")
 
-	var authDetails AuthorizationDetails
+	var authDetails authorizationDetails
 	err = yaml.Unmarshal(authFileContent, &authDetails)
 	assert.NoError(t, err, "There should be no error parsing auth file content.")
 
 	// get client
-	cloudConfig, err := GetTestConfig()
+	cloudConfig, err := getTestConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
 	vcdClient, err := GetTestVCDClient(
