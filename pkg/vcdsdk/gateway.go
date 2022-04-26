@@ -163,7 +163,7 @@ func getUnusedIPAddressInRange(startIPAddress string, endIPAddress string,
 func (gm *GatewayManager) GetUnusedInternalIPAddress(ctx context.Context, oneArm *OneArm) (string, error) {
 
 	if oneArm == nil {
-		return "", fmt.Errorf("unable to get unused external IP address as oneArm is nil")
+		return "", fmt.Errorf("unable to get unused internal IP address as oneArm is nil")
 	}
 	client := gm.Client
 	if gm.GatewayRef == nil {
@@ -1400,7 +1400,6 @@ func (gm *GatewayManager) IsNSXTBackedGateway() bool {
 	return isNSXTBackedGateway
 }
 
-// CAPVCD code -------
 func (gateway *GatewayManager) GetLoadBalancerPool(ctx context.Context, lbPoolName string) (*swaggerClient.EntityReference, error) {
 	lbPoolRef, err := gateway.getLoadBalancerPool(ctx, lbPoolName)
 	if err != nil {

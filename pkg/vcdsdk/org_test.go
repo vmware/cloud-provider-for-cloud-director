@@ -32,7 +32,9 @@ func TestComputePolicy(t *testing.T) {
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
 
 	computePolicyName := "4core4gb"
-	orgManager := NewOrgManager(vcdClient)
+	orgManager, err := NewOrgManager(vcdClient, vcdClient.ClusterOrgName)
+	assert.NoError(t, err, "there should be no error when creating orgManager object")
+
 	computePolicy, err := orgManager.GetComputePolicyDetailsFromName(computePolicyName)
 	assert.NoError(t, err, "should be able to get compute policy [%s]", computePolicyName)
 	assert.NotNil(t, computePolicy, "should get compute policy for [%s]", computePolicyName)

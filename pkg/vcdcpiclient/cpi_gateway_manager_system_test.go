@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdsdk"
-	_ "github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdsdk"
 	"io/ioutil"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"path/filepath"

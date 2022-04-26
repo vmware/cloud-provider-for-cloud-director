@@ -106,14 +106,17 @@ func (vmic *VmInfoCache) GetByName(vmName string) (*VmInfo, error) {
 	if err := vmic.client.RefreshBearerToken(); err != nil {
 		return nil, fmt.Errorf("error while obtaining access token: [%v]", err)
 	}
-	vmm := vcdsdk.NewVMManager(vmic.client, vmic.clusterVAppName)
-	vm, err := vmm.FindVMByName(vmName)
+	vdcManager, err := vcdsdk.NewVDCManager(vmic.client, vmic.client.ClusterOrgName, vmic.client.ClusterOVDCName, vmic.clusterVAppName)
+	if err != nil {
+		return nil, fmt.Errorf("error creating VDCManager object: [%v]", err)
+	}
+	vm, err := vdcManager.FindVMByName(vmName)
 	if err != nil {
 		if err == govcd.ErrorEntityNotFound {
 			return nil, govcd.ErrorEntityNotFound
 		}
 
-		if vmm.IsVmNotAvailable(err) {
+		if vdcManager.IsVmNotAvailable(err) {
 			return nil, govcd.ErrorEntityNotFound
 		}
 
@@ -150,14 +153,17 @@ func (vmic *VmInfoCache) GetByUUID(vmUUID string) (*VmInfo, error) {
 	if err := vmic.client.RefreshBearerToken(); err != nil {
 		return nil, fmt.Errorf("error while obtaining access token: [%v]", err)
 	}
-	vmm := vcdsdk.NewVMManager(vmic.client, vmic.clusterVAppName)
-	vm, err := vmm.FindVMByUUID(vmUUID)
+	vdcManager, err := vcdsdk.NewVDCManager(vmic.client, vmic.client.ClusterOrgName, vmic.client.ClusterOVDCName, vmic.clusterVAppName)
+	if err != nil {
+		return nil, fmt.Errorf("error creating VDCManager object: [%v]", err)
+	}
+	vm, err := vdcManager.FindVMByUUID(vmUUID)
 	if err != nil {
 		if err == govcd.ErrorEntityNotFound {
 			return nil, govcd.ErrorEntityNotFound
 		}
 
-		if vmm.IsVmNotAvailable(err) {
+		if vdcManager.IsVmNotAvailable(err) {
 			return nil, govcd.ErrorEntityNotFound
 		}
 
