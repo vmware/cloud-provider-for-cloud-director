@@ -15,15 +15,24 @@ import (
 
 func TestVApp(t *testing.T) {
 
+	authFile := filepath.Join(gitRoot, "testdata/auth_test.yaml")
+	authFileContent, err := ioutil.ReadFile(authFile)
+	assert.NoError(t, err, "There should be no error reading the auth file contents.")
+
+	var authDetails authorizationDetails
+	err = yaml.Unmarshal(authFileContent, &authDetails)
+	assert.NoError(t, err, "There should be no error parsing auth file content.")
+
 	cloudConfig, err := getTestConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
 	// get client
-	vcdClient, err := GetTestVCDClient(
-		cloudConfig,
-		map[string]interface{}{
-			"getVdcClient": true,
-		})
+	vcdClient, err := GetTestVCDClient(cloudConfig, map[string]interface{}{
+		"user":         authDetails.Username,
+		"secret":       authDetails.Password,
+		"userOrg":      authDetails.UserOrg,
+		"getVdcClient": true,
+	})
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
 
@@ -31,6 +40,11 @@ func TestVApp(t *testing.T) {
 	vAppName := "manual-vapp"
 	vdcManager, err := NewVDCManager(vcdClient, vcdClient.ClusterOrgName, vcdClient.ClusterOVDCName, vAppName)
 	assert.NoError(t, err, "error creating VDCManager")
+
+	// create VApp
+	vappObj, err := vdcManager.GetOrCreateVApp(cloudConfig.LB.VDCNetwork)
+	assert.NoError(t, err, "error creating VApp")
+	assert.NotNil(t, vappObj, "vApp created should not be nil")
 
 	vms, err := vdcManager.FindAllVMsInVapp()
 	assert.NoError(t, err, "unable to find VMs in vApp")
@@ -40,42 +54,59 @@ func TestVApp(t *testing.T) {
 }
 
 func TestDeleteVapp(t *testing.T) {
+	authFile := filepath.Join(gitRoot, "testdata/auth_test.yaml")
+	authFileContent, err := ioutil.ReadFile(authFile)
+	assert.NoError(t, err, "There should be no error reading the auth file contents.")
+
+	var authDetails authorizationDetails
+	err = yaml.Unmarshal(authFileContent, &authDetails)
+	assert.NoError(t, err, "There should be no error parsing auth file content.")
+
 	cloudConfig, err := getTestConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 	// get client
-	vcdClient, err := GetTestVCDClient(
-		cloudConfig,
-		map[string]interface{}{
-			"getVdcClient": true,
-		})
+	vcdClient, err := GetTestVCDClient(cloudConfig, map[string]interface{}{
+		"user":         authDetails.Username,
+		"secret":       authDetails.Password,
+		"userOrg":      authDetails.UserOrg,
+		"getVdcClient": true,
+	})
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
 
-	vdcManager := VdcManager{
-		Client:  vcdClient,
-		Vdc:     vcdClient.VDC,
-	}
-	vapp, err := vdcManager.GetOrCreateVApp("vapp1", "ovdc1_nw")
+	vappName := "vapp1"
+	vdcManager, err := NewVDCManager(vcdClient, vcdClient.ClusterOrgName, vcdClient.ClusterOVDCName, vappName)
+	assert.NoError(t, err, "there should be no error in creating VDCManager object")
+	vapp, err := vdcManager.GetOrCreateVApp( cloudConfig.LB.VDCNetwork)
 	assert.NoError(t, err, "unable to find vApp")
 	assert.NotNil(t, vapp, "vapp should not be nil")
-	err = vdcManager.DeleteVApp("vapp1")
+
+	// delete VApp
+	err = vdcManager.DeleteVApp()
 	assert.NoError(t, err, "unable to delete vApp")
 }
 
 func TestVdcManager_CacheVdcDetails(t *testing.T) {
+	authFile := filepath.Join(gitRoot, "testdata/auth_test.yaml")
+	authFileContent, err := ioutil.ReadFile(authFile)
+	assert.NoError(t, err, "There should be no error reading the auth file contents.")
+
+	var authDetails authorizationDetails
+	err = yaml.Unmarshal(authFileContent, &authDetails)
+	assert.NoError(t, err, "There should be no error parsing auth file content.")
+
 	cloudConfig, err := getTestConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
-	vcdClient, err := GetTestVCDClient(
-		cloudConfig,
-		map[string]interface{}{
-			"getVdcClient": true,
-		})
+	vcdClient, err := GetTestVCDClient(cloudConfig, map[string]interface{}{
+		"user":         authDetails.Username,
+		"secret":       authDetails.Password,
+		"userOrg":      authDetails.UserOrg,
+		"getVdcClient": true,
+	})
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
-	vdcManager := VdcManager{
-		Client:  vcdClient,
-	}
+	vdcManager, err := NewVDCManager(vcdClient, vcdClient.ClusterOrgName, vcdClient.ClusterOVDCName, "")
 	err = vdcManager.cacheVdcDetails()
 	assert.NoError(t, err, "There should no error while caching VDC details")
 }
@@ -94,11 +125,12 @@ func TestVMCreation(t *testing.T) {
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
 	// get client
-	vcdClient, err := GetTestVCDClient(
-		cloudConfig,
-		map[string]interface{}{
-			"getVdcClient": true,
-		})
+	vcdClient, err := GetTestVCDClient(cloudConfig, map[string]interface{}{
+		"user":         authDetails.Username,
+		"secret":       authDetails.Password,
+		"userOrg":      authDetails.UserOrg,
+		"getVdcClient": true,
+	})
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
 
@@ -107,7 +139,7 @@ func TestVMCreation(t *testing.T) {
 	vdcManager, err := NewVDCManager(vcdClient, vcdClient.ClusterOrgName, vcdClient.ClusterOVDCName, vAppName)
 	assert.NoError(t, err, "there should be no error when creating VDCManager object")
 
-	vApp, err := vdcManager.GetOrCreateVApp(vAppName, "tenant1_ovdc_nw")
+	vApp, err := vdcManager.GetOrCreateVApp(cloudConfig.LB.VDCNetwork)
 	assert.NoError(t, err, "unable to create vApp")
 	require.NotNil(t, vApp, "vApp created should not be nil")
 
@@ -131,13 +163,17 @@ fi
 exit 0
 `
 
+	// TODO: read the following variables from testdata
+	catalog := "cse"
+	templateName := "ubuntu-16.04_k8-1.20_weave-2.6.5_rev2"
+	placementPolicyName := "cse----native"
+	computePolicyName := "2core2gb"
 
-	_, err = vdcManager.AddNewMultipleVM(vApp, vmNamePrefix, vmNum, "ProviderCatalogs",
-		"ubuntu-16.04_k8-1.20_weave-2.6.5_rev2",
-		"cse----native", "2core2gb", guestCustScript, true, true)
+	_, err = vdcManager.AddNewMultipleVM(vApp, vmNamePrefix, vmNum, catalog,
+		templateName,placementPolicyName, computePolicyName, guestCustScript, true, true)
 	require.NoError(t, err, "unable to create [%d] VMs", vmNum)
 
-	_ = vdcManager.WaitForGuestScriptCompletion(vmNamePrefix, vAppName)
+	_ = vdcManager.WaitForGuestScriptCompletion(vmNamePrefix)
 
 	//err = VcdClient.DeleteVM(vAppName, vmName)
 	//assert.NoError(t, err, "unable to delete VM")
@@ -156,12 +192,14 @@ func TestVMExtraConfig(t *testing.T) {
 
 	cloudConfig, err := getTestConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
+
 	// get client
-	vcdClient, err := GetTestVCDClient(
-		cloudConfig,
-		map[string]interface{}{
-			"getVdcClient": true,
-		})
+	vcdClient, err := GetTestVCDClient(cloudConfig, map[string]interface{}{
+		"user":         authDetails.Username,
+		"secret":       authDetails.Password,
+		"userOrg":      authDetails.UserOrg,
+		"getVdcClient": true,
+	})
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
 
@@ -170,7 +208,7 @@ func TestVMExtraConfig(t *testing.T) {
 	vdcManager, err := NewVDCManager(vcdClient, vcdClient.ClusterOrgName, vcdClient.ClusterOVDCName, vAppName)
 	assert.NoError(t, err, "there should be no error when creating VDCManager object")
 
-	vApp, err := vdcManager.GetOrCreateVApp(vAppName, cloudConfig.LB.VDCNetwork)
+	vApp, err := vdcManager.GetOrCreateVApp(cloudConfig.LB.VDCNetwork)
 	assert.NoError(t, err, "unable to create vApp")
 	require.NotNil(t, vApp, "vApp created should not be nil")
 
@@ -195,7 +233,7 @@ exit 0
 `
 
 	// TODO: allow these vm params to be user passed through a config
-	err = vdcManager.AddNewVM(vmNamePrefix, vAppName, vmNum, "cse",
+	err = vdcManager.AddNewVM(vmNamePrefix, vmNum, "cse",
 		"ubuntu-16.04_k8-1.21_weave-2.8.1_rev1", "cse----native",
 		"2core2gb", guestCustScript, true)
 	assert.NoError(t, err, "unable to create [%d] VMs", vmNum)
@@ -218,7 +256,7 @@ exit 0
 	assert.NoError(t, err, "failed to get hardware section value for key %s", key)
 	assert.Equal(t, value, retrievedValue, "retrieved incorrect value")
 
-	err = vdcManager.DeleteVApp(vAppName)
+	err = vdcManager.DeleteVApp()
 	assert.NoError(t, err, "unable to delete vApp: [%s]", vAppName)
 }
 
