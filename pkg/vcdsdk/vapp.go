@@ -154,14 +154,14 @@ func NewVDCManager(client *Client, orgName string, vdcName string, vAppName stri
 }
 
 func (vdc *VdcManager) cacheVdcDetails() error {
-	org, err := vdc.Client.VCDClient.GetOrgByName(vdc.Client.ClusterOrgName)
+	org, err := vdc.Client.VCDClient.GetOrgByName(vdc.OrgName)
 	if err != nil {
-		return fmt.Errorf("unable to get org from name [%s]: [%v]", vdc.Client.ClusterOrgName, err)
+		return fmt.Errorf("unable to get org from name [%s]: [%v]", vdc.OrgName, err)
 	}
 
-	vdc.Vdc, err = org.GetVDCByName(vdc.Client.ClusterOrgName, true)
+	vdc.Vdc, err = org.GetVDCByName(vdc.VdcName, true)
 	if err != nil {
-		return fmt.Errorf("unable to get Vdc [%s] from org [%s]: [%v]", vdc.Client.ClusterOVDCName, vdc.Client.ClusterOVDCName, err)
+		return fmt.Errorf("unable to get Vdc [%s] from org [%s]: [%v]", vdc.VdcName, vdc.OrgName, err)
 	}
 	return nil
 }
@@ -203,8 +203,16 @@ func (vdc *VdcManager) DeleteVApp() error {
 	if err != nil {
 		task, err = vApp.Delete()
 		if err != nil {
-			return fmt.Errorf("failed to delete vApp [%s]", vdc.VAppName)
+			return fmt.Errorf("failed to delete vApp [%s]: [%v]", vdc.VAppName, err)
 		}
+
+		// Undeploy can fail if the vApp is not running. But VApp will be in a state where it can be deleted
+		err = task.WaitTaskCompletion()
+		if err != nil {
+			return fmt.Errorf("failed to delete vApp [%s]: [%v]", vdc.VAppName, err)
+		}
+		// Deletion successful
+		return nil
 	}
 	err = task.WaitTaskCompletion()
 	if err != nil {
@@ -212,7 +220,7 @@ func (vdc *VdcManager) DeleteVApp() error {
 	}
 	task, err = vApp.Delete()
 	if err != nil {
-		return fmt.Errorf("failed to delete vApp [%s]", vdc.VAppName)
+		return fmt.Errorf("failed to delete vApp [%s]: [%v]", vdc.VAppName, err)
 	}
 	err = task.WaitTaskCompletion()
 	if err != nil {
