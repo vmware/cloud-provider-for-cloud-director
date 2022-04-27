@@ -1,9 +1,10 @@
-package vcdsdk
+package vcdcpiclient
 
 import (
 	"context"
 	"fmt"
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/util"
+	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdsdk"
 	swaggerClient "github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdswaggerclient"
 	"k8s.io/klog"
 	"net/http"
@@ -17,10 +18,10 @@ const (
 type RDEManager struct {
 	ClusterID string
 	// Client will be refreshed separately
-	Client *Client
+	Client *vcdsdk.Client
 }
 
-func NewRDEManager(client *Client, clusterID string) *RDEManager {
+func NewRDEManager(client *vcdsdk.Client, clusterID string) *RDEManager {
 	return &RDEManager{
 		ClusterID: clusterID,
 		Client:    client,

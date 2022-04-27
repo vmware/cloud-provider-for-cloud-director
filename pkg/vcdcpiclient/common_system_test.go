@@ -2,15 +2,19 @@
    Copyright 2021 VMware, Inc.
    SPDX-License-Identifier: Apache-2.0
 */
-
-package vcdsdk
+package vcdcpiclient
 
 import (
 	"fmt"
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/config"
+	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdsdk"
 	"os"
 	"path/filepath"
 )
+
+// NOTE: The test util functions in vcdsdk/common_system_test.go are being replicated in this file
+// because it is not possible to import functions or variables declared in _test.go files belonging to
+// a different package
 
 var (
 	gitRoot string = ""
@@ -82,7 +86,7 @@ func getBoolValStrict(val interface{}, defaultVal bool) bool {
 //}
 
 // config will be passed in from getTestConfig() and error checked in unit test
-func GetTestVCDClient(config *config.CloudConfig, inputMap map[string]interface{}) (*Client, error) {
+func getTestVCDClient(config *config.CloudConfig, inputMap map[string]interface{}) (*vcdsdk.Client, error) {
 	cloudConfig := *config // Make a copy of cloudConfig so modified inputs don't carry over to next test
 	insecure := true
 	getVdcClient := false
@@ -109,7 +113,7 @@ func GetTestVCDClient(config *config.CloudConfig, inputMap map[string]interface{
 		}
 	}
 
-	return NewVCDClientFromSecrets(
+	return vcdsdk.NewVCDClientFromSecrets(
 		cloudConfig.VCD.Host,
 		cloudConfig.VCD.Org,
 		cloudConfig.VCD.VDC,

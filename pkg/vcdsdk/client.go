@@ -26,17 +26,9 @@ type Client struct {
 	VCDAuthConfig   *VCDAuthConfig // s
 	ClusterOrgName  string
 	ClusterOVDCName string
-	//ClusterVAppName    string /// out
 	VCDClient *govcd.VCDClient
 	VDC       *govcd.Vdc // TODO: Incrementally remove and test in tests
 	APIClient *swaggerClient.APIClient
-	//networkName        string // out
-	//IPAMSubnet         string // out
-	//gatewayRef         *swaggerClient.EntityReference // out
-	//networkBackingType swaggerClient.BackingNetworkType // out; break fix from vapp and gateway from CAPVCD
-	//ClusterID          string // out; will break CSI and CPI
-	//OneArm             *OneArm
-	//CertificateAlias   string
 	RWLock sync.RWMutex
 }
 

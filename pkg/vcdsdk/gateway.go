@@ -3,6 +3,8 @@
    SPDX-License-Identifier: Apache-2.0
 */
 
+// TODO: log statements should change to klog.V(3)
+
 package vcdsdk
 
 import (
@@ -11,7 +13,6 @@ import (
 	"github.com/antihax/optional"
 	"github.com/apparentlymart/go-cidr/cidr"
 	"github.com/peterhellberg/link"
-	"github.com/vmware/cloud-provider-for-cloud-director/pkg/config"
 	swaggerClient "github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdswaggerclient"
 	"github.com/vmware/go-vcloud-director/v2/govcd"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
@@ -23,6 +24,11 @@ import (
 	"strings"
 )
 
+type OneArm struct {
+	StartIP string
+	EndIP   string
+}
+
 type GatewayManager struct {
 	NetworkName        string
 	GatewayRef         *swaggerClient.EntityReference
@@ -33,7 +39,7 @@ type GatewayManager struct {
 }
 
 // CacheGatewayDetails get gateway reference and cache some details in client object
-func (gm *GatewayManager) CacheGatewayDetails(ctx context.Context) error {
+func (gm *GatewayManager) cacheGatewayDetails(ctx context.Context) error {
 
 	if gm.NetworkName == "" {
 		return fmt.Errorf("network name should not be empty")
@@ -79,7 +85,7 @@ func NewGatewayManager(ctx context.Context, client *Client, networkName string, 
 		IPAMSubnet:  ipamSubnet,
 	}
 
-	err := gateway.CacheGatewayDetails(ctx)
+	err := gateway.cacheGatewayDetails(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("error caching gateway related details: [%v]", err)
 	}
@@ -154,8 +160,11 @@ func getUnusedIPAddressInRange(startIPAddress string, endIPAddress string,
 	return freeIP
 }
 
-func (gm *GatewayManager) getUnusedInternalIPAddress(ctx context.Context, oneArm *config.OneArm) (string, error) {
+func (gm *GatewayManager) GetUnusedInternalIPAddress(ctx context.Context, oneArm *OneArm) (string, error) {
 
+	if oneArm == nil {
+		return "", fmt.Errorf("unable to get unused internal IP address as oneArm is nil")
+	}
 	client := gm.Client
 	if gm.GatewayRef == nil {
 		return "", fmt.Errorf("gateway reference should not be nil")
@@ -180,8 +189,7 @@ func (gm *GatewayManager) getUnusedInternalIPAddress(ctx context.Context, oneArm
 		pageNum++
 	}
 
-	freeIP := getUnusedIPAddressInRange(oneArm.StartIP,
-		oneArm.EndIP, usedIPAddress)
+	freeIP := getUnusedIPAddressInRange(oneArm.StartIP, oneArm.EndIP, usedIPAddress)
 	if freeIP == "" {
 		return "", fmt.Errorf("unable to find unused IP address in range [%s-%s]",
 			oneArm.StartIP, oneArm.EndIP)
@@ -192,7 +200,7 @@ func (gm *GatewayManager) getUnusedInternalIPAddress(ctx context.Context, oneArm
 
 // There are races here since there is no 'acquisition' of an IP. However, since k8s retries, it will
 // be correct.
-func (gm *GatewayManager) getUnusedExternalIPAddress(ctx context.Context, ipamSubnet string) (string, error) {
+func (gm *GatewayManager) GetUnusedExternalIPAddress(ctx context.Context, ipamSubnet string) (string, error) {
 	client := gm.Client
 	if gm.GatewayRef == nil {
 		return "", fmt.Errorf("gateway reference should not be nil")
@@ -266,7 +274,7 @@ func (gm *GatewayManager) getUnusedExternalIPAddress(ctx context.Context, ipamSu
 }
 
 // TODO: There could be a race here as we don't book a slot. Retry repeatedly to get a LB Segment.
-func (gm *GatewayManager) getLoadBalancerSEG(ctx context.Context) (*swaggerClient.EntityReference, error) {
+func (gm *GatewayManager) GetLoadBalancerSEG(ctx context.Context) (*swaggerClient.EntityReference, error) {
 	if gm.GatewayRef == nil {
 		return nil, fmt.Errorf("gateway reference should not be nil")
 	}
@@ -355,8 +363,8 @@ type NatRuleRef struct {
 	InternalPort int
 }
 
-// getNATRuleRef: returns nil if the rule is not found;
-func (gm *GatewayManager) getNATRuleRef(ctx context.Context, natRuleName string) (*NatRuleRef, error) {
+// GetNATRuleRef: returns nil if the rule is not found;
+func (gm *GatewayManager) GetNATRuleRef(ctx context.Context, natRuleName string) (*NatRuleRef, error) {
 
 	if gm.GatewayRef == nil {
 		return nil, fmt.Errorf("gateway reference should not be nil")
@@ -429,15 +437,15 @@ func (gm *GatewayManager) getNATRuleRef(ctx context.Context, natRuleName string)
 	return natRuleRef, nil
 }
 
-func getDNATRuleName(virtualServiceName string) string {
+func GetDNATRuleName(virtualServiceName string) string {
 	return fmt.Sprintf("dnat-%s", virtualServiceName)
 }
 
-func getAppPortProfileName(dnatRuleName string) string {
+func GetAppPortProfileName(dnatRuleName string) string {
 	return fmt.Sprintf("appPort_%s", dnatRuleName)
 }
 
-func (gm *GatewayManager) createDNATRule(ctx context.Context, dnatRuleName string,
+func (gm *GatewayManager) CreateDNATRule(ctx context.Context, dnatRuleName string,
 	externalIP string, internalIP string, externalPort int32, internalPort int32) error {
 
 	if gm.GatewayRef == nil {
@@ -445,7 +453,7 @@ func (gm *GatewayManager) createDNATRule(ctx context.Context, dnatRuleName strin
 	}
 
 	client := gm.Client
-	dnatRuleRef, err := gm.getNATRuleRef(ctx, dnatRuleName)
+	dnatRuleRef, err := gm.GetNATRuleRef(ctx, dnatRuleName)
 	if err != nil {
 		return fmt.Errorf("unexpected error while looking for nat rule [%s] in gateway [%s]: [%v]",
 			dnatRuleName, gm.GatewayRef.Name, err)
@@ -460,7 +468,7 @@ func (gm *GatewayManager) createDNATRule(ctx context.Context, dnatRuleName strin
 		return fmt.Errorf("unable to find org [%s] by name: [%v]", client.ClusterOrgName, err)
 	}
 
-	appPortProfileName := getAppPortProfileName(dnatRuleName)
+	appPortProfileName := GetAppPortProfileName(dnatRuleName)
 	klog.Infof("Verifying if app port profile [%s] exists in org [%s]...", appPortProfileName,
 		client.ClusterOrgName)
 	// we always use tenant scoped profiles
@@ -551,7 +559,7 @@ func (gm *GatewayManager) createDNATRule(ctx context.Context, dnatRuleName strin
 	return nil
 }
 
-func (gm *GatewayManager) updateAppPortProfile(appPortProfileName string, externalPort int32) error {
+func (gm *GatewayManager) UpdateAppPortProfile(appPortProfileName string, externalPort int32) error {
 	client := gm.Client
 	org, err := client.VCDClient.GetOrgByName(client.ClusterOrgName)
 	if err != nil {
@@ -577,13 +585,13 @@ func (gm *GatewayManager) updateAppPortProfile(appPortProfileName string, extern
 	return nil
 }
 
-func (gm *GatewayManager) updateDNATRule(ctx context.Context, dnatRuleName string, externalIP string, internalIP string, externalPort int32) error {
+func (gm *GatewayManager) UpdateDNATRule(ctx context.Context, dnatRuleName string, externalIP string, internalIP string, externalPort int32) error {
 	client := gm.Client
 	if err := gm.checkIfGatewayIsReady(ctx); err != nil {
 		klog.Errorf("failed to update DNAT rule; gateway [%s] is busy", gm.GatewayRef.Name)
 		return err
 	}
-	dnatRuleRef, err := gm.getNATRuleRef(ctx, dnatRuleName)
+	dnatRuleRef, err := gm.GetNATRuleRef(ctx, dnatRuleName)
 	if err != nil {
 		return fmt.Errorf("unexpected error while looking for nat rule [%s] in gateway [%s]: [%v]",
 			dnatRuleName, gm.GatewayRef.Name, err)
@@ -639,7 +647,7 @@ func (gm *GatewayManager) updateDNATRule(ctx context.Context, dnatRuleName strin
 
 // Note that this also deletes App Port Profile Config. So we always need to call this
 // even if we don't find a DNAT rule, to ensure that everything is cleaned up.
-func (gm *GatewayManager) deleteDNATRule(ctx context.Context, dnatRuleName string,
+func (gm *GatewayManager) DeleteDNATRule(ctx context.Context, dnatRuleName string,
 	failIfAbsent bool) error {
 
 	client := gm.Client
@@ -652,7 +660,7 @@ func (gm *GatewayManager) deleteDNATRule(ctx context.Context, dnatRuleName strin
 		return fmt.Errorf("gateway reference should not be nil")
 	}
 
-	dnatRuleRef, err := gm.getNATRuleRef(ctx, dnatRuleName)
+	dnatRuleRef, err := gm.GetNATRuleRef(ctx, dnatRuleName)
 	if err != nil {
 		return fmt.Errorf("unexpected error while finding dnat rule [%s]: [%v]", dnatRuleName, err)
 	}
@@ -684,7 +692,7 @@ func (gm *GatewayManager) deleteDNATRule(ctx context.Context, dnatRuleName strin
 		klog.Infof("Deleted DNAT rule [%s] on gateway [%s]\n", dnatRuleName, gm.GatewayRef.Name)
 	}
 
-	appPortProfileName := getAppPortProfileName(dnatRuleName)
+	appPortProfileName := GetAppPortProfileName(dnatRuleName)
 	klog.Infof("Checking if App Port Profile [%s] in org [%s] exists", appPortProfileName,
 		client.ClusterOrgName)
 
@@ -787,7 +795,7 @@ func (gm *GatewayManager) formLoadBalancerPool(lbPoolName string, ips []string,
 	return lbPool, lbPoolMembers
 }
 
-func (gm *GatewayManager) createLoadBalancerPool(ctx context.Context, lbPoolName string,
+func (gm *GatewayManager) CreateLoadBalancerPool(ctx context.Context, lbPoolName string,
 	ips []string, internalPort int32) (*swaggerClient.EntityReference, error) {
 
 	client := gm.Client
@@ -839,7 +847,7 @@ func (gm *GatewayManager) createLoadBalancerPool(ctx context.Context, lbPoolName
 	return lbPoolRef, nil
 }
 
-func (gm *GatewayManager) deleteLoadBalancerPool(ctx context.Context, lbPoolName string,
+func (gm *GatewayManager) DeleteLoadBalancerPool(ctx context.Context, lbPoolName string,
 	failIfAbsent bool) error {
 
 	client := gm.Client
@@ -898,7 +906,7 @@ func hasSameLBPoolMembers(array1 []swaggerClient.EdgeLoadBalancerPoolMember, arr
 	return true
 }
 
-func (gm *GatewayManager) updateLoadBalancerPool(ctx context.Context, lbPoolName string, ips []string,
+func (gm *GatewayManager) UpdateLoadBalancerPool(ctx context.Context, lbPoolName string, ips []string,
 	internalPort int32) (*swaggerClient.EntityReference, error) {
 	client := gm.Client
 	lbPoolRef, err := gm.getLoadBalancerPool(ctx, lbPoolName)
@@ -973,7 +981,7 @@ func (gm *GatewayManager) updateLoadBalancerPool(ctx context.Context, lbPoolName
 	return lbPoolRef, nil
 }
 
-func (gm *GatewayManager) getVirtualService(ctx context.Context,
+func (gm *GatewayManager) GetVirtualService(ctx context.Context,
 	virtualServiceName string) (*swaggerClient.EdgeLoadBalancerVirtualServiceSummary, error) {
 
 	client := gm.Client
@@ -999,13 +1007,13 @@ func (gm *GatewayManager) getVirtualService(ctx context.Context,
 	return &lbVSSummaries.Values[0], nil
 }
 
-func (gm *GatewayManager) checkIfVirtualServiceIsPending(ctx context.Context, virtualServiceName string) error {
+func (gm *GatewayManager) CheckIfVirtualServiceIsPending(ctx context.Context, virtualServiceName string) error {
 	if gm.GatewayRef == nil {
 		return fmt.Errorf("gateway reference should not be nil")
 	}
 
 	klog.V(3).Infof("Checking if virtual service [%s] is still pending", virtualServiceName)
-	vsSummary, err := gm.getVirtualService(ctx, virtualServiceName)
+	vsSummary, err := gm.GetVirtualService(ctx, virtualServiceName)
 	if err != nil {
 		return fmt.Errorf("unable to get summary for LB VS [%s]: [%v]", virtualServiceName, err)
 	}
@@ -1028,7 +1036,7 @@ func (gm *GatewayManager) checkIfVirtualServiceIsReady(ctx context.Context, virt
 	}
 
 	klog.V(3).Infof("Checking if virtual service [%s] is busy", virtualServiceName)
-	vsSummary, err := gm.getVirtualService(ctx, virtualServiceName)
+	vsSummary, err := gm.GetVirtualService(ctx, virtualServiceName)
 	if err != nil {
 		return fmt.Errorf("unable to get summary for LB VS [%s]: [%v]", virtualServiceName, err)
 	}
@@ -1091,9 +1099,9 @@ func (gm *GatewayManager) checkIfGatewayIsReady(ctx context.Context) error {
 	return NewGatewayBusyError(gm.GatewayRef.Name)
 }
 
-func (gm *GatewayManager) updateVirtualServicePort(ctx context.Context, virtualServiceName string, externalPort int32) error {
+func (gm *GatewayManager) UpdateVirtualServicePort(ctx context.Context, virtualServiceName string, externalPort int32) error {
 	client := gm.Client
-	vsSummary, err := gm.getVirtualService(ctx, virtualServiceName)
+	vsSummary, err := gm.GetVirtualService(ctx, virtualServiceName)
 	if err != nil {
 		return fmt.Errorf("failed to get virtual service summary for virtual service [%s]: [%v]", virtualServiceName, err)
 	}
@@ -1142,24 +1150,25 @@ func (gm *GatewayManager) updateVirtualServicePort(ctx context.Context, virtualS
 	return nil
 }
 
-func (gm *GatewayManager) createVirtualService(ctx context.Context, virtualServiceName string,
+// TODO: separate out rde operations: how?
+func (gm *GatewayManager) CreateVirtualService(ctx context.Context, virtualServiceName string,
 	lbPoolRef *swaggerClient.EntityReference, segRef *swaggerClient.EntityReference,
-	freeIP string, rdeVIP string, vsType string, externalPort int32,
-	useSSL bool, certificateAlias string, rdeID string) (*swaggerClient.EntityReference, error) {
+	freeIP string, vsType string, externalPort int32,
+	useSSL bool, certificateAlias string) (*swaggerClient.EntityReference, error) {
 
 	client := gm.Client
 	if gm.GatewayRef == nil {
 		return nil, fmt.Errorf("gateway reference should not be nil")
 	}
 
-	vsSummary, err := gm.getVirtualService(ctx, virtualServiceName)
+	vsSummary, err := gm.GetVirtualService(ctx, virtualServiceName)
 	if err != nil {
 		return nil, fmt.Errorf("unexpected error while getting summary for LB VS [%s]: [%v]",
 			virtualServiceName, err)
 	}
 	if vsSummary != nil {
 		klog.V(3).Infof("LoadBalancer Virtual Service [%s] already exists", virtualServiceName)
-		if err = gm.checkIfVirtualServiceIsPending(ctx, virtualServiceName); err != nil {
+		if err = gm.CheckIfVirtualServiceIsPending(ctx, virtualServiceName); err != nil {
 			return nil, err
 		}
 
@@ -1264,14 +1273,7 @@ func (gm *GatewayManager) createVirtualService(ctx context.Context, virtualServi
 			taskURL, err)
 	}
 
-	// update RDE with freeIp
-	rm := NewRDEManager(client, rdeID)
-	err = rm.addVirtualIpToRDE(ctx, rdeVIP)
-	if err != nil {
-		klog.Errorf("error when adding virtual IP to RDE: [%v]", err)
-	}
-
-	vsSummary, err = gm.getVirtualService(ctx, virtualServiceName)
+	vsSummary, err = gm.GetVirtualService(ctx, virtualServiceName)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get summary for freshly created LB VS [%s]: [%v]",
 			virtualServiceName, err)
@@ -1281,7 +1283,7 @@ func (gm *GatewayManager) createVirtualService(ctx context.Context, virtualServi
 			virtualServiceName, err)
 	}
 
-	if err = gm.checkIfVirtualServiceIsPending(ctx, virtualServiceName); err != nil {
+	if err = gm.CheckIfVirtualServiceIsPending(ctx, virtualServiceName); err != nil {
 		return nil, err
 	}
 
@@ -1294,15 +1296,15 @@ func (gm *GatewayManager) createVirtualService(ctx context.Context, virtualServi
 	return virtualServiceRef, nil
 }
 
-func (gm *GatewayManager) deleteVirtualService(ctx context.Context, virtualServiceName string,
-	failIfAbsent bool, rdeID string, rdeVIP string) error {
+func (gm *GatewayManager) DeleteVirtualService(ctx context.Context, virtualServiceName string,
+	failIfAbsent bool) error {
 
 	client := gm.Client
 	if gm.GatewayRef == nil {
 		return fmt.Errorf("gateway reference should not be nil")
 	}
 
-	vsSummary, err := gm.getVirtualService(ctx, virtualServiceName)
+	vsSummary, err := gm.GetVirtualService(ctx, virtualServiceName)
 	if err != nil {
 		return fmt.Errorf("unable to get summary for LB Virtual Service [%s]: [%v]",
 			virtualServiceName, err)
@@ -1343,13 +1345,6 @@ func (gm *GatewayManager) deleteVirtualService(ctx context.Context, virtualServi
 	}
 	klog.Infof("Deleted virtual service [%s]\n", virtualServiceName)
 
-	// remove virtual ip from RDE
-	rm := NewRDEManager(client, rdeID)
-	err = rm.removeVirtualIpFromRDE(ctx, rdeVIP)
-	if err != nil {
-		return fmt.Errorf("error when removing vip from RDE: [%v]", err)
-	}
-
 	return nil
 }
 
@@ -1362,269 +1357,10 @@ type PortDetails struct {
 	CertAlias    string
 }
 
-// CreateLoadBalancer : create a new load balancer pool and virtual service pointing to it
-func (gm *GatewayManager) CreateLoadBalancer(ctx context.Context, virtualServiceNamePrefix string,
-	lbPoolNamePrefix string, ips []string, portDetailsList []PortDetails, oneArm *config.OneArm, rdeID string) (string, error) {
-
-	client := gm.Client
-	client.RWLock.Lock()
-	defer client.RWLock.Unlock()
-
-	if len(portDetailsList) == 0 {
-		// nothing to do here
-		klog.Infof("There is no port specified. Hence nothing to do.")
-		return "", fmt.Errorf("nothing to do since http and https ports are not specified")
-	}
-
-	if gm.GatewayRef == nil {
-		return "", fmt.Errorf("gateway reference should not be nil")
-	}
-
-	// Separately loop through all DNAT rules to see if any exist, so that we can reuse the external IP in case a
-	// partial creation of load-balancer is continued and an externalIP was claimed earlier by a dnat rule
-	externalIP := ""
-	var err error
-	if oneArm != nil {
-		for _, portDetails := range portDetailsList {
-			if portDetails.InternalPort == 0 {
-				continue
-			}
-
-			virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, portDetails.PortSuffix)
-			dnatRuleName := getDNATRuleName(virtualServiceName)
-			dnatRuleRef, err := gm.getNATRuleRef(ctx, dnatRuleName)
-			if err != nil {
-				return "", fmt.Errorf("unable to retrieve created dnat rule [%s]: [%v]", dnatRuleName, err)
-			}
-			if dnatRuleRef == nil {
-				continue // ths implies that the rule does not exist
-			}
-
-			if externalIP != "" && externalIP != dnatRuleRef.ExternalIP {
-				return "", fmt.Errorf("as per dnat there are two external IP rules for the same service: [%s], [%s]",
-					externalIP, dnatRuleRef.ExternalIP)
-			}
-
-			externalIP = dnatRuleRef.ExternalIP
-		}
-	}
-
-	if externalIP == "" {
-		externalIP, err = gm.getUnusedExternalIPAddress(ctx, gm.IPAMSubnet)
-		if err != nil {
-			return "", fmt.Errorf("unable to get unused IP address from subnet [%s]: [%v]",
-				gm.IPAMSubnet, err)
-		}
-	}
-	klog.Infof("Using external IP [%s] for virtual service\n", externalIP)
-
-	for _, portDetails := range portDetailsList {
-		if portDetails.InternalPort == 0 {
-			klog.Infof("No internal port specified for [%s], hence loadbalancer not created\n",
-				portDetails.PortSuffix)
-			continue
-		}
-
-		virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, portDetails.PortSuffix)
-		lbPoolName := fmt.Sprintf("%s-%s", lbPoolNamePrefix, portDetails.PortSuffix)
-
-		vsSummary, err := gm.getVirtualService(ctx, virtualServiceName)
-		if err != nil {
-			return "", fmt.Errorf("unexpected error while querying for virtual service [%s]: [%v]",
-				virtualServiceName, err)
-		}
-		if vsSummary != nil {
-			if vsSummary.LoadBalancerPoolRef.Name != lbPoolName {
-				return "", fmt.Errorf("virtual Service [%s] found with unexpected loadbalancer pool [%s]",
-					virtualServiceName, lbPoolName)
-			}
-
-			klog.V(3).Infof("LoadBalancer Virtual Service [%s] already exists", virtualServiceName)
-			if err = gm.checkIfVirtualServiceIsPending(ctx, virtualServiceName); err != nil {
-				return "", err
-			}
-
-			continue
-		}
-
-		virtualServiceIP := externalIP
-		if oneArm != nil {
-			internalIP, err := gm.getUnusedInternalIPAddress(ctx, oneArm)
-			if err != nil {
-				return "", fmt.Errorf("unable to get internal IP address for one-arm mode: [%v]", err)
-			}
-
-			dnatRuleName := getDNATRuleName(virtualServiceName)
-			if err = gm.createDNATRule(ctx, dnatRuleName, externalIP, internalIP,
-				portDetails.ExternalPort, portDetails.InternalPort); err != nil {
-				return "", fmt.Errorf("unable to create dnat rule [%s:%d] => [%s:%d]: [%v]",
-					externalIP, portDetails.ExternalPort, internalIP, portDetails.InternalPort, err)
-			}
-			// use the internal IP to create virtual service
-			virtualServiceIP = internalIP
-
-			// We get an IP address above and try to get-or-create a DNAT rule from external IP => internal IP.
-			// If the rule already existed, the old DNAT rule will remain unchanged. Hence we get the old externalIP
-			// from the old rule and use it. What happens to the new externalIP that we selected above? It just remains
-			// unused and hence does not get allocated and disappears. Since there is no IPAM based resource
-			// _acquisition_, the new externalIP can just be forgotten about.
-			dnatRuleRef, err := gm.getNATRuleRef(ctx, dnatRuleName)
-			if err != nil {
-				return "", fmt.Errorf("unable to retrieve created dnat rule [%s]: [%v]", dnatRuleName, err)
-			}
-			if dnatRuleRef == nil {
-				return "", fmt.Errorf("retrieved dnat rule ref is nil")
-			}
-
-			externalIP = dnatRuleRef.ExternalIP
-		}
-
-		segRef, err := gm.getLoadBalancerSEG(ctx)
-		if err != nil {
-			return "", fmt.Errorf("unable to get service engine group from edge [%s]: [%v]",
-				gm.GatewayRef.Name, err)
-		}
-
-		lbPoolRef, err := gm.createLoadBalancerPool(ctx, lbPoolName, ips, portDetails.InternalPort)
-		if err != nil {
-			return "", fmt.Errorf("unable to create load balancer pool [%s]: [%v]", lbPoolName, err)
-		}
-
-		virtualServiceRef, err := gm.createVirtualService(ctx, virtualServiceName, lbPoolRef, segRef,
-			virtualServiceIP, externalIP, portDetails.Protocol, portDetails.ExternalPort,
-			portDetails.UseSSL, portDetails.CertAlias, rdeID)
-		if err != nil {
-			return "", err
-		}
-		klog.Infof("Created Load Balancer with virtual service [%v], pool [%v] on gateway [%s]\n",
-			virtualServiceRef, lbPoolRef, gm.GatewayRef.Name)
-	}
-
-	return externalIP, nil
-}
-
-func (gm *GatewayManager) UpdateLoadBalancer(ctx context.Context, lbPoolName string, virtualServiceName string,
-	ips []string, internalPort int32, externalPort int32) error {
-
-	client := gm.Client
-	client.RWLock.Lock()
-	defer client.RWLock.Unlock()
-	_, err := gm.updateLoadBalancerPool(ctx, lbPoolName, ips, internalPort)
-	if err != nil {
-		if lbPoolBusyErr, ok := err.(*LoadBalancerPoolBusyError); ok {
-			klog.Errorf("update loadbalancer pool failed; loadbalancer pool [%s] is busy: [%v]", lbPoolName, err)
-			return lbPoolBusyErr
-		}
-		return fmt.Errorf("unable to update load balancer pool [%s]: [%v]", lbPoolName, err)
-	}
-	err = gm.updateVirtualServicePort(ctx, virtualServiceName, externalPort)
-	if err != nil {
-		if vsBusyErr, ok := err.(*VirtualServiceBusyError); ok {
-			klog.Errorf("update virtual service failed; virtual service [%s] is busy: [%v]", virtualServiceName, err)
-			return vsBusyErr
-		}
-		return fmt.Errorf("unable to update virtual service [%s] with port [%d]: [%v]", virtualServiceName, externalPort, err)
-	}
-	// update app port profile
-	dnatRuleName := getDNATRuleName(virtualServiceName)
-	appPortProfileName := getAppPortProfileName(dnatRuleName)
-	err = gm.updateAppPortProfile(appPortProfileName, externalPort)
-	if err != nil {
-		return fmt.Errorf("unable to update application port profile [%s] with external port [%d]: [%v]", appPortProfileName, externalPort, err)
-	}
-
-	// update DNAT rule
-	dnatRuleRef, err := gm.getNATRuleRef(ctx, dnatRuleName)
-	if err != nil {
-		return fmt.Errorf("unable to retrieve created dnat rule [%s]: [%v]", dnatRuleName, err)
-	}
-	err = gm.updateDNATRule(ctx, dnatRuleName, dnatRuleRef.ExternalIP, dnatRuleRef.InternalIP, externalPort)
-	if err != nil {
-		return fmt.Errorf("unable to update DNAT rule [%s]: [%v]", dnatRuleName, err)
-	}
-	return nil
-}
-
-// DeleteLoadBalancer : create a new load balancer pool and virtual service pointing to it
-func (gm *GatewayManager) DeleteLoadBalancer(ctx context.Context, virtualServiceNamePrefix string,
-	lbPoolNamePrefix string, portDetailsList []PortDetails, oneArm *config.OneArm, rdeID string) error {
-
-	client := gm.Client
-	client.RWLock.Lock()
-	defer client.RWLock.Unlock()
-
-	// TODO: try to continue in case of errors
-	var err error
-
-	// Here the principle is to delete what is available; retry in case of failure
-	// but do not fail for missing entities, since a retry will always have missing
-	// entities.
-	for _, portDetails := range portDetailsList {
-		if portDetails.InternalPort == 0 {
-			klog.Infof("No internal port specified for [%s], hence loadbalancer not created\n",
-				portDetails.PortSuffix)
-			continue
-		}
-
-		virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, portDetails.PortSuffix)
-		lbPoolName := fmt.Sprintf("%s-%s", lbPoolNamePrefix, portDetails.PortSuffix)
-
-		// get external IP
-		rdeVIP := ""
-		dnatRuleName := ""
-		if oneArm != nil {
-			dnatRuleName = getDNATRuleName(virtualServiceName)
-			dnatRuleRef, err := gm.getNATRuleRef(ctx, dnatRuleName)
-			if err != nil {
-				return fmt.Errorf("unable to get dnat rule ref for nat rule [%s]: [%v]", dnatRuleName, err)
-			}
-			if dnatRuleRef != nil {
-				rdeVIP = dnatRuleRef.ExternalIP
-			}
-		} else {
-			vsSummary, err := gm.getVirtualService(ctx, virtualServiceName)
-			if err != nil {
-				return fmt.Errorf("unable to get summary for LB Virtual Service [%s]: [%v]",
-					virtualServiceName, err)
-			}
-			if vsSummary != nil {
-				rdeVIP = vsSummary.VirtualIpAddress
-			}
-		}
-
-		err = gm.deleteVirtualService(ctx, virtualServiceName, false, rdeVIP, rdeID)
-		if err != nil {
-			if vsBusyErr, ok := err.(*VirtualServiceBusyError); ok {
-				klog.Errorf("delete virtual service failed; virtual service [%s] is busy: [%v]", virtualServiceName, err)
-				return vsBusyErr
-			}
-			return fmt.Errorf("unable to delete virtual service [%s]: [%v]", virtualServiceName, err)
-		}
-
-		err = gm.deleteLoadBalancerPool(ctx, lbPoolName, false)
-		if err != nil {
-			if lbPoolBusyErr, ok := err.(*LoadBalancerPoolBusyError); ok {
-				klog.Errorf("delete loadbalancer pool failed; loadbalancer pool [%s] is busy: [%v]", lbPoolName, err)
-				return lbPoolBusyErr
-			}
-			return fmt.Errorf("unable to delete load balancer pool [%s]: [%v]", lbPoolName, err)
-		}
-
-		if oneArm != nil {
-			err = gm.deleteDNATRule(ctx, dnatRuleName, false)
-			if err != nil {
-				return fmt.Errorf("unable to delete dnat rule [%s]: [%v]", dnatRuleName, err)
-			}
-		}
-	}
-
-	return nil
-}
-
 // GetLoadBalancer :
-func (gm *GatewayManager) GetLoadBalancer(ctx context.Context, virtualServiceName string, oneArm *config.OneArm) (string, error) {
+func (gm *GatewayManager) GetLoadBalancer(ctx context.Context, virtualServiceName string, oneArm *OneArm) (string, error) {
 
-	vsSummary, err := gm.getVirtualService(ctx, virtualServiceName)
+	vsSummary, err := gm.GetVirtualService(ctx, virtualServiceName)
 	if err != nil {
 		return "", fmt.Errorf("unable to get summary for LB Virtual Service [%s]: [%v]",
 			virtualServiceName, err)
@@ -1634,7 +1370,7 @@ func (gm *GatewayManager) GetLoadBalancer(ctx context.Context, virtualServiceNam
 	}
 
 	klog.V(3).Infof("LoadBalancer Virtual Service [%s] exists", virtualServiceName)
-	if err = gm.checkIfVirtualServiceIsPending(ctx, virtualServiceName); err != nil {
+	if err = gm.CheckIfVirtualServiceIsPending(ctx, virtualServiceName); err != nil {
 		return "", err
 	}
 
@@ -1642,8 +1378,8 @@ func (gm *GatewayManager) GetLoadBalancer(ctx context.Context, virtualServiceNam
 		return vsSummary.VirtualIpAddress, nil
 	}
 
-	dnatRuleName := getDNATRuleName(virtualServiceName)
-	dnatRuleRef, err := gm.getNATRuleRef(ctx, dnatRuleName)
+	dnatRuleName := GetDNATRuleName(virtualServiceName)
+	dnatRuleRef, err := gm.GetNATRuleRef(ctx, dnatRuleName)
 	if err != nil {
 		return "", fmt.Errorf("unable to find dnat rule [%s] for virtual service [%s]: [%v]",
 			dnatRuleName, virtualServiceName, err)
@@ -1662,4 +1398,34 @@ func (gm *GatewayManager) IsNSXTBackedGateway() bool {
 			(gm.NetworkBackingType == swaggerClient.NSXT_FLEXIBLE_SEGMENT_BackingNetworkType)
 
 	return isNSXTBackedGateway
+}
+
+func (gateway *GatewayManager) GetLoadBalancerPool(ctx context.Context, lbPoolName string) (*swaggerClient.EntityReference, error) {
+	lbPoolRef, err := gateway.getLoadBalancerPool(ctx, lbPoolName)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get reference for LB pool [%s]: [%v]", lbPoolName, err)
+	}
+	if lbPoolRef == nil {
+		return nil, govcd.ErrorEntityNotFound
+	}
+	return lbPoolRef, nil
+}
+
+func (gateway *GatewayManager) GetLoadBalancerPoolMemberIPs(ctx context.Context, lbPoolRef *swaggerClient.EntityReference) ([]string, error) {
+	client := gateway.Client
+	if lbPoolRef == nil {
+		return nil, govcd.ErrorEntityNotFound
+	}
+	lbPool, resp, err := client.APIClient.EdgeGatewayLoadBalancerPoolApi.GetLoadBalancerPool(ctx, lbPoolRef.Id)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get the details for LB pool [%s]: [%+v]: [%v]",
+			lbPoolRef.Name, resp, err)
+	}
+
+	memberIPs := make([]string, lbPool.MemberCount)
+	members := lbPool.Members
+	for i, member := range members {
+		memberIPs[i] = member.IpAddress
+	}
+	return memberIPs, nil
 }
