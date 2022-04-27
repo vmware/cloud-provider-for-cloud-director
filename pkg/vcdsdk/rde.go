@@ -1,4 +1,4 @@
-package vcdclient
+package vcdsdk
 
 import (
 	"context"
@@ -14,13 +14,27 @@ const (
 	NoRdePrefix = `NO_RDE_`
 )
 
-func (client *Client) GetRDEVirtualIps(ctx context.Context) ([]string, string, *swaggerClient.DefinedEntity, error) {
-	if client.ClusterID == "" || strings.HasPrefix(client.ClusterID, NoRdePrefix) {
-		klog.Infof("ClusterID [%s] is empty or generated", client.ClusterID)
+type RDEManager struct {
+	ClusterID string
+	// Client will be refreshed separately
+	Client *Client
+}
+
+func NewRDEManager(client *Client, clusterID string) *RDEManager {
+	return &RDEManager{
+		ClusterID: clusterID,
+		Client:    client,
+	}
+}
+
+func (rm *RDEManager) GetRDEVirtualIps(ctx context.Context) ([]string, string, *swaggerClient.DefinedEntity, error) {
+	if rm.ClusterID == "" || strings.HasPrefix(rm.ClusterID, NoRdePrefix) {
+		klog.Infof("ClusterID [%s] is empty or generated", rm.ClusterID)
 		return nil, "", nil, nil
 	}
 
-	defEnt, _, etag, err := client.APIClient.DefinedEntityApi.GetDefinedEntity(ctx, client.ClusterID)
+	client := rm.Client
+	defEnt, _, etag, err := client.APIClient.DefinedEntityApi.GetDefinedEntity(ctx, rm.ClusterID)
 	if err != nil {
 		return nil, "", nil, fmt.Errorf("error when getting defined entity: [%v]", err)
 	}
@@ -32,43 +46,44 @@ func (client *Client) GetRDEVirtualIps(ctx context.Context) ([]string, string, *
 			return nil, "", nil, capvcdEntityFoundErr
 		}
 		return nil, "", nil, fmt.Errorf("failed to retrieve Virtual IPs from RDE [%s]: [%v]",
-			client.ClusterID, err)
+			rm.ClusterID, err)
 	}
 	return virtualIpStrs, etag, &defEnt, nil
 }
 
 // This function will modify the passed in defEnt
-func (client *Client) updateRDEVirtualIps(ctx context.Context, updatedIps []string, etag string,
+func (rm *RDEManager) updateRDEVirtualIps(ctx context.Context, updatedIps []string, etag string,
 	defEnt *swaggerClient.DefinedEntity) (*http.Response, error) {
 	defEnt, err := util.ReplaceVirtualIPsInRDE(defEnt, updatedIps)
 	if err != nil {
 		if capvcdEntityFoundErr, ok := err.(util.CapvcdRdeFoundError); ok {
 			return nil, capvcdEntityFoundErr
 		}
-		return nil, fmt.Errorf("failed to locally edit RDE with ID [%s] with virtual IPs: [%v]", client.ClusterID, err)
+		return nil, fmt.Errorf("failed to locally edit RDE with ID [%s] with virtual IPs: [%v]", rm.ClusterID, err)
 	}
+	client := rm.Client
 	// can pass invokeHooks
-	_, httpResponse, err := client.APIClient.DefinedEntityApi.UpdateDefinedEntity(ctx, *defEnt, etag, client.ClusterID, nil)
+	_, httpResponse, err := client.APIClient.DefinedEntityApi.UpdateDefinedEntity(ctx, *defEnt, etag, rm.ClusterID, nil)
 	if err != nil {
-		return httpResponse, fmt.Errorf("error when updating defined entity [%s]: [%v]", client.ClusterID, err)
+		return httpResponse, fmt.Errorf("error when updating defined entity [%s]: [%v]", rm.ClusterID, err)
 	}
 	return httpResponse, nil
 }
 
-func (client *Client) addVirtualIpToRDE(ctx context.Context, addIp string) error {
+func (rm *RDEManager) addVirtualIpToRDE(ctx context.Context, addIp string) error {
 	if addIp == "" {
 		klog.Infof("VIP is empty, hence not adding anything to RDE")
 		return nil
 	}
-	if client.ClusterID == "" || strings.HasPrefix(client.ClusterID, NoRdePrefix) {
+	if rm.ClusterID == "" || strings.HasPrefix(rm.ClusterID, NoRdePrefix) {
 		klog.Infof("ClusterID [%s] is empty or generated, hence not adding VIP [%s] from RDE",
-			client.ClusterID, addIp)
+			rm.ClusterID, addIp)
 		return nil
 	}
 
 	numRetries := 10
 	for i := 0; i < numRetries; i++ {
-		currIps, etag, defEnt, err := client.GetRDEVirtualIps(ctx)
+		currIps, etag, defEnt, err := rm.GetRDEVirtualIps(ctx)
 		if err != nil {
 			if _, ok := err.(util.CapvcdRdeFoundError); ok {
 				klog.Infof("CAPVCD entity type found. Skipping adding RDE VIPs to status")
@@ -90,7 +105,7 @@ func (client *Client) addVirtualIpToRDE(ctx context.Context, addIp string) error
 		}
 
 		updatedIps := append(currIps, addIp)
-		httpResponse, err := client.updateRDEVirtualIps(ctx, updatedIps, etag, defEnt)
+		httpResponse, err := rm.updateRDEVirtualIps(ctx, updatedIps, etag, defEnt)
 		if err != nil {
 			if capvcdEntityFoundErr, ok := err.(util.CapvcdRdeFoundError); ok {
 				return capvcdEntityFoundErr
@@ -101,27 +116,27 @@ func (client *Client) addVirtualIpToRDE(ctx context.Context, addIp string) error
 			}
 			return fmt.Errorf("error when adding virtual ip [%s] to RDE: [%v]", addIp, err)
 		}
-		klog.Infof("Successfully updated RDE [%s] with virtual IP [%s]", client.ClusterID, addIp)
+		klog.Infof("Successfully updated RDE [%s] with virtual IP [%s]", rm.ClusterID, addIp)
 		return nil
 	}
 
 	return fmt.Errorf("unable to update rde due to incorrect etag after [%d]] tries", numRetries)
 }
 
-func (client *Client) removeVirtualIpFromRDE(ctx context.Context, removeIp string) error {
+func (rm *RDEManager) removeVirtualIpFromRDE(ctx context.Context, removeIp string) error {
 	if removeIp == "" {
 		klog.Infof("VIP is empty, hence not removing anything from RDE")
 		return nil
 	}
-	if client.ClusterID == "" || strings.HasPrefix(client.ClusterID, NoRdePrefix) {
+	if rm.ClusterID == "" || strings.HasPrefix(rm.ClusterID, NoRdePrefix) {
 		klog.Infof("ClusterID [%s] is empty or generated, hence not removing VIP [%s] from RDE",
-			client.ClusterID, removeIp)
+			rm.ClusterID, removeIp)
 		return nil
 	}
 
 	numRetries := 10
 	for i := 0; i < numRetries; i++ {
-		currIps, etag, defEnt, err := client.GetRDEVirtualIps(ctx)
+		currIps, etag, defEnt, err := rm.GetRDEVirtualIps(ctx)
 		if err != nil {
 			if _, ok := err.(util.CapvcdRdeFoundError); ok {
 				klog.Infof("CAPVCD entity found. Skip removing VIPs from RDE in the status")
@@ -148,7 +163,7 @@ func (client *Client) removeVirtualIpFromRDE(ctx context.Context, removeIp strin
 		}
 		updatedIps := append(currIps[:foundIdx], currIps[foundIdx+1:]...)
 
-		httpResponse, err := client.updateRDEVirtualIps(ctx, updatedIps, etag, defEnt)
+		httpResponse, err := rm.updateRDEVirtualIps(ctx, updatedIps, etag, defEnt)
 		if err != nil {
 			if capvcdEntityFoundErr, ok := err.(util.CapvcdRdeFoundError); ok {
 				return capvcdEntityFoundErr

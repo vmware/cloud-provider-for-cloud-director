@@ -9,9 +9,6 @@ data:
       host: VCD_HOST
       org: ORG
       vdc: OVDC
-      vAppName: VAPP
-      network: NETWORK
-      vipSubnet: VIP_SUBNET_CIDR
     loadbalancer:
       oneArm:
         startIP: "192.168.8.2"
@@ -19,6 +16,9 @@ data:
       ports:
         http: 80
         https: 443
+      network: NETWORK
+      vipSubnet: VIP_SUBNET_CIDR
       certAlias: CLUSTER_ID-cert
     clusterid: CLUSTER_ID
+    vAppName: VAPP
 immutable: true
