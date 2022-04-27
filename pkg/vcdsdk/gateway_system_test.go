@@ -63,7 +63,7 @@ func TestCacheGatewayDetails(t *testing.T) {
 
 func TestDNATRuleCRUDE(t *testing.T) {
 
-	// NOTE: For the time being, NO_RDE_ prefix will be used in clusterID
+	// NOTE: For the time being, NoRdePrefix prefix will be used in clusterID
 	authFile := filepath.Join(gitRoot, "testdata/auth_test.yaml")
 	authFileContent, err := ioutil.ReadFile(authFile)
 	assert.NoError(t, err, "There should be no error reading the auth file contents.")
@@ -148,8 +148,8 @@ func TestLBPoolCRUDE(t *testing.T) {
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
 
-	// Avoid RDE updates by using clusterID which has `NO_RDE_` prefix
-	cloudConfig.ClusterID = fmt.Sprintf("%s-%s", uuid.New().String(), "NO_RDE_")
+	// Avoid RDE updates by using clusterID which has `NoRdePrefix` prefix
+	cloudConfig.ClusterID = fmt.Sprintf("%s-%s", uuid.New().String(), "NoRdePrefix")
 
 	ctx := context.Background()
 
@@ -318,8 +318,8 @@ func TestVirtualServiceHttpCRUDE(t *testing.T) {
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
 
-	// Avoid RDE updates by using clusterID which has `NO_RDE_` prefix
-	cloudConfig.ClusterID = fmt.Sprintf("%s-%s", uuid.New().String(), "NO_RDE_")
+	// Avoid RDE updates by using clusterID which has `NoRdePrefix` prefix
+	cloudConfig.ClusterID = fmt.Sprintf("%s-%s", uuid.New().String(), "NoRdePrefix")
 
 	ctx := context.Background()
 
@@ -420,8 +420,8 @@ func TestVirtualServiceHttpsCRUDE(t *testing.T) {
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
 
-	// Avoid RDE updates by using clusterID which has `NO_RDE_` prefix
-	cloudConfig.ClusterID = fmt.Sprintf("%s-%s", uuid.New().String(), "NO_RDE_")
+	// Avoid RDE updates by using clusterID which has `NoRdePrefix` prefix
+	cloudConfig.ClusterID = fmt.Sprintf("%s-%s", uuid.New().String(), NoRdePrefix)
 
 	ctx := context.Background()
 

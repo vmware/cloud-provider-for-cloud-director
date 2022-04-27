@@ -11,10 +11,6 @@ import (
 	"strings"
 )
 
-const (
-	NoRdePrefix = `NO_RDE_`
-)
-
 type RDEManager struct {
 	ClusterID string
 	// Client will be refreshed separately
@@ -29,7 +25,7 @@ func NewRDEManager(client *vcdsdk.Client, clusterID string) *RDEManager {
 }
 
 func (rm *RDEManager) GetRDEVirtualIps(ctx context.Context) ([]string, string, *swaggerClient.DefinedEntity, error) {
-	if rm.ClusterID == "" || strings.HasPrefix(rm.ClusterID, NoRdePrefix) {
+	if rm.ClusterID == "" || strings.HasPrefix(rm.ClusterID, vcdsdk.NoRdePrefix) {
 		klog.Infof("ClusterID [%s] is empty or generated", rm.ClusterID)
 		return nil, "", nil, nil
 	}
@@ -76,7 +72,7 @@ func (rm *RDEManager) addVirtualIpToRDE(ctx context.Context, addIp string) error
 		klog.Infof("VIP is empty, hence not adding anything to RDE")
 		return nil
 	}
-	if rm.ClusterID == "" || strings.HasPrefix(rm.ClusterID, NoRdePrefix) {
+	if rm.ClusterID == "" || strings.HasPrefix(rm.ClusterID, vcdsdk.NoRdePrefix) {
 		klog.Infof("ClusterID [%s] is empty or generated, hence not adding VIP [%s] from RDE",
 			rm.ClusterID, addIp)
 		return nil
@@ -129,7 +125,7 @@ func (rm *RDEManager) removeVirtualIpFromRDE(ctx context.Context, removeIp strin
 		klog.Infof("VIP is empty, hence not removing anything from RDE")
 		return nil
 	}
-	if rm.ClusterID == "" || strings.HasPrefix(rm.ClusterID, NoRdePrefix) {
+	if rm.ClusterID == "" || strings.HasPrefix(rm.ClusterID, vcdsdk.NoRdePrefix) {
 		klog.Infof("ClusterID [%s] is empty or generated, hence not removing VIP [%s] from RDE",
 			rm.ClusterID, removeIp)
 		return nil
