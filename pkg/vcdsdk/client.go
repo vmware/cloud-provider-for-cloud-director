@@ -8,6 +8,7 @@ package vcdsdk
 import (
 	"crypto/tls"
 	"fmt"
+	"github.com/vmware/cloud-provider-for-cloud-director/pkg/config"
 	"k8s.io/klog"
 	"net/http"
 	"sync"
@@ -103,6 +104,12 @@ func NewVCDClientFromSecrets(host string, orgName string, vdcName string, userOr
 
 	// TODO: validation of parameters
 
+	newUserOrg, newUsername, err := config.GetUserAndOrg(user, userOrg)
+
+	if err != nil {
+		return nil, fmt.Errorf("Error parsing username before authenticating to VCD: [%v]", err)
+	}
+
 	clientCreatorLock.Lock()
 	defer clientCreatorLock.Unlock()
 
@@ -112,8 +119,8 @@ func NewVCDClientFromSecrets(host string, orgName string, vdcName string, userOr
 		if clientSingleton.VCDAuthConfig.Host == host &&
 			clientSingleton.ClusterOrgName == orgName &&
 			clientSingleton.ClusterOVDCName == vdcName &&
-			clientSingleton.VCDAuthConfig.UserOrg == userOrg &&
-			clientSingleton.VCDAuthConfig.User == user &&
+			clientSingleton.VCDAuthConfig.UserOrg == newUserOrg &&
+			clientSingleton.VCDAuthConfig.User == newUsername &&
 			clientSingleton.VCDAuthConfig.Password == password &&
 			clientSingleton.VCDAuthConfig.RefreshToken == refreshToken &&
 			clientSingleton.VCDAuthConfig.Insecure == insecure {
@@ -121,7 +128,7 @@ func NewVCDClientFromSecrets(host string, orgName string, vdcName string, userOr
 		}
 	}
 
-	vcdAuthConfig := NewVCDAuthConfigFromSecrets(host, user, password, refreshToken, userOrg, insecure) //
+	vcdAuthConfig := NewVCDAuthConfigFromSecrets(host, newUsername, password, refreshToken, newUserOrg, insecure) //
 
 	vcdClient, apiClient, err := vcdAuthConfig.GetSwaggerClientFromSecrets()
 	if err != nil {
