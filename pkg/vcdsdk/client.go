@@ -99,8 +99,7 @@ func (client *Client) RefreshBearerToken() error {
 // host, orgName, userOrg, refreshToken, insecure, user, password
 
 // New method from (vdcClient, vdcName) return *govcd.Vdc
-// TODO: Remove userOrg as a param for client creation as it's not being used
-func NewVCDClientFromSecrets(host string, orgName string, vdcName string, userOrg string,
+func NewVCDClientFromSecrets(host string, orgName string, vdcName string,
 	user string, password string, refreshToken string, insecure bool, getVdcClient bool) (*Client, error) {
 
 	// TODO: validation of parameters
