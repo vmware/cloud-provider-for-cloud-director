@@ -445,8 +445,68 @@ func GetAppPortProfileName(dnatRuleName string) string {
 	return fmt.Sprintf("appPort_%s", dnatRuleName)
 }
 
+func (gatewayManager *GatewayManager) CreateAppPortProfile(appPortProfileName string, externalPort int32) (*govcd.NsxtAppPortProfile, error) {
+	client := gatewayManager.Client
+	org, err := client.VCDClient.GetOrgByName(client.ClusterOrgName)
+	if err != nil {
+		return nil, fmt.Errorf("unable to find org [%s] by name: [%v]", client.ClusterOrgName, err)
+	}
+
+	klog.Infof("Verifying if app port profile [%s] exists in org [%s]...", appPortProfileName,
+		client.ClusterOrgName)
+	// we always use tenant scoped profiles
+	contextEntityID := client.VDC.Vdc.ID
+	scope := types.ApplicationPortProfileScopeTenant
+	appPortProfile, err := org.GetNsxtAppPortProfileByName(appPortProfileName, scope)
+	if err != nil && !strings.Contains(err.Error(), govcd.ErrorEntityNotFound.Error()) {
+		return nil, fmt.Errorf("unable to search for Application Port Profile [%s]: [%v]",
+			appPortProfileName, err)
+	}
+	if appPortProfile != nil {
+		return appPortProfile, nil
+	}
+	if err == nil {
+		// this should not arise
+		return nil, fmt.Errorf("obtained empty Application Port Profile even though there was no error")
+	}
+
+	klog.Infof("App Port Profile [%s] in org [%s] does not exist.", appPortProfileName,
+		client.ClusterOrgName)
+
+	appPortProfileConfig := &types.NsxtAppPortProfile{
+		Name:        appPortProfileName,
+		Description: fmt.Sprintf("App Port Profile [%s]", appPortProfileName),
+		ApplicationPorts: []types.NsxtAppPortProfilePort{
+			{
+				Protocol: "TCP",
+				// We use the externalPort itself, since the LB does the ExternalPort=>InternalPort
+				// translation.
+				DestinationPorts: []string{fmt.Sprintf("%d", externalPort)},
+			},
+		},
+		OrgRef: &types.OpenApiReference{
+			Name: org.Org.Name,
+			ID:   org.Org.ID,
+		},
+		ContextEntityId: contextEntityID,
+		Scope:           scope,
+	}
+
+	klog.Infof("Creating App Port Profile [%s] in org [%s]...", appPortProfileName,
+		client.ClusterOrgName)
+	appPortProfile, err = org.CreateNsxtAppPortProfile(appPortProfileConfig)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create nsxt app port profile with config [%#v]: [%v]",
+			appPortProfileConfig, err)
+	}
+
+	klog.Infof("Created App Port Profile [%s] in org [%s].", appPortProfileName,
+		client.ClusterOrgName)
+	return appPortProfile, nil
+}
+
 func (gatewayManager *GatewayManager) CreateDNATRule(ctx context.Context, dnatRuleName string,
-	externalIP string, internalIP string, externalPort int32, internalPort int32) error {
+	externalIP string, internalIP string, externalPort int32, internalPort int32, appPortProfile *govcd.NsxtAppPortProfile) error {
 
 	if gatewayManager.GatewayRef == nil {
 		return fmt.Errorf("gateway reference should not be nil")
@@ -463,60 +523,8 @@ func (gatewayManager *GatewayManager) CreateDNATRule(ctx context.Context, dnatRu
 		return nil
 	}
 
-	org, err := client.VCDClient.GetOrgByName(client.ClusterOrgName)
-	if err != nil {
-		return fmt.Errorf("unable to find org [%s] by name: [%v]", client.ClusterOrgName, err)
-	}
-
-	appPortProfileName := GetAppPortProfileName(dnatRuleName)
-	klog.Infof("Verifying if app port profile [%s] exists in org [%s]...", appPortProfileName,
-		client.ClusterOrgName)
-	// we always use tenant scoped profiles
-	contextEntityID := client.VDC.Vdc.ID
-	scope := types.ApplicationPortProfileScopeTenant
-	appPortProfile, err := org.GetNsxtAppPortProfileByName(appPortProfileName, scope)
-	if err != nil && !strings.Contains(err.Error(), govcd.ErrorEntityNotFound.Error()) {
-		return fmt.Errorf("unable to search for Application Port Profile [%s]: [%v]",
-			appPortProfileName, err)
-	}
-	if appPortProfile == nil {
-		if err == nil {
-			// this should not arise
-			return fmt.Errorf("obtained empty Application Port Profile even though there was no error")
-		}
-
-		klog.Infof("App Port Profile [%s] in org [%s] does not exist.", appPortProfileName,
-			client.ClusterOrgName)
-
-		appPortProfileConfig := &types.NsxtAppPortProfile{
-			Name:        appPortProfileName,
-			Description: fmt.Sprintf("App Port Profile for DNAT rule [%s]", dnatRuleName),
-			ApplicationPorts: []types.NsxtAppPortProfilePort{
-				{
-					Protocol: "TCP",
-					// We use the externalPort itself, since the LB does the ExternalPort=>InternalPort
-					// translation.
-					DestinationPorts: []string{fmt.Sprintf("%d", externalPort)},
-				},
-			},
-			OrgRef: &types.OpenApiReference{
-				Name: org.Org.Name,
-				ID:   org.Org.ID,
-			},
-			ContextEntityId: contextEntityID,
-			Scope:           scope,
-		}
-
-		klog.Infof("Creating App Port Profile [%s] in org [%s]...", appPortProfileName,
-			client.ClusterOrgName)
-		appPortProfile, err = org.CreateNsxtAppPortProfile(appPortProfileConfig)
-		if err != nil {
-			return fmt.Errorf("unable to create nsxt app port profile with config [%#v]: [%v]",
-				appPortProfileConfig, err)
-		}
-
-		klog.Infof("Created App Port Profile [%s] in org [%s].", appPortProfileName,
-			client.ClusterOrgName)
+	if appPortProfile == nil || appPortProfile.NsxtAppPortProfile == nil {
+		return fmt.Errorf("empty app port profile")
 	}
 
 	ruleType := swaggerClient.DNAT_NatRuleType
@@ -569,46 +577,46 @@ func (gatewayManager *GatewayManager) CreateDNATRule(ctx context.Context, dnatRu
 	return nil
 }
 
-func (gatewayManager *GatewayManager) UpdateAppPortProfile(appPortProfileName string, externalPort int32) error {
+func (gatewayManager *GatewayManager) UpdateAppPortProfile(appPortProfileName string, externalPort int32) (*govcd.NsxtAppPortProfile, error) {
 	client := gatewayManager.Client
 	org, err := client.VCDClient.GetOrgByName(client.ClusterOrgName)
 	if err != nil {
-		return fmt.Errorf("unable to find org [%s] by name: [%v]", client.ClusterOrgName, err)
+		return nil, fmt.Errorf("unable to find org [%s] by name: [%v]", client.ClusterOrgName, err)
 	}
 	appPortProfile, err := org.GetNsxtAppPortProfileByName(appPortProfileName, types.ApplicationPortProfileScopeTenant)
 	if err != nil {
-		return fmt.Errorf("failed to get application port profile by name [%s]: [%v]", appPortProfileName, err)
+		return nil, fmt.Errorf("failed to get application port profile by name [%s]: [%v]", appPortProfileName, err)
 	}
 	if appPortProfile == nil || appPortProfile.NsxtAppPortProfile == nil || len(appPortProfile.NsxtAppPortProfile.ApplicationPorts) == 0 || len(appPortProfile.NsxtAppPortProfile.ApplicationPorts[0].DestinationPorts) == 0 {
-		return fmt.Errorf("invalid app port profile [%s]", appPortProfileName)
+		return nil, fmt.Errorf("invalid app port profile [%s]", appPortProfileName)
 	}
 
 	if appPortProfile.NsxtAppPortProfile.ApplicationPorts[0].DestinationPorts[0] == fmt.Sprintf("%d", externalPort) {
 		klog.Infof("Update to application port profile [%s] is not required", appPortProfileName)
-		return nil
+		return appPortProfile, nil
 	}
 	appPortProfile.NsxtAppPortProfile.ApplicationPorts[0].DestinationPorts[0] = fmt.Sprintf("%d", externalPort)
-	_, err = appPortProfile.Update(appPortProfile.NsxtAppPortProfile)
+	appPortProfile, err = appPortProfile.Update(appPortProfile.NsxtAppPortProfile)
 	if err != nil {
-		return fmt.Errorf("failed to update application port profile")
+		return nil, fmt.Errorf("failed to update application port profile")
 	}
 	klog.Infof("successfully updated app port profile [%s]", appPortProfileName)
-	return nil
+	return appPortProfile, nil
 }
 
-func (gatewayManager *GatewayManager) UpdateDNATRule(ctx context.Context, dnatRuleName string, externalIP string, internalIP string, externalPort int32) error {
+func (gatewayManager *GatewayManager) UpdateDNATRule(ctx context.Context, dnatRuleName string, externalIP string, internalIP string, externalPort int32) (*NatRuleRef, error) {
 	client := gatewayManager.Client
 	if err := gatewayManager.checkIfGatewayIsReady(ctx); err != nil {
 		klog.Errorf("failed to update DNAT rule; gateway [%s] is busy", gatewayManager.GatewayRef.Name)
-		return err
+		return nil, err
 	}
 	dnatRuleRef, err := gatewayManager.GetNATRuleRef(ctx, dnatRuleName)
 	if err != nil {
-		return fmt.Errorf("unexpected error while looking for nat rule [%s] in gateway [%s]: [%v]",
+		return nil, fmt.Errorf("unexpected error while looking for nat rule [%s] in gateway [%s]: [%v]",
 			dnatRuleName, gatewayManager.GatewayRef.Name, err)
 	}
 	if dnatRuleRef == nil {
-		return fmt.Errorf("failed to get DNAT rule name [%s]", dnatRuleName)
+		return nil, fmt.Errorf("failed to get DNAT rule name [%s]", dnatRuleName)
 	}
 	dnatRule, resp, err := client.APIClient.EdgeGatewayNatRuleApi.GetNatRule(ctx, gatewayManager.GatewayRef.Id, dnatRuleRef.ID)
 	if resp != nil && resp.StatusCode != http.StatusOK {
@@ -616,16 +624,17 @@ func (gatewayManager *GatewayManager) UpdateDNATRule(ctx context.Context, dnatRu
 		if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
 			responseMessageBytes = gsErr.Body()
 		}
-		return fmt.Errorf(
+		return nil, fmt.Errorf(
 			"unable to get DNAT rule [%s]; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]",
 			dnatRuleRef.Name, http.StatusOK, resp.StatusCode, string(responseMessageBytes), err)
 	} else if err != nil {
-		return fmt.Errorf("error while getting DNAT rule [%s]: [%v]", dnatRuleRef.Name, err)
+		return nil, fmt.Errorf("error while getting DNAT rule [%s]: [%v]", dnatRuleRef.Name, err)
 	}
 
-	if dnatRule.ExternalAddresses == externalIP && dnatRule.InternalAddresses == internalIP && dnatRule.DnatExternalPort == strconv.FormatInt(int64(externalPort), 10) {
+	if dnatRule.ExternalAddresses == externalIP &&
+		dnatRule.InternalAddresses == internalIP && dnatRule.DnatExternalPort == strconv.FormatInt(int64(externalPort), 10) {
 		klog.Infof("Update to DNAT rule [%s] not required", dnatRuleRef.Name)
-		return nil
+		return dnatRuleRef, nil
 	}
 	// update DNAT rule
 	dnatRule.ExternalAddresses = externalIP
@@ -637,20 +646,70 @@ func (gatewayManager *GatewayManager) UpdateDNATRule(ctx context.Context, dnatRu
 		if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
 			responseMessageBytes = gsErr.Body()
 		}
-		return fmt.Errorf(
+		return nil, fmt.Errorf(
 			"unable to update DNAT rule [%s]; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]",
 			dnatRuleRef.Name, http.StatusAccepted, resp.StatusCode, string(responseMessageBytes), err)
 	} else if err != nil {
-		return fmt.Errorf("error while updating DNAT rule [%s]: [%v]", dnatRuleRef.Name, err)
+		return nil, fmt.Errorf("error while updating DNAT rule [%s]: [%v]", dnatRuleRef.Name, err)
 	}
 	taskURL := resp.Header.Get("Location")
 	task := govcd.NewTask(&client.VCDClient.Client)
 	task.Task.HREF = taskURL
 	if err = task.WaitTaskCompletion(); err != nil {
-		return fmt.Errorf("unable to delete dnat rule [%s]: deletion task [%s] did not complete: [%v]",
+		return nil, fmt.Errorf("unable to delete dnat rule [%s]: deletion task [%s] did not complete: [%v]",
 			dnatRuleName, taskURL, err)
 	}
+
+	dnatRuleRef, err = gatewayManager.GetNATRuleRef(ctx, dnatRuleName)
+	if err != nil {
+		return nil, fmt.Errorf("unexpected error while looking for nat rule [%s] in gateway [%s]: [%v]",
+			dnatRuleName, gatewayManager.GatewayRef.Name, err)
+	}
+	if dnatRuleRef == nil {
+		return nil, fmt.Errorf("failed to get DNAT rule name [%s]", dnatRuleName)
+	}
+
 	klog.Infof("successfully updated DNAT rule [%s] on gateway [%s]", dnatRuleRef.Name, gatewayManager.GatewayRef.Name)
+	return dnatRuleRef, nil
+}
+
+func (gatewayManager *GatewayManager) DeleteAppPortProfile(appPortProfileName string, failIfAbsent bool) error {
+	client := gatewayManager.Client
+	klog.Infof("Checking if App Port Profile [%s] in org [%s] exists", appPortProfileName,
+		client.ClusterOrgName)
+
+	org, err := client.VCDClient.GetOrgByName(client.ClusterOrgName)
+	if err != nil {
+		return fmt.Errorf("unable to find org [%s] by name: [%v]", client.ClusterOrgName, err)
+	}
+
+	// we always use tenant scoped profiles
+	scope := types.ApplicationPortProfileScopeTenant
+	appPortProfile, err := org.GetNsxtAppPortProfileByName(appPortProfileName, scope)
+	if err != nil {
+		if strings.Contains(err.Error(), govcd.ErrorEntityNotFound.Error()) {
+			// things to delete are done
+			return nil
+		}
+
+		return fmt.Errorf("unable to search for Application Port Profile [%s]: [%v]",
+			appPortProfileName, err)
+	}
+
+	if appPortProfile == nil {
+		if failIfAbsent {
+			return fmt.Errorf("app port profile [%s] does not exist in org [%s]",
+				appPortProfileName, client.ClusterOrgName)
+		}
+
+		klog.Infof("App Port Profile [%s] does not exist", appPortProfileName)
+	} else {
+		klog.Infof("Deleting App Port Profile [%s] in org [%s]", appPortProfileName,
+			client.ClusterOrgName)
+		if err = appPortProfile.Delete(); err != nil {
+			return fmt.Errorf("unable to delete application port profile [%s]: [%v]", appPortProfileName, err)
+		}
+	}
 	return nil
 }
 
@@ -700,44 +759,6 @@ func (gatewayManager *GatewayManager) DeleteDNATRule(ctx context.Context, dnatRu
 		}
 		klog.Infof("Deleted DNAT rule [%s] on gateway [%s]\n", dnatRuleName, gatewayManager.GatewayRef.Name)
 	}
-
-	appPortProfileName := GetAppPortProfileName(dnatRuleName)
-	klog.Infof("Checking if App Port Profile [%s] in org [%s] exists", appPortProfileName,
-		client.ClusterOrgName)
-
-	org, err := client.VCDClient.GetOrgByName(client.ClusterOrgName)
-	if err != nil {
-		return fmt.Errorf("unable to find org [%s] by name: [%v]", client.ClusterOrgName, err)
-	}
-
-	// we always use tenant scoped profiles
-	scope := types.ApplicationPortProfileScopeTenant
-	appPortProfile, err := org.GetNsxtAppPortProfileByName(appPortProfileName, scope)
-	if err != nil {
-		if strings.Contains(err.Error(), govcd.ErrorEntityNotFound.Error()) {
-			// things to delete are done
-			return nil
-		}
-
-		return fmt.Errorf("unable to search for Application Port Profile [%s]: [%v]",
-			appPortProfileName, err)
-	}
-
-	if appPortProfile == nil {
-		if failIfAbsent {
-			return fmt.Errorf("app port profile [%s] does not exist in org [%s]",
-				appPortProfileName, client.ClusterOrgName)
-		}
-
-		klog.Infof("App Port Profile [%s] does not exist", appPortProfileName)
-	} else {
-		klog.Infof("Deleting App Port Profile [%s] in org [%s]", appPortProfileName,
-			client.ClusterOrgName)
-		if err = appPortProfile.Delete(); err != nil {
-			return fmt.Errorf("unable to delete application port profile [%s]: [%v]", appPortProfileName, err)
-		}
-	}
-
 	return nil
 }
 
@@ -1109,29 +1130,32 @@ func (gatewayManager *GatewayManager) checkIfGatewayIsReady(ctx context.Context)
 	return NewGatewayBusyError(gatewayManager.GatewayRef.Name)
 }
 
-func (gatewayManager *GatewayManager) UpdateVirtualServicePort(ctx context.Context, virtualServiceName string, externalPort int32) error {
+func (gatewayManager *GatewayManager) UpdateVirtualServicePort(ctx context.Context, virtualServiceName string, externalPort int32) (*swaggerClient.EntityReference, error) {
 	client := gatewayManager.Client
 	vsSummary, err := gatewayManager.GetVirtualService(ctx, virtualServiceName)
 	if err != nil {
-		return fmt.Errorf("failed to get virtual service summary for virtual service [%s]: [%v]", virtualServiceName, err)
+		return nil, fmt.Errorf("failed to get virtual service summary for virtual service [%s]: [%v]", virtualServiceName, err)
 	}
 	if vsSummary == nil {
-		return fmt.Errorf("virtual service [%s] doesn't exist", virtualServiceName)
+		return nil, fmt.Errorf("virtual service [%s] doesn't exist", virtualServiceName)
 	}
 	if len(vsSummary.ServicePorts) == 0 {
-		return fmt.Errorf("virtual service [%s] has no service ports", virtualServiceName)
+		return nil, fmt.Errorf("virtual service [%s] has no service ports", virtualServiceName)
 	}
 
 	if vsSummary.ServicePorts[0].PortStart == externalPort {
 		klog.Infof("virtual service [%s] is already configured with port [%d]", virtualServiceName, externalPort)
-		return nil
+		return &swaggerClient.EntityReference{
+			Name: vsSummary.Name,
+			Id:   vsSummary.Id,
+		}, nil
 	}
 	if err = gatewayManager.checkIfVirtualServiceIsReady(ctx, virtualServiceName); err != nil {
-		return err
+		return nil, err
 	}
 	vs, _, err := client.APIClient.EdgeGatewayLoadBalancerVirtualServiceApi.GetVirtualService(ctx, vsSummary.Id)
 	if err != nil {
-		return fmt.Errorf("failed to get virtual service with ID [%s]", vsSummary.Id)
+		return nil, fmt.Errorf("failed to get virtual service with ID [%s]", vsSummary.Id)
 	}
 	if externalPort != vsSummary.ServicePorts[0].PortStart {
 		// update both port start and port end to be the same.
@@ -1144,21 +1168,35 @@ func (gatewayManager *GatewayManager) UpdateVirtualServicePort(ctx context.Conte
 		if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
 			responseMessageBytes = gsErr.Body()
 		}
-		return fmt.Errorf(
+		return nil, fmt.Errorf(
 			"unable to update virtual service; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]",
 			http.StatusAccepted, resp.StatusCode, string(responseMessageBytes), err)
 	} else if err != nil {
-		return fmt.Errorf("error while updating virtual service [%s]: [%v]", virtualServiceName, err)
+		return nil, fmt.Errorf("error while updating virtual service [%s]: [%v]", virtualServiceName, err)
 	}
 	taskURL := resp.Header.Get("Location")
 	task := govcd.NewTask(&client.VCDClient.Client)
 	task.Task.HREF = taskURL
 	if err = task.WaitTaskCompletion(); err != nil {
-		return fmt.Errorf("unable to update virtual service; update task [%s] did not complete: [%v]",
+		return nil, fmt.Errorf("unable to update virtual service; update task [%s] did not complete: [%v]",
 			taskURL, err)
 	}
+
+	vsSummary, err = gatewayManager.GetVirtualService(ctx, virtualServiceName)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get summary for freshly created LB VS [%s]: [%v]",
+			virtualServiceName, err)
+	}
+	if vsSummary == nil {
+		return nil, fmt.Errorf("unable to get summary of freshly created virtual service [%s]: [%v]",
+			virtualServiceName, err)
+	}
+
 	klog.Errorf("successfully updated virtual service [%s] on gateway [%s]", virtualServiceName, gatewayManager.GatewayRef.Name)
-	return nil
+	return &swaggerClient.EntityReference{
+		Name: vsSummary.Name,
+		Id:   vsSummary.Id,
+	}, nil
 }
 
 // TODO: separate out rde operations: how?

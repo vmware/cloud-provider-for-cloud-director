@@ -91,11 +91,17 @@ func TestDNATRuleCRUDE(t *testing.T) {
 
 	dnatRuleName := fmt.Sprintf("test-dnat-rule-%s", uuid.New().String())
 
-	err = gm.CreateDNATRule(ctx, dnatRuleName, "1.2.3.4", "1.2.3.5", 80, 36123)
+	appPortProfileName := GetAppPortProfileName(dnatRuleName)
+	appPortProfile, err := gm.CreateAppPortProfile(appPortProfileName, 80)
+	assert.NoError(t, err, "there should be no error creating an app port profile")
+	assert.NotNil(t, appPortProfile, "app port profile created should not be nil")
+	assert.NotNil(t, appPortProfile.NsxtAppPortProfile, "nsxt app port profile should not be nil")
+
+	err = gm.CreateDNATRule(ctx, dnatRuleName, "1.2.3.4", "1.2.3.5", 80, 36123, appPortProfile)
 	assert.NoError(t, err, "Unable to create dnat rule")
 
 	// repeated creation should not fail
-	err = gm.CreateDNATRule(ctx, dnatRuleName, "1.2.3.4", "1.2.3.5", 80, 36123)
+	err = gm.CreateDNATRule(ctx, dnatRuleName, "1.2.3.4", "1.2.3.5", 80, 36123, appPortProfile)
 	assert.NoError(t, err, "Unable to create dnat rule for the second time")
 
 	natRuleRef, err := gm.GetNATRuleRef(ctx, dnatRuleName)
@@ -118,6 +124,12 @@ func TestDNATRuleCRUDE(t *testing.T) {
 
 	err = gm.DeleteDNATRule(ctx, dnatRuleName, false)
 	assert.NoError(t, err, "Should not fail when deleting non-existing dnat rule")
+
+	err = gm.DeleteAppPortProfile(appPortProfileName, false)
+	assert.NoError(t, err, "there should be no error when app port profile is deleted")
+
+	err = gm.DeleteAppPortProfile(appPortProfileName, false)
+	assert.NoError(t, err, "there should be no error when app port profile is deleted again")
 
 	natRuleRef, err = gm.GetNATRuleRef(ctx, dnatRuleName)
 	assert.NoError(t, err, "Get should not fail when nat rule is absent")
@@ -336,7 +348,7 @@ func TestVirtualServiceHttpCRUDE(t *testing.T) {
 	virtualServiceName := fmt.Sprintf("test-virtual-service-%s", uuid.New().String())
 	internalIP := "2.3.4.5"
 	var vsRef *swagger.EntityReference
-	for i := 0; i < BusyRetries; i ++ {
+	for i := 0; i < BusyRetries; i++ {
 		vsRef, err = gm.CreateVirtualService(ctx, virtualServiceName, lbPoolRef, segRef,
 			internalIP, "HTTP", 80, false, "")
 		if err != nil {
@@ -356,7 +368,7 @@ func TestVirtualServiceHttpCRUDE(t *testing.T) {
 	assert.NotEmpty(t, vsRefObtained.Id, "Virtual service ID should not be empty")
 
 	// repeated creation should not fail
-	for i := 0; i < BusyRetries; i ++ {
+	for i := 0; i < BusyRetries; i++ {
 		vsRef, err = gm.CreateVirtualService(ctx, virtualServiceName, lbPoolRef, segRef,
 			internalIP, "HTTP", 80, false, "")
 		if err != nil {
@@ -445,7 +457,7 @@ func TestVirtualServiceHttpsCRUDE(t *testing.T) {
 	}
 
 	var vsRef *swagger.EntityReference
-	for i := 0; i < BusyRetries; i ++ {
+	for i := 0; i < BusyRetries; i++ {
 		vsRef, err = gm.CreateVirtualService(ctx, virtualServiceName, lbPoolRef, segRef,
 			internalIP, "HTTP", 80, false, "")
 		if err != nil {

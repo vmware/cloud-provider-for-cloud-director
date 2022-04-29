@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdsdk"
 	swaggerClient "github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdswaggerclient"
+	"github.com/vmware/cloud-provider-for-cloud-director/release"
 	"k8s.io/klog"
 )
 
@@ -117,6 +118,7 @@ func (cgm *CpiGatewayManager) CreateLoadBalancer(ctx context.Context, virtualSer
 		}
 
 		virtualServiceIP := externalIP
+		rdeManager := vcdsdk.NewRDEManager(client, cgm.ClusterID, release.CloudControllerManagerName, release.CpiVersion)
 		if oneArm != nil {
 			internalIP, err := gm.GetUnusedInternalIPAddress(ctx, oneArm)
 			if err != nil {
@@ -124,8 +126,26 @@ func (cgm *CpiGatewayManager) CreateLoadBalancer(ctx context.Context, virtualSer
 			}
 
 			dnatRuleName := vcdsdk.GetDNATRuleName(virtualServiceName)
-			if err = gm.CreateDNATRule(ctx, dnatRuleName, externalIP, internalIP,
-				portDetails.ExternalPort, portDetails.InternalPort); err != nil {
+
+			// create app port profile
+			appPortProfileName := vcdsdk.GetAppPortProfileName(dnatRuleName)
+			appPortProfile, err := gm.CreateAppPortProfile(appPortProfileName, portDetails.ExternalPort)
+			if err != nil {
+				return "", fmt.Errorf("failed to create App Port Profile: [%v]", err)
+			}
+			if appPortProfile == nil || appPortProfile.NsxtAppPortProfile == nil {
+				return "", fmt.Errorf("creation of app port profile succeeded but app port profile is empty")
+			}
+			// add app port profile to VCDResourceSet
+			err = rdeManager.AddToVCDResourceSet(ctx, vcdsdk.ComponentCPI, vcdsdk.VcdResourceAppPortProfile, appPortProfile.NsxtAppPortProfile.Name,
+				appPortProfile.NsxtAppPortProfile.ID, nil)
+			if err != nil {
+				return "", fmt.Errorf("failed to add DNAT rule to VCDResourceSet of CPI in RDE [%s]: [%v]", rdeManager.ClusterID, err)
+			}
+
+			err = gm.CreateDNATRule(ctx, dnatRuleName, externalIP, internalIP,
+				portDetails.ExternalPort, portDetails.InternalPort, appPortProfile)
+			if err != nil {
 				return "", fmt.Errorf("unable to create dnat rule [%s:%d] => [%s:%d]: [%v]",
 					externalIP, portDetails.ExternalPort, internalIP, portDetails.InternalPort, err)
 			}
@@ -144,6 +164,12 @@ func (cgm *CpiGatewayManager) CreateLoadBalancer(ctx context.Context, virtualSer
 			if dnatRuleRef == nil {
 				return "", fmt.Errorf("retrieved dnat rule ref is nil")
 			}
+			// add DNAT rule to VCDResourceSet
+			err = rdeManager.AddToVCDResourceSet(ctx, vcdsdk.ComponentCPI, vcdsdk.VcdResourceDNATRule, dnatRuleRef.Name,
+				dnatRuleRef.ID, nil)
+			if err != nil {
+				return "", fmt.Errorf("failed to add DNAT rule to VCDResourceSet of CPI in RDE [%s]: [%v]", rdeManager.ClusterID, err)
+			}
 
 			externalIP = dnatRuleRef.ExternalIP
 		}
@@ -158,6 +184,13 @@ func (cgm *CpiGatewayManager) CreateLoadBalancer(ctx context.Context, virtualSer
 		if err != nil {
 			return "", fmt.Errorf("unable to create load balancer pool [%s]: [%v]", lbPoolName, err)
 		}
+		// Add LoadBalancerPool to VCDResourceSet
+		err = rdeManager.AddToVCDResourceSet(ctx, vcdsdk.ComponentCPI, vcdsdk.VcdResourceLoadBalancerPool,
+			lbPoolRef.Name, lbPoolRef.Id, nil)
+		if err != nil {
+			return "", fmt.Errorf("failed to add load balancer pool [%s] to VCDResourceSet of RDE [%s]",
+				lbPoolRef.Name, rdeManager.ClusterID)
+		}
 
 		virtualServiceRef, err := gm.CreateVirtualService(ctx, virtualServiceName, lbPoolRef, segRef,
 			virtualServiceIP, portDetails.Protocol, portDetails.ExternalPort,
@@ -170,11 +203,18 @@ func (cgm *CpiGatewayManager) CreateLoadBalancer(ctx context.Context, virtualSer
 			}
 			return "", err
 		}
+		// Add virtual service to vcd resource set
+		err = rdeManager.AddToVCDResourceSet(ctx, vcdsdk.ComponentCPI, vcdsdk.VcdResourceVirtualService,
+			virtualServiceRef.Name, virtualServiceRef.Id, map[string]interface{}{
+				"virtualIP": externalIP,
+			})
+		if err != nil {
+			return "", fmt.Errorf("failed to add virtual service [%s] to VCDResourceSet of RDE [%s]", virtualServiceRef.Name, rdeManager.ClusterID)
+		}
 
-		// TODO: add VIP to RDE
 		// update RDE with virtual IP
-		rm := NewRDEManager(client, cgm.ClusterID)
-		err = rm.addVirtualIpToRDE(ctx, externalIP)
+		cpiRdeManager := NewCPIRDEManager(rdeManager)
+		err = cpiRdeManager.addVirtualIpToRDE(ctx, externalIP)
 		if err != nil {
 			klog.Errorf("error when adding virtual IP to RDE: [%v]", err)
 		}
@@ -197,28 +237,21 @@ func (cgm *CpiGatewayManager) UpdateLoadBalancer(ctx context.Context, lbPoolName
 	client := gm.Client
 	client.RWLock.Lock()
 	defer client.RWLock.Unlock()
-	_, err := gm.UpdateLoadBalancerPool(ctx, lbPoolName, ips, internalPort)
-	if err != nil {
-		if lbPoolBusyErr, ok := err.(*vcdsdk.LoadBalancerPoolBusyError); ok {
-			klog.Errorf("update loadbalancer pool failed; loadbalancer pool [%s] is busy: [%v]", lbPoolName, err)
-			return lbPoolBusyErr
-		}
-		return fmt.Errorf("unable to update load balancer pool [%s]: [%v]", lbPoolName, err)
-	}
-	err = gm.UpdateVirtualServicePort(ctx, virtualServiceName, externalPort)
-	if err != nil {
-		if vsBusyErr, ok := err.(*vcdsdk.VirtualServiceBusyError); ok {
-			klog.Errorf("update virtual service failed; virtual service [%s] is busy: [%v]", virtualServiceName, err)
-			return vsBusyErr
-		}
-		return fmt.Errorf("unable to update virtual service [%s] with port [%d]: [%v]", virtualServiceName, externalPort, err)
-	}
+
+	rdeManager := vcdsdk.NewRDEManager(client, cgm.ClusterID, release.CloudControllerManagerName, release.CpiVersion)
+
 	// update app port profile
 	dnatRuleName := vcdsdk.GetDNATRuleName(virtualServiceName)
 	appPortProfileName := vcdsdk.GetAppPortProfileName(dnatRuleName)
-	err = gm.UpdateAppPortProfile(appPortProfileName, externalPort)
+	appPortProfile, err := gm.UpdateAppPortProfile(appPortProfileName, externalPort)
 	if err != nil {
 		return fmt.Errorf("unable to update application port profile [%s] with external port [%d]: [%v]", appPortProfileName, externalPort, err)
+	}
+	// add app port profile to VCDResourceSet
+	err = rdeManager.AddToVCDResourceSet(ctx, vcdsdk.ComponentCPI, vcdsdk.VcdResourceAppPortProfile, appPortProfile.NsxtAppPortProfile.Name,
+		appPortProfile.NsxtAppPortProfile.ID, nil)
+	if err != nil {
+		return fmt.Errorf("failed to add DNAT rule to VCDResourceSet of CPI in RDE [%s]: [%v]", rdeManager.ClusterID, err)
 	}
 
 	// update DNAT rule
@@ -226,10 +259,50 @@ func (cgm *CpiGatewayManager) UpdateLoadBalancer(ctx context.Context, lbPoolName
 	if err != nil {
 		return fmt.Errorf("unable to retrieve created dnat rule [%s]: [%v]", dnatRuleName, err)
 	}
-	err = gm.UpdateDNATRule(ctx, dnatRuleName, dnatRuleRef.ExternalIP, dnatRuleRef.InternalIP, externalPort)
+	dnatRuleRef, err = gm.UpdateDNATRule(ctx, dnatRuleName, dnatRuleRef.ExternalIP, dnatRuleRef.InternalIP, externalPort)
 	if err != nil {
 		return fmt.Errorf("unable to update DNAT rule [%s]: [%v]", dnatRuleName, err)
 	}
+	// add DNAT rule to VCDResourceSet
+	err = rdeManager.AddToVCDResourceSet(ctx, vcdsdk.ComponentCPI, vcdsdk.VcdResourceDNATRule, dnatRuleRef.Name,
+		dnatRuleRef.ID, nil)
+	if err != nil {
+		return fmt.Errorf("failed to add DNAT rule to VCDResourceSet of CPI in RDE [%s]: [%v]", rdeManager.ClusterID, err)
+	}
+
+	lbPoolRef, err := gm.UpdateLoadBalancerPool(ctx, lbPoolName, ips, internalPort)
+	if err != nil {
+		if lbPoolBusyErr, ok := err.(*vcdsdk.LoadBalancerPoolBusyError); ok {
+			klog.Errorf("update loadbalancer pool failed; loadbalancer pool [%s] is busy: [%v]", lbPoolName, err)
+			return lbPoolBusyErr
+		}
+		return fmt.Errorf("unable to update load balancer pool [%s]: [%v]", lbPoolName, err)
+	}
+	// Add LoadBalancerPool to VCDResourceSet
+	err = rdeManager.AddToVCDResourceSet(ctx, vcdsdk.ComponentCPI, vcdsdk.VcdResourceLoadBalancerPool,
+		lbPoolRef.Name, lbPoolRef.Id, nil)
+	if err != nil {
+		return fmt.Errorf("failed to add load balancer pool [%s] to VCDResourceSet of RDE [%s]",
+			lbPoolRef.Name, rdeManager.ClusterID)
+	}
+
+	virtualServiceRef, err := gm.UpdateVirtualServicePort(ctx, virtualServiceName, externalPort)
+	if err != nil {
+		if vsBusyErr, ok := err.(*vcdsdk.VirtualServiceBusyError); ok {
+			klog.Errorf("update virtual service failed; virtual service [%s] is busy: [%v]", virtualServiceName, err)
+			return vsBusyErr
+		}
+		return fmt.Errorf("unable to update virtual service [%s] with port [%d]: [%v]", virtualServiceName, externalPort, err)
+	}
+	// Add virtual service to vcd resource set
+	err = rdeManager.AddToVCDResourceSet(ctx, vcdsdk.ComponentCPI, vcdsdk.VcdResourceVirtualService,
+		virtualServiceRef.Name, virtualServiceRef.Id, map[string]interface{}{
+			"virtualIP": dnatRuleRef.ExternalIP,
+		})
+	if err != nil {
+		return fmt.Errorf("failed to add virtual service [%s] to VCDResourceSet of RDE [%s]", virtualServiceRef.Name, rdeManager.ClusterID)
+	}
+
 	return nil
 }
 
@@ -250,6 +323,7 @@ func (cgm *CpiGatewayManager) DeleteLoadBalancer(ctx context.Context, virtualSer
 	// Here the principle is to delete what is available; retry in case of failure
 	// but do not fail for missing entities, since a retry will always have missing
 	// entities.
+	rdeManager := vcdsdk.NewRDEManager(client, cgm.ClusterID, release.CloudControllerManagerName, release.CpiVersion)
 	for _, portDetails := range portDetailsList {
 		if portDetails.InternalPort == 0 {
 			klog.Infof("No internal port specified for [%s], hence loadbalancer not created\n",
@@ -291,9 +365,15 @@ func (cgm *CpiGatewayManager) DeleteLoadBalancer(ctx context.Context, virtualSer
 			}
 			return fmt.Errorf("unable to delete virtual service [%s]: [%v]", virtualServiceName, err)
 		}
+		// remove virtual service from VCDResourceSet
+		err := rdeManager.RemoveFromVCDResourceSet(ctx, vcdsdk.ComponentCPI, vcdsdk.VcdResourceVirtualService, virtualServiceName)
+		if err != nil {
+			return fmt.Errorf("failed to remove virtual service [%s] from VCDResourceSet of RDE [%s]: [%v]",
+				virtualServiceName, rdeManager.ClusterID, err)
+		}
 
 		// remove virtual ip from RDE
-		rm := NewRDEManager(client, cgm.ClusterID)
+		rm := NewCPIRDEManager(rdeManager)
 		err = rm.removeVirtualIpFromRDE(ctx, rdeVIP)
 		if err != nil {
 			return fmt.Errorf("error when removing vip from RDE: [%v]", err)
@@ -307,11 +387,36 @@ func (cgm *CpiGatewayManager) DeleteLoadBalancer(ctx context.Context, virtualSer
 			}
 			return fmt.Errorf("unable to delete load balancer pool [%s]: [%v]", lbPoolName, err)
 		}
+		// remove lb pool from VCDResourceSet
+		err = rdeManager.RemoveFromVCDResourceSet(ctx, vcdsdk.ComponentCPI, vcdsdk.VcdResourceLoadBalancerPool, lbPoolName)
+		if err != nil {
+			return fmt.Errorf("failed to remove lb pool [%s] from VCDResourceSet of RDE [%s]: [%v]",
+				lbPoolName, rdeManager.ClusterID, err)
+		}
 
 		if oneArm != nil {
 			err = gm.DeleteDNATRule(ctx, dnatRuleName, false)
 			if err != nil {
 				return fmt.Errorf("unable to delete dnat rule [%s]: [%v]", dnatRuleName, err)
+			}
+			// remove DNAT rule from VCDResourceSet
+			err := rdeManager.RemoveFromVCDResourceSet(ctx, vcdsdk.ComponentCPI, vcdsdk.VcdResourceDNATRule, dnatRuleName)
+			if err != nil {
+				return fmt.Errorf("failed to remove dnat rule [%s] from VCDResourceSet of RDE [%s]: [%v]",
+					dnatRuleName, rdeManager.ClusterID, err)
+			}
+
+			appPortProfileName := vcdsdk.GetAppPortProfileName(dnatRuleName)
+			err = gm.DeleteAppPortProfile(dnatRuleName, false)
+			if err != nil {
+				return fmt.Errorf("failed to remove App port profile [%s] from VCDResourceSet of RDE [%s]: [%v]",
+					appPortProfileName, rdeManager.ClusterID, err)
+			}
+			// remove App Port Profile rule from VCDResourceSet
+			err = rdeManager.RemoveFromVCDResourceSet(ctx, vcdsdk.ComponentCPI, vcdsdk.VcdResourceDNATRule, appPortProfileName)
+			if err != nil {
+				return fmt.Errorf("failed to remove dnat rule [%s] from VCDResourceSet of RDE [%s]: [%v]",
+					appPortProfileName, rdeManager.ClusterID, err)
 			}
 		}
 	}

@@ -52,13 +52,13 @@ func TestDeleteVapp(t *testing.T) {
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
 
 	vdcManager := VdcManager{
-		Client:  vcdClient,
-		Vdc:     vcdClient.VDC,
+		Client: vcdClient,
+		Vdc:    vcdClient.VDC,
 	}
-	vapp, err := vdcManager.GetOrCreateVApp("vapp1", "ovdc1_nw")
+	vapp, err := vdcManager.GetOrCreateVApp("ovdc1_nw")
 	assert.NoError(t, err, "unable to find vApp")
 	assert.NotNil(t, vapp, "vapp should not be nil")
-	err = vdcManager.DeleteVApp("vapp1")
+	err = vdcManager.DeleteVApp()
 	assert.NoError(t, err, "unable to delete vApp")
 }
 
@@ -74,7 +74,7 @@ func TestVdcManager_CacheVdcDetails(t *testing.T) {
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
 	vdcManager := VdcManager{
-		Client:  vcdClient,
+		Client: vcdClient,
 	}
 	err = vdcManager.cacheVdcDetails()
 	assert.NoError(t, err, "There should no error while caching VDC details")
@@ -107,7 +107,7 @@ func TestVMCreation(t *testing.T) {
 	vdcManager, err := NewVDCManager(vcdClient, vcdClient.ClusterOrgName, vcdClient.ClusterOVDCName, vAppName)
 	assert.NoError(t, err, "there should be no error when creating VDCManager object")
 
-	vApp, err := vdcManager.GetOrCreateVApp(vAppName, "tenant1_ovdc_nw")
+	vApp, err := vdcManager.GetOrCreateVApp("tenant1_ovdc_nw")
 	assert.NoError(t, err, "unable to create vApp")
 	require.NotNil(t, vApp, "vApp created should not be nil")
 
@@ -131,13 +131,12 @@ fi
 exit 0
 `
 
-
 	_, err = vdcManager.AddNewMultipleVM(vApp, vmNamePrefix, vmNum, "ProviderCatalogs",
 		"ubuntu-16.04_k8-1.20_weave-2.6.5_rev2",
 		"cse----native", "2core2gb", guestCustScript, true, true)
 	require.NoError(t, err, "unable to create [%d] VMs", vmNum)
 
-	_ = vdcManager.WaitForGuestScriptCompletion(vmNamePrefix, vAppName)
+	_ = vdcManager.WaitForGuestScriptCompletion(vmNamePrefix)
 
 	//err = VcdClient.DeleteVM(vAppName, vmName)
 	//assert.NoError(t, err, "unable to delete VM")
@@ -170,7 +169,7 @@ func TestVMExtraConfig(t *testing.T) {
 	vdcManager, err := NewVDCManager(vcdClient, vcdClient.ClusterOrgName, vcdClient.ClusterOVDCName, vAppName)
 	assert.NoError(t, err, "there should be no error when creating VDCManager object")
 
-	vApp, err := vdcManager.GetOrCreateVApp(vAppName, cloudConfig.LB.VDCNetwork)
+	vApp, err := vdcManager.GetOrCreateVApp(cloudConfig.LB.VDCNetwork)
 	assert.NoError(t, err, "unable to create vApp")
 	require.NotNil(t, vApp, "vApp created should not be nil")
 
@@ -195,7 +194,7 @@ exit 0
 `
 
 	// TODO: allow these vm params to be user passed through a config
-	err = vdcManager.AddNewVM(vmNamePrefix, vAppName, vmNum, "cse",
+	err = vdcManager.AddNewVM(vmNamePrefix, vmNum, "cse",
 		"ubuntu-16.04_k8-1.21_weave-2.8.1_rev1", "cse----native",
 		"2core2gb", guestCustScript, true)
 	assert.NoError(t, err, "unable to create [%d] VMs", vmNum)
@@ -218,7 +217,6 @@ exit 0
 	assert.NoError(t, err, "failed to get hardware section value for key %s", key)
 	assert.Equal(t, value, retrievedValue, "retrieved incorrect value")
 
-	err = vdcManager.DeleteVApp(vAppName)
+	err = vdcManager.DeleteVApp()
 	assert.NoError(t, err, "unable to delete vApp: [%s]", vAppName)
 }
-

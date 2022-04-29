@@ -159,9 +159,9 @@ func (vdc *VdcManager) cacheVdcDetails() error {
 		return fmt.Errorf("unable to get org from name [%s]: [%v]", vdc.Client.ClusterOrgName, err)
 	}
 
-	vdc.Vdc, err = org.GetVDCByName(vdc.Client.ClusterOrgName, true)
+	vdc.Vdc, err = org.GetVDCByName(vdc.Client.ClusterOVDCName, true)
 	if err != nil {
-		return fmt.Errorf("unable to get Vdc [%s] from org [%s]: [%v]", vdc.Client.ClusterOVDCName, vdc.Client.ClusterOVDCName, err)
+		return fmt.Errorf("unable to get Vdc [%s] from org [%s]: [%v]", vdc.Client.ClusterOVDCName, vdc.Client.ClusterOrgName, err)
 	}
 	return nil
 }

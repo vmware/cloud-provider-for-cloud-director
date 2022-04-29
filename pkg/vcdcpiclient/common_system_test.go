@@ -42,13 +42,13 @@ func getTestConfig() (*config.CloudConfig, error) {
 	testConfigFilePath := filepath.Join(gitRoot, "testdata/config_test.yaml")
 	configReader, err := os.Open(testConfigFilePath)
 	if err != nil {
-		return nil, fmt.Errorf("Unable to open file [%s]: [%v]", testConfigFilePath, err)
+		return nil, fmt.Errorf("unable to open file [%s]: [%v]", testConfigFilePath, err)
 	}
 	defer configReader.Close()
 
 	cloudConfig, err := config.ParseCloudConfig(configReader)
 	if err != nil {
-		return nil, fmt.Errorf("Unable to parse cloud config file [%s]: [%v]", testConfigFilePath, err)
+		return nil, fmt.Errorf("unable to parse cloud config file [%s]: [%v]", testConfigFilePath, err)
 	}
 	return cloudConfig, nil
 }
