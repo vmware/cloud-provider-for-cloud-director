@@ -64,6 +64,7 @@ func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error
 			cloudConfig.VCD.Host,
 			cloudConfig.VCD.Org,
 			cloudConfig.VCD.VDC,
+			cloudConfig.VCD.UserOrg,
 			cloudConfig.VCD.User,
 			cloudConfig.VCD.Secret,
 			cloudConfig.VCD.RefreshToken,

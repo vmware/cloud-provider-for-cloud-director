@@ -99,15 +99,18 @@ func (client *Client) RefreshBearerToken() error {
 // host, orgName, userOrg, refreshToken, insecure, user, password
 
 // New method from (vdcClient, vdcName) return *govcd.Vdc
-func NewVCDClientFromSecrets(host string, orgName string, vdcName string,
+func NewVCDClientFromSecrets(host string, orgName string, vdcName string, userOrg string,
 	user string, password string, refreshToken string, insecure bool, getVdcClient bool) (*Client, error) {
 
 	// TODO: validation of parameters
 
-	newUserOrg, newUsername, err := config.GetUserAndOrg(user, orgName)
+	// We need username, clusterOrg, userOrg for additional fallback as cloudConfig params to client creation in correct format already
+	// ex: username: system/administrator -> user: administrator, userOrg: system, org: org1
+	// By using GetUserAndOrg(username, orgName) this would overwrite userOrg from system to org1
+	newUserOrg, newUsername, err := config.GetUserAndOrg(user, orgName, userOrg)
 
 	if err != nil {
-		return nil, fmt.Errorf("Error parsing username before authenticating to VCD: [%v]", err)
+		return nil, fmt.Errorf("error parsing username before authenticating to VCD: [%v]", err)
 	}
 
 	clientCreatorLock.Lock()
