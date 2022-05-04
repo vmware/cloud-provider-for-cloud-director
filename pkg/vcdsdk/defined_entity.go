@@ -46,17 +46,17 @@ type ComponentStatus struct {
 }
 
 type RDEManager struct {
-	Client    *Client
-	StatusComponentName string
+	Client                 *Client
+	StatusComponentName    string
 	StatusComponentVersion string
-	ClusterID string
+	ClusterID              string
 }
 
 func NewRDEManager(client *Client, clusterID string, statusComponentName string, statusComponentVersion string) *RDEManager {
 	return &RDEManager{
-		Client:    client,
-		ClusterID: clusterID,
-		StatusComponentName: statusComponentName,
+		Client:                 client,
+		ClusterID:              clusterID,
+		StatusComponentName:    statusComponentName,
 		StatusComponentVersion: statusComponentVersion,
 	}
 }
@@ -209,6 +209,10 @@ func (rdeManager *RDEManager) AddToVCDResourceSet(ctx context.Context, component
 					"failed to add resource [%s] having ID [%s] to VCDResourseSet of CPI in RDE [%s]; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]",
 					vcdResource.Name, vcdResource.ID, rdeManager.ClusterID, http.StatusOK, resp.StatusCode, string(responseMessageBytes), err)
 			}
+			// resp.StatusCode is http.StatusOK
+			klog.Infof("successfully added resource [%s] having ID [%s] to VCDResourceSet of [%s] in RDE [%s]",
+				vcdResource.Name, vcdResource.ID, component, rdeManager.ClusterID)
+			return nil
 		} else if err != nil {
 			return fmt.Errorf("error while updating the RDE [%s]: [%v]", rdeManager.ClusterID, err)
 		} else {
@@ -248,7 +252,7 @@ func removeFromVCDResourceSet(component string, componentName string, componentV
 	resourceFound := false
 	updatedVcdResourceSet := make([]VCDResource, 0)
 	for _, resource := range componentStatus.VCDResourceSet {
-		if resource.ID == vcdResource.ID && resource.Type == vcdResource.Type {
+		if resource.Name == vcdResource.Name && resource.Type == vcdResource.Type {
 			// remove the resource from the array
 			resourceFound = true
 			continue
@@ -257,7 +261,7 @@ func removeFromVCDResourceSet(component string, componentName string, componentV
 	}
 
 	if !resourceFound {
-		klog.Infof("VCDResource having name [%s] and ID [%s] was not found in the component [%s]", vcdResource.Name, vcdResource.ID, component)
+		klog.Infof("VCDResource having name [%s] and Type [%s] was not found in the component [%s]", vcdResource.Name, vcdResource.Type, component)
 		return statusMap, nil
 	}
 
@@ -305,9 +309,9 @@ func (rdeManager *RDEManager) RemoveFromVCDResourceSet(ctx context.Context, comp
 		}
 		updatedStatus, err := removeFromVCDResourceSet(component, rdeManager.StatusComponentName,
 			rdeManager.StatusComponentVersion, statusMap, VCDResource{
-			Type: resourceType,
-			Name:   resourceName,
-		})
+				Type: resourceType,
+				Name: resourceName,
+			})
 		if err != nil {
 			return fmt.Errorf("failed to remove resource [%s] from VCDResourceSet in CPI status section of RDE [%s]: [%v]", resourceName, rdeManager.ClusterID, err)
 		}
@@ -327,6 +331,10 @@ func (rdeManager *RDEManager) RemoveFromVCDResourceSet(ctx context.Context, comp
 					"failed to update CPI status for RDE [%s]; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]",
 					rdeManager.ClusterID, http.StatusOK, resp.StatusCode, string(responseMessageBytes), err)
 			}
+			// resp.StatusCode is http.StatusOK
+			klog.Infof("successfully removed resource [%s] of type [%s] from VCDResourceSet of [%s] in RDE [%s]",
+				resourceName, resourceType, component, rdeManager.ClusterID)
+			return nil
 		} else if err != nil {
 			return fmt.Errorf("error while removing virtual service [%s] from the RDE [%s]: [%v]", resourceName, rdeManager.ClusterID, err)
 		} else {

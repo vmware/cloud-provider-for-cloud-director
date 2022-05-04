@@ -11,7 +11,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/config"
-	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdcpiclient"
+	"github.com/vmware/cloud-provider-for-cloud-director/pkg/cpisdk"
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdsdk"
 	"github.com/vmware/cloud-provider-for-cloud-director/release"
 	"io"
@@ -108,7 +108,7 @@ func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error
 	// TODO: upgrade all CAPVCD RDEs here
 
 	rdeManager := vcdsdk.NewRDEManager(vcdClient, cloudConfig.ClusterID, release.CloudControllerManagerName, release.CpiVersion)
-	cpiRdeManager := vcdcpiclient.NewCPIRDEManager(rdeManager)
+	cpiRdeManager := cpisdk.NewCPIRDEManager(rdeManager)
 	err = cpiRdeManager.UpgradeCPIStatusOfExistingRDE(context.Background(), cloudConfig.ClusterID)
 	if err != nil {
 		klog.Errorf("failed to create CPI status in the RDE [%s]: [%v]", cloudConfig.ClusterID, err)

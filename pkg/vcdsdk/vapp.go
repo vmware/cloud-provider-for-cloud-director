@@ -515,18 +515,18 @@ func (vdc *VdcManager) SetVmExtraConfigKeyValue(vm *govcd.VM, key string, value 
 // power on VMs and join the cluster with hardcoded script
 func (vdc *VdcManager) AddNewMultipleVM(vapp *govcd.VApp, vmNamePrefix string, vmNum int,
 	catalogName string, templateName string, placementPolicyName string, computePolicyName string,
-	guestCustScript string, acceptAllEulas bool, powerOn bool) (govcd.Task, error) {
+	storageProfileName string, guestCustScript string, acceptAllEulas bool, powerOn bool) (govcd.Task, error) {
 
 	klog.V(3).Infof("start adding %d VMs\n", vmNum)
 
-	orgManager, err := NewOrgManager(vdc.Client, vdc.Client.ClusterOrgName)
+	orgManager, err := NewOrgManager(vdc.Client, vdc.OrgName)
 	if err != nil {
-		return govcd.Task{}, fmt.Errorf("error creating orgManager: [%v]", err)
+		return govcd.Task{}, fmt.Errorf("failed to create org manager object: [%v]", err)
 	}
 	catalog, err := orgManager.GetCatalogByName(catalogName)
 	if err != nil {
 		return govcd.Task{}, fmt.Errorf("unable to find catalog [%s] in org [%s]: [%v]",
-			catalogName, vdc.Client.ClusterOrgName, err)
+			catalogName, vdc.OrgName, err)
 	}
 
 	vAppTemplateList, err := catalog.QueryVappTemplateList()
@@ -592,6 +592,22 @@ func (vdc *VdcManager) AddNewMultipleVM(vapp *govcd.VApp, vmNamePrefix string, v
 		}
 	}
 
+	var storageProfile *types.Reference = nil
+
+	if storageProfileName != "" {
+		storageProfiles := vdc.Client.VDC.Vdc.VdcStorageProfiles.VdcStorageProfile
+		for _, profile := range storageProfiles {
+			if profile.Name == storageProfileName {
+				storageProfile = profile
+				break
+			}
+		}
+
+		if storageProfile == nil {
+			return govcd.Task{}, fmt.Errorf("storage profile [%s] chosen to create the VM in vApp [%s] does not exist", storageProfileName, vapp.VApp.Name)
+		}
+	}
+
 	// for loop to create vms with same settings and append to the sourcedItemList
 	sourcedItemList := make([]*types.SourcedCompositionItemParam, vmNum)
 	for i := 0; i < vmNum; i++ {
@@ -627,7 +643,8 @@ func (vdc *VdcManager) AddNewMultipleVM(vapp *govcd.VApp, vmNamePrefix string, v
 						},
 					},
 				},
-				ComputePolicy: computePolicy,
+				StorageProfile: storageProfile,
+				ComputePolicy:  computePolicy,
 			},
 		)
 	}
@@ -662,8 +679,7 @@ func (vdc *VdcManager) AddNewMultipleVM(vapp *govcd.VApp, vmNamePrefix string, v
 			task.Task, vmNamePrefix, err)
 	}
 
-	vdcManager, err := NewVDCManager(vdc.Client, vdc.Client.ClusterOrgName, vdc.Client.ClusterOVDCName, vapp.VApp.Name)
-	vAppRefreshed, err := vdcManager.Vdc.GetVAppByName(vapp.VApp.Name, true)
+	vAppRefreshed, err := vdc.Vdc.GetVAppByName(vapp.VApp.Name, true)
 	if err != nil {
 		return govcd.Task{}, fmt.Errorf("unable to get refreshed vapp by name [%s]: [%v]", vapp.VApp.Name, err)
 	}
@@ -751,27 +767,26 @@ func (vdc *VdcManager) AddNewMultipleVM(vapp *govcd.VApp, vmNamePrefix string, v
 
 func (vdc *VdcManager) AddNewVM(vmNamePrefix string, vmNum int,
 	catalogName string, templateName string, placementPolicyName string, computePolicyName string,
-	guestCustScript string, powerOn bool) error {
+	storageProfileName string, guestCustScript string, powerOn bool) error {
 
-	if vdc.Client.VDC == nil {
-		return fmt.Errorf("no Vdc created with name [%s]", vdc.Client.ClusterOVDCName)
+	if vdc.Vdc == nil {
+		return fmt.Errorf("no Vdc created with name [%s]", vdc.VdcName)
 	}
 
-	vApp, err := vdc.Client.VDC.GetVAppByName(vdc.VAppName, true)
+	vApp, err := vdc.Vdc.GetVAppByName(vdc.VAppName, true)
 	if err != nil {
 		return fmt.Errorf("unable to get vApp [%s] from Vdc [%s]: [%v]",
-			vdc.VAppName, vdc.Client.ClusterOVDCName, err)
+			vdc.VAppName, vdc.VdcName, err)
 	}
 
-	orgManager, err := NewOrgManager(vdc.Client, vdc.Client.ClusterOrgName)
+	orgManager, err := NewOrgManager(vdc.Client, vdc.OrgName)
 	if err != nil {
-		return fmt.Errorf("error creating an orgManager object: [%v]", err)
+		return fmt.Errorf("failed to create org manager object: [%v]", err)
 	}
-
 	catalog, err := orgManager.GetCatalogByName(catalogName)
 	if err != nil {
 		return fmt.Errorf("unable to find catalog [%s] in org [%s]: [%v]",
-			catalogName, orgManager.Client.ClusterOrgName, err)
+			catalogName, vdc.OrgName, err)
 	}
 
 	vAppTemplateList, err := catalog.QueryVappTemplateList()
@@ -799,8 +814,8 @@ func (vdc *VdcManager) AddNewVM(vmNamePrefix string, vmNum int,
 			queryVAppTemplate.HREF, err)
 	}
 
-	_, err = vdc.AddNewMultipleVM(vApp, vmNamePrefix, vmNum, catalogName, templateName,
-		placementPolicyName, computePolicyName, guestCustScript, true, powerOn)
+	_, err = vdc.AddNewMultipleVM(vApp, vmNamePrefix, vmNum, catalogName, templateName, placementPolicyName,
+		computePolicyName, storageProfileName, guestCustScript, true, powerOn)
 	if err != nil {
 		return fmt.Errorf(
 			"unable to issue call to create VMs with prefix [%s] in vApp [%s] with template [%s/%s]: [%v]",

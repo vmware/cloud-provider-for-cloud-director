@@ -1,4 +1,4 @@
-package vcdcpiclient
+package cpisdk
 
 import (
 	"context"
@@ -8,6 +8,9 @@ import (
 	"github.com/vmware/cloud-provider-for-cloud-director/release"
 	"k8s.io/klog"
 )
+
+// TODO(VCDA-3647): make RDE operations in CreateLoadBalancer, UpdateLoadBalancer, DeleteLoadBalancer and GetLoadBalancer
+//   generic and move them to vcdsdk
 
 // CpiGatewayManager represents CPI's custom gateway manager. The separation is because CPI does some set of custom
 // operations on RDE after operations like Create/Delete virtual services.
@@ -98,6 +101,8 @@ func (cgm *CpiGatewayManager) CreateLoadBalancer(ctx context.Context, virtualSer
 		virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, portDetails.PortSuffix)
 		lbPoolName := fmt.Sprintf("%s-%s", lbPoolNamePrefix, portDetails.PortSuffix)
 
+		rdeManager := vcdsdk.NewRDEManager(client, cgm.ClusterID, release.CloudControllerManagerName, release.CpiVersion)
+
 		vsSummary, err := gm.GetVirtualService(ctx, virtualServiceName)
 		if err != nil {
 			return "", fmt.Errorf("unexpected error while querying for virtual service [%s]: [%v]",
@@ -114,11 +119,19 @@ func (cgm *CpiGatewayManager) CreateLoadBalancer(ctx context.Context, virtualSer
 				return "", err
 			}
 
+			// Add virtual service to vcd resource set
+			err = rdeManager.AddToVCDResourceSet(ctx, vcdsdk.ComponentCPI, vcdsdk.VcdResourceVirtualService,
+				vsSummary.Name, vsSummary.Id, map[string]interface{}{
+					"virtualIP": externalIP,
+				})
+			if err != nil {
+				return "", fmt.Errorf("failed to add virtual service [%s] to VCDResourceSet of RDE [%s]", vsSummary.Name, rdeManager.ClusterID)
+			}
+
 			continue
 		}
 
 		virtualServiceIP := externalIP
-		rdeManager := vcdsdk.NewRDEManager(client, cgm.ClusterID, release.CloudControllerManagerName, release.CpiVersion)
 		if oneArm != nil {
 			internalIP, err := gm.GetUnusedInternalIPAddress(ctx, oneArm)
 			if err != nil {
@@ -413,7 +426,7 @@ func (cgm *CpiGatewayManager) DeleteLoadBalancer(ctx context.Context, virtualSer
 					appPortProfileName, rdeManager.ClusterID, err)
 			}
 			// remove App Port Profile rule from VCDResourceSet
-			err = rdeManager.RemoveFromVCDResourceSet(ctx, vcdsdk.ComponentCPI, vcdsdk.VcdResourceDNATRule, appPortProfileName)
+			err = rdeManager.RemoveFromVCDResourceSet(ctx, vcdsdk.ComponentCPI, vcdsdk.VcdResourceAppPortProfile, appPortProfileName)
 			if err != nil {
 				return fmt.Errorf("failed to remove dnat rule [%s] from VCDResourceSet of RDE [%s]: [%v]",
 					appPortProfileName, rdeManager.ClusterID, err)
