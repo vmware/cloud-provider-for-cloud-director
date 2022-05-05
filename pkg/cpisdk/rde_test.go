@@ -2,6 +2,8 @@ package cpisdk
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdsdk"
 	"github.com/vmware/cloud-provider-for-cloud-director/release"
@@ -20,6 +22,16 @@ func foundStringInSlice(find string, slice []string) bool {
 	}
 	return false
 }
+
+func convertToJson(obj interface{}) (string, error) {
+	objByteArr, err := json.Marshal(&obj)
+	if err != nil {
+		return "", fmt.Errorf("error while marshaling object: [%v]", err)
+	}
+
+	return string(objByteArr), nil
+}
+
 
 func TestUpdateRDEUsingEtag(t *testing.T) {
 	// TODO: This test will currently fail unless the code below is uncommented. Refer to VCDA-3600
@@ -93,4 +105,66 @@ func TestUpdateRDEUsingEtag(t *testing.T) {
 	assert.NoError(t, err, "Should retrieve RDE vips to check added ips are removed")
 	assert.False(t, foundStringInSlice(addIp1, rdeVips5), "ip [%s] should not be found in rde vips", addIp1)
 	assert.False(t, foundStringInSlice(addIp2, rdeVips5), "ip [%s] should not be found in rde vips", addIp2)
+}
+
+func TestUpgradeCPISectionInStatus(t *testing.T) {
+	type TestCase struct {
+		Name           string
+		StatusMap      map[string]interface{}
+		ExpectedStatus map[string]interface{}
+	}
+	testCaseList := []TestCase{
+		{
+			Name: "no modifications to status map outside CPI status",
+			StatusMap: map[string]interface{}{
+				"cpi": map[string]interface{}{
+					"vcdResourceSet": []vcdsdk.VCDResource{
+						{
+							Type: vcdsdk.VcdResourceVirtualService,
+							Name: "virtual-service-1",
+							ID:   "12345",
+						},
+					},
+				},
+				"csi": map[string]interface{}{
+					"key1": "value1",
+				},
+				"capvcd": map[string]interface{}{
+					"key2": "value2",
+				},
+			},
+			ExpectedStatus: map[string]interface{}{
+				"cpi": map[string]interface{}{
+					"name": "cloud-controller-manager",
+					"vcdResourceSet": []interface{}{
+						map[string]interface{}{
+							"id":   "12345",
+							"name": "virtual-service-1",
+							"type": "virtual-service",
+						},
+					},
+					"version": release.CpiVersion,
+				},
+				"capvcd": map[string]interface{}{
+					"key2": "value2",
+				},
+				"csi": map[string]interface{}{
+					"key1": "value1",
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCaseList {
+		updatedStatus, err := UpgradeCPISectionInStatus(tc.StatusMap)
+		assert.NoError(t, err, tc.Name)
+		assert.Equal(t, tc.ExpectedStatus, updatedStatus, tc.Name)
+
+		actualJson, err := convertToJson(updatedStatus)
+		assert.NoError(t, err, tc.Name, "expected no error converting updatedStatusMap to json")
+		expectedJson, err := convertToJson(tc.ExpectedStatus)
+		assert.NoError(t, err, tc.Name, "expected no error when converting expected status to json")
+
+		assert.JSONEqf(t, expectedJson, actualJson, tc.Name)
+	}
 }

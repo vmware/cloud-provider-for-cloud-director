@@ -15,6 +15,14 @@ import (
 
 func TestVApp(t *testing.T) {
 
+	authFile := filepath.Join(gitRoot, "testdata/auth_test.yaml")
+	authFileContent, err := ioutil.ReadFile(authFile)
+	assert.NoError(t, err, "There should be no error reading the auth file contents.")
+
+	var authDetails authorizationDetails
+	err = yaml.Unmarshal(authFileContent, &authDetails)
+	assert.NoError(t, err, "There should be no error parsing auth file content.")
+
 	cloudConfig, err := getTestConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
@@ -23,6 +31,9 @@ func TestVApp(t *testing.T) {
 		cloudConfig,
 		map[string]interface{}{
 			"getVdcClient": true,
+			"user":         authDetails.Username,
+			"secret":       authDetails.Password,
+			"userOrg":      authDetails.UserOrg,
 		})
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
@@ -40,6 +51,14 @@ func TestVApp(t *testing.T) {
 }
 
 func TestDeleteVapp(t *testing.T) {
+	authFile := filepath.Join(gitRoot, "testdata/auth_test.yaml")
+	authFileContent, err := ioutil.ReadFile(authFile)
+	assert.NoError(t, err, "There should be no error reading the auth file contents.")
+
+	var authDetails authorizationDetails
+	err = yaml.Unmarshal(authFileContent, &authDetails)
+	assert.NoError(t, err, "There should be no error parsing auth file content.")
+
 	cloudConfig, err := getTestConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 	// get client
@@ -47,6 +66,9 @@ func TestDeleteVapp(t *testing.T) {
 		cloudConfig,
 		map[string]interface{}{
 			"getVdcClient": true,
+			"user":         authDetails.Username,
+			"secret":       authDetails.Password,
+			"userOrg":      authDetails.UserOrg,
 		})
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
@@ -63,6 +85,14 @@ func TestDeleteVapp(t *testing.T) {
 }
 
 func TestVdcManager_CacheVdcDetails(t *testing.T) {
+	authFile := filepath.Join(gitRoot, "testdata/auth_test.yaml")
+	authFileContent, err := ioutil.ReadFile(authFile)
+	assert.NoError(t, err, "There should be no error reading the auth file contents.")
+
+	var authDetails authorizationDetails
+	err = yaml.Unmarshal(authFileContent, &authDetails)
+	assert.NoError(t, err, "There should be no error parsing auth file content.")
+
 	cloudConfig, err := getTestConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
@@ -70,6 +100,9 @@ func TestVdcManager_CacheVdcDetails(t *testing.T) {
 		cloudConfig,
 		map[string]interface{}{
 			"getVdcClient": true,
+			"user":         authDetails.Username,
+			"secret":       authDetails.Password,
+			"userOrg":      authDetails.UserOrg,
 		})
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
@@ -98,6 +131,9 @@ func TestVMCreation(t *testing.T) {
 		cloudConfig,
 		map[string]interface{}{
 			"getVdcClient": true,
+			"user":         authDetails.Username,
+			"secret":       authDetails.Password,
+			"userOrg":      authDetails.UserOrg,
 		})
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
@@ -161,6 +197,9 @@ func TestVMExtraConfig(t *testing.T) {
 		cloudConfig,
 		map[string]interface{}{
 			"getVdcClient": true,
+			"user":         authDetails.Username,
+			"secret":       authDetails.Password,
+			"userOrg":      authDetails.UserOrg,
 		})
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")

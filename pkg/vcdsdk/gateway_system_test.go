@@ -16,6 +16,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 const BusyRetries = 5
@@ -110,10 +111,10 @@ func TestDNATRuleCRUDE(t *testing.T) {
 	assert.Equal(t, dnatRuleName, natRuleRef.Name, "Nat Rule name should match")
 	assert.NotEmpty(t, natRuleRef.ID, "Nat Rule ID should not be empty")
 
-	err = gm.UpdateDNATRule(ctx, dnatRuleName, "2.3.4.5", "2.3.4.5", 8080)
+	_, err = gm.UpdateDNATRule(ctx, dnatRuleName, "2.3.4.5", "2.3.4.5", 8080)
 	assert.NoError(t, err, "Unable to update dnat rule")
 
-	err = gm.UpdateDNATRule(ctx, dnatRuleName, "2.3.4.5", "2.3.4.5", 8080)
+	_, err = gm.UpdateDNATRule(ctx, dnatRuleName, "2.3.4.5", "2.3.4.5", 8080)
 	assert.NoError(t, err, "repeated updates to dnat rule should not fail")
 
 	err = gm.DeleteDNATRule(ctx, dnatRuleName, true)
@@ -310,6 +311,9 @@ func TestGetUnusedGatewayIP(t *testing.T) {
 
 func TestVirtualServiceHttpCRUDE(t *testing.T) {
 
+	// NOTE: Create a dummy virtual service before running this test. Time to create the first virtual service may
+	// bottle-neck the test execution.
+
 	authFile := filepath.Join(gitRoot, "testdata/auth_test.yaml")
 	authFileContent, err := ioutil.ReadFile(authFile)
 	assert.NoError(t, err, "There should be no error reading the auth file contents.")
@@ -356,6 +360,7 @@ func TestVirtualServiceHttpCRUDE(t *testing.T) {
 				break
 			}
 		}
+		time.Sleep(3*time.Second)
 	}
 	assert.NoError(t, err, "Unable to create virtual service")
 	require.NotNil(t, vsRef, "VirtualServiceRef should not be nil")
@@ -381,14 +386,14 @@ func TestVirtualServiceHttpCRUDE(t *testing.T) {
 	require.NotNil(t, vsRef, "VirtualServiceRef should not be nil")
 	assert.Equal(t, virtualServiceName, vsRef.Name, "Virtual Service name should match")
 
-	err = gm.UpdateVirtualServicePort(ctx, virtualServiceName, 8080)
+	_, err = gm.UpdateVirtualServicePort(ctx, virtualServiceName, 8080)
 	assert.NoError(t, err, "Unable to update external port")
 
 	// repeated update should not fail
-	err = gm.UpdateVirtualServicePort(ctx, virtualServiceName, 8080)
+	_, err = gm.UpdateVirtualServicePort(ctx, virtualServiceName, 8080)
 	assert.NoError(t, err, "Repeated update to external port should not fail")
 
-	err = gm.UpdateVirtualServicePort(ctx, virtualServiceName+"-invalid", 8080)
+	_, err = gm.UpdateVirtualServicePort(ctx, virtualServiceName+"-invalid", 8080)
 	assert.Error(t, err, "Update virtual service on a non-existent virtual service should fail")
 
 	err = gm.DeleteVirtualService(ctx, virtualServiceName, true)
@@ -411,6 +416,9 @@ func TestVirtualServiceHttpCRUDE(t *testing.T) {
 }
 
 func TestVirtualServiceHttpsCRUDE(t *testing.T) {
+
+	// NOTE: Create a dummy virtual service before running this test. Time to create the first virtual service may
+	// bottle-neck the test execution.
 
 	authFile := filepath.Join(gitRoot, "testdata/auth_test.yaml")
 	authFileContent, err := ioutil.ReadFile(authFile)
@@ -484,15 +492,15 @@ func TestVirtualServiceHttpsCRUDE(t *testing.T) {
 	assert.Equal(t, virtualServiceName, vsRef.Name, "Virtual Service name should match")
 
 	// update and delete calls might error out if virtual services are busy. Retry if the error is caused by the busy virtual services
-	err = gm.UpdateVirtualServicePort(ctx, virtualServiceName, 8443)
+	_, err = gm.UpdateVirtualServicePort(ctx, virtualServiceName, 8443)
 	assert.NoError(t, err, "Unable to update external port")
 
 	// repeated update should not fail
-	err = gm.UpdateVirtualServicePort(ctx, virtualServiceName, 8443)
+	_, err = gm.UpdateVirtualServicePort(ctx, virtualServiceName, 8443)
 	assert.NoError(t, err, "Repeated update to external port should not fail")
 
 	// update of invalid virtual service
-	err = gm.UpdateVirtualServicePort(ctx, virtualServiceName+"-invalid\n", 8443)
+	_, err = gm.UpdateVirtualServicePort(ctx, virtualServiceName+"-invalid\n", 8443)
 	assert.Error(t, err, "Update virtual service on a non-existent virtual service should fail")
 
 	err = gm.DeleteVirtualService(ctx, virtualServiceName, true)

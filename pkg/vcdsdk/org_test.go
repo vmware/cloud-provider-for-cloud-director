@@ -27,6 +27,9 @@ func TestComputePolicy(t *testing.T) {
 		cloudConfig,
 		map[string]interface{}{
 			"getVdcClient": true,
+			"user":         authDetails.Username,
+			"secret":       authDetails.Password,
+			"userOrg":      authDetails.UserOrg,
 		})
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
