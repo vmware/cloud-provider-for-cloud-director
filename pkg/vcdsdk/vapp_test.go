@@ -170,7 +170,7 @@ exit 0
 	computePolicyName := "2core2gb"
 
 	_, err = vdcManager.AddNewMultipleVM(vApp, vmNamePrefix, vmNum, catalog,
-		templateName,placementPolicyName, computePolicyName, guestCustScript, true, true)
+		templateName,placementPolicyName, computePolicyName, "*", guestCustScript, true, true)
 	require.NoError(t, err, "unable to create [%d] VMs", vmNum)
 
 	_ = vdcManager.WaitForGuestScriptCompletion(vmNamePrefix)
@@ -235,7 +235,7 @@ exit 0
 	// TODO: allow these vm params to be user passed through a config
 	err = vdcManager.AddNewVM(vmNamePrefix, vmNum, "cse",
 		"ubuntu-16.04_k8-1.21_weave-2.8.1_rev1", "cse----native",
-		"2core2gb", guestCustScript, true)
+		"2core2gb","*", guestCustScript, true)
 	assert.NoError(t, err, "unable to create [%d] VMs", vmNum)
 
 	vms, err := vdcManager.FindAllVMsInVapp()
