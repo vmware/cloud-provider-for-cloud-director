@@ -272,6 +272,9 @@ func (cgm *CpiGatewayManager) UpdateLoadBalancer(ctx context.Context, lbPoolName
 	if err != nil {
 		return fmt.Errorf("unable to retrieve created dnat rule [%s]: [%v]", dnatRuleName, err)
 	}
+	if dnatRuleRef == nil {
+		return fmt.Errorf("unable to find DNAT rule with name [%s]", dnatRuleName)
+	}
 	dnatRuleRef, err = gm.UpdateDNATRule(ctx, dnatRuleName, dnatRuleRef.ExternalIP, dnatRuleRef.InternalIP, externalPort)
 	if err != nil {
 		return fmt.Errorf("unable to update DNAT rule [%s]: [%v]", dnatRuleName, err)
