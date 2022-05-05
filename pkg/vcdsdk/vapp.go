@@ -914,3 +914,25 @@ func (vdc *VdcManager) RebootVm(vm *govcd.VM) error {
 	klog.V(3).Infof("Reboot complete for VM [%s]", vm.VM.Name)
 	return nil
 }
+
+func (vdc *VdcManager) AddMetadataToVApp(paramMap map[string]string) error {
+	vApp, err := vdc.Vdc.GetVAppByName(vdc.VAppName, true)
+	if err != nil {
+		if err == govcd.ErrorEntityNotFound {
+			return fmt.Errorf("cannot get the vApp [%s] from Vdc [%s]: [%v]", vdc.VAppName, vdc.VdcName, err)
+		}
+		return fmt.Errorf("error while getting vApp [%s] from Vdc [%s]: [%v]",
+			vdc.VAppName, vdc.VdcName, err)
+	}
+	if vApp == nil || vApp.VApp == nil {
+		return fmt.Errorf("cannot add metadata to a nil vApp")
+	}
+	for key, value := range paramMap {
+		_, err := vApp.AddMetadata(key, value)
+		if err != nil {
+			return fmt.Errorf("unable to add metadata  [%s]: [%s] to vApp [%s]: [%v]",
+				key, value, vApp.VApp.Name, err)
+		}
+	}
+	return nil
+}
