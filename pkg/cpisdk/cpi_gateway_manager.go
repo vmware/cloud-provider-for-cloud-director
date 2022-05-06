@@ -242,6 +242,9 @@ func (cgm *CpiGatewayManager) CreateLoadBalancer(ctx context.Context, virtualSer
 func (cgm *CpiGatewayManager) UpdateLoadBalancer(ctx context.Context, lbPoolName string, virtualServiceName string,
 	ips []string, internalPort int32, externalPort int32) error {
 
+	// TODO: If OneArm is not supplied, CreateLoadBalancer() won't create a DNAT rule and App port profile. Add checks
+	//		for oneArm to prevent errors.
+
 	gm := cgm.VcdGatewayManager
 	if gm == nil {
 		return fmt.Errorf("GatewayManager cannot be nil")
