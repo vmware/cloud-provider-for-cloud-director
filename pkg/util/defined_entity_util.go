@@ -2,16 +2,8 @@ package util
 
 import (
 	"fmt"
+	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdsdk"
 	swaggerClient "github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdswaggerclient"
-	"strings"
-)
-
-const (
-	CAPVCDEntityTypeVendor = "vmware"
-	CAPVCDEntityTypeNss    = "capvcdCluster"
-
-	NativeClusterEntityTypeVendor = "cse"
-	NativeClusterEntityTypeNss    = "nativeCluster"
 )
 
 type CapvcdRdeFoundError struct {
@@ -22,37 +14,12 @@ func (e CapvcdRdeFoundError) Error() string {
 	return fmt.Sprintf("found entity of type [%s]", e.EntityType)
 }
 
-type VCDResource struct {
-	Type string `json:"type,omitempty"`
-	ID   string `json:"id,omitempty"`
-	Name string `json:"name,omitempty"`
-	AdditionalDetails map[string]interface{} `json:"additionalDetails,omitempty"`
-}
-
 type CPIStatus struct {
-	Name           string        `json:"name,omitempty"`
-	Version        string        `json:"version,omitempty"`
-	VCDResourceSet []VCDResource `json:"vcdResourceSet,omitempty"`
-	Errors         []string      `json:"errors,omitempty"`
-	VirtualIPs     []string      `json:"virtualIPs,omitempty"`
-}
-
-func IsCAPVCDEntityType(entityTypeID string) bool {
-	entityTypeIDSplit := strings.Split(entityTypeID, ":")
-	// format is urn:vcloud:type:<vendor>:<nss>:<version>
-	if len(entityTypeIDSplit) != 6 {
-		return false
-	}
-	return entityTypeIDSplit[3] == CAPVCDEntityTypeVendor && entityTypeIDSplit[4] == CAPVCDEntityTypeNss
-}
-
-func IsNativeClusterEntityType(entityTypeID string) bool {
-	entityTypeIDSplit := strings.Split(entityTypeID, ":")
-	// format is urn:vcloud:type:<vendor>:<nss>:<version>
-	if len(entityTypeIDSplit) != 6 {
-		return false
-	}
-	return entityTypeIDSplit[3] == NativeClusterEntityTypeVendor && entityTypeIDSplit[4] == NativeClusterEntityTypeNss
+	Name           string               `json:"name,omitempty"`
+	Version        string               `json:"version,omitempty"`
+	VCDResourceSet []vcdsdk.VCDResource `json:"vcdResourceSet,omitempty"`
+	Errors         []string             `json:"errors,omitempty"`
+	VirtualIPs     []string             `json:"virtualIPs,omitempty"`
 }
 
 func GetVirtualIPsFromRDE(rde *swaggerClient.DefinedEntity) ([]string, error) {
@@ -66,11 +33,11 @@ func GetVirtualIPsFromRDE(rde *swaggerClient.DefinedEntity) ([]string, error) {
 	}
 
 	var virtualIpInterfaces interface{}
-	if IsCAPVCDEntityType(rde.EntityType) {
+	if vcdsdk.IsCAPVCDEntityType(rde.EntityType) {
 		return nil, CapvcdRdeFoundError{
 			EntityType: rde.EntityType,
 		}
-	} else if IsNativeClusterEntityType(rde.EntityType) {
+	} else if vcdsdk.IsNativeClusterEntityType(rde.EntityType) {
 		virtualIpInterfaces = statusMap["virtual_IPs"]
 	} else {
 		return nil, fmt.Errorf("entity type %s not supported by CPI", rde.EntityType)
@@ -106,12 +73,12 @@ func ReplaceVirtualIPsInRDE(rde *swaggerClient.DefinedEntity, updatedIps []strin
 	if !ok {
 		return nil, fmt.Errorf("unable to convert [%T] to map", statusEntry)
 	}
-	if IsCAPVCDEntityType(rde.EntityType) {
+	if vcdsdk.IsCAPVCDEntityType(rde.EntityType) {
 		capvcdEntityFoundErr := CapvcdRdeFoundError{
 			EntityType: rde.EntityType,
 		}
 		return nil, capvcdEntityFoundErr
-	} else if IsNativeClusterEntityType(rde.EntityType) {
+	} else if vcdsdk.IsNativeClusterEntityType(rde.EntityType) {
 		statusMap["virtual_IPs"] = updatedIps
 	}
 	return rde, nil

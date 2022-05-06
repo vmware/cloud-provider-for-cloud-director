@@ -11,7 +11,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/config"
+	"github.com/vmware/cloud-provider-for-cloud-director/pkg/cpisdk"
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdsdk"
+	"github.com/vmware/cloud-provider-for-cloud-director/release"
 	"io"
 	"k8s.io/client-go/informers"
 	_ "k8s.io/client-go/tools/clientcmd"
@@ -89,7 +91,16 @@ func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error
 		klog.Infof("Gateway of network [%s] not backed by NSX-T. Hence LB will not be initialized.",
 			cloudConfig.LB.VDCNetwork)
 	} else {
-		lb = newLoadBalancer(vcdClient, cloudConfig.LB.CertificateAlias, cloudConfig.LB.OneArm,
+		var oneArm *vcdsdk.OneArm
+		if cloudConfig.LB.OneArm != nil {
+			oneArm = &vcdsdk.OneArm{
+				StartIP: cloudConfig.LB.OneArm.StartIP,
+				EndIP:   cloudConfig.LB.OneArm.EndIP,
+			}
+		} else {
+			oneArm = nil
+		}
+		lb = newLoadBalancer(vcdClient, cloudConfig.LB.CertificateAlias, oneArm,
 			cloudConfig.LB.VDCNetwork, cloudConfig.LB.VIPSubnet, cloudConfig.ClusterID)
 	}
 
@@ -98,7 +109,9 @@ func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error
 
 	// TODO: upgrade all CAPVCD RDEs here
 
-	err = vcdClient.UpgradeCPIStatusOfExistingRDE(context.Background(), cloudConfig.ClusterID)
+	rdeManager := vcdsdk.NewRDEManager(vcdClient, cloudConfig.ClusterID, release.CloudControllerManagerName, release.CpiVersion)
+	cpiRdeManager := cpisdk.NewCPIRDEManager(rdeManager)
+	err = cpiRdeManager.UpgradeCPIStatusOfExistingRDE(context.Background(), cloudConfig.ClusterID)
 	if err != nil {
 		klog.Errorf("failed to create CPI status in the RDE [%s]: [%v]", cloudConfig.ClusterID, err)
 	} else {

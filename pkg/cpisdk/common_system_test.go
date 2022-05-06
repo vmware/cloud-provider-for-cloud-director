@@ -2,15 +2,19 @@
    Copyright 2021 VMware, Inc.
    SPDX-License-Identifier: Apache-2.0
 */
-
-package vcdsdk
+package cpisdk
 
 import (
 	"fmt"
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/config"
+	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdsdk"
 	"os"
 	"path/filepath"
 )
+
+// NOTE: The test util functions in vcdsdk/common_system_test.go are being replicated in this file
+// because it is not possible to import functions or variables declared in _test.go files belonging to
+// a different package
 
 var (
 	gitRoot string = ""
@@ -38,13 +42,13 @@ func getTestConfig() (*config.CloudConfig, error) {
 	testConfigFilePath := filepath.Join(gitRoot, "testdata/config_test.yaml")
 	configReader, err := os.Open(testConfigFilePath)
 	if err != nil {
-		return nil, fmt.Errorf("Unable to open file [%s]: [%v]", testConfigFilePath, err)
+		return nil, fmt.Errorf("unable to open file [%s]: [%v]", testConfigFilePath, err)
 	}
 	defer configReader.Close()
 
 	cloudConfig, err := config.ParseCloudConfig(configReader)
 	if err != nil {
-		return nil, fmt.Errorf("Unable to parse cloud config file [%s]: [%v]", testConfigFilePath, err)
+		return nil, fmt.Errorf("unable to parse cloud config file [%s]: [%v]", testConfigFilePath, err)
 	}
 	return cloudConfig, nil
 }
@@ -65,24 +69,8 @@ func getBoolValStrict(val interface{}, defaultVal bool) bool {
 	return defaultVal
 }
 
-//func getOneArmValStrict(val interface{}, defaultVal *config.OneArm) *config.OneArm {
-//	if oneArmVal, ok := val.(*config.OneArm); ok {
-//		return oneArmVal
-//	}
-//
-//	return defaultVal
-//}
-//
-//func getInt32ValStrict(val interface{}, defaultVal int32) int32 {
-//	if int32Val, ok := val.(int32); ok {
-//		return int32Val
-//	}
-//
-//	return defaultVal
-//}
-
 // config will be passed in from getTestConfig() and error checked in unit test
-func GetTestVCDClient(config *config.CloudConfig, inputMap map[string]interface{}) (*Client, error) {
+func getTestVCDClient(config *config.CloudConfig, inputMap map[string]interface{}) (*vcdsdk.Client, error) {
 	cloudConfig := *config // Make a copy of cloudConfig so modified inputs don't carry over to next test
 	insecure := true
 	getVdcClient := false
@@ -109,7 +97,7 @@ func GetTestVCDClient(config *config.CloudConfig, inputMap map[string]interface{
 		}
 	}
 
-	return NewVCDClientFromSecrets(
+	return vcdsdk.NewVCDClientFromSecrets(
 		cloudConfig.VCD.Host,
 		cloudConfig.VCD.Org,
 		cloudConfig.VCD.VDC,

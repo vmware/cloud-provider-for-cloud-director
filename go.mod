@@ -5,6 +5,7 @@ go 1.16
 require (
 	github.com/antihax/optional v1.0.0
 	github.com/apparentlymart/go-cidr v1.1.0
+	github.com/go-openapi/errors v0.20.2
 	github.com/google/uuid v1.1.2
 	github.com/peterhellberg/link v1.1.0
 	github.com/stretchr/testify v1.7.0
@@ -18,4 +19,5 @@ require (
 	k8s.io/cloud-provider v0.22.1
 	k8s.io/component-base v0.22.1
 	k8s.io/klog v1.0.0
+	k8s.io/klog/v2 v2.9.0
 )

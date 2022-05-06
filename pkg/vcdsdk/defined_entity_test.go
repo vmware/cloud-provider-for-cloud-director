@@ -1,85 +1,40 @@
 package vcdsdk
 
 import (
+	"encoding/json"
+	"fmt"
 	"github.com/stretchr/testify/assert"
-	"github.com/vmware/cloud-provider-for-cloud-director/pkg/util"
 	"testing"
 )
 
-func TestUpgradeCPISectionInStatus(t *testing.T) {
-	type TestCase struct {
-		Name           string
-		StatusMap      map[string]interface{}
-		ExpectedStatus map[string]interface{}
-	}
-	testCaseList := []TestCase{
-		{
-			Name: "no modifications to status map outside CPI status",
-			StatusMap: map[string]interface{}{
-				"cpi": map[string]interface{}{
-					"vcdResourceSet": []util.VCDResource{
-						{
-							Type: VcdResourceVirtualService,
-							Name: "virtual-service-1",
-							ID:   "12345",
-						},
-					},
-				},
-				"csi": map[string]interface{}{
-					"key1": "value1",
-				},
-				"capvcd": map[string]interface{}{
-					"key2": "value2",
-				},
-			},
-			ExpectedStatus: map[string]interface{}{
-				"cpi": map[string]interface{}{
-					"name": "cloud-controller-manager",
-					"vcdResourceSet": []interface{}{
-						map[string]interface{}{
-							"id":   "12345",
-							"name": "virtual-service-1",
-							"type": "virtual-service",
-						},
-					},
-					"version": "1.1.2",
-				},
-				"capvcd": map[string]interface{}{
-					"key2": "value2",
-				},
-				"csi": map[string]interface{}{
-					"key1": "value1",
-				},
-			},
-		},
+func convertToJson(obj interface{}) (string, error) {
+	objByteArr, err := json.Marshal(&obj)
+	if err != nil {
+		return "", fmt.Errorf("error while marshaling object: [%v]", err)
 	}
 
-	for _, tc := range testCaseList {
-		updatedStatus, err := UpgradeCPISectionInStatus(tc.StatusMap)
-		assert.NoError(t, err, tc.Name)
-		assert.Equal(t, tc.ExpectedStatus, updatedStatus, tc.Name)
-	}
+	return string(objByteArr), nil
 }
 
 func TestAddToVCDResourceSet(t *testing.T) {
 	type TestCase struct {
 		StatusMap      map[string]interface{}
-		VCDResource    util.VCDResource
+		VCDResource    VCDResource
 		ExpectedStatus map[string]interface{}
-		Message string
+		Message        string
 	}
 	testCaseList := []TestCase{
 		{
 			Message: "add resource when absent from VCD resource set",
 			StatusMap: map[string]interface{}{
-				"cpi": map[string]interface{}{
-					"name": CloudControllerManagerName,
-					"version": CloudControllerManagerVersion,
-					"vcdResourceSet": []util.VCDResource{
-						{
-							Type: VcdResourceVirtualService,
-							Name: "virtual-service-1",
-							ID:   "12345",
+				ComponentCPI: map[string]interface{}{
+					"name":    "ccm",
+					"version": "1.1.1",
+					"vcdResourceSet": []interface{}{
+						map[string]interface{}{
+							"type": VcdResourceVirtualService,
+							"name": "virtual-service-1",
+							"id":   "12345",
 						},
 					},
 				},
@@ -90,18 +45,18 @@ func TestAddToVCDResourceSet(t *testing.T) {
 					"key2": "value2",
 				},
 			},
-			VCDResource: util.VCDResource{
+			VCDResource: VCDResource{
 				Type: VcdResourceVirtualService,
 				Name: "virtual-service-2",
-				ID: "6789",
+				ID:   "6789",
 				AdditionalDetails: map[string]interface{}{
 					"virtualIP": "1.2.3.4",
 				},
 			},
 			ExpectedStatus: map[string]interface{}{
-				"cpi": map[string]interface{}{
-					"name": CloudControllerManagerName,
-					"version": CloudControllerManagerVersion,
+				ComponentCPI: map[string]interface{}{
+					"name":    "ccm",
+					"version": "1.1.1",
 					"vcdResourceSet": []interface{}{
 						map[string]interface{}{
 							"id":   "12345",
@@ -109,7 +64,7 @@ func TestAddToVCDResourceSet(t *testing.T) {
 							"type": VcdResourceVirtualService,
 						},
 						map[string]interface{}{
-							"id": "6789",
+							"id":   "6789",
 							"name": "virtual-service-2",
 							"type": VcdResourceVirtualService,
 							"additionalDetails": map[string]interface{}{
@@ -129,15 +84,15 @@ func TestAddToVCDResourceSet(t *testing.T) {
 		{
 			Message: "do not add duplicate resource when it is already present in VCD resource set",
 			StatusMap: map[string]interface{}{
-				"cpi": map[string]interface{}{
-					"name": CloudControllerManagerName,
-					"version": CloudControllerManagerVersion,
-					"vcdResourceSet": []util.VCDResource{
-						{
-							Type: VcdResourceVirtualService,
-							Name: "virtual-service-1",
-							ID:   "12345",
-							AdditionalDetails: map[string]interface{}{
+				ComponentCPI: map[string]interface{}{
+					"name":    "ccm",
+					"version": "1.1.1",
+					"vcdResourceSet": []interface{}{
+						map[string]interface{}{
+							"type": VcdResourceVirtualService,
+							"name": "virtual-service-1",
+							"id":   "12345",
+							"additionalDetails": map[string]interface{}{
 								"virtualIP": "1.2.3.4",
 							},
 						},
@@ -150,18 +105,18 @@ func TestAddToVCDResourceSet(t *testing.T) {
 					"key2": "value2",
 				},
 			},
-			VCDResource: util.VCDResource{
+			VCDResource: VCDResource{
 				Type: VcdResourceVirtualService,
 				Name: "virtual-service-1",
-				ID: "12345",
+				ID:   "12345",
 				AdditionalDetails: map[string]interface{}{
 					"virtualIP": "1.2.3.4",
 				},
 			},
 			ExpectedStatus: map[string]interface{}{
-				"cpi": map[string]interface{}{
-					"name": CloudControllerManagerName,
-					"version": CloudControllerManagerVersion,
+				ComponentCPI: map[string]interface{}{
+					"name":    "ccm",
+					"version": "1.1.1",
 					"vcdResourceSet": []interface{}{
 						map[string]interface{}{
 							"id":   "12345",
@@ -191,18 +146,18 @@ func TestAddToVCDResourceSet(t *testing.T) {
 					"key2": "value2",
 				},
 			},
-			VCDResource: util.VCDResource{
+			VCDResource: VCDResource{
 				Type: VcdResourceVirtualService,
 				Name: "virtual-service-1",
-				ID: "12345",
+				ID:   "12345",
 				AdditionalDetails: map[string]interface{}{
 					"virtualIP": "1.2.3.4",
 				},
 			},
 			ExpectedStatus: map[string]interface{}{
-				"cpi": map[string]interface{}{
-					"name": CloudControllerManagerName,
-					"version": CloudControllerManagerVersion,
+				ComponentCPI: map[string]interface{}{
+					"name":    "ccm",
+					"version": "1.1.1",
 					"vcdResourceSet": []interface{}{
 						map[string]interface{}{
 							"id":   "12345",
@@ -224,33 +179,39 @@ func TestAddToVCDResourceSet(t *testing.T) {
 		},
 	}
 	for _, tc := range testCaseList {
-		updatedStatusMap, err := AddToVCDResourceSet(tc.StatusMap, tc.VCDResource)
+		updatedStatusMap, err := addToVCDResourceSet(ComponentCPI, "ccm", "1.1.1", tc.StatusMap, tc.VCDResource)
 		assert.NoError(t, err, "Expected no error ", tc.Message)
-		assert.Equal(t, updatedStatusMap, tc.ExpectedStatus, "expected updated status map to match the expected status map ", tc.Message)
+
+		actualJson, err := convertToJson(updatedStatusMap)
+		assert.NoError(t, err, tc.Message, "expected no error converting updatedStatusMap to json")
+		expectedJson, err := convertToJson(tc.ExpectedStatus)
+		assert.NoError(t, err, tc.Message, "expected no error when converting expected status to json")
+
+		assert.JSONEqf(t, expectedJson, actualJson, tc.Message)
 	}
 }
 
 func TestRemoveFromCPIVCDResourceSet(t *testing.T) {
 	type TestCase struct {
-		StatusMap map[string]interface{}
-		VCDResourceID string
+		StatusMap       map[string]interface{}
+		VCDResourceName string
 		VCDResourceType string
-		ExpectedStatus map[string]interface{}
-		Message string
+		ExpectedStatus  map[string]interface{}
+		Message         string
 	}
-	idToBeRemoved := "12345"
+	nameToBeRemoved := "virtual-service-1"
 	testCaseList := []TestCase{
 		{
-			Message: "remove from resource set if ID matches",
+			Message: "remove from resource set if name and resource type matches",
 			StatusMap: map[string]interface{}{
-				"cpi": map[string]interface{}{
-					"name": CloudControllerManagerName,
-					"version": CloudControllerManagerVersion,
-					"vcdResourceSet": []util.VCDResource{
+				ComponentCPI: map[string]interface{}{
+					"name":    "ccm",
+					"version": "1.1.1",
+					"vcdResourceSet": []VCDResource{
 						{
 							Type: VcdResourceVirtualService,
-							Name: "virtual-service-1",
-							ID:   idToBeRemoved,
+							Name: nameToBeRemoved,
+							ID:   "12345",
 						},
 					},
 				},
@@ -261,12 +222,13 @@ func TestRemoveFromCPIVCDResourceSet(t *testing.T) {
 					"key2": "value2",
 				},
 			},
-			VCDResourceID: idToBeRemoved,
+			VCDResourceName: nameToBeRemoved,
 			VCDResourceType: VcdResourceVirtualService,
 			ExpectedStatus: map[string]interface{}{
-				"cpi": map[string]interface{}{
-					"name": CloudControllerManagerName,
-					"version": CloudControllerManagerVersion,
+				ComponentCPI: map[string]interface{}{
+					"name":           "ccm",
+					"version":        "1.1.1",
+					"vcdResourceSet": []interface{}{},
 				},
 				"csi": map[string]interface{}{
 					"key1": "value1",
@@ -277,12 +239,12 @@ func TestRemoveFromCPIVCDResourceSet(t *testing.T) {
 			},
 		},
 		{
-			Message: "no error when ID is absent",
+			Message: "no error when resource by the name and type is absent",
 			StatusMap: map[string]interface{}{
-				"cpi": map[string]interface{}{
-					"name": CloudControllerManagerName,
-					"version": CloudControllerManagerVersion,
-					"vcdResourceSet": nil,
+				ComponentCPI: map[string]interface{}{
+					"name":           "ccm",
+					"version":        "1.1.1",
+					"vcdResourceSet": []interface{}{},
 				},
 				"csi": map[string]interface{}{
 					"key1": "value1",
@@ -291,12 +253,13 @@ func TestRemoveFromCPIVCDResourceSet(t *testing.T) {
 					"key2": "value2",
 				},
 			},
-			VCDResourceID: idToBeRemoved,
+			VCDResourceName: nameToBeRemoved,
 			VCDResourceType: VcdResourceVirtualService,
 			ExpectedStatus: map[string]interface{}{
-				"cpi": map[string]interface{}{
-					"name": CloudControllerManagerName,
-					"version": CloudControllerManagerVersion,
+				ComponentCPI: map[string]interface{}{
+					"name":           "ccm",
+					"version":        "1.1.1",
+					"vcdResourceSet": []interface{}{},
 				},
 				"csi": map[string]interface{}{
 					"key1": "value1",
@@ -309,11 +272,6 @@ func TestRemoveFromCPIVCDResourceSet(t *testing.T) {
 		{
 			Message: "recreate CPI status if absent",
 			StatusMap: map[string]interface{}{
-				"cpi": map[string]interface{}{
-					"name": CloudControllerManagerName,
-					"version": CloudControllerManagerVersion,
-					"vcdResourceSet": nil,
-				},
 				"csi": map[string]interface{}{
 					"key1": "value1",
 				},
@@ -321,12 +279,13 @@ func TestRemoveFromCPIVCDResourceSet(t *testing.T) {
 					"key2": "value2",
 				},
 			},
-			VCDResourceID: idToBeRemoved,
+			VCDResourceName: nameToBeRemoved,
 			VCDResourceType: VcdResourceVirtualService,
 			ExpectedStatus: map[string]interface{}{
-				"cpi": map[string]interface{}{
-					"name": CloudControllerManagerName,
-					"version": CloudControllerManagerVersion,
+				ComponentCPI: map[string]interface{}{
+					"name":           "ccm",
+					"version":        "1.1.1",
+					"vcdResourceSet": []interface{}{},
 				},
 				"csi": map[string]interface{}{
 					"key1": "value1",
@@ -338,11 +297,18 @@ func TestRemoveFromCPIVCDResourceSet(t *testing.T) {
 		},
 	}
 	for _, tc := range testCaseList {
-		updatedStatusMap, err := RemoveFromCPIVCDResourceSet(tc.StatusMap, util.VCDResource{
-			Type: tc.VCDResourceType,
-			ID: tc.VCDResourceID,
-		})
-		assert.NoError(t, err, "error executing test: ", tc.Message)
-		assert.Equal(t, updatedStatusMap, tc.ExpectedStatus, "updated status map doesn't match expected status map: ", tc.Message)
+		updatedStatusMap, err := removeFromVCDResourceSet(ComponentCPI, "ccm", "1.1.1",
+			tc.StatusMap,
+			VCDResource{
+				Type: tc.VCDResourceType,
+				Name: tc.VCDResourceName,
+			})
+		actualJson, err := convertToJson(updatedStatusMap)
+		assert.NoError(t, err, tc.Message, "expected no error converting updatedStatusMap to json")
+		expectedJson, err := convertToJson(tc.ExpectedStatus)
+		fmt.Println(expectedJson)
+		assert.NoError(t, err, tc.Message, "expected no error when converting expected status to json")
+
+		assert.JSONEqf(t, expectedJson, actualJson, tc.Message)
 	}
 }

@@ -183,8 +183,12 @@ func (i *instances) InstanceShutdownByProviderID(ctx context.Context, providerID
 
 	status, err := vmInfo.vm.GetStatus()
 	if err != nil {
-		vmm := vcdsdk.NewVMManager(i.vmInfoCache.client, i.vmInfoCache.clusterVAppName)
-		if vmm.IsVmNotAvailable(err) {
+		vdcManager, vdcManagerErr := vcdsdk.NewVDCManager(i.vmInfoCache.client, i.vmInfoCache.client.ClusterOrgName,
+			i.vmInfoCache.client.ClusterOVDCName, i.vmInfoCache.clusterVAppName)
+		if vdcManagerErr != nil {
+			return false, fmt.Errorf("error creating VDC manager object: [%v]", err)
+		}
+		if vdcManager.IsVmNotAvailable(err) {
 			return true, nil
 		}
 
