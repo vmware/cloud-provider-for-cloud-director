@@ -19,7 +19,6 @@ import (
 
 var (
 	clientCreatorLock sync.Mutex
-	clientSingleton   *Client = nil
 )
 
 // Client :
@@ -121,22 +120,7 @@ func NewVCDClientFromSecrets(host string, orgName string, vdcName string, userOr
 	clientCreatorLock.Lock()
 	defer clientCreatorLock.Unlock()
 
-	// Return old client if everything matches. Else create new one and cache it.
-	// This is suboptimal but is not a common case.
-	if clientSingleton != nil {
-		if clientSingleton.VCDAuthConfig.Host == host &&
-			clientSingleton.ClusterOrgName == orgName &&
-			clientSingleton.ClusterOVDCName == vdcName &&
-			clientSingleton.VCDAuthConfig.UserOrg == newUserOrg &&
-			clientSingleton.VCDAuthConfig.User == newUsername &&
-			clientSingleton.VCDAuthConfig.Password == password &&
-			clientSingleton.VCDAuthConfig.RefreshToken == refreshToken &&
-			clientSingleton.VCDAuthConfig.Insecure == insecure {
-			return clientSingleton, nil
-		}
-	}
-
-	vcdAuthConfig := NewVCDAuthConfigFromSecrets(host, newUsername, password, refreshToken, newUserOrg, insecure) //
+	vcdAuthConfig := NewVCDAuthConfigFromSecrets(host, user, password, refreshToken, userOrg, insecure) //
 
 	vcdClient, apiClient, err := vcdAuthConfig.GetSwaggerClientFromSecrets()
 	if err != nil {
@@ -163,8 +147,7 @@ func NewVCDClientFromSecrets(host string, orgName string, vdcName string, userOr
 		}
 	}
 	client.VCDClient = vcdClient
-	clientSingleton = client
 
-	klog.Infof("Client singleton is sysadmin: [%v]", clientSingleton.VCDClient.Client.IsSysAdmin)
-	return clientSingleton, nil
+	klog.Infof("Client is sysadmin: [%v]", client.VCDClient.Client.IsSysAdmin)
+	return client, nil
 }
