@@ -110,6 +110,8 @@ func NewVCDClientFromSecrets(host string, orgName string, vdcName string, userOr
 	// so if userOrg is already set, we want the updated fallback to userOrg first which could fall back to clusterOrg if empty
 	// In vcdcluster controller's case, both orgName and userOrg will be the same as we pass in vcdcluster.Spec.Org to both
 	// but since username is still 'sys/admin', we will return correctly
+
+	// TODO: Remove pkg/config dependency from vcdsdk; currently common_system_test.go depends on pkg/config
 	newUserOrg, newUsername, err := config.GetUserAndOrg(user, orgName, userOrg)
 
 	if err != nil {
