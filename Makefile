@@ -20,6 +20,11 @@ ccm: $(GO_CODE)
 
 all: ccm
 
+vendor:
+	go mod edit -go=1.17
+	go mod tidy
+	go mod vendor
+
 test:
 	go test -tags testing -v github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdclient -cover -count=1
 	go test -tags testing -v github.com/vmware/cloud-provider-for-cloud-director/pkg/config -cover -count=1
