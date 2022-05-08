@@ -65,22 +65,6 @@ func getBoolValStrict(val interface{}, defaultVal bool) bool {
 	return defaultVal
 }
 
-//func getOneArmValStrict(val interface{}, defaultVal *config.OneArm) *config.OneArm {
-//	if oneArmVal, ok := val.(*config.OneArm); ok {
-//		return oneArmVal
-//	}
-//
-//	return defaultVal
-//}
-//
-//func getInt32ValStrict(val interface{}, defaultVal int32) int32 {
-//	if int32Val, ok := val.(int32); ok {
-//		return int32Val
-//	}
-//
-//	return defaultVal
-//}
-
 // config will be passed in from getTestConfig() and error checked in unit test
 func GetTestVCDClient(config *config.CloudConfig, inputMap map[string]interface{}) (*Client, error) {
 	cloudConfig := *config // Make a copy of cloudConfig so modified inputs don't carry over to next test
