@@ -166,6 +166,11 @@ func (vdc *VdcManager) cacheVdcDetails() error {
 
 func (vdc *VdcManager) FindAllVMsInVapp(VAppName string) ([]*types.Vm, error) {
 
+	if VAppName == "" {
+		return nil, fmt.Errorf("VApp name is empty")
+	}
+
+
 	vApp, err := vdc.Vdc.GetVAppByName(VAppName, true)
 	if err != nil {
 		return nil, fmt.Errorf("unable to find vApp [%s]: [%v]", VAppName, err)
