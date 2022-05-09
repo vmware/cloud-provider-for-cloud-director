@@ -23,14 +23,13 @@ func TestComputePolicy(t *testing.T) {
 	cloudConfig, err := getTestConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
-	vcdClient, err := GetTestVCDClient(
-		cloudConfig,
-		map[string]interface{}{
-			"getVdcClient": true,
-			"user":         authDetails.Username,
-			"secret":       authDetails.Password,
-			"userOrg":      authDetails.UserOrg,
-		})
+	// get client
+	vcdClient, err := GetTestVCDClient(cloudConfig, map[string]interface{}{
+		"user":         authDetails.Username,
+		"secret":       authDetails.Password,
+		"userOrg":      authDetails.UserOrg,
+		"getVdcClient": true,
+	})
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
 
