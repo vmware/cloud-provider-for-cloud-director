@@ -52,6 +52,9 @@ github.com/felixge/httpsnoop
 # github.com/go-logr/logr v0.4.0
 ## explicit; go 1.14
 github.com/go-logr/logr
+# github.com/go-openapi/errors v0.20.2
+## explicit; go 1.14
+github.com/go-openapi/errors
 # github.com/go-openapi/jsonpointer v0.19.5
 ## explicit; go 1.13
 github.com/go-openapi/jsonpointer
