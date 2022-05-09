@@ -112,7 +112,7 @@ func NewVCDClientFromSecrets(host string, orgName string, vdcName string, userOr
 		return nil, fmt.Errorf("error parsing username before authenticating to VCD: [%v]", err)
 	}
 
-	vcdAuthConfig := NewVCDAuthConfigFromSecrets(host, user, password, refreshToken, userOrg, insecure) //
+	vcdAuthConfig := NewVCDAuthConfigFromSecrets(host, newUsername, password, refreshToken, newUserOrg, insecure) //
 
 	vcdClient, apiClient, err := vcdAuthConfig.GetSwaggerClientFromSecrets()
 	if err != nil {
