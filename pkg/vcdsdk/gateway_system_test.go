@@ -23,29 +23,16 @@ const BusyRetries = 5
 
 func TestCacheGatewayDetails(t *testing.T) {
 
-	authFile := filepath.Join(gitRoot, "testdata/auth_test.yaml")
-	authFileContent, err := ioutil.ReadFile(authFile)
-	assert.NoError(t, err, "There should be no error reading the auth file contents.")
-
-	var authDetails authorizationDetails
-	err = yaml.Unmarshal(authFileContent, &authDetails)
-	assert.NoError(t, err, "There should be no error parsing auth file content.")
-
-	cloudConfig, err := getTestConfig()
+	vcdConfig, err := getTestVCDConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
-	vcdClient, err := GetTestVCDClient(cloudConfig, map[string]interface{}{
-		"user":         authDetails.Username,
-		"secret":       authDetails.Password,
-		"userOrg":      authDetails.UserOrg,
-		"getVdcClient": true,
-	})
+	vcdClient, err := getTestVCDClient(vcdConfig, nil)
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
 
 	ctx := context.Background()
 
-	gm, err := NewGatewayManager(ctx, vcdClient, cloudConfig.LB.VDCNetwork, cloudConfig.LB.VIPSubnet)
+	gm, err := NewGatewayManager(ctx, vcdClient, vcdConfig.OvdcNetwork, vcdConfig.VIPSubnet)
 	assert.NoError(t, err, "gateway manager should be created without error")
 
 	require.NotNil(t, gm.GatewayRef, "Gateway reference should not be nil")
@@ -53,7 +40,7 @@ func TestCacheGatewayDetails(t *testing.T) {
 	assert.NotEmpty(t, gm.GatewayRef.Id, "Gateway Id should not be empty")
 
 	// Missing network name should be reported
-	vcdClient, err = GetTestVCDClient(cloudConfig, map[string]interface{}{
+	vcdClient, err = getTestVCDClient(nil, map[string]interface{}{
 		"network": "",
 	})
 	assert.Error(t, err, "Should get error for unknown network")
@@ -64,30 +51,16 @@ func TestCacheGatewayDetails(t *testing.T) {
 
 func TestDNATRuleCRUDE(t *testing.T) {
 
-	// NOTE: For the time being, NoRdePrefix prefix will be used in clusterID
-	authFile := filepath.Join(gitRoot, "testdata/auth_test.yaml")
-	authFileContent, err := ioutil.ReadFile(authFile)
-	assert.NoError(t, err, "There should be no error reading the auth file contents.")
-
-	var authDetails authorizationDetails
-	err = yaml.Unmarshal(authFileContent, &authDetails)
-	assert.NoError(t, err, "There should be no error parsing auth file content.")
-
-	cloudConfig, err := getTestConfig()
+	vcdConfig, err := getTestVCDConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
-	vcdClient, err := GetTestVCDClient(cloudConfig, map[string]interface{}{
-		"user":         authDetails.Username,
-		"secret":       authDetails.Password,
-		"userOrg":      authDetails.UserOrg,
-		"getVdcClient": true,
-	})
+	vcdClient, err := getTestVCDClient(vcdConfig, nil)
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
 
 	ctx := context.Background()
 
-	gm, err := NewGatewayManager(ctx, vcdClient, cloudConfig.LB.VDCNetwork, cloudConfig.LB.VIPSubnet)
+	gm, err := NewGatewayManager(ctx, vcdClient, vcdConfig.OvdcNetwork, vcdConfig.VIPSubnet)
 	assert.NoError(t, err, "gateway manager should be created without error")
 
 	dnatRuleName := fmt.Sprintf("test-dnat-rule-%s", uuid.New().String())
@@ -141,32 +114,19 @@ func TestDNATRuleCRUDE(t *testing.T) {
 
 func TestLBPoolCRUDE(t *testing.T) {
 
-	authFile := filepath.Join(gitRoot, "testdata/auth_test.yaml")
-	authFileContent, err := ioutil.ReadFile(authFile)
-	assert.NoError(t, err, "There should be no error reading the auth file contents.")
-
-	var authDetails authorizationDetails
-	err = yaml.Unmarshal(authFileContent, &authDetails)
-	assert.NoError(t, err, "There should be no error parsing auth file content.")
-
-	cloudConfig, err := getTestConfig()
+	vcdConfig, err := getTestVCDConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
-	vcdClient, err := GetTestVCDClient(cloudConfig, map[string]interface{}{
-		"user":         authDetails.Username,
-		"secret":       authDetails.Password,
-		"userOrg":      authDetails.UserOrg,
-		"getVdcClient": true,
-	})
+	vcdClient, err := getTestVCDClient(vcdConfig, nil)
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
 
 	// Avoid RDE updates by using clusterID which has `NoRdePrefix` prefix
-	cloudConfig.ClusterID = fmt.Sprintf("%s-%s", uuid.New().String(), "NoRdePrefix")
+	vcdConfig.ClusterID = fmt.Sprintf("%s-%s", uuid.New().String(), "NoRdePrefix")
 
 	ctx := context.Background()
 
-	gm, err := NewGatewayManager(ctx, vcdClient, cloudConfig.LB.VDCNetwork, cloudConfig.LB.VIPSubnet)
+	gm, err := NewGatewayManager(ctx, vcdClient, vcdConfig.OvdcNetwork, vcdConfig.VIPSubnet)
 	assert.NoError(t, err, "gateway manager should be created without error")
 
 	lbPoolName := fmt.Sprintf("test-lb-pool-%s", uuid.New().String())
@@ -229,29 +189,16 @@ func TestLBPoolCRUDE(t *testing.T) {
 
 func TestGetLoadBalancerSEG(t *testing.T) {
 
-	authFile := filepath.Join(gitRoot, "testdata/auth_test.yaml")
-	authFileContent, err := ioutil.ReadFile(authFile)
-	assert.NoError(t, err, "There should be no error reading the auth file contents.")
-
-	var authDetails authorizationDetails
-	err = yaml.Unmarshal(authFileContent, &authDetails)
-	assert.NoError(t, err, "There should be no error parsing auth file content.")
-
-	cloudConfig, err := getTestConfig()
+	vcdConfig, err := getTestVCDConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
-	vcdClient, err := GetTestVCDClient(cloudConfig, map[string]interface{}{
-		"user":         authDetails.Username,
-		"secret":       authDetails.Password,
-		"userOrg":      authDetails.UserOrg,
-		"getVdcClient": true,
-	})
+	vcdClient, err := getTestVCDClient(vcdConfig, nil)
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
 
 	ctx := context.Background()
 
-	gm, err := NewGatewayManager(ctx, vcdClient, cloudConfig.LB.VDCNetwork, cloudConfig.LB.VIPSubnet)
+	gm, err := NewGatewayManager(ctx, vcdClient, vcdConfig.OvdcNetwork, vcdConfig.VIPSubnet)
 	assert.NoError(t, err, "gateway manager should be created without error")
 
 	segRef, err := gm.GetLoadBalancerSEG(ctx)
@@ -265,33 +212,19 @@ func TestGetLoadBalancerSEG(t *testing.T) {
 
 func TestGetUnusedGatewayIP(t *testing.T) {
 
-	authFile := filepath.Join(gitRoot, "testdata/auth_test.yaml")
-	authFileContent, err := ioutil.ReadFile(authFile)
-	assert.NoError(t, err, "There should be no error reading the auth file contents.")
-
-	var authDetails authorizationDetails
-	err = yaml.Unmarshal(authFileContent, &authDetails)
-	assert.NoError(t, err, "There should be no error parsing auth file content.")
-
-	cloudConfig, err := getTestConfig()
+	vcdConfig, err := getTestVCDConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
-	vcdClient, err := GetTestVCDClient(cloudConfig, map[string]interface{}{
-		"user":         authDetails.Username,
-		"secret":       authDetails.Password,
-		"userOrg":      authDetails.UserOrg,
-		"getVdcClient": true,
-		"subnet":       "",
-	})
+	vcdClient, err := getTestVCDClient(vcdConfig, nil)
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
 
 	ctx := context.Background()
 
-	gm, err := NewGatewayManager(ctx, vcdClient, cloudConfig.LB.VDCNetwork, cloudConfig.LB.VIPSubnet)
+	gm, err := NewGatewayManager(ctx, vcdClient, vcdConfig.OvdcNetwork, vcdConfig.VIPSubnet)
 	assert.NoError(t, err, "gateway manager should be created without error")
 
-	validSubnet := cloudConfig.LB.VIPSubnet
+	validSubnet := vcdConfig.VIPSubnet
 	externalIP, err := gm.GetUnusedExternalIPAddress(ctx, validSubnet)
 	assert.NoError(t, err, "should not get an error for this range")
 	assert.NotEmpty(t, externalIP, "should get a valid IP address in the range [%s]", validSubnet)
@@ -313,33 +246,19 @@ func TestVirtualServiceHttpCRUDE(t *testing.T) {
 
 	// NOTE: Create a dummy virtual service before running this test. Time to create the first virtual service may
 	// bottle-neck the test execution.
-
-	authFile := filepath.Join(gitRoot, "testdata/auth_test.yaml")
-	authFileContent, err := ioutil.ReadFile(authFile)
-	assert.NoError(t, err, "There should be no error reading the auth file contents.")
-
-	var authDetails authorizationDetails
-	err = yaml.Unmarshal(authFileContent, &authDetails)
-	assert.NoError(t, err, "There should be no error parsing auth file content.")
-
-	cloudConfig, err := getTestConfig()
+	vcdConfig, err := getTestVCDConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
-	vcdClient, err := GetTestVCDClient(cloudConfig, map[string]interface{}{
-		"user":         authDetails.Username,
-		"secret":       authDetails.Password,
-		"userOrg":      authDetails.UserOrg,
-		"getVdcClient": true,
-	})
+	vcdClient, err := getTestVCDClient(vcdConfig, nil)
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
 
 	// Avoid RDE updates by using clusterID which has `NoRdePrefix` prefix
-	cloudConfig.ClusterID = fmt.Sprintf("%s-%s", uuid.New().String(), "NoRdePrefix")
+	vcdConfig.ClusterID = fmt.Sprintf("%s-%s", uuid.New().String(), "NoRdePrefix")
 
 	ctx := context.Background()
 
-	gm, err := NewGatewayManager(ctx, vcdClient, cloudConfig.LB.VDCNetwork, cloudConfig.LB.VIPSubnet)
+	gm, err := NewGatewayManager(ctx, vcdClient, vcdConfig.OvdcNetwork, vcdConfig.VIPSubnet)
 	assert.NoError(t, err, "gateway manager should be created without error")
 
 	lbPoolName := fmt.Sprintf("test-lb-pool-%s", uuid.New().String())
@@ -428,24 +347,19 @@ func TestVirtualServiceHttpsCRUDE(t *testing.T) {
 	err = yaml.Unmarshal(authFileContent, &authDetails)
 	assert.NoError(t, err, "There should be no error parsing auth file content.")
 
-	cloudConfig, err := getTestConfig()
+	vcdConfig, err := getTestVCDConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
-	vcdClient, err := GetTestVCDClient(cloudConfig, map[string]interface{}{
-		"user":         authDetails.Username,
-		"secret":       authDetails.Password,
-		"userOrg":      authDetails.UserOrg,
-		"getVdcClient": true,
-	})
+	vcdClient, err := getTestVCDClient(vcdConfig, nil)
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
 
 	// Avoid RDE updates by using clusterID which has `NoRdePrefix` prefix
-	cloudConfig.ClusterID = fmt.Sprintf("%s-%s", uuid.New().String(), NoRdePrefix)
+	vcdConfig.ClusterID = fmt.Sprintf("%s-%s", uuid.New().String(), NoRdePrefix)
 
 	ctx := context.Background()
 
-	gm, err := NewGatewayManager(ctx, vcdClient, cloudConfig.LB.VDCNetwork, cloudConfig.LB.VIPSubnet)
+	gm, err := NewGatewayManager(ctx, vcdClient, vcdConfig.OvdcNetwork, vcdConfig.VIPSubnet)
 	assert.NoError(t, err, "gateway manager should be created without error")
 
 	lbPoolName := fmt.Sprintf("test-lb-pool-%s", uuid.New().String())
@@ -459,9 +373,9 @@ func TestVirtualServiceHttpsCRUDE(t *testing.T) {
 	//externalIP := "11.12.13.14"
 	internalIP := "3.4.5.6"
 	virtualServiceName := fmt.Sprintf("test-virtual-service-https-%s", uuid.New().String())
-	certName := cloudConfig.LB.CertificateAlias
+	certName := vcdConfig.CertificateAlias
 	if certName == "" {
-		certName = fmt.Sprintf("%s-cert", cloudConfig.ClusterID)
+		certName = fmt.Sprintf("%s-cert", vcdConfig.ClusterID)
 	}
 
 	var vsRef *swagger.EntityReference

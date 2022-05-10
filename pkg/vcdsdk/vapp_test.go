@@ -15,26 +15,11 @@ import (
 
 func TestVApp(t *testing.T) {
 
-	authFile := filepath.Join(gitRoot, "testdata/auth_test.yaml")
-	authFileContent, err := ioutil.ReadFile(authFile)
-	assert.NoError(t, err, "There should be no error reading the auth file contents.")
-
-	var authDetails authorizationDetails
-	err = yaml.Unmarshal(authFileContent, &authDetails)
-	assert.NoError(t, err, "There should be no error parsing auth file content.")
-
-	cloudConfig, err := getTestConfig()
+	vcdConfig, err := getTestVCDConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
 	// get client
-	vcdClient, err := GetTestVCDClient(
-		cloudConfig,
-		map[string]interface{}{
-			"getVdcClient": true,
-			"user":         authDetails.Username,
-			"secret":       authDetails.Password,
-			"userOrg":      authDetails.UserOrg,
-		})
+	vcdClient, err := getTestVCDClient(vcdConfig, nil)
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
 
@@ -44,7 +29,7 @@ func TestVApp(t *testing.T) {
 	assert.NoError(t, err, "error creating VDCManager")
 
 	// create VApp
-	vappObj, err := vdcManager.GetOrCreateVApp(vAppName, cloudConfig.LB.VDCNetwork)
+	vappObj, err := vdcManager.GetOrCreateVApp(vAppName, vcdConfig.OvdcNetwork)
 	assert.NoError(t, err, "error creating VApp")
 	assert.NotNil(t, vappObj, "vApp created should not be nil")
 
@@ -56,32 +41,18 @@ func TestVApp(t *testing.T) {
 }
 
 func TestDeleteVapp(t *testing.T) {
-	authFile := filepath.Join(gitRoot, "testdata/auth_test.yaml")
-	authFileContent, err := ioutil.ReadFile(authFile)
-	assert.NoError(t, err, "There should be no error reading the auth file contents.")
 
-	var authDetails authorizationDetails
-	err = yaml.Unmarshal(authFileContent, &authDetails)
-	assert.NoError(t, err, "There should be no error parsing auth file content.")
-
-	cloudConfig, err := getTestConfig()
+	vcdConfig, err := getTestVCDConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 	// get client
-	vcdClient, err := GetTestVCDClient(
-		cloudConfig,
-		map[string]interface{}{
-			"getVdcClient": true,
-			"user":         authDetails.Username,
-			"secret":       authDetails.Password,
-			"userOrg":      authDetails.UserOrg,
-		})
+	vcdClient, err := getTestVCDClient(vcdConfig, nil)
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
 
 	vappName := "vapp1"
 	vdcManager, err := NewVDCManager(vcdClient, vcdClient.ClusterOrgName, vcdClient.ClusterOVDCName)
 	assert.NoError(t, err, "there should be no error in creating VDCManager object")
-	vapp, err := vdcManager.GetOrCreateVApp(vappName, cloudConfig.LB.VDCNetwork)
+	vapp, err := vdcManager.GetOrCreateVApp(vappName, vcdConfig.OvdcNetwork)
 	assert.NoError(t, err, "unable to find vApp")
 	assert.NotNil(t, vapp, "vapp should not be nil")
 
@@ -99,17 +70,10 @@ func TestVdcManager_CacheVdcDetails(t *testing.T) {
 	err = yaml.Unmarshal(authFileContent, &authDetails)
 	assert.NoError(t, err, "There should be no error parsing auth file content.")
 
-	cloudConfig, err := getTestConfig()
+	vcdConfig, err := getTestVCDConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
-	vcdClient, err := GetTestVCDClient(
-		cloudConfig,
-		map[string]interface{}{
-			"getVdcClient": true,
-			"user":         authDetails.Username,
-			"secret":       authDetails.Password,
-			"userOrg":      authDetails.UserOrg,
-		})
+	vcdClient, err := getTestVCDClient(vcdConfig, nil)
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
 
@@ -120,26 +84,11 @@ func TestVdcManager_CacheVdcDetails(t *testing.T) {
 
 func TestVMCreation(t *testing.T) {
 
-	authFile := filepath.Join(gitRoot, "testdata/auth_test.yaml")
-	authFileContent, err := ioutil.ReadFile(authFile)
-	assert.NoError(t, err, "There should be no error reading the auth file contents.")
-
-	var authDetails authorizationDetails
-	err = yaml.Unmarshal(authFileContent, &authDetails)
-	assert.NoError(t, err, "There should be no error parsing auth file content.")
-
-	cloudConfig, err := getTestConfig()
+	vcdConfig, err := getTestVCDConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
 	// get client
-	vcdClient, err := GetTestVCDClient(
-		cloudConfig,
-		map[string]interface{}{
-			"getVdcClient": true,
-			"user":         authDetails.Username,
-			"secret":       authDetails.Password,
-			"userOrg":      authDetails.UserOrg,
-		})
+	vcdClient, err := getTestVCDClient(vcdConfig,nil)
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
 
@@ -148,7 +97,7 @@ func TestVMCreation(t *testing.T) {
 	vdcManager, err := NewVDCManager(vcdClient, vcdClient.ClusterOrgName, vcdClient.ClusterOVDCName)
 	assert.NoError(t, err, "there should be no error when creating VDCManager object")
 
-	vApp, err := vdcManager.GetOrCreateVApp(vAppName, cloudConfig.LB.VDCNetwork)
+	vApp, err := vdcManager.GetOrCreateVApp(vAppName, vcdConfig.OvdcNetwork)
 	assert.NoError(t, err, "unable to create vApp")
 	require.NotNil(t, vApp, "vApp created should not be nil")
 
@@ -187,25 +136,11 @@ exit 0
 }
 
 func TestVMExtraConfig(t *testing.T) {
-	authFile := filepath.Join(gitRoot, "testdata/auth_test.yaml")
-	authFileContent, err := ioutil.ReadFile(authFile)
-	assert.NoError(t, err, "There should be no error reading the auth file contents.")
 
-	var authDetails authorizationDetails
-	err = yaml.Unmarshal(authFileContent, &authDetails)
-	assert.NoError(t, err, "There should be no error parsing auth file content.")
-
-	cloudConfig, err := getTestConfig()
+	vcdConfig, err := getTestVCDConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 	// get client
-	vcdClient, err := GetTestVCDClient(
-		cloudConfig,
-		map[string]interface{}{
-			"getVdcClient": true,
-			"user":         authDetails.Username,
-			"secret":       authDetails.Password,
-			"userOrg":      authDetails.UserOrg,
-		})
+	vcdClient, err := getTestVCDClient(vcdConfig, nil)
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
 
@@ -214,7 +149,7 @@ func TestVMExtraConfig(t *testing.T) {
 	vdcManager, err := NewVDCManager(vcdClient, vcdClient.ClusterOrgName, vcdClient.ClusterOVDCName)
 	assert.NoError(t, err, "there should be no error when creating VDCManager object")
 
-	vApp, err := vdcManager.GetOrCreateVApp(vAppName, cloudConfig.LB.VDCNetwork)
+	vApp, err := vdcManager.GetOrCreateVApp(vAppName, vcdConfig.OvdcNetwork)
 	assert.NoError(t, err, "unable to create vApp")
 	require.NotNil(t, vApp, "vApp created should not be nil")
 

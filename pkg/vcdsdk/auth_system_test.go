@@ -23,10 +23,10 @@ func TestNewVCDAuthConfigFromSecrets(t *testing.T) {
 	err = yaml.Unmarshal(authFileContent, &authDetails)
 	assert.NoError(t, err, "There should be no error parsing auth file content.")
 
-	cloudConfig, err := getTestConfig()
+	vcdConfig, err := getTestVCDConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
-	vcdClient, err := GetTestVCDClient(cloudConfig, map[string]interface{}{
+	vcdClient, err := getTestVCDClient(vcdConfig, map[string]interface{}{
 		"user":    authDetails.Username,
 		"secret":  authDetails.Password,
 		"userOrg": authDetails.UserOrg,
@@ -34,7 +34,7 @@ func TestNewVCDAuthConfigFromSecrets(t *testing.T) {
 	assert.NoError(t, err, "Unable to get VCD client")
 	assert.NotNil(t, vcdClient, "VCD Client should not be nil")
 
-	vcdClient, err = GetTestVCDClient(cloudConfig, map[string]interface{}{
+	vcdClient, err = getTestVCDClient(vcdConfig, map[string]interface{}{
 		"getVdcClient": true,
 		"user":         authDetails.Username,
 		"secret":       authDetails.Password,
@@ -43,14 +43,14 @@ func TestNewVCDAuthConfigFromSecrets(t *testing.T) {
 	assert.NoError(t, err, "Unable to get Client with VDC details.")
 	assert.NotNil(t, vcdClient, "VCD Client should not be nil")
 
-	vcdClient, err = GetTestVCDClient(cloudConfig, map[string]interface{}{
+	vcdClient, err = getTestVCDClient(vcdConfig, map[string]interface{}{
 		"refreshToken": authDetails.RefreshToken,
 		"userOrg":      authDetails.UserOrg,
 	})
 	assert.NoError(t, err, "Unable to get VCD Client")
 	assert.NotNil(t, vcdClient, "VCD Client should not be nil")
 
-	vcdClient, err = GetTestVCDClient(cloudConfig, map[string]interface{}{
+	vcdClient, err = getTestVCDClient(vcdConfig, map[string]interface{}{
 		"getVdcClient": true,
 		"user":         authDetails.Username,
 		"secret":       authDetails.Password,
@@ -58,7 +58,7 @@ func TestNewVCDAuthConfigFromSecrets(t *testing.T) {
 	})
 	assert.NoError(t, err, "Unable to get Client with VDC details.")
 
-	vcdClient, err = GetTestVCDClient(cloudConfig, map[string]interface{}{
+	vcdClient, err = getTestVCDClient(vcdConfig, map[string]interface{}{
 		"host":    "https://some-random-address",
 		"user":    authDetails.Username,
 		"secret":  authDetails.Password,
@@ -66,7 +66,7 @@ func TestNewVCDAuthConfigFromSecrets(t *testing.T) {
 	})
 	assert.Error(t, err, "Error should be obtained for url [https://some-random-address]")
 
-	vcdClient, err = GetTestVCDClient(cloudConfig, map[string]interface{}{
+	vcdClient, err = getTestVCDClient(vcdConfig, map[string]interface{}{
 		"oneArm":  nil,
 		"user":    authDetails.Username,
 		"secret":  authDetails.Password,
@@ -75,7 +75,7 @@ func TestNewVCDAuthConfigFromSecrets(t *testing.T) {
 	assert.NoError(t, err, "There should be no error for missing OneArm")
 	assert.NotNil(t, vcdClient, "VCD Client should not be nil")
 
-	vcdClient, err = GetTestVCDClient(cloudConfig, map[string]interface{}{
+	vcdClient, err = getTestVCDClient(vcdConfig, map[string]interface{}{
 		"user":    authDetails.SystemUser,
 		"secret":  authDetails.SystemUserPassword,
 		"userOrg": "system",
@@ -83,7 +83,7 @@ func TestNewVCDAuthConfigFromSecrets(t *testing.T) {
 	assert.NoError(t, err, "Unable to get VCD client for system administrator")
 	assert.NotNil(t, vcdClient, "VCD Client should not be nil")
 
-	vcdClient, err = GetTestVCDClient(cloudConfig, map[string]interface{}{
+	vcdClient, err = getTestVCDClient(vcdConfig, map[string]interface{}{
 		"refreshToken": authDetails.SystemUserRefreshToken,
 		"userOrg":      "system",
 	})
