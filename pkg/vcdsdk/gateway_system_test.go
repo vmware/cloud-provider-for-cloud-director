@@ -30,10 +30,10 @@ func TestCacheGatewayDetails(t *testing.T) {
 	err = yaml.Unmarshal(authFileContent, &authDetails)
 	assert.NoError(t, err, "There should be no error parsing auth file content.")
 
-	cloudConfig, err := getTestConfig()
+	vcdConfig, err := getVCDConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
-	vcdClient, err := GetTestVCDClient(cloudConfig, map[string]interface{}{
+	vcdClient, err := GetTestVCDClient(vcdConfig, map[string]interface{}{
 		"user":         authDetails.Username,
 		"secret":       authDetails.Password,
 		"userOrg":      authDetails.UserOrg,
@@ -44,7 +44,7 @@ func TestCacheGatewayDetails(t *testing.T) {
 
 	ctx := context.Background()
 
-	gm, err := NewGatewayManager(ctx, vcdClient, cloudConfig.LB.VDCNetwork, cloudConfig.LB.VIPSubnet)
+	gm, err := NewGatewayManager(ctx, vcdClient, vcdConfig.OvdcNetwork, vcdConfig.VIPSubnet)
 	assert.NoError(t, err, "gateway manager should be created without error")
 
 	require.NotNil(t, gm.GatewayRef, "Gateway reference should not be nil")
@@ -52,7 +52,7 @@ func TestCacheGatewayDetails(t *testing.T) {
 	assert.NotEmpty(t, gm.GatewayRef.Id, "Gateway Id should not be empty")
 
 	// Missing network name should be reported
-	vcdClient, err = GetTestVCDClient(cloudConfig, map[string]interface{}{
+	vcdClient, err = GetTestVCDClient(vcdConfig, map[string]interface{}{
 		"network": "",
 	})
 	assert.Error(t, err, "Should get error for unknown network")
@@ -71,10 +71,10 @@ func TestDNATRuleCRUDE(t *testing.T) {
 	err = yaml.Unmarshal(authFileContent, &authDetails)
 	assert.NoError(t, err, "There should be no error parsing auth file content.")
 
-	cloudConfig, err := getTestConfig()
+	vcdConfig, err := getVCDConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
-	vcdClient, err := GetTestVCDClient(cloudConfig, map[string]interface{}{
+	vcdClient, err := GetTestVCDClient(vcdConfig, map[string]interface{}{
 		"user":         authDetails.Username,
 		"secret":       authDetails.Password,
 		"userOrg":      authDetails.UserOrg,
@@ -85,7 +85,7 @@ func TestDNATRuleCRUDE(t *testing.T) {
 
 	ctx := context.Background()
 
-	gm, err := NewGatewayManager(ctx, vcdClient, cloudConfig.LB.VDCNetwork, cloudConfig.LB.VIPSubnet)
+	gm, err := NewGatewayManager(ctx, vcdClient, vcdConfig.OvdcNetwork, vcdConfig.VIPSubnet)
 	assert.NoError(t, err, "gateway manager should be created without error")
 
 	dnatRuleName := fmt.Sprintf("test-dnat-rule-%s", uuid.New().String())
@@ -134,10 +134,10 @@ func TestLBPoolCRUDE(t *testing.T) {
 	err = yaml.Unmarshal(authFileContent, &authDetails)
 	assert.NoError(t, err, "There should be no error parsing auth file content.")
 
-	cloudConfig, err := getTestConfig()
+	vcdConfig, err := getVCDConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
-	vcdClient, err := GetTestVCDClient(cloudConfig, map[string]interface{}{
+	vcdClient, err := GetTestVCDClient(vcdConfig, map[string]interface{}{
 		"user":         authDetails.Username,
 		"secret":       authDetails.Password,
 		"userOrg":      authDetails.UserOrg,
@@ -148,7 +148,7 @@ func TestLBPoolCRUDE(t *testing.T) {
 
 	ctx := context.Background()
 
-	gm, err := NewGatewayManager(ctx, vcdClient, cloudConfig.LB.VDCNetwork, cloudConfig.LB.VIPSubnet)
+	gm, err := NewGatewayManager(ctx, vcdClient, vcdConfig.OvdcNetwork, vcdConfig.VIPSubnet)
 	assert.NoError(t, err, "gateway manager should be created without error")
 
 	lbPoolName := fmt.Sprintf("test-lb-pool-%s", uuid.New().String())
@@ -218,10 +218,10 @@ func TestGetLoadBalancerSEG(t *testing.T) {
 	err = yaml.Unmarshal(authFileContent, &authDetails)
 	assert.NoError(t, err, "There should be no error parsing auth file content.")
 
-	cloudConfig, err := getTestConfig()
+	vcdConfig, err := getVCDConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
-	vcdClient, err := GetTestVCDClient(cloudConfig, map[string]interface{}{
+	vcdClient, err := GetTestVCDClient(vcdConfig, map[string]interface{}{
 		"user":         authDetails.Username,
 		"secret":       authDetails.Password,
 		"userOrg":      authDetails.UserOrg,
@@ -232,7 +232,7 @@ func TestGetLoadBalancerSEG(t *testing.T) {
 
 	ctx := context.Background()
 
-	gm, err := NewGatewayManager(ctx, vcdClient, cloudConfig.LB.VDCNetwork, cloudConfig.LB.VIPSubnet)
+	gm, err := NewGatewayManager(ctx, vcdClient, vcdConfig.OvdcNetwork, vcdConfig.VIPSubnet)
 	assert.NoError(t, err, "gateway manager should be created without error")
 
 	segRef, err := gm.GetLoadBalancerSEG(ctx)
@@ -254,10 +254,10 @@ func TestGetUnusedGatewayIP(t *testing.T) {
 	err = yaml.Unmarshal(authFileContent, &authDetails)
 	assert.NoError(t, err, "There should be no error parsing auth file content.")
 
-	cloudConfig, err := getTestConfig()
+	vcdConfig, err := getVCDConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
-	vcdClient, err := GetTestVCDClient(cloudConfig, map[string]interface{}{
+	vcdClient, err := GetTestVCDClient(vcdConfig, map[string]interface{}{
 		"user":         authDetails.Username,
 		"secret":       authDetails.Password,
 		"userOrg":      authDetails.UserOrg,
@@ -269,10 +269,10 @@ func TestGetUnusedGatewayIP(t *testing.T) {
 
 	ctx := context.Background()
 
-	gm, err := NewGatewayManager(ctx, vcdClient, cloudConfig.LB.VDCNetwork, cloudConfig.LB.VIPSubnet)
+	gm, err := NewGatewayManager(ctx, vcdClient, vcdConfig.OvdcNetwork, vcdConfig.VIPSubnet)
 	assert.NoError(t, err, "gateway manager should be created without error")
 
-	validSubnet := cloudConfig.LB.VIPSubnet
+	validSubnet := vcdConfig.VIPSubnet
 	externalIP, err := gm.GetUnusedExternalIPAddress(ctx, validSubnet)
 	assert.NoError(t, err, "should not get an error for this range")
 	assert.NotEmpty(t, externalIP, "should get a valid IP address in the range [%s]", validSubnet)
@@ -300,10 +300,10 @@ func TestVirtualServiceHttpCRUDE(t *testing.T) {
 	err = yaml.Unmarshal(authFileContent, &authDetails)
 	assert.NoError(t, err, "There should be no error parsing auth file content.")
 
-	cloudConfig, err := getTestConfig()
+	vcdConfig, err := getVCDConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
-	vcdClient, err := GetTestVCDClient(cloudConfig, map[string]interface{}{
+	vcdClient, err := GetTestVCDClient(vcdConfig, map[string]interface{}{
 		"user":         authDetails.Username,
 		"secret":       authDetails.Password,
 		"userOrg":      authDetails.UserOrg,
@@ -314,7 +314,7 @@ func TestVirtualServiceHttpCRUDE(t *testing.T) {
 
 	ctx := context.Background()
 
-	gm, err := NewGatewayManager(ctx, vcdClient, cloudConfig.LB.VDCNetwork, cloudConfig.LB.VIPSubnet)
+	gm, err := NewGatewayManager(ctx, vcdClient, vcdConfig.OvdcNetwork, vcdConfig.VIPSubnet)
 	assert.NoError(t, err, "gateway manager should be created without error")
 
 	lbPoolName := fmt.Sprintf("test-lb-pool-%s", uuid.New().String())
@@ -391,29 +391,16 @@ func TestVirtualServiceHttpCRUDE(t *testing.T) {
 
 func TestVirtualServiceHttpsCRUDE(t *testing.T) {
 
-	authFile := filepath.Join(gitRoot, "testdata/auth_test.yaml")
-	authFileContent, err := ioutil.ReadFile(authFile)
-	assert.NoError(t, err, "There should be no error reading the auth file contents.")
-
-	var authDetails authorizationDetails
-	err = yaml.Unmarshal(authFileContent, &authDetails)
-	assert.NoError(t, err, "There should be no error parsing auth file content.")
-
-	cloudConfig, err := getTestConfig()
+	vcdConfig, err := getVCDConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
-	vcdClient, err := GetTestVCDClient(cloudConfig, map[string]interface{}{
-		"user":         authDetails.Username,
-		"secret":       authDetails.Password,
-		"userOrg":      authDetails.UserOrg,
-		"getVdcClient": true,
-	})
+	vcdClient, err := GetTestVCDClient(vcdConfig, nil)
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
 
 	ctx := context.Background()
 
-	gm, err := NewGatewayManager(ctx, vcdClient, cloudConfig.LB.VDCNetwork, cloudConfig.LB.VIPSubnet)
+	gm, err := NewGatewayManager(ctx, vcdClient, vcdConfig.OvdcNetwork, vcdConfig.VIPSubnet)
 	assert.NoError(t, err, "gateway manager should be created without error")
 
 	lbPoolName := fmt.Sprintf("test-lb-pool-%s", uuid.New().String())
@@ -426,9 +413,9 @@ func TestVirtualServiceHttpsCRUDE(t *testing.T) {
 	//externalIP := "11.12.13.14"
 	internalIP := "3.4.5.6"
 	virtualServiceName := fmt.Sprintf("test-virtual-service-https-%s", uuid.New().String())
-	certName := cloudConfig.LB.CertificateAlias
+	certName := vcdConfig.CertificateAlias
 	if certName == "" {
-		certName = fmt.Sprintf("%s-cert", cloudConfig.ClusterID)
+		certName = fmt.Sprintf("%s-cert", vcdConfig.ClusterID)
 	}
 
 	var vsRef *swagger.EntityReference
@@ -488,194 +475,3 @@ func TestVirtualServiceHttpsCRUDE(t *testing.T) {
 
 	return
 }
-
-//func TestLoadBalancerCRUDE(t *testing.T) {
-//
-//	authFile := filepath.Join(gitRoot, "testdata/auth_test.yaml")
-//	authFileContent, err := ioutil.ReadFile(authFile)
-//	assert.NoError(t, err, "There should be no error reading the auth file contents.")
-//
-//	var authDetails authorizationDetails
-//	err = yaml.Unmarshal(authFileContent, &authDetails)
-//	assert.NoError(t, err, "There should be no error parsing auth file content.")
-//
-//	cloudConfig, err := getTestConfig()
-//	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
-//
-//	vcdClient, err := getTestVCDClient(cloudConfig, map[string]interface{}{
-//		"user":         authDetails.Username,
-//		"secret":       authDetails.Password,
-//		"userOrg":      authDetails.UserOrg,
-//		"getVdcClient": true,
-//	})
-//	assert.NoError(t, err, "Unable to get VCD client")
-//	require.NotNil(t, vcdClient, "VCD Client should not be nil")
-//
-//	ctx := context.Background()
-//
-//	gm, err := NewGatewayManager(ctx, vcdClient, cloudConfig.LB.VDCNetwork, cloudConfig.LB.VIPSubnet)
-//	assert.NoError(t, err, "gateway manager should be created without error")
-//
-//	virtualServiceNamePrefix := fmt.Sprintf("test-virtual-service-https-%s", uuid.New().String())
-//	lbPoolNamePrefix := fmt.Sprintf("test-lb-pool-%s", uuid.New().String())
-//	certName := cloudConfig.LB.CertificateAlias
-//	if certName == "" {
-//		certName = fmt.Sprintf("%s-cert", cloudConfig.ClusterID)
-//	}
-//	portDetailsList := []PortDetails{
-//		{
-//			PortSuffix:   `http`,
-//			ExternalPort: 80,
-//			InternalPort: 31234,
-//			Protocol:     "HTTP",
-//			UseSSL:       false,
-//		},
-//		{
-//			PortSuffix:   `https`,
-//			ExternalPort: 443,
-//			InternalPort: 31235,
-//			Protocol:     "HTTPS",
-//			UseSSL:       true,
-//			CertAlias:    certName,
-//		},
-//	}
-//	freeIP := ""
-//	freeIP, err = gm.CreateLoadBalancer(ctx, virtualServiceNamePrefix,
-//		lbPoolNamePrefix, []string{"1.2.3.4", "1.2.3.5"}, portDetailsList, cloudConfig.LB.OneArm, cloudConfig.ClusterID)
-//	assert.NoError(t, err, "Load Balancer should be created")
-//	assert.NotEmpty(t, freeIP, "There should be a non-empty IP returned")
-//
-//	virtualServiceNameHttp := fmt.Sprintf("%s-http", virtualServiceNamePrefix)
-//	freeIPObtained, err := gm.GetLoadBalancer(ctx, virtualServiceNameHttp, cloudConfig.LB.OneArm)
-//	assert.NoError(t, err, "Load Balancer should be found")
-//	assert.Equal(t, freeIP, freeIPObtained, "The IPs should match")
-//
-//	virtualServiceNameHttps := fmt.Sprintf("%s-https", virtualServiceNamePrefix)
-//	freeIPObtained, err = gm.GetLoadBalancer(ctx, virtualServiceNameHttps, cloudConfig.LB.OneArm)
-//	assert.NoError(t, err, "Load Balancer should be found")
-//	assert.Equal(t, freeIP, freeIPObtained, "The IPs should match")
-//
-//	freeIP, err = gm.CreateLoadBalancer(ctx, virtualServiceNamePrefix,
-//		lbPoolNamePrefix, []string{"1.2.3.4", "1.2.3.5"}, portDetailsList, cloudConfig.LB.OneArm, cloudConfig.ClusterID)
-//	assert.NoError(t, err, "Load Balancer should be created even on second attempt")
-//	assert.NotEmpty(t, freeIP, "There should be a non-empty IP returned")
-//
-//	updatedIps := []string{"5.5.5.5"}
-//	updatedInternalPort := int32(55555)
-//	// update IPs and internal port
-//	err = gm.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-http", virtualServiceNamePrefix+"-http", updatedIps, updatedInternalPort, 80)
-//	assert.NoError(t, err, "HTTP Load Balancer should be updated")
-//
-//	err = gm.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-https", virtualServiceNamePrefix+"-https", updatedIps, updatedInternalPort, 443)
-//	assert.NoError(t, err, "HTTPS Load Balancer should be updated")
-//
-//	// update external port only
-//	updatedExternalPortHttp := int32(8080)
-//	updatedExternalPortHttps := int32(8443)
-//	err = gm.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-http", virtualServiceNamePrefix+"-http", updatedIps, updatedInternalPort, updatedExternalPortHttp)
-//	assert.NoError(t, err, "HTTP Load Balancer should be updated")
-//
-//	err = gm.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-https", virtualServiceNamePrefix+"-https", updatedIps, updatedInternalPort, updatedExternalPortHttps)
-//	assert.NoError(t, err, "HTTPS Load Balancer should be updated")
-//
-//	// No error on repeated update
-//	err = gm.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-http", virtualServiceNamePrefix+"-http", updatedIps, updatedInternalPort, updatedExternalPortHttp)
-//	assert.NoError(t, err, "HTTP Load Balancer should be updated")
-//
-//	err = gm.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-https", virtualServiceNamePrefix+"-https", updatedIps, updatedInternalPort, updatedExternalPortHttps)
-//	assert.NoError(t, err, "HTTPS Load Balancer should be updated")
-//
-//	err = gm.DeleteLoadBalancer(ctx, virtualServiceNamePrefix, lbPoolNamePrefix, portDetailsList, cloudConfig.LB.OneArm, cloudConfig.ClusterID)
-//	assert.NoError(t, err, "Load Balancer should be deleted")
-//
-//	freeIPObtained, err = gm.GetLoadBalancer(ctx, virtualServiceNameHttp, cloudConfig.LB.OneArm)
-//	assert.NoError(t, err, "Load Balancer should not be found")
-//	assert.Empty(t, freeIPObtained, "The VIP should not be found")
-//
-//	freeIPObtained, err = gm.GetLoadBalancer(ctx, virtualServiceNameHttps, cloudConfig.LB.OneArm)
-//	assert.NoError(t, err, "Load Balancer should not be found")
-//	assert.Empty(t, freeIPObtained, "The VIP should not be found")
-//
-//	err = gm.DeleteLoadBalancer(ctx, virtualServiceNamePrefix, lbPoolNamePrefix, portDetailsList, cloudConfig.LB.OneArm, cloudConfig.ClusterID)
-//	assert.NoError(t, err, "Repeated deletion of Load Balancer should not fail")
-//
-//	err = gm.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-http", virtualServiceNamePrefix+"-http", updatedIps, updatedInternalPort, 80)
-//	assert.Error(t, err, "updating deleted HTTP Load Balancer should be an error")
-//	err = gm.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-https", virtualServiceNamePrefix+"https", updatedIps, updatedInternalPort, 43)
-//	assert.Error(t, err, "updating deleted HTTPS Load Balancer should be an error")
-//
-//	return
-//}
-//
-//func TestUpdateRDEUsingEtag(t *testing.T) {
-//	// TODO: This test will currently fail unless the code below is uncommented. Refer to VCDA-3600
-//
-//	cloudConfig, err := getTestConfig()
-//	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
-//
-//	authFile := filepath.Join(gitRoot, "testdata/auth_test.yaml")
-//	authFileContent, err := ioutil.ReadFile(authFile)
-//	assert.NoError(t, err, "There should be no error reading the auth file contents.")
-//
-//	var authDetails authorizationDetails
-//	err = yaml.Unmarshal(authFileContent, &authDetails)
-//	assert.NoError(t, err, "There should be no error parsing auth file content.")
-//
-//	vcdClient, err := getTestVCDClient(cloudConfig, map[string]interface{}{
-//		"user":    authDetails.Username,
-//		"secret":  authDetails.Password,
-//		"userOrg": authDetails.UserOrg,
-//	})
-//
-//	ctx := context.Background()
-//
-//	rm := NewRDEManager(vcdClient, cloudConfig.ClusterID)
-//
-//	// get rde Vips
-//	rdeVips1, etag1, defEnt1, err := rm.GetRDEVirtualIps(ctx)
-//	assert.NoError(t, err, "Should retrieve RDE vips on first attempt")
-//	rdeVips2, etag2, defEnt2, err := rm.GetRDEVirtualIps(ctx)
-//	assert.NoError(t, err, "Should retrieve RDE vips on second attempt")
-//	assert.Equal(t, etag1, etag2, "etags from consecutive RDE GET calls should match")
-//	origRdeVips := make([]string, len(rdeVips1))
-//	copy(origRdeVips, rdeVips1)
-//
-//	// Test successfully updating using first etag
-//	addIp1 := "1.2.3.4"
-//	addIp2 := "2.3.4.5"
-//	updatedRdeVips1 := append(rdeVips1, addIp1)
-//	httpResponse1, err := rm.updateRDEVirtualIps(ctx, updatedRdeVips1, etag1, defEnt1)
-//	assert.NoError(t, err, "RDE should be updated")
-//	assert.Equal(t, http.StatusOK, httpResponse1.StatusCode, "RDE update status code should be 200 (OK)")
-//	rdeVips3, _, _, err := rm.GetRDEVirtualIps(ctx)
-//	assert.NoError(t, err, "Should retrieve RDE vips successfully")
-//	assert.True(t, foundStringInSlice(addIp1, rdeVips3), "ip [%s] should be found in rde vips", addIp1)
-//
-//	// Test adding addIp2 with outdated etag
-//	updatedRdeVips2 := append(rdeVips2, addIp2)
-//	httpResponse2, err := rm.updateRDEVirtualIps(ctx, updatedRdeVips2, etag2, defEnt2)
-//	assert.Error(t, err, "Should have an error updating RDE with outdated etag")
-//	assert.Equal(t, http.StatusPreconditionFailed, httpResponse2.StatusCode, "RDE update status code should be 412 (Precondition failed)")
-//	rdeVips3, etag3, defEnt3, err := rm.GetRDEVirtualIps(ctx)
-//	assert.NoError(t, err, "Should retrieve RDE vips successfully")
-//	assert.False(t, foundStringInSlice(addIp2, rdeVips3), "ip [%s] should not be found in rde vips", addIp2)
-//
-//	// Try adding addIp2 with correct etag
-//	updatedRdeVips3 := append(rdeVips3, addIp2)
-//	httpResponse3, err := rm.updateRDEVirtualIps(ctx, updatedRdeVips3, etag3, defEnt3)
-//	assert.NoError(t, err, "RDE should be updated")
-//	assert.Equal(t, http.StatusOK, httpResponse3.StatusCode, "RDE update status code should be 200 (OK)")
-//	rdeVips4, etag4, defEnt4, err := rm.GetRDEVirtualIps(ctx)
-//	assert.NoError(t, err, "Should retrieve RDE vips successfully")
-//	assert.True(t, foundStringInSlice(addIp2, rdeVips4), "ip [%s] should be found in rde vips", addIp2)
-//
-//	// reset RDE vips to original state
-//	httpResponse4, err := rm.updateRDEVirtualIps(ctx, rdeVips1, etag4, defEnt4)
-//	assert.NoError(t, err, "RDE should be updated")
-//	assert.Equal(t, http.StatusOK, httpResponse4.StatusCode, "RDE update status code should be 200 (OK)")
-//	// no check to ensure ip's removed because they may have been previously present in the RDE vips
-//	rdeVips5, _, _, err := rm.GetRDEVirtualIps(ctx)
-//	assert.NoError(t, err, "Should retrieve RDE vips to check added ips are removed")
-//	assert.False(t, foundStringInSlice(addIp1, rdeVips5), "ip [%s] should not be found in rde vips", addIp1)
-//	assert.False(t, foundStringInSlice(addIp2, rdeVips5), "ip [%s] should not be found in rde vips", addIp2)
-//}
