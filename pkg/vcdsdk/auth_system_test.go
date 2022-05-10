@@ -79,6 +79,7 @@ func TestNewVCDAuthConfigFromSecrets(t *testing.T) {
 		"user":    authDetails.SystemUser,
 		"secret":  authDetails.SystemUserPassword,
 		"userOrg": "system",
+		"refreshToken": "",
 	})
 	assert.NoError(t, err, "Unable to get VCD client for system administrator")
 	assert.NotNil(t, vcdClient, "VCD Client should not be nil")

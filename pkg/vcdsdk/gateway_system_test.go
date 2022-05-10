@@ -40,11 +40,9 @@ func TestCacheGatewayDetails(t *testing.T) {
 	assert.NotEmpty(t, gm.GatewayRef.Id, "Gateway Id should not be empty")
 
 	// Missing network name should be reported
-	vcdClient, err = getTestVCDClient(nil, map[string]interface{}{
-		"network": "",
-	})
+	gatewayManager, err := NewGatewayManager(ctx, vcdClient, "", vcdConfig.VIPSubnet)
 	assert.Error(t, err, "Should get error for unknown network")
-	assert.Nil(t, vcdClient, "Client should be nil when erroring out")
+	assert.Nil(t, gatewayManager, "gateway manager should be nil when erroring out")
 
 	return
 }
@@ -54,7 +52,9 @@ func TestDNATRuleCRUDE(t *testing.T) {
 	vcdConfig, err := getTestVCDConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
-	vcdClient, err := getTestVCDClient(vcdConfig, nil)
+	vcdClient, err := getTestVCDClient(vcdConfig, map[string]interface{}{
+		"getVdcClient": true,
+	})
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
 

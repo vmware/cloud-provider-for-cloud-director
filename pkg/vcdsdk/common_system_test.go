@@ -82,39 +82,40 @@ func getTestVCDConfig() (*VcdConfig, error) {
 
 // getTestVCDClient config will be passed in from getTestConfig() and error checked in unit test
 func getTestVCDClient(vcdConfig *VcdConfig, inputMap map[string]interface{}) (*Client, error) {
+	vcdConfigCopy := *vcdConfig
 	insecure := true
 	getVdcClient := false
 	if inputMap != nil {
 		for key, val := range inputMap {
 			switch key {
 			case "host":
-				vcdConfig.Host = getStrValStrict(val, vcdConfig.Host)
+				vcdConfigCopy.Host = getStrValStrict(val, vcdConfigCopy.Host)
 			case "org":
-				vcdConfig.TenantOrg = getStrValStrict(val, vcdConfig.TenantOrg)
+				vcdConfigCopy.TenantOrg = getStrValStrict(val, vcdConfigCopy.TenantOrg)
 			case "user":
-				vcdConfig.User = getStrValStrict(val, vcdConfig.User)
+				vcdConfigCopy.User = getStrValStrict(val, vcdConfigCopy.User)
 			case "secret":
-				vcdConfig.Password = getStrValStrict(val, vcdConfig.Password)
+				vcdConfigCopy.Password = getStrValStrict(val, vcdConfigCopy.Password)
 			case "insecure":
 				insecure = getBoolValStrict(val, true)
 			case "getVdcClient":
 				getVdcClient = getBoolValStrict(val, false)
 			case "refreshToken":
-				vcdConfig.RefreshToken = getStrValStrict(val, vcdConfig.RefreshToken)
+				vcdConfigCopy.RefreshToken = getStrValStrict(val, vcdConfigCopy.RefreshToken)
 			case "userOrg":
-				vcdConfig.UserOrg = getStrValStrict(val, vcdConfig.UserOrg)
+				vcdConfigCopy.UserOrg = getStrValStrict(val, vcdConfigCopy.UserOrg)
 			}
 		}
 	}
 
 	return NewVCDClientFromSecrets(
-		vcdConfig.Host,
-		vcdConfig.TenantOrg,
-		vcdConfig.TenantVdc,
-		vcdConfig.UserOrg,
-		vcdConfig.User,
-		vcdConfig.Password,
-		vcdConfig.RefreshToken,
+		vcdConfigCopy.Host,
+		vcdConfigCopy.TenantOrg,
+		vcdConfigCopy.TenantVdc,
+		vcdConfigCopy.UserOrg,
+		vcdConfigCopy.User,
+		vcdConfigCopy.Password,
+		vcdConfigCopy.RefreshToken,
 		insecure,
 		getVdcClient,
 	)
