@@ -7,6 +7,7 @@ package config
 
 import (
 	"fmt"
+	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdsdk"
 	yaml "gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"
@@ -63,34 +64,6 @@ type CloudConfig struct {
 	VAppName  string    `yaml:"vAppName"`
 }
 
-func GetUserAndOrg(fullUserName string, clusterOrg string, currentUserOrg string) (userOrg string, userName string, err error) {
-	// If the full username is specified as org/user, the scenario is that the user
-	// may belong to an org different from the cluster, but still has the
-	// necessary rights to view the VMs on this org. Else if the username is
-	// specified as just user, the scenario is that the user is in the same org
-	// as the cluster.
-	parts := strings.Split(string(fullUserName), "/")
-	if len(parts) > 2 {
-		return "", "", fmt.Errorf(
-			"invalid username format; expected at most two fields separated by /, obtained [%d]",
-			len(parts))
-	}
-	// Add additional fallback to clusterOrg if current userOrg does not exist, this allows auth to continue properly
-	if len(parts) == 1 {
-		if currentUserOrg == "" {
-			userOrg = clusterOrg
-		} else {
-			userOrg = currentUserOrg
-		}
-		userName = parts[0]
-	} else {
-		userOrg = parts[0]
-		userName = parts[1]
-	}
-
-	return userOrg, userName, nil
-}
-
 // ParseCloudConfig : parses config and env to fill in the CloudConfig struct
 func ParseCloudConfig(configReader io.Reader) (*CloudConfig, error) {
 	var err error
@@ -120,7 +93,7 @@ func SetAuthorization(config *CloudConfig) error {
 	} else {
 		trimmedUserName := strings.TrimSuffix(string(username), "\n")
 		if string(trimmedUserName) != "" {
-			config.VCD.UserOrg, config.VCD.User, err = GetUserAndOrg(trimmedUserName, config.VCD.Org, config.VCD.UserOrg)
+			config.VCD.UserOrg, config.VCD.User, err = vcdsdk.GetUserAndOrg(trimmedUserName, config.VCD.Org, config.VCD.UserOrg)
 			if err != nil {
 				return fmt.Errorf("unable to get user org and name: [%v]", err)
 			}

@@ -66,7 +66,7 @@ func TestLoadBalancerCRUDE(t *testing.T) {
 	freeIP := ""
 	oneArm := &vcdsdk.OneArm{
 		StartIP: cloudConfig.LB.OneArm.StartIP,
-		EndIP: cloudConfig.LB.OneArm.EndIP,
+		EndIP:   cloudConfig.LB.OneArm.EndIP,
 	}
 	freeIP, err = cgm.CreateLoadBalancer(ctx, virtualServiceNamePrefix,
 		lbPoolNamePrefix, []string{"1.2.3.4", "1.2.3.5"}, portDetailsList, oneArm)

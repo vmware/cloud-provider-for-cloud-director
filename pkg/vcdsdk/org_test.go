@@ -3,33 +3,17 @@ package vcdsdk
 import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gopkg.in/yaml.v2"
-	"io/ioutil"
-	"path/filepath"
 	"testing"
 )
 
 func TestComputePolicy(t *testing.T) {
 
-	authFile := filepath.Join(gitRoot, "testdata/auth_test.yaml")
-	authFileContent, err := ioutil.ReadFile(authFile)
-	assert.NoError(t, err, "There should be no error reading the auth file contents.")
-
-	var authDetails authorizationDetails
-	err = yaml.Unmarshal(authFileContent, &authDetails)
-	assert.NoError(t, err, "There should be no error parsing auth file content.")
-
 	// get client
-	cloudConfig, err := getTestConfig()
+	vcdConfig, err := getVCDConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
 	// get client
-	vcdClient, err := GetTestVCDClient(cloudConfig, map[string]interface{}{
-		"user":         authDetails.Username,
-		"secret":       authDetails.Password,
-		"userOrg":      authDetails.UserOrg,
-		"getVdcClient": true,
-	})
+	vcdClient, err := GetTestVCDClient(vcdConfig, nil)
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
 
