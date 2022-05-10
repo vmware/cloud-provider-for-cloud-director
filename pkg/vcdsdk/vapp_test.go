@@ -11,11 +11,11 @@ import (
 )
 
 func TestVApp(t *testing.T) {
-	vcdConfig, err := getVCDConfig()
+	vcdConfig, err := getTestVCDConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
 	// get client
-	vcdClient, err := GetTestVCDClient(vcdConfig, nil)
+	vcdClient, err := getTestVCDClient(vcdConfig, nil)
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
 
@@ -38,10 +38,10 @@ func TestVApp(t *testing.T) {
 
 func TestDeleteVapp(t *testing.T) {
 
-	vcdConfig, err := getVCDConfig()
+	vcdConfig, err := getTestVCDConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 	// get client
-	vcdClient, err := GetTestVCDClient(vcdConfig, nil)
+	vcdClient, err := getTestVCDClient(vcdConfig, nil)
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
 
@@ -58,10 +58,10 @@ func TestDeleteVapp(t *testing.T) {
 }
 
 func TestVdcManager_CacheVdcDetails(t *testing.T) {
-	vcdConfig, err := getVCDConfig()
+	vcdConfig, err := getTestVCDConfig()
 	assert.NoError(t, err, "There should be no error parsing auth file content.")
 
-	vcdClient, err := GetTestVCDClient(vcdConfig, nil)
+	vcdClient, err := getTestVCDClient(vcdConfig, nil)
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
 	vdcManager, err := NewVDCManager(vcdClient, vcdClient.ClusterOrgName, vcdClient.ClusterOVDCName)
@@ -71,10 +71,10 @@ func TestVdcManager_CacheVdcDetails(t *testing.T) {
 
 func TestVMCreation(t *testing.T) {
 	// get client
-	vcdConfig, err := getVCDConfig()
+	vcdConfig, err := getTestVCDConfig()
 	assert.NoError(t, err, "No error creating VCD config")
 	assert.NotNil(t, err, "[%T] should not be nil", vcdConfig)
-	vcdClient, err := GetTestVCDClient(vcdConfig, nil)
+	vcdClient, err := getTestVCDClient(vcdConfig, nil)
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
 
@@ -127,11 +127,11 @@ exit 0
 
 func TestVMExtraConfig(t *testing.T) {
 
-	vcdConfig, err := getVCDConfig()
+	vcdConfig, err := getTestVCDConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
 	// get client
-	vcdClient, err := GetTestVCDClient(vcdConfig, nil)
+	vcdClient, err := getTestVCDClient(vcdConfig, nil)
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
 

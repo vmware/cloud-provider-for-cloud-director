@@ -65,7 +65,7 @@ func getBoolValStrict(val interface{}, defaultVal bool) bool {
 	return defaultVal
 }
 
-func getVCDConfig() (*VcdConfig, error) {
+func getTestVCDConfig() (*VcdConfig, error) {
 	testVcdInfoFilePath := filepath.Join(gitRoot, "testdata/vcd_info.yaml")
 	vcdInfoContent, err := ioutil.ReadFile(testVcdInfoFilePath)
 	if err != nil {
@@ -80,8 +80,8 @@ func getVCDConfig() (*VcdConfig, error) {
 	return &vcdInfo, nil
 }
 
-// GetTestVCDClient returns a client created using the file testdata/vcd_info.yaml
-func GetTestVCDClient(vcdConfig *VcdConfig, inputMap map[string]interface{}) (*Client, error) {
+// getTestVCDClient returns a client created using the file testdata/vcd_info.yaml
+func getTestVCDClient(vcdConfig *VcdConfig, inputMap map[string]interface{}) (*Client, error) {
 	insecure := true
 	getVdcClient := false
 	if inputMap != nil {
