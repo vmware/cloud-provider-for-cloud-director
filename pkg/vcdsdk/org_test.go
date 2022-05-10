@@ -9,11 +9,11 @@ import (
 func TestComputePolicy(t *testing.T) {
 
 	// get client
-	vcdConfig, err := getVCDConfig()
+	vcdConfig, err := getTestVCDConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
 	// get client
-	vcdClient, err := GetTestVCDClient(vcdConfig, nil)
+	vcdClient, err := getTestVCDClient(vcdConfig, nil)
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
 

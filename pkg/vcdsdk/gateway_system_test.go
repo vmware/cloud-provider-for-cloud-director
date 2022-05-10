@@ -30,10 +30,10 @@ func TestCacheGatewayDetails(t *testing.T) {
 	err = yaml.Unmarshal(authFileContent, &authDetails)
 	assert.NoError(t, err, "There should be no error parsing auth file content.")
 
-	vcdConfig, err := getVCDConfig()
+	vcdConfig, err := getTestVCDConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
-	vcdClient, err := GetTestVCDClient(vcdConfig, map[string]interface{}{
+	vcdClient, err := getTestVCDClient(vcdConfig, map[string]interface{}{
 		"user":         authDetails.Username,
 		"secret":       authDetails.Password,
 		"userOrg":      authDetails.UserOrg,
@@ -52,7 +52,7 @@ func TestCacheGatewayDetails(t *testing.T) {
 	assert.NotEmpty(t, gm.GatewayRef.Id, "Gateway Id should not be empty")
 
 	// Missing network name should be reported
-	vcdClient, err = GetTestVCDClient(vcdConfig, map[string]interface{}{
+	vcdClient, err = getTestVCDClient(vcdConfig, map[string]interface{}{
 		"network": "",
 	})
 	assert.Error(t, err, "Should get error for unknown network")
@@ -71,10 +71,10 @@ func TestDNATRuleCRUDE(t *testing.T) {
 	err = yaml.Unmarshal(authFileContent, &authDetails)
 	assert.NoError(t, err, "There should be no error parsing auth file content.")
 
-	vcdConfig, err := getVCDConfig()
+	vcdConfig, err := getTestVCDConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
-	vcdClient, err := GetTestVCDClient(vcdConfig, map[string]interface{}{
+	vcdClient, err := getTestVCDClient(vcdConfig, map[string]interface{}{
 		"user":         authDetails.Username,
 		"secret":       authDetails.Password,
 		"userOrg":      authDetails.UserOrg,
@@ -134,10 +134,10 @@ func TestLBPoolCRUDE(t *testing.T) {
 	err = yaml.Unmarshal(authFileContent, &authDetails)
 	assert.NoError(t, err, "There should be no error parsing auth file content.")
 
-	vcdConfig, err := getVCDConfig()
+	vcdConfig, err := getTestVCDConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
-	vcdClient, err := GetTestVCDClient(vcdConfig, map[string]interface{}{
+	vcdClient, err := getTestVCDClient(vcdConfig, map[string]interface{}{
 		"user":         authDetails.Username,
 		"secret":       authDetails.Password,
 		"userOrg":      authDetails.UserOrg,
@@ -218,10 +218,10 @@ func TestGetLoadBalancerSEG(t *testing.T) {
 	err = yaml.Unmarshal(authFileContent, &authDetails)
 	assert.NoError(t, err, "There should be no error parsing auth file content.")
 
-	vcdConfig, err := getVCDConfig()
+	vcdConfig, err := getTestVCDConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
-	vcdClient, err := GetTestVCDClient(vcdConfig, map[string]interface{}{
+	vcdClient, err := getTestVCDClient(vcdConfig, map[string]interface{}{
 		"user":         authDetails.Username,
 		"secret":       authDetails.Password,
 		"userOrg":      authDetails.UserOrg,
@@ -254,10 +254,10 @@ func TestGetUnusedGatewayIP(t *testing.T) {
 	err = yaml.Unmarshal(authFileContent, &authDetails)
 	assert.NoError(t, err, "There should be no error parsing auth file content.")
 
-	vcdConfig, err := getVCDConfig()
+	vcdConfig, err := getTestVCDConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
-	vcdClient, err := GetTestVCDClient(vcdConfig, map[string]interface{}{
+	vcdClient, err := getTestVCDClient(vcdConfig, map[string]interface{}{
 		"user":         authDetails.Username,
 		"secret":       authDetails.Password,
 		"userOrg":      authDetails.UserOrg,
@@ -300,10 +300,10 @@ func TestVirtualServiceHttpCRUDE(t *testing.T) {
 	err = yaml.Unmarshal(authFileContent, &authDetails)
 	assert.NoError(t, err, "There should be no error parsing auth file content.")
 
-	vcdConfig, err := getVCDConfig()
+	vcdConfig, err := getTestVCDConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
-	vcdClient, err := GetTestVCDClient(vcdConfig, map[string]interface{}{
+	vcdClient, err := getTestVCDClient(vcdConfig, map[string]interface{}{
 		"user":         authDetails.Username,
 		"secret":       authDetails.Password,
 		"userOrg":      authDetails.UserOrg,
@@ -391,10 +391,10 @@ func TestVirtualServiceHttpCRUDE(t *testing.T) {
 
 func TestVirtualServiceHttpsCRUDE(t *testing.T) {
 
-	vcdConfig, err := getVCDConfig()
+	vcdConfig, err := getTestVCDConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
-	vcdClient, err := GetTestVCDClient(vcdConfig, nil)
+	vcdClient, err := getTestVCDClient(vcdConfig, nil)
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
 
