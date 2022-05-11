@@ -7,7 +7,8 @@ package vcdsdk
 
 import (
 	"fmt"
-	"github.com/vmware/cloud-provider-for-cloud-director/pkg/config"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 )
@@ -15,6 +16,20 @@ import (
 var (
 	gitRoot string = ""
 )
+
+type VcdConfig struct {
+	Host             string `yaml:"host"`
+	TenantOrg        string `yaml:"tenantOrg"`
+	TenantVdc        string `yaml:"tenantVdc"`
+	OvdcNetwork      string `yaml:"ovdcNetwork"`
+	User             string `yaml:"user"`
+	UserOrg          string `yaml:"userOrg"`
+	Password         string `yaml:"password"`
+	RefreshToken     string `yaml:"refreshToken"`
+	VIPSubnet        string `yaml:"vipSubnet"`
+	CertificateAlias string `yaml:"certificateAlias"`
+	ClusterID        string `yaml:"clusterID"`
+}
 
 type authorizationDetails struct {
 	Username               string `yaml:"username"`
@@ -34,21 +49,6 @@ func init() {
 	}
 }
 
-func getTestConfig() (*config.CloudConfig, error) {
-	testConfigFilePath := filepath.Join(gitRoot, "testdata/config_test.yaml")
-	configReader, err := os.Open(testConfigFilePath)
-	if err != nil {
-		return nil, fmt.Errorf("Unable to open file [%s]: [%v]", testConfigFilePath, err)
-	}
-	defer configReader.Close()
-
-	cloudConfig, err := config.ParseCloudConfig(configReader)
-	if err != nil {
-		return nil, fmt.Errorf("Unable to parse cloud config file [%s]: [%v]", testConfigFilePath, err)
-	}
-	return cloudConfig, nil
-}
-
 func getStrValStrict(val interface{}, defaultVal string) string {
 	if strVal, ok := val.(string); ok {
 		return strVal
@@ -65,42 +65,57 @@ func getBoolValStrict(val interface{}, defaultVal bool) bool {
 	return defaultVal
 }
 
-// config will be passed in from getTestConfig() and error checked in unit test
-func GetTestVCDClient(config *config.CloudConfig, inputMap map[string]interface{}) (*Client, error) {
-	cloudConfig := *config // Make a copy of cloudConfig so modified inputs don't carry over to next test
+func getTestVCDConfig() (*VcdConfig, error) {
+	testVcdInfoFilePath := filepath.Join(gitRoot, "testdata/vcd_info.yaml")
+	vcdInfoContent, err := ioutil.ReadFile(testVcdInfoFilePath)
+	if err != nil {
+		return nil, fmt.Errorf("error reading the vcd_info.yaml file contents: [%v]", err)
+	}
+
+	var vcdInfo VcdConfig
+	err = yaml.Unmarshal(vcdInfoContent, &vcdInfo)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing vcd_info.yaml file content: [%v]", err)
+	}
+	return &vcdInfo, nil
+}
+
+// getTestVCDClient returns a client created using the file testdata/vcd_info.yaml
+func getTestVCDClient(vcdConfig *VcdConfig, inputMap map[string]interface{}) (*Client, error) {
+	vcdConfigCopy := *vcdConfig
 	insecure := true
 	getVdcClient := false
 	if inputMap != nil {
 		for key, val := range inputMap {
 			switch key {
 			case "host":
-				cloudConfig.VCD.Host = getStrValStrict(val, cloudConfig.VCD.Host)
+				vcdConfigCopy.Host = getStrValStrict(val, vcdConfigCopy.Host)
 			case "org":
-				cloudConfig.VCD.Org = getStrValStrict(val, cloudConfig.VCD.Org)
+				vcdConfigCopy.TenantOrg = getStrValStrict(val, vcdConfigCopy.TenantOrg)
 			case "user":
-				cloudConfig.VCD.User = getStrValStrict(val, cloudConfig.VCD.User)
+				vcdConfigCopy.User = getStrValStrict(val, vcdConfigCopy.User)
 			case "secret":
-				cloudConfig.VCD.Secret = getStrValStrict(val, cloudConfig.VCD.Secret)
+				vcdConfigCopy.Password = getStrValStrict(val, vcdConfigCopy.Password)
 			case "insecure":
 				insecure = getBoolValStrict(val, true)
 			case "getVdcClient":
 				getVdcClient = getBoolValStrict(val, false)
 			case "refreshToken":
-				cloudConfig.VCD.RefreshToken = getStrValStrict(val, cloudConfig.VCD.RefreshToken)
+				vcdConfigCopy.RefreshToken = getStrValStrict(val, vcdConfigCopy.RefreshToken)
 			case "userOrg":
-				cloudConfig.VCD.UserOrg = getStrValStrict(val, cloudConfig.VCD.UserOrg)
+				vcdConfigCopy.UserOrg = getStrValStrict(val, vcdConfigCopy.UserOrg)
 			}
 		}
 	}
 
 	return NewVCDClientFromSecrets(
-		cloudConfig.VCD.Host,
-		cloudConfig.VCD.Org,
-		cloudConfig.VCD.VDC,
-		cloudConfig.VCD.UserOrg,
-		cloudConfig.VCD.User,
-		cloudConfig.VCD.Secret,
-		cloudConfig.VCD.RefreshToken,
+		vcdConfigCopy.Host,
+		vcdConfigCopy.TenantOrg,
+		vcdConfigCopy.TenantVdc,
+		vcdConfigCopy.UserOrg,
+		vcdConfigCopy.User,
+		vcdConfigCopy.Password,
+		vcdConfigCopy.RefreshToken,
 		insecure,
 		getVdcClient,
 	)

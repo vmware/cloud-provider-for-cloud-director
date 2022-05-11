@@ -2,7 +2,7 @@
    Copyright 2021 VMware, Inc.
    SPDX-License-Identifier: Apache-2.0
 */
-package vcdcpiclient
+package cpisdk
 
 import (
 	"fmt"
@@ -68,22 +68,6 @@ func getBoolValStrict(val interface{}, defaultVal bool) bool {
 
 	return defaultVal
 }
-
-//func getOneArmValStrict(val interface{}, defaultVal *config.OneArm) *config.OneArm {
-//	if oneArmVal, ok := val.(*config.OneArm); ok {
-//		return oneArmVal
-//	}
-//
-//	return defaultVal
-//}
-//
-//func getInt32ValStrict(val interface{}, defaultVal int32) int32 {
-//	if int32Val, ok := val.(int32); ok {
-//		return int32Val
-//	}
-//
-//	return defaultVal
-//}
 
 // config will be passed in from getTestConfig() and error checked in unit test
 func getTestVCDClient(config *config.CloudConfig, inputMap map[string]interface{}) (*vcdsdk.Client, error) {
