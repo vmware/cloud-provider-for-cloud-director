@@ -197,6 +197,7 @@ func (cgm *CpiGatewayManager) UpdateLoadBalancer(ctx context.Context, lbPoolName
 	client := gm.Client
 	client.RWLock.Lock()
 	defer client.RWLock.Unlock()
+
 	_, err := gm.UpdateLoadBalancerPool(ctx, lbPoolName, ips, internalPort)
 	if err != nil {
 		if lbPoolBusyErr, ok := err.(*vcdsdk.LoadBalancerPoolBusyError); ok {
