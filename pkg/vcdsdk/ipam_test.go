@@ -7,7 +7,6 @@ package vcdsdk
 
 import (
 	"github.com/stretchr/testify/assert"
-	swaggerClient "github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdswaggerclient"
 	"testing"
 )
 
@@ -83,7 +82,7 @@ func TestGetUnusedIPAddressInRange(t *testing.T) {
 
 	for _, testCase := range testCaseList {
 		freeIP, err := getUnusedIPAddressInRange(testCase.StartIPAddress, testCase.EndIPAddress,
-			testCase.UsedIPAddressMap)
+			testCase.UsedIPAddressMap, nil)
 		assert.NoError(t, err, "Should not get an error while finding unused IP address in range")
 		assert.Equal(t, freeIP, testCase.FreeIP, testCase.ErrorComment)
 	}
@@ -94,105 +93,77 @@ func TestGetUnusedIPAddressInRange(t *testing.T) {
 func TestCheckIfIPIsAvailable(t *testing.T) {
 	type TestCase struct {
 		IPAddress   string
-		IPRanges []*swaggerClient.IpRanges
+		IPRanges []IPRange
 		RetVal bool
 	}
 
 	testCaseList := []TestCase{
 		{
 			IPAddress: "1.2.3.4",
-			IPRanges: []*swaggerClient.IpRanges{
+			IPRanges: []IPRange{
 				{
-					Values: []swaggerClient.IpRange{
-						{
-							StartAddress: "1.2.3.1",
-							EndAddress: "1.2.3.10",
-						},
-					},
+					StartIP: "1.2.3.1",
+					EndIP: "1.2.3.10",
 				},
 			},
 			RetVal: true,
 		},
 		{
 			IPAddress: "1.2.3.4",
-			IPRanges: []*swaggerClient.IpRanges{
+			IPRanges: []IPRange{
 				{
-					Values: []swaggerClient.IpRange{
-						{
-							StartAddress: "2.1.3.1",
-							EndAddress: "2.1.3.3",
-						},
-					},
+					StartIP: "2.1.3.1",
+					EndIP: "2.1.3.3",
 				},
 			},
 			RetVal: false,
 		},
 		{
 			IPAddress: "1.2.3.4",
-			IPRanges: []*swaggerClient.IpRanges{
+			IPRanges: []IPRange{
 				{
-					Values: []swaggerClient.IpRange{
-						{
-							StartAddress: "1.2.3.4",
-							EndAddress: "1.2.3.4",
-						},
-					},
+					StartIP: "1.2.3.4",
+					EndIP: "1.2.3.4",
 				},
 			},
 			RetVal: true,
 		},
 		{
 			IPAddress: "1.2.3.4",
-			IPRanges: []*swaggerClient.IpRanges{
+			IPRanges: []IPRange{
 				{
-					Values: []swaggerClient.IpRange{
-						{
-							StartAddress: "1.2.3.1",
-							EndAddress: "1.2.3.4",
-						},
-					},
+					StartIP: "1.2.3.1",
+					EndIP: "1.2.3.4",
 				},
 			},
 			RetVal: true,
 		},
 		{
 			IPAddress: "1.2.3.4",
-			IPRanges: []*swaggerClient.IpRanges{
+			IPRanges: []IPRange{
 				{
-					Values: []swaggerClient.IpRange{
-						{
-							StartAddress: "1.2.3.4",
-							EndAddress: "1.2.3.10",
-						},
-					},
+					StartIP: "1.2.3.4",
+					EndIP: "1.2.3.10",
 				},
 			},
 			RetVal: true,
 		},
 		{
 			IPAddress: "1.2.3.255",
-			IPRanges: []*swaggerClient.IpRanges{
+			IPRanges: []IPRange{
 				{
-					Values: []swaggerClient.IpRange{
-						{
-							StartAddress: "1.2.3.1",
-							EndAddress: "1.2.4.1",
-						},
-					},
+					StartIP: "1.2.3.1",
+					EndIP: "1.2.4.1",
 				},
 			},
 			RetVal: true,
 		},
 		{
 			IPAddress: "1.2.3.0",
-			IPRanges: []*swaggerClient.IpRanges{
+			IPRanges: []IPRange{
 				{
-					Values: []swaggerClient.IpRange{
-						{
-							StartAddress: "1.2.3.1",
-							EndAddress: "1.2.3.255",
-						},
-					},
+					StartIP: "1.2.3.1",
+					EndIP: "1.2.3.255",
 				},
 			},
 			RetVal: false,
@@ -200,7 +171,7 @@ func TestCheckIfIPIsAvailable(t *testing.T) {
 	}
 
 	for _, testCase := range testCaseList {
-		retVal := checkIfIPIsAvailable(testCase.IPAddress, testCase.IPRanges)
+		retVal := checkIfIPInRanges(testCase.IPAddress, &testCase.IPRanges)
 		assert.Equal(t, retVal, testCase.RetVal, "Failed test for [%v]", testCase)
 	}
 
