@@ -119,7 +119,8 @@ func (cgm *CpiGatewayManager) CreateLoadBalancer(ctx context.Context, virtualSer
 				return "", err
 			}
 
-			// Add virtual service to vcd resource set
+			// Add virtual service to vcd resource set. This is benign repeated addition.
+			// AddToVCDResourceSet will make sure not to add duplicate values.
 			err = rdeManager.AddToVCDResourceSet(ctx, vcdsdk.ComponentCPI, vcdsdk.VcdResourceVirtualService,
 				vsSummary.Name, vsSummary.Id, map[string]interface{}{
 					"virtualIP": externalIP,
@@ -208,6 +209,16 @@ func (cgm *CpiGatewayManager) CreateLoadBalancer(ctx context.Context, virtualSer
 		virtualServiceRef, err := gm.CreateVirtualService(ctx, virtualServiceName, lbPoolRef, segRef,
 			virtualServiceIP, portDetails.Protocol, portDetails.ExternalPort,
 			portDetails.UseSSL, portDetails.CertAlias)
+		if virtualServiceRef != nil {
+			// Add virtual service to vcd resource set
+			err = rdeManager.AddToVCDResourceSet(ctx, vcdsdk.ComponentCPI, vcdsdk.VcdResourceVirtualService,
+				virtualServiceRef.Name, virtualServiceRef.Id, map[string]interface{}{
+					"virtualIP": externalIP,
+				})
+			if err != nil {
+				return "", fmt.Errorf("failed to add virtual service [%s] to VCDResourceSet of RDE [%s]", virtualServiceRef.Name, rdeManager.ClusterID)
+			}
+		}
 		if err != nil {
 			// return  plain error if vcdsdk.VirtualServicePendingError is returned. Helps the caller recognize that the
 			// error is because VirtualService is still in Pending state.
@@ -215,14 +226,6 @@ func (cgm *CpiGatewayManager) CreateLoadBalancer(ctx context.Context, virtualSer
 				return "", err
 			}
 			return "", err
-		}
-		// Add virtual service to vcd resource set
-		err = rdeManager.AddToVCDResourceSet(ctx, vcdsdk.ComponentCPI, vcdsdk.VcdResourceVirtualService,
-			virtualServiceRef.Name, virtualServiceRef.Id, map[string]interface{}{
-				"virtualIP": externalIP,
-			})
-		if err != nil {
-			return "", fmt.Errorf("failed to add virtual service [%s] to VCDResourceSet of RDE [%s]", virtualServiceRef.Name, rdeManager.ClusterID)
 		}
 
 		// update RDE with virtual IP
