@@ -163,7 +163,7 @@ func getUnusedIPAddressInRange(startIPAddress string, endIPAddress string,
 
 	endIP, _, err := net.ParseCIDR(fmt.Sprintf("%s/32", endIPAddress))
 	if err != nil {
-		return "", fmt.Errorf("unable to parse start IP CIDR [%s]: [%v]", startIPAddress, err)
+		return "", fmt.Errorf("unable to parse end IP CIDR [%s]: [%v]", endIPAddress, err)
 	}
 
 	freeIP := ""
@@ -186,6 +186,8 @@ func getUnusedIPAddressInRange(startIPAddress string, endIPAddress string,
 	return freeIP, nil
 }
 
+// checkIfIPInRanges checks if the ipStr is in the list of ranges provided in ipRangeListPtr
+// If ipRangeListPtr is nil, ipStr is found. This was the simplest way to not have a check.
 func checkIfIPInRanges(ipStr string, ipRangeListPtr *[]IPRange) bool {
 	if ipRangeListPtr == nil {
 		return true
