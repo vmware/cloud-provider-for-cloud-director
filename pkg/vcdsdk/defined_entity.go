@@ -41,6 +41,20 @@ type VCDResource struct {
 	AdditionalDetails map[string]interface{} `json:"additionalDetails,omitempty"`
 }
 
+type BackendError struct {
+	Name              string                 `json:"name,omitempty"`
+	Timestamp         string                 `json:"timestamp, omitempty"`
+	VcdResourceId     string                 `json:"vcdResourceId, omitempty"`
+	AdditionalDetails map[string]interface{} `json:"additionalDetails,omitempty"`
+}
+
+type BackendEvent struct {
+	Name              string                 `json:"name,omitempty"`
+	Timestamp         string                 `json:"timestamp, omitempty"`
+	VcdResourceId     string                 `json:"vcdResourceId, omitempty"`
+	AdditionalDetails map[string]interface{} `json:"additionalDetails,omitempty"`
+}
+
 type ComponentStatus struct {
 	VCDResourceSet []VCDResource `json:"vcdResourceSet,omitempty"`
 }
@@ -145,12 +159,68 @@ func addToVCDResourceSet(component string, componentName string, componentVersio
 	return statusMap, nil
 }
 
+func (rdeManager *RDEManager) AddToErrors(ctx context.Context, component string, errorSet []BackendError, rollingWindowSize int) error {
+	if rdeManager.ClusterID == "" || strings.HasPrefix(rdeManager.ClusterID, NoRdePrefix) {
+		// Indicates that the RDE ID is either empty or it was auto-generated.
+		klog.Infof("ClusterID [%s] is empty or generated, hence cannot add errors [%v] to RDE",
+			rdeManager.ClusterID, errorSet)
+		return nil
+	}
+	for i := MaxRDEUpdateRetries; i > 1; i-- {
+		rde, resp, etag, err := rdeManager.Client.APIClient.DefinedEntityApi.GetDefinedEntity(ctx, rdeManager.ClusterID)
+		if resp != nil && resp.StatusCode != http.StatusOK {
+			var responseMessageBytes []byte
+			if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
+				responseMessageBytes = gsErr.Body()
+			}
+			return fmt.Errorf(
+				"failed to get RDE [%s] when adding resourse to VCD resource set ; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]",
+				rdeManager.ClusterID, http.StatusOK, resp.StatusCode, string(responseMessageBytes), err)
+		} else if err != nil {
+			return fmt.Errorf("error while updating the RDE [%s]: [%v]", rdeManager.ClusterID, err)
+		}
+		// Only entity of type capvcdCluster should be updated.
+		if !IsCAPVCDEntityType(rde.EntityType) {
+			nonCapvcdEntityError := NonCAPVCDEntityError{
+				EntityTypeID: rde.EntityType,
+			}
+			return nonCapvcdEntityError
+		}
+
+		_, resp, err = rdeManager.Client.APIClient.DefinedEntityApi.UpdateDefinedEntity(ctx, rde, etag, rdeManager.ClusterID, nil)
+		if resp != nil {
+			if resp.StatusCode == http.StatusPreconditionFailed {
+				klog.Errorf("wrong etag while adding errorSet [%v] in RDE [%s]. Retry attempts remaining: [%d]", errorSet, rdeManager.ClusterID, i-1)
+				continue
+			} else if resp.StatusCode != http.StatusOK {
+				var responseMessageBytes []byte
+				if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
+					responseMessageBytes = gsErr.Body()
+				}
+				return fmt.Errorf(
+					"failed to add errorSet [%v] in component [%s] of RDE [%s]; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]",
+					errorSet, component, rdeManager.ClusterID, http.StatusOK, resp.StatusCode, string(responseMessageBytes), err)
+			}
+			// resp.StatusCode is http.StatusOK
+			klog.Infof("successfully added errorSet [%v] in component [%s] of RDE [%s]",
+				errorSet, component, rdeManager.ClusterID)
+			return nil
+		} else if err != nil {
+			return fmt.Errorf("error while updating the RDE [%s]: [%v]", rdeManager.ClusterID, err)
+		} else {
+			return fmt.Errorf("invalid response obtained when updating errorSet [%v] of component [%s] in RDE [%s]", errorSet, component, rdeManager.ClusterID)
+		}
+	}
+
+	return nil
+}
+
 // AddToVCDResourceSet adds a VCDResource to the VCDResourceSet of the component in the RDE
 func (rdeManager *RDEManager) AddToVCDResourceSet(ctx context.Context, component string, resourceType string,
 	resourceName string, resourceId string, additionalDetails map[string]interface{}) error {
 	if rdeManager.ClusterID == "" || strings.HasPrefix(rdeManager.ClusterID, NoRdePrefix) {
 		// Indicates that the RDE ID is either empty or it was auto-generated.
-		klog.Infof("ClusterID [%s] is empty or generated, hence not removing VCDResource [%s:%s] from RDE",
+		klog.Infof("ClusterID [%s] is empty or generated, hence not adding VCDResource [%s:%s] to RDE",
 			rdeManager.ClusterID, resourceType, resourceId)
 		return nil
 	}
