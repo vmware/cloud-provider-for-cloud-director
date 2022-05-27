@@ -31,9 +31,14 @@ func (gm *GatewayManager) GetUnusedExternalIPAddress(ctx context.Context, allowe
 	// Overall procedure
 	// 1. Get all IP ranges in gateway
 	// 2. Get all used IP addresses in gateway
-	// 3. Loop through allowed ip addresses in allowedIPAMSubnetStr
-	// 4. Check if the IP address is unused
-	// 5. Verify that the IP address is in at least one of the gateway ranges
+	// Depending on whether allowedIPAMSubnetStr is empty or not we have two options:
+	// If allowedIPAMSubnetStr is NOT empty:
+	//		3. Loop through allowed ip addresses in allowedIPAMSubnetStr
+	//		4. Check if the IP address is unused
+	//		5. Verify that the IP address is in at least one of the gateway ranges
+	// If allowedIPAMSubnetStr is empty:
+	// 		3. Loop through all IPs in the allowed ip ranges in the gateway
+	// 		4. Check if the IP address is unused
 	// Note: This is not the best approach and can be optimized further by skipping ranges.
 
 	// 1. Get all IP ranges in gateway
@@ -174,12 +179,13 @@ func getUnusedIPAddressInRange(usedIPAddresses map[string]bool, ipRangeList []IP
 		}
 		endIP = cidr.Inc(endIP)
 
-		for !startIP.Equal(endIP) {
-			if !usedIPAddresses[startIP.String()] {
-				return startIP.String(), nil
+		currIP := startIP
+		for !currIP.Equal(endIP) {
+			if !usedIPAddresses[currIP.String()] {
+				return currIP.String(), nil
 			}
 
-			startIP = cidr.Inc(startIP)
+			currIP = cidr.Inc(currIP)
 		}
 	}
 
@@ -205,13 +211,14 @@ func getUnusedIPAddressInAllowedRange(startIPAddress string, endIPAddress string
 	endIP = cidr.Inc(endIP)
 
 	freeIP := ""
-	for !startIP.Equal(endIP) {
-		if !usedIPAddresses[startIP.String()] && checkIfIPInRanges(startIP.String(), ipRangeListPtr) {
-			freeIP = startIP.String()
+	currIP := startIP
+	for !currIP.Equal(endIP) {
+		if !usedIPAddresses[currIP.String()] && checkIfIPInRanges(currIP.String(), ipRangeListPtr) {
+			freeIP = currIP.String()
 			break
 		}
 
-		startIP = cidr.Inc(startIP)
+		currIP = cidr.Inc(currIP)
 	}
 
 	return freeIP, nil
