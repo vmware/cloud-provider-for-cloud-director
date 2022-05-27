@@ -8,6 +8,7 @@ import (
 	"k8s.io/klog"
 	"net/http"
 	"strings"
+	"time"
 )
 
 const (
@@ -16,6 +17,8 @@ const (
 	MaxRDEUpdateRetries = 10
 
 	ComponentStatusFieldVCDResourceSet = "vcdResourceSet"
+	ComponentStatusFieldErrorSet       = "errorSet"
+	ComponentStatusFieldEventSet       = "eventSet"
 
 	ComponentCPI    = "cpi"
 	ComponentCSI    = "csi"
@@ -43,20 +46,22 @@ type VCDResource struct {
 
 type BackendError struct {
 	Name              string                 `json:"name,omitempty"`
-	Timestamp         string                 `json:"timestamp, omitempty"`
+	OccurredAt        time.Time              `json:"occurredAt, omitempty"`
 	VcdResourceId     string                 `json:"vcdResourceId, omitempty"`
 	AdditionalDetails map[string]interface{} `json:"additionalDetails,omitempty"`
 }
 
 type BackendEvent struct {
 	Name              string                 `json:"name,omitempty"`
-	Timestamp         string                 `json:"timestamp, omitempty"`
-	VcdResourceId     string                 `json:"vcdResourceId, omitempty"`
+	OccurredAt        time.Time              `json:"occurredAt,omitempty"`
+	VcdResourceId     string                 `json:"vcdResourceId,omitempty"`
 	AdditionalDetails map[string]interface{} `json:"additionalDetails,omitempty"`
 }
 
 type ComponentStatus struct {
-	VCDResourceSet []VCDResource `json:"vcdResourceSet,omitempty"`
+	VCDResourceSet []VCDResource  `json:"vcdResourceSet,omitempty"`
+	ErrorSet       []BackendError `json:"errorSet,omitempty"`
+	EventSet       []BackendEvent `json:"eventSet,omitempty"`
 }
 
 type RDEManager struct {
@@ -131,7 +136,7 @@ func addToVCDResourceSet(component string, componentName string, componentVersio
 
 	componentStatus, err := convertMapToComponentStatus(componentMap)
 	if err != nil {
-		return nil, fmt.Errorf("failed to convert component status map to ")
+		return nil, fmt.Errorf("failed to convert component status map to component status object")
 	}
 
 	if componentStatus.VCDResourceSet == nil || len(componentStatus.VCDResourceSet) == 0 {
@@ -159,11 +164,21 @@ func addToVCDResourceSet(component string, componentName string, componentVersio
 	return statusMap, nil
 }
 
-func (rdeManager *RDEManager) AddToErrors(ctx context.Context, component string, errorSet []BackendError, rollingWindowSize int) error {
+/*
+AddToErrors function takes BackendError as an input and adds it to the "errorSet" of the specified "componentSectionName" in the RDE status.
+It caps the size of the "errorSet" in the specified "componentSectionName" to the "rollingWindowSize" by removing the oldest entries.
+
+Below is the sample structure of the RDE this function operates on.
+status:
+  <componentSectionName>:
+     errorSet:
+       - <newError>
+*/
+func (rdeManager *RDEManager) AddToErrors(ctx context.Context, componentSectionName string, newError BackendError, rollingWindowSize int) error {
 	if rdeManager.ClusterID == "" || strings.HasPrefix(rdeManager.ClusterID, NoRdePrefix) {
 		// Indicates that the RDE ID is either empty or it was auto-generated.
 		klog.Infof("ClusterID [%s] is empty or generated, hence cannot add errors [%v] to RDE",
-			rdeManager.ClusterID, errorSet)
+			rdeManager.ClusterID, newError)
 		return nil
 	}
 	for i := MaxRDEUpdateRetries; i > 1; i-- {
@@ -174,10 +189,10 @@ func (rdeManager *RDEManager) AddToErrors(ctx context.Context, component string,
 				responseMessageBytes = gsErr.Body()
 			}
 			return fmt.Errorf(
-				"failed to get RDE [%s] when adding resourse to VCD resource set ; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]",
-				rdeManager.ClusterID, http.StatusOK, resp.StatusCode, string(responseMessageBytes), err)
+				"failed to get RDE [%s] when adding error to the errorSet of [%s] ; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]",
+				rdeManager.ClusterID, componentSectionName, http.StatusOK, resp.StatusCode, string(responseMessageBytes), err)
 		} else if err != nil {
-			return fmt.Errorf("error while updating the RDE [%s]: [%v]", rdeManager.ClusterID, err)
+			return fmt.Errorf("error retrieving the RDE [%s]: [%v], while adding to errorSet", rdeManager.ClusterID, err)
 		}
 		// Only entity of type capvcdCluster should be updated.
 		if !IsCAPVCDEntityType(rde.EntityType) {
@@ -187,10 +202,27 @@ func (rdeManager *RDEManager) AddToErrors(ctx context.Context, component string,
 			return nonCapvcdEntityError
 		}
 
+		statusIf, ok := rde.Entity["status"]
+		if !ok {
+			return fmt.Errorf("missing RDE status section in [%s], while adding error [%v] to the errorSet", rdeManager.ClusterID, newError)
+		}
+		statusMap, ok := statusIf.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("failed to convert RDE status [%s] to map[string]interface{}, while adding error [%s] to the errorSet", rdeManager.ClusterID, newError)
+		}
+
+		// update the statusMap (in memory) with the new Error in the specified componentSection
+		updatedStatusMap, err := rdeManager.updateComponentMapWithNewError(componentSectionName, statusMap, newError, rollingWindowSize)
+		if err != nil {
+			return fmt.Errorf("error occurred when updating error set of [%s] status in RDE [%s]: [%v]", componentSectionName, rdeManager.ClusterID, err)
+		}
+		rde.Entity["status"] = updatedStatusMap
+
+		// persist the updated statusMap to VCD
 		_, resp, err = rdeManager.Client.APIClient.DefinedEntityApi.UpdateDefinedEntity(ctx, rde, etag, rdeManager.ClusterID, nil)
 		if resp != nil {
 			if resp.StatusCode == http.StatusPreconditionFailed {
-				klog.Errorf("wrong etag while adding errorSet [%v] in RDE [%s]. Retry attempts remaining: [%d]", errorSet, rdeManager.ClusterID, i-1)
+				klog.Errorf("wrong etag while adding newError [%v] in RDE [%s]. Retry attempts remaining: [%d]", newError, rdeManager.ClusterID, i-1)
 				continue
 			} else if resp.StatusCode != http.StatusOK {
 				var responseMessageBytes []byte
@@ -198,17 +230,175 @@ func (rdeManager *RDEManager) AddToErrors(ctx context.Context, component string,
 					responseMessageBytes = gsErr.Body()
 				}
 				return fmt.Errorf(
-					"failed to add errorSet [%v] in component [%s] of RDE [%s]; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]",
-					errorSet, component, rdeManager.ClusterID, http.StatusOK, resp.StatusCode, string(responseMessageBytes), err)
+					"failed to add newError [%v] in componentSectionName [%s] of RDE [%s]; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]",
+					newError, componentSectionName, rdeManager.ClusterID, http.StatusOK, resp.StatusCode, string(responseMessageBytes), err)
 			}
 			// resp.StatusCode is http.StatusOK
-			klog.Infof("successfully added errorSet [%v] in component [%s] of RDE [%s]",
-				errorSet, component, rdeManager.ClusterID)
+			klog.Infof("successfully added newError [%v] in componentSectionName [%s] of RDE [%s]",
+				newError, componentSectionName, rdeManager.ClusterID)
 			return nil
 		} else if err != nil {
 			return fmt.Errorf("error while updating the RDE [%s]: [%v]", rdeManager.ClusterID, err)
 		} else {
-			return fmt.Errorf("invalid response obtained when updating errorSet [%v] of component [%s] in RDE [%s]", errorSet, component, rdeManager.ClusterID)
+			return fmt.Errorf("invalid response obtained when updating newError [%v] of componentSectionName [%s] in RDE [%s]", newError, componentSectionName, rdeManager.ClusterID)
+		}
+	}
+
+	return nil
+}
+
+func (RDEManager *RDEManager) removeErrorByName(ctx context.Context, componentSectionName string, errorName string) error {
+	return nil
+
+}
+
+/*
+function updateComponentMapWithNewEvent updates the local (in memory) rde status map with the specified new event.
+It also ensures the length of the "eventSet" is capped at the specified "rollingWindowSize" by removing the old entries.
+*/
+func (rdeManager *RDEManager) updateComponentMapWithNewEvent(componentName string, statusMap map[string]interface{}, newEvent BackendEvent, rollingWindowSize int) (map[string]interface{}, error) {
+	// get the component info from the status
+	componentIf, ok := statusMap[componentName]
+	if !ok {
+		// component map not found
+		statusMap[componentName] = map[string]interface{}{
+			"name":     rdeManager.StatusComponentName,
+			"version":  rdeManager.StatusComponentVersion,
+			"eventSet": []BackendEvent{newEvent},
+		}
+		klog.Infof("created component map [%#v] since the component was not found in the status map", statusMap[componentName])
+		return statusMap, nil
+	}
+	componentMap, ok := componentIf.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("failed to convert the status belonging to component [%s] to map[string]interface{}", componentName)
+	}
+	componentStatus, err := convertMapToComponentStatus(componentMap)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert component status map to Component object")
+	}
+
+	newSize := len(componentStatus.ErrorSet) + 1
+	componentStatus.EventSet = append(componentStatus.EventSet, newEvent)
+	if newSize > rollingWindowSize {
+		componentStatus.ErrorSet = componentStatus.ErrorSet[1:]
+	}
+	componentMap[ComponentStatusFieldEventSet] = componentStatus.ErrorSet
+	return statusMap, nil
+}
+
+/*
+function updateComponentMapWithNewError updates the local (in memory) rde status map with the specified new error.
+It also ensures the length of the "errorSet" is capped at the specified "rollingWindowSize" by removing the old entries.
+*/
+func (rdeManager *RDEManager) updateComponentMapWithNewError(componentRdeSectionName string, statusMap map[string]interface{}, newError BackendError, rollingWindowSize int) (map[string]interface{}, error) {
+	// get the component info from the status
+	componentIf, ok := statusMap[componentRdeSectionName]
+	if !ok {
+		// component map not found
+		statusMap[componentRdeSectionName] = map[string]interface{}{
+			"name":     rdeManager.StatusComponentName,
+			"version":  rdeManager.StatusComponentVersion,
+			"errorSet": []BackendError{newError},
+		}
+		klog.Infof("created component map [%#v] since the component was not found in the status map", statusMap[componentRdeSectionName])
+		return statusMap, nil
+	}
+	componentMap, ok := componentIf.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("failed to convert the status belonging to component [%s] to map[string]interface{}", componentRdeSectionName)
+	}
+	componentStatus, err := convertMapToComponentStatus(componentMap)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert component status map to Component object")
+	}
+
+	newSize := len(componentStatus.ErrorSet) + 1
+	componentStatus.ErrorSet = append(componentStatus.ErrorSet, newError)
+	if newSize > rollingWindowSize {
+		componentStatus.ErrorSet = componentStatus.ErrorSet[1:]
+	}
+	componentMap[ComponentStatusFieldErrorSet] = componentStatus.ErrorSet
+	return statusMap, nil
+}
+
+/*
+AddToEventSet function takes BackendEvent as an input and adds it to the "eventSet" of the specified "componentSectionName" in the RDE status.
+It caps the size of the "eventSet" in the specified "componentSectionName" to the "rollingWindowSize" by removing the oldest entries.
+
+Below is the sample structure of the RDE this function operates on.
+status:
+  <componentSectionName>:
+     eventSet:
+       - <newEvent>
+*/
+func (rdeManager *RDEManager) AddToEventSet(ctx context.Context, componentSectionName string, newEvent BackendEvent, rollingWindowSize int) error {
+	if rdeManager.ClusterID == "" || strings.HasPrefix(rdeManager.ClusterID, NoRdePrefix) {
+		// Indicates that the RDE ID is either empty or it was auto-generated.
+		klog.Infof("ClusterID [%s] is empty or generated, hence cannot add events [%#v] to RDE",
+			rdeManager.ClusterID, newEvent)
+		return nil
+	}
+	for i := MaxRDEUpdateRetries; i > 1; i-- {
+		rde, resp, etag, err := rdeManager.Client.APIClient.DefinedEntityApi.GetDefinedEntity(ctx, rdeManager.ClusterID)
+		if resp != nil && resp.StatusCode != http.StatusOK {
+			var responseMessageBytes []byte
+			if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
+				responseMessageBytes = gsErr.Body()
+			}
+			return fmt.Errorf(
+				"failed to get RDE [%s] when adding event to the eventSet of [%s] ; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]",
+				rdeManager.ClusterID, componentSectionName, http.StatusOK, resp.StatusCode, string(responseMessageBytes), err)
+		} else if err != nil {
+			return fmt.Errorf("error retrieving the RDE [%s]: [%v], while adding to eventSet", rdeManager.ClusterID, err)
+		}
+		// Only entity of type capvcdCluster should be updated.
+		if !IsCAPVCDEntityType(rde.EntityType) {
+			nonCapvcdEntityError := NonCAPVCDEntityError{
+				EntityTypeID: rde.EntityType,
+			}
+			return nonCapvcdEntityError
+		}
+
+		statusIf, ok := rde.Entity["status"]
+		if !ok {
+			return fmt.Errorf("missing RDE status section in [%s], while adding event [%s] to the eventSet", rdeManager.ClusterID, newEvent)
+		}
+		statusMap, ok := statusIf.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("failed to convert RDE status [%s] to map[string]interface{}, while adding event [%#v] to the eventSet ", rdeManager.ClusterID, newEvent)
+		}
+
+		// update the statusMap (in memory) with the new Event in the specified componentSection
+		updatedStatusMap, err := rdeManager.updateComponentMapWithNewEvent(componentSectionName, statusMap, newEvent, rollingWindowSize)
+		if err != nil {
+			return fmt.Errorf("error occurred while updating event set of [%s] in RDE [%s]: [%v]", componentSectionName, rdeManager.ClusterID, err)
+		}
+		rde.Entity["status"] = updatedStatusMap
+
+		// persist the updated statusMap to VCD
+		_, resp, err = rdeManager.Client.APIClient.DefinedEntityApi.UpdateDefinedEntity(ctx, rde, etag, rdeManager.ClusterID, nil)
+		if resp != nil {
+			if resp.StatusCode == http.StatusPreconditionFailed {
+				klog.Errorf("wrong etag while adding newEvent [%#v] in RDE [%s]. Retry attempts remaining: [%d]", newEvent, rdeManager.ClusterID, i-1)
+				continue
+			} else if resp.StatusCode != http.StatusOK {
+				var responseMessageBytes []byte
+				if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
+					responseMessageBytes = gsErr.Body()
+				}
+				return fmt.Errorf(
+					"failed to add newEvent [%#v] in componentSectionName [%s] of RDE [%s]; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]",
+					newEvent, componentSectionName, rdeManager.ClusterID, http.StatusOK, resp.StatusCode, string(responseMessageBytes), err)
+			}
+			// resp.StatusCode is http.StatusOK
+			klog.Infof("successfully added newEvent [%v] in componentSectionName [%s] of RDE [%s]",
+				newEvent, componentSectionName, rdeManager.ClusterID)
+			return nil
+		} else if err != nil {
+			return fmt.Errorf("error while updating the RDE [%s]: [%v]", rdeManager.ClusterID, err)
+		} else {
+			return fmt.Errorf("invalid response obtained when updating newEvent [%#v] of componentSectionName [%s] in RDE [%s]", newEvent, componentSectionName, rdeManager.ClusterID)
 		}
 	}
 
@@ -232,10 +422,10 @@ func (rdeManager *RDEManager) AddToVCDResourceSet(ctx context.Context, component
 				responseMessageBytes = gsErr.Body()
 			}
 			return fmt.Errorf(
-				"failed to get RDE [%s] when adding resourse to VCD resource set ; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]",
+				"failed to get RDE [%s] when adding resource to VCD resource set ; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]",
 				rdeManager.ClusterID, http.StatusOK, resp.StatusCode, string(responseMessageBytes), err)
 		} else if err != nil {
-			return fmt.Errorf("error while updating the RDE [%s]: [%v]", rdeManager.ClusterID, err)
+			return fmt.Errorf("error retrieving the RDE [%s]: [%v], while adding to vcdResourceSet", rdeManager.ClusterID, err)
 		}
 
 		// Only entity of type capvcdCluster should be updated.

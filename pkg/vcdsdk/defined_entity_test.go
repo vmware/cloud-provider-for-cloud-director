@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"testing"
+	"time"
 )
 
 func convertToJson(obj interface{}) (string, error) {
@@ -29,13 +30,20 @@ func TestAddToErrorSet(t *testing.T) {
 
 	rdeManager := RDEManager{
 		Client:                 vcdClient,
-		StatusComponentName:    "",
-		StatusComponentVersion: "",
+		StatusComponentName:    "capvcd",
+		StatusComponentVersion: "1.0.0",
 		ClusterID:              "urn:vcloud:entity:vmware:capvcdCluster:0637ac72-bf64-404b-b612-d93f019e9bf2",
 	}
 	ctx := context.Background()
-	errorSet := make([]BackendError, 1)
-	rdeManager.AddToErrors(ctx, "capvcd", errorSet, 2)
+	err1 := BackendError{
+		Name:              "LoadbalancerError",
+		OccurredAt:        time.Now(),
+		VcdResourceId:     "3",
+		AdditionalDetails: nil,
+	}
+	fmt.Println(fmt.Sprintf(" v [%#v]", err1))
+	fmt.Println(fmt.Sprintf(" v [%s]", err1))
+	rdeManager.AddToErrors(ctx, "capvcd", err1, 2)
 }
 
 func TestAddToVCDResourceSet(t *testing.T) {
