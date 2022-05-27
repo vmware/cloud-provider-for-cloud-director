@@ -43,10 +43,10 @@ type authorizationDetails struct {
 
 func init() {
 	gitRoot = os.Getenv("GITROOT")
-	if gitRoot == "" {
-		// It is okay to panic here as this will be caught during dev
-		panic("GITROOT should be set")
-	}
+	//if gitRoot == "" {
+	//	// It is okay to panic here as this will be caught during dev
+	//	panic("GITROOT should be set")
+	//}
 }
 
 func getStrValStrict(val interface{}, defaultVal string) string {
@@ -66,7 +66,8 @@ func getBoolValStrict(val interface{}, defaultVal bool) bool {
 }
 
 func getTestVCDConfig() (*VcdConfig, error) {
-	testVcdInfoFilePath := filepath.Join(gitRoot, "testdata/vcd_info.yaml")
+	//testVcdInfoFilePath := filepath.Join(gitRoot, "testdata/vcd_info.yaml")
+	testVcdInfoFilePath := filepath.Join("", "/Users/sayloo/go/cloud-provider-for-cloud-director/testdata/vcd_info.yaml")
 	vcdInfoContent, err := ioutil.ReadFile(testVcdInfoFilePath)
 	if err != nil {
 		return nil, fmt.Errorf("error reading the vcd_info.yaml file contents: [%v]", err)

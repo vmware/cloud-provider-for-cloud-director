@@ -1,9 +1,11 @@
 package vcdsdk
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"testing"
 )
 
@@ -14,6 +16,26 @@ func convertToJson(obj interface{}) (string, error) {
 	}
 
 	return string(objByteArr), nil
+}
+
+func TestAddToErrorSet(t *testing.T) {
+	vcdConfig, err := getTestVCDConfig()
+	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
+
+	// get client
+	vcdClient, err := getTestVCDClient(vcdConfig, nil)
+	assert.NoError(t, err, "Unable to get VCD client")
+	require.NotNil(t, vcdClient, "VCD Client should not be nil")
+
+	rdeManager := RDEManager{
+		Client:                 vcdClient,
+		StatusComponentName:    "",
+		StatusComponentVersion: "",
+		ClusterID:              "urn:vcloud:entity:vmware:capvcdCluster:0637ac72-bf64-404b-b612-d93f019e9bf2",
+	}
+	ctx := context.Background()
+	errorSet := make([]BackendError, 1)
+	rdeManager.AddToErrors(ctx, "capvcd", errorSet, 2)
 }
 
 func TestAddToVCDResourceSet(t *testing.T) {
