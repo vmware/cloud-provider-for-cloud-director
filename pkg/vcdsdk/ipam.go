@@ -82,22 +82,34 @@ func (gm *GatewayManager) GetUnusedExternalIPAddress(ctx context.Context, allowe
 		pageNum++
 	}
 
-	_, allowedIPAMSubnet, err := net.ParseCIDR(allowedIPAMSubnetStr)
-	if err != nil {
-		return "", fmt.Errorf("unable to parse CIDR [%s] into a subnet: [%v]", allowedIPAMSubnetStr, err)
+	freeIP := ""
+	if allowedIPAMSubnetStr != "" {
+		_, allowedIPAMSubnet, err := net.ParseCIDR(allowedIPAMSubnetStr)
+		if err != nil {
+			return "", fmt.Errorf("unable to parse CIDR [%s] into a subnet: [%v]", allowedIPAMSubnetStr, err)
+		}
+		allowedStartIP, allowedEndIP := cidr.AddressRange(allowedIPAMSubnet)
+		// 3. Loop through allowed ip addresses in the user-specified IPAM Subnet
+		// 4. Check if the IP address is unused &&
+		// 5. Verify that the IP address is in at least one of the gateway ranges
+		// 3-5 performed in the following function
+		freeIP, err = getUnusedIPAddressInAllowedRange(allowedStartIP.String(), allowedEndIP.String(),
+			usedIPAddresses, &ipRangeList)
+		if err != nil {
+			return "", fmt.Errorf("unable to find unused IP from [%s-%s] in IP ranges [%v]",
+				allowedStartIP.String(), allowedEndIP.String(), ipRangeList)
+		}
+	} else {
+		// 3. Loop through all IPs in the allowed ip ranges in the gateway
+		// 4. Check if the IP address is unused
+		// 3-4 performed in the following function
+		freeIP, err = getUnusedIPAddressInRange(usedIPAddresses, ipRangeList)
+		if err != nil {
+			return "", fmt.Errorf("unable to find unused IP in IP ranges [%v]: [%v]",
+				ipRangeList, err)
+		}
 	}
-	allowedStartIP, allowedEndIP := cidr.AddressRange(allowedIPAMSubnet)
 
-	// 3. Loop through allowed ip addresses in gateway's ipamSubnet
-	// 4. Check if the IP address is unused &&
-	// 5. Verify that the IP address is in at least one of the gateway ranges
-	// 3-5 performed in the following function
-	freeIP, err := getUnusedIPAddressInRange(allowedStartIP.String(), allowedEndIP.String(),
-		usedIPAddresses, &ipRangeList)
-	if err != nil {
-		return "", fmt.Errorf("unable to find unused IP from [%s-%s] in IP ranges [%v]",
-			allowedStartIP.String(), allowedEndIP.String(), ipRangeList)
-	}
 	if freeIP == "" {
 		return "", fmt.Errorf("unable to obtain free IP from gateway [%s]; all are used",
 			gm.GatewayRef.Name)
@@ -136,7 +148,7 @@ func (gm *GatewayManager) GetUnusedInternalIPAddress(ctx context.Context, oneArm
 		pageNum++
 	}
 
-	freeIP, err := getUnusedIPAddressInRange(oneArm.StartIP, oneArm.EndIP, usedIPAddresses, nil)
+	freeIP, err := getUnusedIPAddressInAllowedRange(oneArm.StartIP, oneArm.EndIP, usedIPAddresses, nil)
 	if err != nil {
 		return "", fmt.Errorf("error in finding unused IP address in range [%s-%s]: [%v]",
 			oneArm.StartIP, oneArm.EndIP, err)
@@ -149,7 +161,32 @@ func (gm *GatewayManager) GetUnusedInternalIPAddress(ctx context.Context, oneArm
 	return freeIP, nil
 }
 
-func getUnusedIPAddressInRange(startIPAddress string, endIPAddress string,
+func getUnusedIPAddressInRange(usedIPAddresses map[string]bool, ipRangeList []IPRange) (string, error) {
+	for _, ipRange := range ipRangeList {
+		startIP, _, err := net.ParseCIDR(fmt.Sprintf("%s/32", ipRange.StartIP))
+		if err != nil {
+			return "", fmt.Errorf("unable to parse start IP CIDR of range [%v]: [%v]", ipRange, err)
+		}
+
+		endIP, _, err := net.ParseCIDR(fmt.Sprintf("%s/32", ipRange.EndIP))
+		if err != nil {
+			return "", fmt.Errorf("unable to parse start IP CIDR of range [%v]: [%v]", ipRange, err)
+		}
+		endIP = cidr.Inc(endIP)
+
+		for !startIP.Equal(endIP) {
+			if !usedIPAddresses[startIP.String()] {
+				return startIP.String(), nil
+			}
+
+			startIP = cidr.Inc(startIP)
+		}
+	}
+
+	return "", nil
+}
+
+func getUnusedIPAddressInAllowedRange(startIPAddress string, endIPAddress string,
 	usedIPAddresses map[string]bool, ipRangeListPtr *[]IPRange) (string, error) {
 
 	// 3. Loop through allowed ip addresses in gateway's ipamSubnet
@@ -165,6 +202,7 @@ func getUnusedIPAddressInRange(startIPAddress string, endIPAddress string,
 	if err != nil {
 		return "", fmt.Errorf("unable to parse end IP CIDR [%s]: [%v]", endIPAddress, err)
 	}
+	endIP = cidr.Inc(endIP)
 
 	freeIP := ""
 	for !startIP.Equal(endIP) {
@@ -174,13 +212,6 @@ func getUnusedIPAddressInRange(startIPAddress string, endIPAddress string,
 		}
 
 		startIP = cidr.Inc(startIP)
-	}
-
-	// handle the last IP since we skip it above
-	if freeIP == "" && startIP.Equal(endIP) {
-		if !usedIPAddresses[startIP.String()] && checkIfIPInRanges(startIP.String(), ipRangeListPtr) {
-			freeIP = startIP.String()
-		}
 	}
 
 	return freeIP, nil

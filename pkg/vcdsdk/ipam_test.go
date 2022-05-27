@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-func TestGetUnusedIPAddressInRange(t *testing.T) {
+func TestGetUnusedIPAddressInAllowedRange(t *testing.T) {
 
 	type TestCase struct {
 		StartIPAddress   string
@@ -81,7 +81,7 @@ func TestGetUnusedIPAddressInRange(t *testing.T) {
 	}
 
 	for _, testCase := range testCaseList {
-		freeIP, err := getUnusedIPAddressInRange(testCase.StartIPAddress, testCase.EndIPAddress,
+		freeIP, err := getUnusedIPAddressInAllowedRange(testCase.StartIPAddress, testCase.EndIPAddress,
 			testCase.UsedIPAddressMap, nil)
 		assert.NoError(t, err, "Should not get an error while finding unused IP address in range")
 		assert.Equal(t, freeIP, testCase.FreeIP, testCase.ErrorComment)
@@ -89,6 +89,75 @@ func TestGetUnusedIPAddressInRange(t *testing.T) {
 
 	return
 }
+
+func TestGetUnusedIPAddressInRange(t *testing.T) {
+
+	type TestCase struct {
+		IPRangeList      []IPRange
+		UsedIPAddressMap map[string]bool
+		FreeIP           string
+		ErrorComment     string
+	}
+
+	testCaseList := []TestCase{
+		{
+			IPRangeList: []IPRange{
+				{
+					StartIP: "1.2.3.3",
+					EndIP:   "1.2.3.5",
+				},
+			},
+			UsedIPAddressMap: map[string]bool{
+				"1.2.3.4": true,
+				"1.2.3.5": true,
+			},
+			FreeIP:       "1.2.3.3",
+			ErrorComment: "NormalTest: The first IP in range should be returned",
+		},
+		{
+			IPRangeList: []IPRange{
+				{
+					StartIP: "1.2.3.4",
+					EndIP:   "1.2.3.5",
+				},
+			},
+			UsedIPAddressMap: map[string]bool{
+				"1.2.3.4": true,
+				"1.2.3.5": true,
+			},
+			FreeIP:       "",
+			ErrorComment: "NoIPTest",
+		},
+		{
+			IPRangeList: []IPRange{
+				{
+					StartIP: "1.2.3.4",
+					EndIP:   "1.2.3.5",
+				},
+				{
+					StartIP: "1.2.3.9",
+					EndIP:   "1.2.3.11",
+				},
+			},
+			UsedIPAddressMap: map[string]bool{
+				"1.2.3.4": true,
+				"1.2.3.5": true,
+				"1.2.3.9": true,
+			},
+			FreeIP:       "1.2.3.10",
+			ErrorComment: "NoIPTest",
+		},
+	}
+
+	for _, testCase := range testCaseList {
+		freeIP, err := getUnusedIPAddressInRange(testCase.UsedIPAddressMap, testCase.IPRangeList)
+		assert.NoError(t, err, "Should not get an error while finding unused IP address in range")
+		assert.Equal(t, freeIP, testCase.FreeIP, testCase.ErrorComment)
+	}
+
+	return
+}
+
 
 func TestCheckIfIPIsAvailable(t *testing.T) {
 	type TestCase struct {
@@ -167,6 +236,26 @@ func TestCheckIfIPIsAvailable(t *testing.T) {
 				},
 			},
 			RetVal: false,
+		},
+		{
+			IPAddress: "1.2.4.0",
+			IPRanges: []IPRange{
+				{
+					StartIP: "1.2.3.1",
+					EndIP: "1.2.3.255",
+				},
+			},
+			RetVal: false,
+		},
+		{
+			IPAddress: "1.2.3.255",
+			IPRanges: []IPRange{
+				{
+					StartIP: "1.2.3.1",
+					EndIP: "1.2.3.255",
+				},
+			},
+			RetVal: true,
 		},
 	}
 
