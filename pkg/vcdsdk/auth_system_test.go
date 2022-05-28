@@ -71,6 +71,7 @@ func TestNewVCDAuthConfigFromSecrets(t *testing.T) {
 		"user":    authDetails.Username,
 		"secret":  authDetails.Password,
 		"userOrg": authDetails.UserOrg,
+		"refreshToken": "",
 	})
 	assert.NoError(t, err, "There should be no error for missing OneArm")
 	assert.NotNil(t, vcdClient, "VCD Client should not be nil")

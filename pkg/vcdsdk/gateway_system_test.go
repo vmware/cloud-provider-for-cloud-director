@@ -16,17 +16,29 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"testing"
-	"time"
 )
 
 const BusyRetries = 5
 
 func TestCacheGatewayDetails(t *testing.T) {
 
+	authFile := filepath.Join(gitRoot, "testdata/auth_test.yaml")
+	authFileContent, err := ioutil.ReadFile(authFile)
+	assert.NoError(t, err, "There should be no error reading the auth file contents.")
+
+	var authDetails authorizationDetails
+	err = yaml.Unmarshal(authFileContent, &authDetails)
+	assert.NoError(t, err, "There should be no error parsing auth file content.")
+
 	vcdConfig, err := getTestVCDConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
-	vcdClient, err := getTestVCDClient(vcdConfig, nil)
+	vcdClient, err := getTestVCDClient(vcdConfig, map[string]interface{}{
+		"user":         authDetails.Username,
+		"secret":       authDetails.Password,
+		"userOrg":      authDetails.UserOrg,
+		"getVdcClient": true,
+	})
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
 
@@ -49,10 +61,21 @@ func TestCacheGatewayDetails(t *testing.T) {
 
 func TestDNATRuleCRUDE(t *testing.T) {
 
+	authFile := filepath.Join(gitRoot, "testdata/auth_test.yaml")
+	authFileContent, err := ioutil.ReadFile(authFile)
+	assert.NoError(t, err, "There should be no error reading the auth file contents.")
+
+	var authDetails authorizationDetails
+	err = yaml.Unmarshal(authFileContent, &authDetails)
+	assert.NoError(t, err, "There should be no error parsing auth file content.")
+
 	vcdConfig, err := getTestVCDConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
 	vcdClient, err := getTestVCDClient(vcdConfig, map[string]interface{}{
+		"user":         authDetails.Username,
+		"secret":       authDetails.Password,
+		"userOrg":      authDetails.UserOrg,
 		"getVdcClient": true,
 	})
 	assert.NoError(t, err, "Unable to get VCD client")
@@ -64,18 +87,11 @@ func TestDNATRuleCRUDE(t *testing.T) {
 	assert.NoError(t, err, "gateway manager should be created without error")
 
 	dnatRuleName := fmt.Sprintf("test-dnat-rule-%s", uuid.New().String())
-
-	appPortProfileName := GetAppPortProfileName(dnatRuleName)
-	appPortProfile, err := gm.CreateAppPortProfile(appPortProfileName, 80)
-	assert.NoError(t, err, "there should be no error creating an app port profile")
-	assert.NotNil(t, appPortProfile, "app port profile created should not be nil")
-	assert.NotNil(t, appPortProfile.NsxtAppPortProfile, "nsxt app port profile should not be nil")
-
-	err = gm.CreateDNATRule(ctx, dnatRuleName, "1.2.3.4", "1.2.3.5", 80, 36123, appPortProfile)
+	err = gm.CreateDNATRule(ctx, dnatRuleName, "1.2.3.4", "1.2.3.5", 80, 36123)
 	assert.NoError(t, err, "Unable to create dnat rule")
 
 	// repeated creation should not fail
-	err = gm.CreateDNATRule(ctx, dnatRuleName, "1.2.3.4", "1.2.3.5", 80, 36123, appPortProfile)
+	err = gm.CreateDNATRule(ctx, dnatRuleName, "1.2.3.4", "1.2.3.5", 80, 36123)
 	assert.NoError(t, err, "Unable to create dnat rule for the second time")
 
 	natRuleRef, err := gm.GetNATRuleRef(ctx, dnatRuleName)
@@ -84,10 +100,10 @@ func TestDNATRuleCRUDE(t *testing.T) {
 	assert.Equal(t, dnatRuleName, natRuleRef.Name, "Nat Rule name should match")
 	assert.NotEmpty(t, natRuleRef.ID, "Nat Rule ID should not be empty")
 
-	_, err = gm.UpdateDNATRule(ctx, dnatRuleName, "2.3.4.5", "2.3.4.5", 8080)
+	err = gm.UpdateDNATRule(ctx, dnatRuleName, "2.3.4.5", "2.3.4.5", 8080)
 	assert.NoError(t, err, "Unable to update dnat rule")
 
-	_, err = gm.UpdateDNATRule(ctx, dnatRuleName, "2.3.4.5", "2.3.4.5", 8080)
+	err = gm.UpdateDNATRule(ctx, dnatRuleName, "2.3.4.5", "2.3.4.5", 8080)
 	assert.NoError(t, err, "repeated updates to dnat rule should not fail")
 
 	err = gm.DeleteDNATRule(ctx, dnatRuleName, true)
@@ -99,12 +115,6 @@ func TestDNATRuleCRUDE(t *testing.T) {
 	err = gm.DeleteDNATRule(ctx, dnatRuleName, false)
 	assert.NoError(t, err, "Should not fail when deleting non-existing dnat rule")
 
-	err = gm.DeleteAppPortProfile(appPortProfileName, false)
-	assert.NoError(t, err, "there should be no error when app port profile is deleted")
-
-	err = gm.DeleteAppPortProfile(appPortProfileName, false)
-	assert.NoError(t, err, "there should be no error when app port profile is deleted again")
-
 	natRuleRef, err = gm.GetNATRuleRef(ctx, dnatRuleName)
 	assert.NoError(t, err, "Get should not fail when nat rule is absent")
 	assert.Nil(t, natRuleRef, "Deleted nat rule reference should be nil")
@@ -114,15 +124,25 @@ func TestDNATRuleCRUDE(t *testing.T) {
 
 func TestLBPoolCRUDE(t *testing.T) {
 
+	authFile := filepath.Join(gitRoot, "testdata/auth_test.yaml")
+	authFileContent, err := ioutil.ReadFile(authFile)
+	assert.NoError(t, err, "There should be no error reading the auth file contents.")
+
+	var authDetails authorizationDetails
+	err = yaml.Unmarshal(authFileContent, &authDetails)
+	assert.NoError(t, err, "There should be no error parsing auth file content.")
+
 	vcdConfig, err := getTestVCDConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
-	vcdClient, err := getTestVCDClient(vcdConfig, nil)
+	vcdClient, err := getTestVCDClient(vcdConfig, map[string]interface{}{
+		"user":         authDetails.Username,
+		"secret":       authDetails.Password,
+		"userOrg":      authDetails.UserOrg,
+		"getVdcClient": true,
+	})
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
-
-	// Avoid RDE updates by using clusterID which has `NoRdePrefix` prefix
-	vcdConfig.ClusterID = fmt.Sprintf("%s-%s", uuid.New().String(), "NoRdePrefix")
 
 	ctx := context.Background()
 
@@ -130,7 +150,6 @@ func TestLBPoolCRUDE(t *testing.T) {
 	assert.NoError(t, err, "gateway manager should be created without error")
 
 	lbPoolName := fmt.Sprintf("test-lb-pool-%s", uuid.New().String())
-
 	lbPoolRef, err := gm.CreateLoadBalancerPool(ctx, lbPoolName, []string{"1.2.3.4", "1.2.3.5"}, 31234)
 	assert.NoError(t, err, "Unable to create lb pool")
 	require.NotNil(t, lbPoolRef, "LB Pool reference should not be nil")
@@ -189,10 +208,23 @@ func TestLBPoolCRUDE(t *testing.T) {
 
 func TestGetLoadBalancerSEG(t *testing.T) {
 
+	authFile := filepath.Join(gitRoot, "testdata/auth_test.yaml")
+	authFileContent, err := ioutil.ReadFile(authFile)
+	assert.NoError(t, err, "There should be no error reading the auth file contents.")
+
+	var authDetails authorizationDetails
+	err = yaml.Unmarshal(authFileContent, &authDetails)
+	assert.NoError(t, err, "There should be no error parsing auth file content.")
+
 	vcdConfig, err := getTestVCDConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
-	vcdClient, err := getTestVCDClient(vcdConfig, nil)
+	vcdClient, err := getTestVCDClient(vcdConfig, map[string]interface{}{
+		"user":         authDetails.Username,
+		"secret":       authDetails.Password,
+		"userOrg":      authDetails.UserOrg,
+		"getVdcClient": true,
+	})
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
 
@@ -212,10 +244,24 @@ func TestGetLoadBalancerSEG(t *testing.T) {
 
 func TestGetUnusedGatewayIP(t *testing.T) {
 
+	authFile := filepath.Join(gitRoot, "testdata/auth_test.yaml")
+	authFileContent, err := ioutil.ReadFile(authFile)
+	assert.NoError(t, err, "There should be no error reading the auth file contents.")
+
+	var authDetails authorizationDetails
+	err = yaml.Unmarshal(authFileContent, &authDetails)
+	assert.NoError(t, err, "There should be no error parsing auth file content.")
+
 	vcdConfig, err := getTestVCDConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
-	vcdClient, err := getTestVCDClient(vcdConfig, nil)
+	vcdClient, err := getTestVCDClient(vcdConfig, map[string]interface{}{
+		"user":         authDetails.Username,
+		"secret":       authDetails.Password,
+		"userOrg":      authDetails.UserOrg,
+		"getVdcClient": true,
+		"subnet":       "",
+	})
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
 
@@ -244,17 +290,25 @@ func TestGetUnusedGatewayIP(t *testing.T) {
 
 func TestVirtualServiceHttpCRUDE(t *testing.T) {
 
-	// NOTE: Create a dummy virtual service before running this test. Time to create the first virtual service may
-	// bottle-neck the test execution.
+	authFile := filepath.Join(gitRoot, "testdata/auth_test.yaml")
+	authFileContent, err := ioutil.ReadFile(authFile)
+	assert.NoError(t, err, "There should be no error reading the auth file contents.")
+
+	var authDetails authorizationDetails
+	err = yaml.Unmarshal(authFileContent, &authDetails)
+	assert.NoError(t, err, "There should be no error parsing auth file content.")
+
 	vcdConfig, err := getTestVCDConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
-	vcdClient, err := getTestVCDClient(vcdConfig, nil)
+	vcdClient, err := getTestVCDClient(vcdConfig, map[string]interface{}{
+		"user":         authDetails.Username,
+		"secret":       authDetails.Password,
+		"userOrg":      authDetails.UserOrg,
+		"getVdcClient": true,
+	})
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
-
-	// Avoid RDE updates by using clusterID which has `NoRdePrefix` prefix
-	vcdConfig.ClusterID = fmt.Sprintf("%s-%s", uuid.New().String(), "NoRdePrefix")
 
 	ctx := context.Background()
 
@@ -271,7 +325,7 @@ func TestVirtualServiceHttpCRUDE(t *testing.T) {
 	virtualServiceName := fmt.Sprintf("test-virtual-service-%s", uuid.New().String())
 	internalIP := "2.3.4.5"
 	var vsRef *swagger.EntityReference
-	for i := 0; i < BusyRetries; i++ {
+	for i := 0; i < BusyRetries; i ++ {
 		vsRef, err = gm.CreateVirtualService(ctx, virtualServiceName, lbPoolRef, segRef,
 			internalIP, "HTTP", 80, false, "")
 		if err != nil {
@@ -292,7 +346,7 @@ func TestVirtualServiceHttpCRUDE(t *testing.T) {
 	assert.NotEmpty(t, vsRefObtained.Id, "Virtual service ID should not be empty")
 
 	// repeated creation should not fail
-	for i := 0; i < BusyRetries; i++ {
+	for i := 0; i < BusyRetries; i ++ {
 		vsRef, err = gm.CreateVirtualService(ctx, virtualServiceName, lbPoolRef, segRef,
 			internalIP, "HTTP", 80, false, "")
 		if err != nil {
@@ -305,14 +359,14 @@ func TestVirtualServiceHttpCRUDE(t *testing.T) {
 	require.NotNil(t, vsRef, "VirtualServiceRef should not be nil")
 	assert.Equal(t, virtualServiceName, vsRef.Name, "Virtual Service name should match")
 
-	_, err = gm.UpdateVirtualServicePort(ctx, virtualServiceName, 8080)
+	err = gm.UpdateVirtualServicePort(ctx, virtualServiceName, 8080)
 	assert.NoError(t, err, "Unable to update external port")
 
 	// repeated update should not fail
-	_, err = gm.UpdateVirtualServicePort(ctx, virtualServiceName, 8080)
+	err = gm.UpdateVirtualServicePort(ctx, virtualServiceName, 8080)
 	assert.NoError(t, err, "Repeated update to external port should not fail")
 
-	_, err = gm.UpdateVirtualServicePort(ctx, virtualServiceName+"-invalid", 8080)
+	err = gm.UpdateVirtualServicePort(ctx, virtualServiceName+"-invalid", 8080)
 	assert.Error(t, err, "Update virtual service on a non-existent virtual service should fail")
 
 	err = gm.DeleteVirtualService(ctx, virtualServiceName, true)
@@ -335,9 +389,6 @@ func TestVirtualServiceHttpCRUDE(t *testing.T) {
 }
 
 func TestVirtualServiceHttpsCRUDE(t *testing.T) {
-
-	// NOTE: Create a dummy virtual service before running this test. Time to create the first virtual service may
-	// bottle-neck the test execution.
 
 	authFile := filepath.Join(gitRoot, "testdata/auth_test.yaml")
 	authFileContent, err := ioutil.ReadFile(authFile)
@@ -363,7 +414,6 @@ func TestVirtualServiceHttpsCRUDE(t *testing.T) {
 	assert.NoError(t, err, "gateway manager should be created without error")
 
 	lbPoolName := fmt.Sprintf("test-lb-pool-%s", uuid.New().String())
-
 	lbPoolRef, err := gm.CreateLoadBalancerPool(ctx, lbPoolName, []string{"1.2.3.4", "1.2.3.5"}, 31234)
 	assert.NoError(t, err, "Unable to create lb pool")
 
@@ -379,7 +429,7 @@ func TestVirtualServiceHttpsCRUDE(t *testing.T) {
 	}
 
 	var vsRef *swagger.EntityReference
-	for i := 0; i < BusyRetries; i++ {
+	for i := 0; i < BusyRetries; i ++ {
 		vsRef, err = gm.CreateVirtualService(ctx, virtualServiceName, lbPoolRef, segRef,
 			internalIP, "HTTP", 80, false, "")
 		if err != nil {
@@ -406,15 +456,15 @@ func TestVirtualServiceHttpsCRUDE(t *testing.T) {
 	assert.Equal(t, virtualServiceName, vsRef.Name, "Virtual Service name should match")
 
 	// update and delete calls might error out if virtual services are busy. Retry if the error is caused by the busy virtual services
-	_, err = gm.UpdateVirtualServicePort(ctx, virtualServiceName, 8443)
+	err = gm.UpdateVirtualServicePort(ctx, virtualServiceName, 8443)
 	assert.NoError(t, err, "Unable to update external port")
 
 	// repeated update should not fail
-	_, err = gm.UpdateVirtualServicePort(ctx, virtualServiceName, 8443)
+	err = gm.UpdateVirtualServicePort(ctx, virtualServiceName, 8443)
 	assert.NoError(t, err, "Repeated update to external port should not fail")
 
 	// update of invalid virtual service
-	_, err = gm.UpdateVirtualServicePort(ctx, virtualServiceName+"-invalid\n", 8443)
+	err = gm.UpdateVirtualServicePort(ctx, virtualServiceName+"-invalid\n", 8443)
 	assert.Error(t, err, "Update virtual service on a non-existent virtual service should fail")
 
 	err = gm.DeleteVirtualService(ctx, virtualServiceName, true)

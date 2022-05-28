@@ -80,7 +80,7 @@ func getTestVCDConfig() (*VcdConfig, error) {
 	return &vcdInfo, nil
 }
 
-// getTestVCDClient config will be passed in from getTestConfig() and error checked in unit test
+// getTestVCDClient returns a client created using the file testdata/vcd_info.yaml
 func getTestVCDClient(vcdConfig *VcdConfig, inputMap map[string]interface{}) (*Client, error) {
 	vcdConfigCopy := *vcdConfig
 	insecure := true

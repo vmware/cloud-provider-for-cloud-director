@@ -1,8 +1,7 @@
-package util
+package vcdsdk
 
 import (
 	"fmt"
-	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdsdk"
 	swaggerClient "github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdswaggerclient"
 )
 
@@ -16,9 +15,9 @@ func (e CapvcdRdeFoundError) Error() string {
 
 type CPIStatus struct {
 	Name           string               `json:"name,omitempty"`
-	Version        string               `json:"version,omitempty"`
-	VCDResourceSet []vcdsdk.VCDResource `json:"vcdResourceSet,omitempty"`
-	Errors         []string             `json:"errors,omitempty"`
+	Version        string        `json:"version,omitempty"`
+	VCDResourceSet []VCDResource `json:"vcdResourceSet,omitempty"`
+	Errors         []string      `json:"errors,omitempty"`
 	VirtualIPs     []string             `json:"virtualIPs,omitempty"`
 }
 
@@ -33,11 +32,11 @@ func GetVirtualIPsFromRDE(rde *swaggerClient.DefinedEntity) ([]string, error) {
 	}
 
 	var virtualIpInterfaces interface{}
-	if vcdsdk.IsCAPVCDEntityType(rde.EntityType) {
+	if IsCAPVCDEntityType(rde.EntityType) {
 		return nil, CapvcdRdeFoundError{
 			EntityType: rde.EntityType,
 		}
-	} else if vcdsdk.IsNativeClusterEntityType(rde.EntityType) {
+	} else if IsNativeClusterEntityType(rde.EntityType) {
 		virtualIpInterfaces = statusMap["virtual_IPs"]
 	} else {
 		return nil, fmt.Errorf("entity type %s not supported by CPI", rde.EntityType)
@@ -73,12 +72,12 @@ func ReplaceVirtualIPsInRDE(rde *swaggerClient.DefinedEntity, updatedIps []strin
 	if !ok {
 		return nil, fmt.Errorf("unable to convert [%T] to map", statusEntry)
 	}
-	if vcdsdk.IsCAPVCDEntityType(rde.EntityType) {
+	if IsCAPVCDEntityType(rde.EntityType) {
 		capvcdEntityFoundErr := CapvcdRdeFoundError{
 			EntityType: rde.EntityType,
 		}
 		return nil, capvcdEntityFoundErr
-	} else if vcdsdk.IsNativeClusterEntityType(rde.EntityType) {
+	} else if IsNativeClusterEntityType(rde.EntityType) {
 		statusMap["virtual_IPs"] = updatedIps
 	}
 	return rde, nil
