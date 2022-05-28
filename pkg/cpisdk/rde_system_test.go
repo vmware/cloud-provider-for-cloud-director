@@ -3,6 +3,7 @@ package cpisdk
 import (
 	"context"
 	"github.com/stretchr/testify/assert"
+	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdsdk"
 	"io/ioutil"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"net/http"
@@ -22,18 +23,18 @@ func foundStringInSlice(find string, slice []string) bool {
 func TestUpdateRDEUsingEtag(t *testing.T) {
 	// TODO: This test will currently fail unless the code below is uncommented. Refer to VCDA-3600
 
-	cloudConfig, err := getTestConfig()
+	cloudConfig, err := vcdsdk.getTestVCDConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
-	authFile := filepath.Join(gitRoot, "testdata/auth_test.yaml")
+	authFile := filepath.Join(vcdsdk.gitRoot, "testdata/auth_test.yaml")
 	authFileContent, err := ioutil.ReadFile(authFile)
 	assert.NoError(t, err, "There should be no error reading the auth file contents.")
 
-	var authDetails authorizationDetails
+	var authDetails vcdsdk.authorizationDetails
 	err = yaml.Unmarshal(authFileContent, &authDetails)
 	assert.NoError(t, err, "There should be no error parsing auth file content.")
 
-	vcdClient, err := getTestVCDClient(cloudConfig, map[string]interface{}{
+	vcdClient, err := vcdsdk.getTestVCDClient(cloudConfig, map[string]interface{}{
 		"user":    authDetails.Username,
 		"secret":  authDetails.Password,
 		"userOrg": authDetails.UserOrg,
@@ -41,7 +42,7 @@ func TestUpdateRDEUsingEtag(t *testing.T) {
 
 	ctx := context.Background()
 
-	rm := NewRDEManager(vcdClient, cloudConfig.ClusterID)
+	rm := vcdsdk.NewRDEManager(vcdClient, cloudConfig.ClusterID)
 
 	// get rde Vips
 	rdeVips1, etag1, defEnt1, err := rm.GetRDEVirtualIps(ctx)
