@@ -357,12 +357,12 @@ func (rdeManager *RDEManager) updateComponentMapWithNewEvent(componentName strin
 		return nil, fmt.Errorf("failed to convert component status map to Component object")
 	}
 
-	newSize := len(componentStatus.ErrorSet) + 1
+	newSize := len(componentStatus.EventSet) + 1
 	componentStatus.EventSet = append(componentStatus.EventSet, newEvent)
 	if newSize > rollingWindowSize {
-		componentStatus.ErrorSet = componentStatus.ErrorSet[1:]
+		componentStatus.EventSet = componentStatus.EventSet[1:]
 	}
-	componentMap[ComponentStatusFieldEventSet] = componentStatus.ErrorSet
+	componentMap[ComponentStatusFieldEventSet] = componentStatus.EventSet
 	return statusMap, nil
 }
 

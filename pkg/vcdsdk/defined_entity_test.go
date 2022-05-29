@@ -35,7 +35,78 @@ func convertToJson(obj interface{}) (string, error) {
 	return string(objByteArr), nil
 }
 
-func TestAddToErrorSet(t *testing.T) {
+func TestCRUDOnEventSet(t *testing.T) {
+	vcdConfig, err := getTestVCDConfig()
+	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
+
+	// get client
+	vcdClient, err := getTestVCDClient(vcdConfig, nil)
+	assert.NoError(t, err, "Unable to get VCD client")
+	require.NotNil(t, vcdClient, "VCD Client should not be nil")
+	ctx := context.Background()
+
+	// create a minimal CAPVCD RDE with almost empty spec and status
+	rdeId, err := createCapvcdRDE(ctx, vcdClient, "testCluster")
+
+	// Create some mock objects for errors in capvcd section
+	rdeManager := RDEManager{
+		Client:                 vcdClient,
+		StatusComponentName:    CAPVCDComponentRDESectionName,
+		StatusComponentVersion: "1.0.0",
+		ClusterID:              rdeId,
+	}
+	ControlPlaneInitializedEvent := BackendEvent{
+		Name:              "ControlplaneInitialized",
+		OccurredAt:        time.Now(),
+		VcdResourceId:     "vmId",
+		AdditionalDetails: nil,
+	}
+	InfrastractureCreatedEvent := BackendEvent{
+		Name:              "InfrastructureCreated",
+		OccurredAt:        time.Now(),
+		VcdResourceId:     "virtualServiceId",
+		AdditionalDetails: nil,
+	}
+	CloudInitEvent := BackendEvent{
+		Name:              "CloudInitSuccessful",
+		OccurredAt:        time.Now(),
+		VcdResourceId:     "VmId",
+		AdditionalDetails: nil,
+	}
+
+	// add few eventss to rde.status.capvcd.eventSet
+	err = rdeManager.AddToEventSet(ctx, "capvcd", ControlPlaneInitializedEvent, 3)
+	assert.NoError(t, err, "failed to add event into the eventset")
+	rdeManager.AddToEventSet(ctx, "capvcd", InfrastractureCreatedEvent, 3)
+	assert.NoError(t, err, "failed to add event into the eventset")
+	rdeManager.AddToEventSet(ctx, "capvcd", CloudInitEvent, 3)
+	assert.NoError(t, err, "failed to add event into the eventset")
+
+	// get the rde and check if the length of errors added is same as expected
+	rde, _, _, err := vcdClient.APIClient.DefinedEntityApi.GetDefinedEntity(ctx, rdeId)
+	status, _ := rde.Entity["status"].(map[string]interface{})
+	capvcdComponent, _ := status[CAPVCDComponentRDESectionName].(map[string]interface{})
+	eventSet, _ := capvcdComponent["eventSet"].([]interface{})
+	assert.Equal(t, 3, len(eventSet), "Length of error set must match with event additions requested")
+
+	rdeManager.AddToEventSet(ctx, "capvcd", CloudInitEvent, 3)
+	assert.NoError(t, err, "failed to add event into the eventset")
+
+	// get the rde and check if the length of events is still capped at 3- window size (even though 4 events were added)
+	rde, _, _, err = vcdClient.APIClient.DefinedEntityApi.GetDefinedEntity(ctx, rdeId)
+	status, _ = rde.Entity["status"].(map[string]interface{})
+	capvcdComponent, _ = status[CAPVCDComponentRDESectionName].(map[string]interface{})
+	eventSet, _ = capvcdComponent["eventSet"].([]interface{})
+	assert.Equal(t, 3, len(eventSet), "Length of error set must match with rollingWindowSize")
+
+	// delete RDE
+	_, _, err = vcdClient.APIClient.DefinedEntityApi.ResolveDefinedEntity(ctx, rdeId)
+	_, err = vcdClient.APIClient.DefinedEntityApi.DeleteDefinedEntity(ctx,
+		rdeId, nil)
+	assert.NoError(t, err, "failed to delete rdeId")
+}
+
+func TestCRUDOnErrorSet(t *testing.T) {
 	vcdConfig, err := getTestVCDConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
