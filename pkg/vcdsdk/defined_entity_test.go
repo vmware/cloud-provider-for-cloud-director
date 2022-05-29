@@ -6,8 +6,24 @@ import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/vmware/go-vcloud-director/v2/govcd"
+	"net/http"
 	"testing"
 	"time"
+
+	swagger "github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdswaggerclient"
+)
+
+const (
+	CAPVCDTypeVendor              = "vmware"
+	CAPVCDTypeNss                 = "capvcdCluster"
+	CAPVCDTypeVersion             = "1.1.0"
+	VCDLocationHeader             = "Location"
+	CAPVCDComponentRDESectionName = "capvcd"
+)
+
+var (
+	CAPVCDEntityTypeID = fmt.Sprintf("urn:vcloud:type:%s:%s:%s", CAPVCDTypeVendor, CAPVCDTypeNss, CAPVCDTypeVersion)
 )
 
 func convertToJson(obj interface{}) (string, error) {
@@ -27,23 +43,106 @@ func TestAddToErrorSet(t *testing.T) {
 	vcdClient, err := getTestVCDClient(vcdConfig, nil)
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
+	ctx := context.Background()
 
+	// create a minimal CAPVCD RDE with almost empty spec and status
+	rdeId, err := createCapvcdRDE(ctx, vcdClient, "testCluster")
+
+	// Create some mock objects for errors in capvcd section
 	rdeManager := RDEManager{
 		Client:                 vcdClient,
-		StatusComponentName:    "capvcd",
+		StatusComponentName:    CAPVCDComponentRDESectionName,
 		StatusComponentVersion: "1.0.0",
-		ClusterID:              "urn:vcloud:entity:vmware:capvcdCluster:0637ac72-bf64-404b-b612-d93f019e9bf2",
+		ClusterID:              rdeId,
 	}
-	ctx := context.Background()
-	err1 := BackendError{
-		Name:              "LoadbalancerError",
+	CloudInitError := BackendError{
+		Name:              "CloudInitError",
 		OccurredAt:        time.Now(),
-		VcdResourceId:     "3",
+		VcdResourceId:     "vmId",
 		AdditionalDetails: nil,
 	}
-	fmt.Println(fmt.Sprintf(" v [%#v]", err1))
-	fmt.Println(fmt.Sprintf(" v [%s]", err1))
-	rdeManager.AddToErrors(ctx, "capvcd", err1, 2)
+	LoadBalancerError := BackendError{
+		Name:              "LoadBalancerError",
+		OccurredAt:        time.Now(),
+		VcdResourceId:     "virtualServiceId",
+		AdditionalDetails: nil,
+	}
+	ControlPlaneError := BackendError{
+		Name:              "ControlPlaneError",
+		OccurredAt:        time.Now(),
+		VcdResourceId:     "VmId",
+		AdditionalDetails: nil,
+	}
+
+	// add few errors to rde.status.capvcd.errorSet
+	err = rdeManager.AddToErrors(ctx, "capvcd", CloudInitError, 8)
+	assert.NoError(t, err, "failed to add error into the errorset")
+	rdeManager.AddToErrors(ctx, "capvcd", LoadBalancerError, 8)
+	assert.NoError(t, err, "failed to add error into the errorset")
+	rdeManager.AddToErrors(ctx, "capvcd", ControlPlaneError, 8)
+	assert.NoError(t, err, "failed to add error into the errorset")
+	rdeManager.AddToErrors(ctx, "capvcd", LoadBalancerError, 8)
+	assert.NoError(t, err, "failed to add error into the errorset")
+	rdeManager.AddToErrors(ctx, "capvcd", CloudInitError, 8)
+	assert.NoError(t, err, "failed to add error into the errorset")
+
+	// get the rde and check if the length of errors added is same as expected
+	rde, _, _, err := vcdClient.APIClient.DefinedEntityApi.GetDefinedEntity(ctx, rdeId)
+	status, _ := rde.Entity["status"].(map[string]interface{})
+	capvcdComponent, _ := status[CAPVCDComponentRDESectionName].(map[string]interface{})
+	errorSet, _ := capvcdComponent["errorSet"].([]interface{})
+	assert.Equal(t, 5, len(errorSet), "Length of error set must match with error additions requested")
+
+	// remove few errors from rde.status.capvcd.errorSet
+	err = rdeManager.RemoveErrorByName(ctx, "capvcd", "LoadBalancerError")
+	assert.NoError(t, err, "failed to remove error from the errorset")
+	err = rdeManager.RemoveErrorByName(ctx, "capvcd", "CloudInitError")
+	assert.NoError(t, err, "failed to remove error from the errorset")
+	err = rdeManager.RemoveErrorByName(ctx, "capvcd", "ControlPlaneError")
+	assert.NoError(t, err, "failed to remove error from the errorset")
+
+	// get the rde and check if the length of the errorSet after removing errors is same as expected
+	rde, _, _, err = vcdClient.APIClient.DefinedEntityApi.GetDefinedEntity(ctx, rdeId)
+	status, _ = rde.Entity["status"].(map[string]interface{})
+	capvcdComponent, _ = status[CAPVCDComponentRDESectionName].(map[string]interface{})
+	errorSet, _ = capvcdComponent["errorSet"].([]interface{})
+	assert.Equal(t, 0, len(errorSet), "Length of error should be reduced to 2 after removing few errors")
+
+	// delete RDE
+	_, _, err = vcdClient.APIClient.DefinedEntityApi.ResolveDefinedEntity(ctx, rdeId)
+	_, err = vcdClient.APIClient.DefinedEntityApi.DeleteDefinedEntity(ctx,
+		rdeId, nil)
+	assert.NoError(t, err, "failed to delete rdeId")
+}
+
+func createCapvcdRDE(ctx context.Context, vcdClient *Client, clusterName string) (string, error) {
+	rde := &swagger.DefinedEntity{
+		EntityType: CAPVCDEntityTypeID,
+		Name:       clusterName,
+	}
+	entityMap := map[string]interface{}{
+		"spec": "",
+		"status": map[string]interface{}{
+			CAPVCDComponentRDESectionName: map[string]interface{}{},
+		},
+	}
+	rde.Entity = entityMap
+	resp, err := vcdClient.APIClient.DefinedEntityApi.CreateDefinedEntity(ctx, *rde, rde.EntityType, nil)
+	if err != nil {
+		return "", fmt.Errorf("error occurred during RDE creation for the cluster [%s]: [%v]", clusterName, err)
+	}
+	if resp.StatusCode != http.StatusAccepted {
+		return "", fmt.Errorf("error occurred during RDE creation for the cluster [%s]", clusterName)
+	}
+	taskURL := resp.Header.Get(VCDLocationHeader)
+	task := govcd.NewTask(&vcdClient.VCDClient.Client)
+	task.Task.HREF = taskURL
+	err = task.Refresh()
+	if err != nil {
+		return "", fmt.Errorf("error occurred during RDE creation for the cluster [%s]; error refreshing task: [%s]", clusterName, task.Task.HREF)
+	}
+	rdeID := task.Task.Owner.ID
+	return rdeID, nil
 }
 
 func TestAddToVCDResourceSet(t *testing.T) {

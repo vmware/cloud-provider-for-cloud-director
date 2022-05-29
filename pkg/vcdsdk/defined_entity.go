@@ -166,9 +166,15 @@ func addToVCDResourceSet(component string, componentName string, componentVersio
 
 /*
 AddToErrors function takes BackendError as an input and adds it to the "errorSet" of the specified "componentSectionName" in the RDE status.
-It caps the size of the "errorSet" in the specified "componentSectionName" to the "rollingWindowSize" by removing the oldest entries.
+It caps the size of the "errorSet" in the specified "componentSectionName" to the "rollingWindowSize", by removing the oldest entries.
 
-Below is the sample structure of the RDE this function operates on.
+It raises errors on below conditions. It is caller/component's responsibility to distinguish the errors as either hard (or) soft failures.
+ - If rdeId is not valid or empty.
+ - If rde.entity.status section is missing
+ - If rde is not of type capvcdCluster
+ - On any failures while updating the RDE.
+
+Below is the sample structure of the RDE this function operates on. <componentSectionName> could be "csi", "cpi", "capvcd", "vkp"
 status:
   <componentSectionName>:
      errorSet:
@@ -247,7 +253,80 @@ func (rdeManager *RDEManager) AddToErrors(ctx context.Context, componentSectionN
 	return nil
 }
 
-func (RDEManager *RDEManager) removeErrorByName(ctx context.Context, componentSectionName string, errorName string) error {
+func (rdeManager *RDEManager) RemoveErrorByName(ctx context.Context, componentSectionName string, errorName string) error {
+	if rdeManager.ClusterID == "" || strings.HasPrefix(rdeManager.ClusterID, NoRdePrefix) {
+		// Indicates that the RDE ID is either empty or it was auto-generated.
+		klog.Infof("ClusterID [%s] is empty or generated, hence cannot remove any errors of name [%s] from RDE",
+			rdeManager.ClusterID, errorName)
+		return nil
+	}
+	for i := MaxRDEUpdateRetries; i > 1; i-- {
+		rde, resp, etag, err := rdeManager.Client.APIClient.DefinedEntityApi.GetDefinedEntity(ctx, rdeManager.ClusterID)
+		if resp != nil && resp.StatusCode != http.StatusOK {
+			var responseMessageBytes []byte
+			if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
+				responseMessageBytes = gsErr.Body()
+			}
+			return fmt.Errorf(
+				"failed to get RDE [%s] when adding error to the errorSet of [%s] ; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]",
+				rdeManager.ClusterID, componentSectionName, http.StatusOK, resp.StatusCode, string(responseMessageBytes), err)
+		} else if err != nil {
+			return fmt.Errorf("error retrieving the RDE [%s]: [%v], while removing error [%s] from errorSet", rdeManager.ClusterID, err, errorName)
+		}
+		// Only entity of type capvcdCluster should be updated.
+		if !IsCAPVCDEntityType(rde.EntityType) {
+			nonCapvcdEntityError := NonCAPVCDEntityError{
+				EntityTypeID: rde.EntityType,
+			}
+			return nonCapvcdEntityError
+		}
+
+		statusIf, ok := rde.Entity["status"]
+		if !ok {
+			return fmt.Errorf("missing RDE status section in [%s], while removing error [%s] from the errorSet", rdeManager.ClusterID, errorName)
+		}
+		statusMap, ok := statusIf.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("failed to convert RDE status [%s] to map[string]interface{}, while removing error [%s] from the errorSet", rdeManager.ClusterID, errorName)
+		}
+
+		// update the statusMap (in memory) with the new Error in the specified componentSection
+		updatedStatusMap, matchingErrorsRemoved, err := rdeManager.removeErrorsfromComponentMap(componentSectionName, statusMap, errorName)
+		if err != nil {
+			return fmt.Errorf("error occurred when updating error set of [%s] status in RDE [%s]: [%v]", componentSectionName, rdeManager.ClusterID, err)
+		}
+		if !matchingErrorsRemoved {
+			klog.V(3).Infof("No matching errors found and removed from the existing error set of [%s] of RDE [%s]", componentSectionName, rdeManager.ClusterID)
+			return nil
+		}
+		rde.Entity["status"] = updatedStatusMap
+
+		// persist the updated statusMap to VCD
+		_, resp, err = rdeManager.Client.APIClient.DefinedEntityApi.UpdateDefinedEntity(ctx, rde, etag, rdeManager.ClusterID, nil)
+		if resp != nil {
+			if resp.StatusCode == http.StatusPreconditionFailed {
+				klog.Errorf("wrong etag while removing Errors [%s] in RDE [%s]. Retry attempts remaining: [%d]", errorName, rdeManager.ClusterID, i-1)
+				continue
+			} else if resp.StatusCode != http.StatusOK {
+				var responseMessageBytes []byte
+				if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
+					responseMessageBytes = gsErr.Body()
+				}
+				return fmt.Errorf(
+					"failed to remove errors [%s] in componentSectionName [%s] of RDE [%s]; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]",
+					errorName, componentSectionName, rdeManager.ClusterID, http.StatusOK, resp.StatusCode, string(responseMessageBytes), err)
+			}
+			// resp.StatusCode is http.StatusOK
+			klog.Infof("successfully removed errors of type [%s] in componentSectionName [%s] of RDE [%s]",
+				errorName, componentSectionName, rdeManager.ClusterID)
+			return nil
+		} else if err != nil {
+			return fmt.Errorf("error while updating the RDE [%s]: [%v]", rdeManager.ClusterID, err)
+		} else {
+			return fmt.Errorf("invalid response obtained when removing errors of type [%s] of componentSectionName [%s] in RDE [%s]", errorName, componentSectionName, rdeManager.ClusterID)
+		}
+	}
+
 	return nil
 
 }
@@ -325,6 +404,12 @@ func (rdeManager *RDEManager) updateComponentMapWithNewError(componentRdeSection
 /*
 AddToEventSet function takes BackendEvent as an input and adds it to the "eventSet" of the specified "componentSectionName" in the RDE status.
 It caps the size of the "eventSet" in the specified "componentSectionName" to the "rollingWindowSize" by removing the oldest entries.
+
+It raises errors on below conditions. It is caller/component's responsibility to distinguish the errors as either hard (or) soft failures.
+ - If rdeId is not valid or empty.
+ - If rde.entity.status section is missing
+ - If rde is not of type capvcdCluster
+ - On any failures while updating the RDE.
 
 Below is the sample structure of the RDE this function operates on.
 status:
@@ -602,4 +687,31 @@ func (rdeManager *RDEManager) RemoveFromVCDResourceSet(ctx context.Context, comp
 		}
 	}
 	return nil
+}
+
+func (rdeManager *RDEManager) removeErrorsfromComponentMap(componentRdeSectionName string, statusMap map[string]interface{}, errorName string) (map[string]interface{}, bool, error) {
+	// get the component info from the status
+	componentIf, ok := statusMap[componentRdeSectionName]
+	if !ok {
+		klog.Infof("missing component [%s] from the rde status, hence skipping removing errors", componentRdeSectionName)
+		return nil, false, nil
+	}
+	componentMap, ok := componentIf.(map[string]interface{})
+	if !ok {
+		return nil, false, fmt.Errorf("failed to convert the status belonging to component [%s] to map[string]interface{}, while removing error [%s]", componentRdeSectionName, errorName)
+	}
+	componentStatus, err := convertMapToComponentStatus(componentMap)
+	if err != nil {
+		return nil, false, fmt.Errorf("failed to convert component status map to Component object")
+	}
+	matchingErrorsRemoved := false
+	for i := 0; i < len(componentStatus.ErrorSet); i++ {
+		if componentStatus.ErrorSet[i].Name == errorName {
+			componentStatus.ErrorSet = append(componentStatus.ErrorSet[:i], componentStatus.ErrorSet[i+1:]...)
+			i--
+			matchingErrorsRemoved = true
+		}
+	}
+	componentMap[ComponentStatusFieldErrorSet] = componentStatus.ErrorSet
+	return statusMap, matchingErrorsRemoved, nil
 }
