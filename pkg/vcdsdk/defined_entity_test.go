@@ -48,7 +48,7 @@ func TestCRUDOnEventSet(t *testing.T) {
 	// create a minimal CAPVCD RDE with almost empty spec and status
 	rdeId, err := createCapvcdRDE(ctx, vcdClient, "testCluster")
 
-	// Create some mock objects for errors in capvcd section
+	// Create some mock objects for events in capvcd section
 	rdeManager := RDEManager{
 		Client:                 vcdClient,
 		StatusComponentName:    CAPVCDComponentRDESectionName,
@@ -74,7 +74,7 @@ func TestCRUDOnEventSet(t *testing.T) {
 		AdditionalDetails: nil,
 	}
 
-	// add few eventss to rde.status.capvcd.eventSet
+	// add few events to rde.status.capvcd.eventSet
 	err = rdeManager.AddToEventSet(ctx, "capvcd", ControlPlaneInitializedEvent, 3)
 	assert.NoError(t, err, "failed to add event into the eventset")
 	rdeManager.AddToEventSet(ctx, "capvcd", InfrastractureCreatedEvent, 3)
@@ -165,11 +165,11 @@ func TestCRUDOnErrorSet(t *testing.T) {
 	assert.Equal(t, 5, len(errorSet), "Length of error set must match with error additions requested")
 
 	// remove few errors from rde.status.capvcd.errorSet
-	err = rdeManager.RemoveErrorByName(ctx, "capvcd", "LoadBalancerError")
+	err = rdeManager.RemoveErrorByNameFromErrorSet(ctx, "capvcd", "LoadBalancerError")
 	assert.NoError(t, err, "failed to remove error from the errorset")
-	err = rdeManager.RemoveErrorByName(ctx, "capvcd", "CloudInitError")
+	err = rdeManager.RemoveErrorByNameFromErrorSet(ctx, "capvcd", "CloudInitError")
 	assert.NoError(t, err, "failed to remove error from the errorset")
-	err = rdeManager.RemoveErrorByName(ctx, "capvcd", "ControlPlaneError")
+	err = rdeManager.RemoveErrorByNameFromErrorSet(ctx, "capvcd", "ControlPlaneError")
 	assert.NoError(t, err, "failed to remove error from the errorset")
 
 	// get the rde and check if the length of the errorSet after removing errors is same as expected

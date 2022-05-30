@@ -253,7 +253,19 @@ func (rdeManager *RDEManager) AddToErrors(ctx context.Context, componentSectionN
 	return nil
 }
 
-func (rdeManager *RDEManager) RemoveErrorByName(ctx context.Context, componentSectionName string, errorName string) error {
+/*
+RemoveErrorByNameFromErrorSet Given a name of the error, it removes all the entries by that name from the errorset of the
+specified component section in the RDE.status.
+
+Below is the RDE portion this function operates on
+RDE.entity
+ status
+   <componentSectionName> //capvcd, csi, cpi, vkp
+       errorSet
+          <controlPlaneError>
+          <cloudInitError>
+*/
+func (rdeManager *RDEManager) RemoveErrorByNameFromErrorSet(ctx context.Context, componentSectionName string, errorName string) error {
 	if rdeManager.ClusterID == "" || strings.HasPrefix(rdeManager.ClusterID, NoRdePrefix) {
 		// Indicates that the RDE ID is either empty or it was auto-generated.
 		klog.Infof("ClusterID [%s] is empty or generated, hence cannot remove any errors of name [%s] from RDE",
@@ -268,7 +280,7 @@ func (rdeManager *RDEManager) RemoveErrorByName(ctx context.Context, componentSe
 				responseMessageBytes = gsErr.Body()
 			}
 			return fmt.Errorf(
-				"failed to get RDE [%s] when adding error to the errorSet of [%s] ; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]",
+				"failed to get RDE [%s] when removing error from the errorSet of [%s] ; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]",
 				rdeManager.ClusterID, componentSectionName, http.StatusOK, resp.StatusCode, string(responseMessageBytes), err)
 		} else if err != nil {
 			return fmt.Errorf("error retrieving the RDE [%s]: [%v], while removing error [%s] from errorSet", rdeManager.ClusterID, err, errorName)
@@ -293,7 +305,7 @@ func (rdeManager *RDEManager) RemoveErrorByName(ctx context.Context, componentSe
 		// update the statusMap (in memory) with the new Error in the specified componentSection
 		updatedStatusMap, matchingErrorsRemoved, err := rdeManager.removeErrorsfromComponentMap(componentSectionName, statusMap, errorName)
 		if err != nil {
-			return fmt.Errorf("error occurred when updating error set of [%s] status in RDE [%s]: [%v]", componentSectionName, rdeManager.ClusterID, err)
+			return fmt.Errorf("error occurred when removing error [%s] from the error set of [%s] status in RDE [%s]: [%v]", errorName, componentSectionName, rdeManager.ClusterID, err)
 		}
 		if !matchingErrorsRemoved {
 			klog.V(3).Infof("No matching errors found and removed from the existing error set of [%s] of RDE [%s]", componentSectionName, rdeManager.ClusterID)
@@ -305,7 +317,7 @@ func (rdeManager *RDEManager) RemoveErrorByName(ctx context.Context, componentSe
 		_, resp, err = rdeManager.Client.APIClient.DefinedEntityApi.UpdateDefinedEntity(ctx, rde, etag, rdeManager.ClusterID, nil)
 		if resp != nil {
 			if resp.StatusCode == http.StatusPreconditionFailed {
-				klog.Errorf("wrong etag while removing Errors [%s] in RDE [%s]. Retry attempts remaining: [%d]", errorName, rdeManager.ClusterID, i-1)
+				klog.Errorf("wrong etag while removing error(s) of name [%s] in RDE [%s]. Retry attempts remaining: [%d]", errorName, rdeManager.ClusterID, i-1)
 				continue
 			} else if resp.StatusCode != http.StatusOK {
 				var responseMessageBytes []byte
@@ -328,12 +340,13 @@ func (rdeManager *RDEManager) RemoveErrorByName(ctx context.Context, componentSe
 	}
 
 	return nil
-
 }
 
 /*
 function updateComponentMapWithNewEvent updates the local (in memory) rde status map with the specified new event.
 It also ensures the length of the "eventSet" is capped at the specified "rollingWindowSize" by removing the old entries.
+
+This function does NOT persist the data into VCD.
 */
 func (rdeManager *RDEManager) updateComponentMapWithNewEvent(componentName string, statusMap map[string]interface{}, newEvent BackendEvent, rollingWindowSize int) (map[string]interface{}, error) {
 	// get the component info from the status
@@ -354,7 +367,7 @@ func (rdeManager *RDEManager) updateComponentMapWithNewEvent(componentName strin
 	}
 	componentStatus, err := convertMapToComponentStatus(componentMap)
 	if err != nil {
-		return nil, fmt.Errorf("failed to convert component status map to Component object")
+		return nil, fmt.Errorf("failed to convert component status [%s] map to Component object", componentName)
 	}
 
 	newSize := len(componentStatus.EventSet) + 1
@@ -389,7 +402,7 @@ func (rdeManager *RDEManager) updateComponentMapWithNewError(componentRdeSection
 	}
 	componentStatus, err := convertMapToComponentStatus(componentMap)
 	if err != nil {
-		return nil, fmt.Errorf("failed to convert component status map to Component object")
+		return nil, fmt.Errorf("failed to convert component status map [%s] to Component object", componentRdeSectionName)
 	}
 
 	newSize := len(componentStatus.ErrorSet) + 1
@@ -416,6 +429,7 @@ status:
   <componentSectionName>:
      eventSet:
        - <newEvent>
+       - existingEvent
 */
 func (rdeManager *RDEManager) AddToEventSet(ctx context.Context, componentSectionName string, newEvent BackendEvent, rollingWindowSize int) error {
 	if rdeManager.ClusterID == "" || strings.HasPrefix(rdeManager.ClusterID, NoRdePrefix) {
