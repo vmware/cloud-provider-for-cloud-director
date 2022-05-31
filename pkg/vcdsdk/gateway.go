@@ -1515,7 +1515,7 @@ func (gm *GatewayManager) CreateLoadBalancer(ctx context.Context, virtualService
 			}
 			return "", err
 		}
-		resourcesAllocated.Insert("virtualService", virtualServiceRef)
+		resourcesAllocated.Insert(VcdResourceVirtualService, virtualServiceRef)
 
 		klog.Infof("Created Load Balancer with virtual service [%v], pool [%v] on gateway [%s]\n",
 			virtualServiceRef, lbPoolRef, gm.GatewayRef.Name)
@@ -1529,7 +1529,7 @@ func (gm *GatewayManager) CreateLoadBalancer(ctx context.Context, virtualService
 }
 
 func (gm *GatewayManager) DeleteLoadBalancer(ctx context.Context, virtualServiceNamePrefix string,
-	lbPoolNamePrefix string, portDetailsList []PortDetails, oneArm *OneArm) (string, error) {
+	lbPoolNamePrefix string, portDetailsList []PortDetails, oneArm *OneArm, resourcesDeallocated *util.AllocatedResourcesMap) (string, error) {
 
 	if gm == nil {
 		return "", fmt.Errorf("GatewayManager cannot be nil")
@@ -1587,6 +1587,11 @@ func (gm *GatewayManager) DeleteLoadBalancer(ctx context.Context, virtualService
 			}
 			return "", fmt.Errorf("unable to delete virtual service [%s]: [%v]", virtualServiceName, err)
 		}
+		// removal from vCDResourceSet is based on ID and type comparison.
+		virtualServiceRef := &swaggerClient.EntityReference{
+			Name: virtualServiceName,
+		}
+		resourcesDeallocated.Insert(VcdResourceVirtualService, virtualServiceRef)
 
 		err = gm.DeleteLoadBalancerPool(ctx, lbPoolName, false)
 		if err != nil {
@@ -1596,12 +1601,27 @@ func (gm *GatewayManager) DeleteLoadBalancer(ctx context.Context, virtualService
 			}
 			return "", fmt.Errorf("unable to delete load balancer pool [%s]: [%v]", lbPoolName, err)
 		}
+		loadBalancerPoolRef := &swaggerClient.EntityReference{
+			Name: lbPoolName,
+		}
+		resourcesDeallocated.Insert(VcdResourceLoadBalancerPool, loadBalancerPoolRef)
 
 		if oneArm != nil {
 			err = gm.DeleteDNATRule(ctx, dnatRuleName, false)
 			if err != nil {
 				return "", fmt.Errorf("unable to delete dnat rule [%s]: [%v]", dnatRuleName, err)
 			}
+			resourcesDeallocated.Insert(VcdResourceDNATRule, &swaggerClient.EntityReference{
+				Name: dnatRuleName,
+			})
+			appPortProfileName := GetAppPortProfileName(dnatRuleName)
+			err = gm.DeleteAppPortProfile(appPortProfileName, false)
+			if err != nil {
+				return "", fmt.Errorf("unable to delete app port profile [%s]: [%v]", appPortProfileName, err)
+			}
+			resourcesDeallocated.Insert(VcdResourceAppPortProfile, &swaggerClient.EntityReference{
+				Name: appPortProfileName,
+			})
 		}
 	}
 
@@ -1609,48 +1629,61 @@ func (gm *GatewayManager) DeleteLoadBalancer(ctx context.Context, virtualService
 }
 
 func (gm *GatewayManager) UpdateLoadBalancer(ctx context.Context, lbPoolName string, virtualServiceName string,
-	ips []string, internalPort int32, externalPort int32) error {
+	ips []string, internalPort int32, externalPort int32, resourcesAllocated *util.AllocatedResourcesMap) (string, error) {
 
 	if gm == nil {
-		return fmt.Errorf("GatewayManager cannot be nil")
+		return "", fmt.Errorf("GatewayManager cannot be nil")
 	}
 
 	client := gm.Client
 	client.RWLock.Lock()
 	defer client.RWLock.Unlock()
 
-	_, err := gm.UpdateLoadBalancerPool(ctx, lbPoolName, ips, internalPort)
+	lbPoolRef, err := gm.UpdateLoadBalancerPool(ctx, lbPoolName, ips, internalPort)
 	if err != nil {
 		if lbPoolBusyErr, ok := err.(*LoadBalancerPoolBusyError); ok {
 			klog.Errorf("update loadbalancer pool failed; loadbalancer pool [%s] is busy: [%v]", lbPoolName, err)
-			return lbPoolBusyErr
+			return "", lbPoolBusyErr
 		}
-		return fmt.Errorf("unable to update load balancer pool [%s]: [%v]", lbPoolName, err)
+		return "", fmt.Errorf("unable to update load balancer pool [%s]: [%v]", lbPoolName, err)
 	}
-	_, err = gm.UpdateVirtualServicePort(ctx, virtualServiceName, externalPort)
+	resourcesAllocated.Insert(VcdResourceLoadBalancerPool, lbPoolRef)
+	vsRef, err := gm.UpdateVirtualServicePort(ctx, virtualServiceName, externalPort)
 	if err != nil {
 		if vsBusyErr, ok := err.(*VirtualServiceBusyError); ok {
 			klog.Errorf("update virtual service failed; virtual service [%s] is busy: [%v]", virtualServiceName, err)
-			return vsBusyErr
+			return "", vsBusyErr
 		}
-		return fmt.Errorf("unable to update virtual service [%s] with port [%d]: [%v]", virtualServiceName, externalPort, err)
+		return "", fmt.Errorf("unable to update virtual service [%s] with port [%d]: [%v]", virtualServiceName, externalPort, err)
 	}
+	resourcesAllocated.Insert(VcdResourceVirtualService, vsRef)
 	// update app port profile
 	dnatRuleName := GetDNATRuleName(virtualServiceName)
 	appPortProfileName := GetAppPortProfileName(dnatRuleName)
-	_, err = gm.UpdateAppPortProfile(appPortProfileName, externalPort)
+	appPortProfileRef, err := gm.UpdateAppPortProfile(appPortProfileName, externalPort)
 	if err != nil {
-		return fmt.Errorf("unable to update application port profile [%s] with external port [%d]: [%v]", appPortProfileName, externalPort, err)
+		return "", fmt.Errorf("unable to update application port profile [%s] with external port [%d]: [%v]", appPortProfileName, externalPort, err)
+	}
+	if appPortProfileRef != nil && appPortProfileRef.NsxtAppPortProfile != nil {
+		appPortProfileRef := &swaggerClient.EntityReference{
+			Name: appPortProfileName,
+			Id: appPortProfileRef.NsxtAppPortProfile.ID,
+		}
+		resourcesAllocated.Insert(VcdResourceAppPortProfile, appPortProfileRef)
 	}
 
 	// update DNAT rule
 	dnatRuleRef, err := gm.GetNATRuleRef(ctx, dnatRuleName)
 	if err != nil {
-		return fmt.Errorf("unable to retrieve created dnat rule [%s]: [%v]", dnatRuleName, err)
+		return "", fmt.Errorf("unable to retrieve created dnat rule [%s]: [%v]", dnatRuleName, err)
 	}
 	_, err = gm.UpdateDNATRule(ctx, dnatRuleName, dnatRuleRef.ExternalIP, dnatRuleRef.InternalIP, externalPort)
 	if err != nil {
-		return fmt.Errorf("unable to update DNAT rule [%s]: [%v]", dnatRuleName, err)
+		return "", fmt.Errorf("unable to update DNAT rule [%s]: [%v]", dnatRuleName, err)
 	}
-	return nil
+	resourcesAllocated.Insert(VcdResourceDNATRule, &swaggerClient.EntityReference{
+		Name: dnatRuleName,
+		Id: dnatRuleRef.ID,
+	})
+	return dnatRuleRef.ExternalIP, nil
 }
