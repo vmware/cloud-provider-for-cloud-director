@@ -258,8 +258,10 @@ func (rdeManager *RDEManager) AddToErrorSet(ctx context.Context, componentSectio
 }
 
 /*
-RemoveErrorByNameFromErrorSet Given a name of the error, it removes all the entries by that name from the errorset of the
+RemoveErrorByNameOrIdFromErrorSet Given a name (and/or) vcdResourceId of the error, it removes all the matching entries from the errorset of the
 specified component section in the RDE.status.
+
+Note that vcdResourceId parameter is optional. If a non-empty vcdResourceId is passed, it tries to match both the errorName and vcdResourceId
 
 Below is the RDE portion this function operates on
 RDE.entity
@@ -269,12 +271,15 @@ RDE.entity
           <controlPlaneError>
           <cloudInitError>
 */
-func (rdeManager *RDEManager) RemoveErrorByNameFromErrorSet(ctx context.Context, componentSectionName string, errorName string) error {
+func (rdeManager *RDEManager) RemoveErrorByNameOrIdFromErrorSet(ctx context.Context, componentSectionName string, errorName string, vcdResourceId string) error {
 	if rdeManager.ClusterID == "" || strings.HasPrefix(rdeManager.ClusterID, NoRdePrefix) {
 		// Indicates that the RDE ID is either empty or it was auto-generated.
 		klog.Infof("ClusterID [%s] is empty or generated, hence cannot remove any errors of name [%s] from RDE",
 			rdeManager.ClusterID, errorName)
 		return nil
+	}
+	if errorName == "" {
+		return fmt.Errorf("errorName cannot be empty, while removing error from the errorSet of [%s]", rdeManager.ClusterID)
 	}
 	for i := MaxRDEUpdateRetries; i > 1; i-- {
 		rde, resp, etag, err := rdeManager.Client.APIClient.DefinedEntityApi.GetDefinedEntity(ctx, rdeManager.ClusterID)
@@ -307,7 +312,7 @@ func (rdeManager *RDEManager) RemoveErrorByNameFromErrorSet(ctx context.Context,
 		}
 
 		// update the statusMap (in memory) with the new Error in the specified componentSection
-		updatedStatusMap, matchingErrorsRemoved, err := rdeManager.removeErrorsfromComponentMap(componentSectionName, statusMap, errorName)
+		updatedStatusMap, matchingErrorsRemoved, err := rdeManager.removeErrorsfromComponentMap(componentSectionName, statusMap, errorName, vcdResourceId)
 		if err != nil {
 			return fmt.Errorf("error occurred when removing error [%s] from the error set of [%s] status in RDE [%s]: [%v]", errorName, componentSectionName, rdeManager.ClusterID, err)
 		}
@@ -712,7 +717,7 @@ func (rdeManager *RDEManager) RemoveFromVCDResourceSet(ctx context.Context, comp
 function removeErrorsfromComponentMap updates the local (in memory) rde status map with the specified error(s) removed.
 This function does NOT persist the data into VCD.
 */
-func (rdeManager *RDEManager) removeErrorsfromComponentMap(componentRdeSectionName string, statusMap map[string]interface{}, errorName string) (map[string]interface{}, bool, error) {
+func (rdeManager *RDEManager) removeErrorsfromComponentMap(componentRdeSectionName string, statusMap map[string]interface{}, errorName string, vcdResourceId string) (map[string]interface{}, bool, error) {
 	// get the component info from the status
 	componentIf, ok := statusMap[componentRdeSectionName]
 	if !ok {
@@ -727,9 +732,14 @@ func (rdeManager *RDEManager) removeErrorsfromComponentMap(componentRdeSectionNa
 	if err != nil {
 		return nil, false, fmt.Errorf("failed to convert component status map to Component object")
 	}
+
+	// remove errors from the errorSet Map
+	// if vcdResourceId is empty, remove all the errors matching the errorName, else remove the errors matching both the
+	// errorName and vcdResourceId
 	matchingErrorsRemoved := false
 	for i := 0; i < len(componentStatus.ErrorSet); i++ {
-		if componentStatus.ErrorSet[i].Name == errorName {
+		if (vcdResourceId == "" && componentStatus.ErrorSet[i].Name == errorName) ||
+			(vcdResourceId != "" && componentStatus.ErrorSet[i].Name == errorName && componentStatus.ErrorSet[i].VcdResourceId == vcdResourceId) {
 			componentStatus.ErrorSet = append(componentStatus.ErrorSet[:i], componentStatus.ErrorSet[i+1:]...)
 			i--
 			matchingErrorsRemoved = true
