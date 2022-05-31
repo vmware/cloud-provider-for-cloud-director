@@ -88,11 +88,11 @@ func TestDNATRuleCRUDE(t *testing.T) {
 	assert.NoError(t, err, "gateway manager should be created without error")
 
 	dnatRuleName := fmt.Sprintf("test-dnat-rule-%s", uuid.New().String())
-	err = gm.CreateDNATRule(ctx, dnatRuleName, "1.2.3.4", "1.2.3.5", 80, 36123)
+	err = gm.CreateDNATRule(ctx, dnatRuleName, "1.2.3.4", "1.2.3.5", 80, 36123, nil)
 	assert.NoError(t, err, "Unable to create dnat rule")
 
 	// repeated creation should not fail
-	err = gm.CreateDNATRule(ctx, dnatRuleName, "1.2.3.4", "1.2.3.5", 80, 36123)
+	err = gm.CreateDNATRule(ctx, dnatRuleName, "1.2.3.4", "1.2.3.5", 80, 36123, nil)
 	assert.NoError(t, err, "Unable to create dnat rule for the second time")
 
 	natRuleRef, err := gm.GetNATRuleRef(ctx, dnatRuleName)

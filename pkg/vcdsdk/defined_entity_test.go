@@ -144,6 +144,12 @@ func TestCRUDOnErrorSet(t *testing.T) {
 		VcdResourceId:     "VmId",
 		AdditionalDetails: nil,
 	}
+	CloudInitError1 := BackendError{
+		Name:              "CloudInitError",
+		OccurredAt:        time.Now(),
+		VcdResourceId:     "vm1Id",
+		AdditionalDetails: nil,
+	}
 
 	// add few errors to rde.status.capvcd.errorSet
 	err = rdeManager.AddToErrorSet(ctx, "capvcd", CloudInitError, 8)
@@ -154,7 +160,7 @@ func TestCRUDOnErrorSet(t *testing.T) {
 	assert.NoError(t, err, "failed to add error into the errorset")
 	rdeManager.AddToErrorSet(ctx, "capvcd", LoadBalancerError, 8)
 	assert.NoError(t, err, "failed to add error into the errorset")
-	rdeManager.AddToErrorSet(ctx, "capvcd", CloudInitError, 8)
+	rdeManager.AddToErrorSet(ctx, "capvcd", CloudInitError1, 8)
 	assert.NoError(t, err, "failed to add error into the errorset")
 
 	// get the rde and check if the length of errors added is same as expected
@@ -165,11 +171,11 @@ func TestCRUDOnErrorSet(t *testing.T) {
 	assert.Equal(t, 5, len(errorSet), "Length of error set must match with error additions requested")
 
 	// remove few errors from rde.status.capvcd.errorSet
-	err = rdeManager.RemoveErrorByNameOrIdFromErrorSet(ctx, "capvcd", "LoadBalancerError")
+	err = rdeManager.RemoveErrorByNameOrIdFromErrorSet(ctx, "capvcd", "LoadBalancerError", "")
 	assert.NoError(t, err, "failed to remove error from the errorset")
-	err = rdeManager.RemoveErrorByNameOrIdFromErrorSet(ctx, "capvcd", "CloudInitError")
+	err = rdeManager.RemoveErrorByNameOrIdFromErrorSet(ctx, "capvcd", "CloudInitError", "")
 	assert.NoError(t, err, "failed to remove error from the errorset")
-	err = rdeManager.RemoveErrorByNameOrIdFromErrorSet(ctx, "capvcd", "ControlPlaneError")
+	err = rdeManager.RemoveErrorByNameOrIdFromErrorSet(ctx, "capvcd", "ControlPlaneError", "")
 	assert.NoError(t, err, "failed to remove error from the errorset")
 
 	// get the rde and check if the length of the errorSet after removing errors is same as expected
@@ -177,7 +183,7 @@ func TestCRUDOnErrorSet(t *testing.T) {
 	status, _ = rde.Entity["status"].(map[string]interface{})
 	capvcdComponent, _ = status[CAPVCDComponentRDESectionName].(map[string]interface{})
 	errorSet, _ = capvcdComponent["errorSet"].([]interface{})
-	assert.Equal(t, 0, len(errorSet), "Length of error should be reduced to 2 after removing few errors")
+	assert.Equal(t, 0, len(errorSet), "Length of error should be reduced to 0 after removing few errors")
 
 	// delete RDE
 	_, _, err = vcdClient.APIClient.DefinedEntityApi.ResolveDefinedEntity(ctx, rdeId)
