@@ -146,15 +146,15 @@ func TestCRUDOnErrorSet(t *testing.T) {
 	}
 
 	// add few errors to rde.status.capvcd.errorSet
-	err = rdeManager.AddToErrors(ctx, "capvcd", CloudInitError, 8)
+	err = rdeManager.AddToErrorSet(ctx, "capvcd", CloudInitError, 8)
 	assert.NoError(t, err, "failed to add error into the errorset")
-	rdeManager.AddToErrors(ctx, "capvcd", LoadBalancerError, 8)
+	rdeManager.AddToErrorSet(ctx, "capvcd", LoadBalancerError, 8)
 	assert.NoError(t, err, "failed to add error into the errorset")
-	rdeManager.AddToErrors(ctx, "capvcd", ControlPlaneError, 8)
+	rdeManager.AddToErrorSet(ctx, "capvcd", ControlPlaneError, 8)
 	assert.NoError(t, err, "failed to add error into the errorset")
-	rdeManager.AddToErrors(ctx, "capvcd", LoadBalancerError, 8)
+	rdeManager.AddToErrorSet(ctx, "capvcd", LoadBalancerError, 8)
 	assert.NoError(t, err, "failed to add error into the errorset")
-	rdeManager.AddToErrors(ctx, "capvcd", CloudInitError, 8)
+	rdeManager.AddToErrorSet(ctx, "capvcd", CloudInitError, 8)
 	assert.NoError(t, err, "failed to add error into the errorset")
 
 	// get the rde and check if the length of errors added is same as expected

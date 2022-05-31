@@ -169,7 +169,7 @@ func addToVCDResourceSet(component string, componentName string, componentVersio
 }
 
 /*
-AddToErrors function takes BackendError as an input and adds it to the "errorSet" of the specified "componentSectionName" in the RDE status.
+AddToErrorSet function takes BackendError as an input and adds it to the "errorSet" of the specified "componentSectionName" in the RDE status.
 It caps the size of the "errorSet" in the specified "componentSectionName" to the "rollingWindowSize", by removing the oldest entries.
 
 It raises errors on below conditions. It is caller/component's responsibility to distinguish the errors as either hard (or) soft failures.
@@ -184,7 +184,7 @@ status:
      errorSet:
        - <newError>
 */
-func (rdeManager *RDEManager) AddToErrors(ctx context.Context, componentSectionName string, newError BackendError, rollingWindowSize int) error {
+func (rdeManager *RDEManager) AddToErrorSet(ctx context.Context, componentSectionName string, newError BackendError, rollingWindowSize int) error {
 	if rdeManager.ClusterID == "" || strings.HasPrefix(rdeManager.ClusterID, NoRdePrefix) {
 		// Indicates that the RDE ID is either empty or it was auto-generated.
 		klog.Infof("ClusterID [%s] is empty or generated, hence cannot add errors [%v] to RDE",
@@ -386,6 +386,7 @@ func (rdeManager *RDEManager) updateComponentMapWithNewEvent(componentName strin
 /*
 function updateComponentMapWithNewError updates the local (in memory) rde status map with the specified new error.
 It also ensures the length of the "errorSet" is capped at the specified "rollingWindowSize" by removing the old entries.
+This function does NOT persist the data into VCD.
 */
 func (rdeManager *RDEManager) updateComponentMapWithNewError(componentRdeSectionName string, statusMap map[string]interface{}, newError BackendError, rollingWindowSize int) (map[string]interface{}, error) {
 	// get the component info from the status
@@ -707,6 +708,10 @@ func (rdeManager *RDEManager) RemoveFromVCDResourceSet(ctx context.Context, comp
 	return nil
 }
 
+/*
+function removeErrorsfromComponentMap updates the local (in memory) rde status map with the specified error(s) removed.
+This function does NOT persist the data into VCD.
+*/
 func (rdeManager *RDEManager) removeErrorsfromComponentMap(componentRdeSectionName string, statusMap map[string]interface{}, errorName string) (map[string]interface{}, bool, error) {
 	// get the component info from the status
 	componentIf, ok := statusMap[componentRdeSectionName]
