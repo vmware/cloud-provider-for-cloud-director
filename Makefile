@@ -5,7 +5,7 @@ version := $(shell cat ${GITROOT}/release/version)
 
 REGISTRY?="harbor-repo.vmware.com/vcloud"
 
-.PHONY: build-within-docker
+.PHONY: build-within-docker vendor
 
 build-within-docker:
 	mkdir -p /build/cloud-provider-for-cloud-director
@@ -19,6 +19,11 @@ ccm: $(GO_CODE)
 	touch out/$@
 
 all: ccm
+
+vendor:
+	go mod edit -go=1.17
+	go mod tidy
+	go mod vendor
 
 test:
 	go test -tags testing -v github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdclient -cover -count=1

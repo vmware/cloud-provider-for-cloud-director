@@ -1,9 +1,10 @@
+//go:build !testing
+// +build !testing
+
 /*
    Copyright 2021 VMware, Inc.
    SPDX-License-Identifier: Apache-2.0
 */
-
-// +build !testing
 
 package ccm
 
@@ -91,14 +92,12 @@ func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error
 		klog.Infof("Gateway of network [%s] not backed by NSX-T. Hence LB will not be initialized.",
 			cloudConfig.LB.VDCNetwork)
 	} else {
-		var oneArm *vcdsdk.OneArm
+		var oneArm *vcdsdk.OneArm = nil
 		if cloudConfig.LB.OneArm != nil {
 			oneArm = &vcdsdk.OneArm{
 				StartIP: cloudConfig.LB.OneArm.StartIP,
 				EndIP:   cloudConfig.LB.OneArm.EndIP,
 			}
-		} else {
-			oneArm = nil
 		}
 		lb = newLoadBalancer(vcdClient, cloudConfig.LB.CertificateAlias, oneArm,
 			cloudConfig.LB.VDCNetwork, cloudConfig.LB.VIPSubnet, cloudConfig.ClusterID)

@@ -88,7 +88,7 @@ func TestVMCreation(t *testing.T) {
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
 	// get client
-	vcdClient, err := getTestVCDClient(vcdConfig,nil)
+	vcdClient, err := getTestVCDClient(vcdConfig, nil)
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
 
@@ -121,10 +121,14 @@ fi
 exit 0
 `
 
-	_, err = vdcManager.AddNewMultipleVM(vApp, vmNamePrefix, vmNum, "ProviderCatalogs",
-		"ubuntu-16.04_k8-1.20_weave-2.6.5_rev2",
-		"cse----native", "2core2gb", "*",
-		guestCustScript, true, true)
+	// TODO: read the following variables from testdata
+	catalog := "cse"
+	templateName := "ubuntu-16.04_k8-1.20_weave-2.6.5_rev2"
+	placementPolicyName := "cse----native"
+	computePolicyName := "2core2gb"
+
+	_, err = vdcManager.AddNewMultipleVM(vApp, vmNamePrefix, vmNum, catalog,
+		templateName, placementPolicyName, computePolicyName, "*", guestCustScript, true, true)
 	require.NoError(t, err, "unable to create [%d] VMs", vmNum)
 
 	_ = vdcManager.WaitForGuestScriptCompletion(vAppName, vmNamePrefix)
@@ -139,6 +143,7 @@ func TestVMExtraConfig(t *testing.T) {
 
 	vcdConfig, err := getTestVCDConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
+
 	// get client
 	vcdClient, err := getTestVCDClient(vcdConfig, nil)
 	assert.NoError(t, err, "Unable to get VCD client")

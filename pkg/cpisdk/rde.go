@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/vmware/cloud-provider-for-cloud-director/pkg/util"
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdsdk"
 	swaggerClient "github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdswaggerclient"
 	"github.com/vmware/cloud-provider-for-cloud-director/release"
@@ -36,9 +35,9 @@ func (cpiRDEManager *CPIRDEManager) GetRDEVirtualIps(ctx context.Context) ([]str
 		return nil, "", nil, fmt.Errorf("error when getting defined entity: [%v]", err)
 	}
 
-	virtualIpStrs, err := util.GetVirtualIPsFromRDE(&defEnt)
+	virtualIpStrs, err := vcdsdk.GetVirtualIPsFromRDE(&defEnt)
 	if err != nil {
-		capvcdEntityFoundErr, ok := err.(util.CapvcdRdeFoundError)
+		capvcdEntityFoundErr, ok := err.(vcdsdk.CapvcdRdeFoundError)
 		if ok {
 			return nil, "", nil, capvcdEntityFoundErr
 		}
@@ -51,9 +50,9 @@ func (cpiRDEManager *CPIRDEManager) GetRDEVirtualIps(ctx context.Context) ([]str
 // This function will modify the passed in defEnt
 func (cpiRDEManager *CPIRDEManager) updateRDEVirtualIps(ctx context.Context, updatedIps []string, etag string,
 	defEnt *swaggerClient.DefinedEntity) (*http.Response, error) {
-	defEnt, err := util.ReplaceVirtualIPsInRDE(defEnt, updatedIps)
+	defEnt, err := vcdsdk.ReplaceVirtualIPsInRDE(defEnt, updatedIps)
 	if err != nil {
-		if capvcdEntityFoundErr, ok := err.(util.CapvcdRdeFoundError); ok {
+		if capvcdEntityFoundErr, ok := err.(vcdsdk.CapvcdRdeFoundError); ok {
 			return nil, capvcdEntityFoundErr
 		}
 		return nil, fmt.Errorf("failed to locally edit RDE with ID [%s] with virtual IPs: [%v]", cpiRDEManager.RDEManager.ClusterID, err)
@@ -82,7 +81,7 @@ func (cpiRDEManager *CPIRDEManager) addVirtualIpToRDE(ctx context.Context, addIp
 	for i := 0; i < numRetries; i++ {
 		currIps, etag, defEnt, err := cpiRDEManager.GetRDEVirtualIps(ctx)
 		if err != nil {
-			if _, ok := err.(util.CapvcdRdeFoundError); ok {
+			if _, ok := err.(vcdsdk.CapvcdRdeFoundError); ok {
 				klog.Infof("CAPVCD entity type found. Skipping adding RDE VIPs to status")
 				return nil
 			}
@@ -104,7 +103,7 @@ func (cpiRDEManager *CPIRDEManager) addVirtualIpToRDE(ctx context.Context, addIp
 		updatedIps := append(currIps, addIp)
 		httpResponse, err := cpiRDEManager.updateRDEVirtualIps(ctx, updatedIps, etag, defEnt)
 		if err != nil {
-			if capvcdEntityFoundErr, ok := err.(util.CapvcdRdeFoundError); ok {
+			if capvcdEntityFoundErr, ok := err.(vcdsdk.CapvcdRdeFoundError); ok {
 				return capvcdEntityFoundErr
 			}
 			if httpResponse.StatusCode == http.StatusPreconditionFailed {
@@ -135,7 +134,7 @@ func (cpiRDEManager *CPIRDEManager) removeVirtualIpFromRDE(ctx context.Context, 
 	for i := 0; i < numRetries; i++ {
 		currIps, etag, defEnt, err := cpiRDEManager.GetRDEVirtualIps(ctx)
 		if err != nil {
-			if _, ok := err.(util.CapvcdRdeFoundError); ok {
+			if _, ok := err.(vcdsdk.CapvcdRdeFoundError); ok {
 				klog.Infof("CAPVCD entity found. Skip removing VIPs from RDE in the status")
 				return nil
 			}
@@ -162,7 +161,7 @@ func (cpiRDEManager *CPIRDEManager) removeVirtualIpFromRDE(ctx context.Context, 
 
 		httpResponse, err := cpiRDEManager.updateRDEVirtualIps(ctx, updatedIps, etag, defEnt)
 		if err != nil {
-			if capvcdEntityFoundErr, ok := err.(util.CapvcdRdeFoundError); ok {
+			if capvcdEntityFoundErr, ok := err.(vcdsdk.CapvcdRdeFoundError); ok {
 				return capvcdEntityFoundErr
 			}
 			if httpResponse.StatusCode == http.StatusPreconditionFailed {
@@ -178,7 +177,7 @@ func (cpiRDEManager *CPIRDEManager) removeVirtualIpFromRDE(ctx context.Context, 
 	return fmt.Errorf("unable to update rde due to incorrect etag after [%d] tries", numRetries)
 }
 
-func convertCPIStatusToMap(cpiStatus util.CPIStatus) (map[string]interface{}, error) {
+func convertCPIStatusToMap(cpiStatus vcdsdk.CPIStatus) (map[string]interface{}, error) {
 	cpiStatusBytes, err := json.Marshal(&cpiStatus)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert CPI status to byte array: [%v]", err)
@@ -191,12 +190,12 @@ func convertCPIStatusToMap(cpiStatus util.CPIStatus) (map[string]interface{}, er
 	return cpiStatusMap, nil
 }
 
-func convertMapToCPIStatus(cpiStatusMap map[string]interface{}) (*util.CPIStatus, error) {
+func convertMapToCPIStatus(cpiStatusMap map[string]interface{}) (*vcdsdk.CPIStatus, error) {
 	cpiStatusMapBytes, err := json.Marshal(&cpiStatusMap)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert CPI status map to byte array: [%v]", err)
 	}
-	var cpiStatus util.CPIStatus
+	var cpiStatus vcdsdk.CPIStatus
 	err = json.Unmarshal(cpiStatusMapBytes, &cpiStatus)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert CPI status bytes to CPIStatus: [%v]", err)
@@ -208,7 +207,7 @@ func UpgradeCPISectionInStatus(statusMap map[string]interface{}) (map[string]int
 	if statusMap == nil {
 		return nil, fmt.Errorf("invalid value for status: [%v]", statusMap)
 	}
-	cpiStatus := &util.CPIStatus{
+	cpiStatus := &vcdsdk.CPIStatus{
 		VCDResourceSet: nil,
 		Errors:         nil,
 		VirtualIPs:     nil,
