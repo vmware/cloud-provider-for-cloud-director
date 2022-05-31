@@ -7,6 +7,7 @@ import (
 	swaggerClient "github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdswaggerclient"
 	"k8s.io/klog"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 )
@@ -32,6 +33,7 @@ const (
 
 	CAPVCDEntityTypeVendor = "vmware"
 	CAPVCDEntityTypeNss    = "capvcdCluster"
+	CAPVCDEntityTypePrefix = "urn:vcloud:type:vmware:capvcdCluster"
 
 	NativeClusterEntityTypeVendor = "cse"
 	NativeClusterEntityTypeNss    = "nativeCluster"
@@ -102,6 +104,15 @@ func IsNativeClusterEntityType(entityTypeID string) bool {
 	return entityTypeIDSplit[3] == NativeClusterEntityTypeVendor && entityTypeIDSplit[4] == NativeClusterEntityTypeNss
 }
 
+// EntityType contains only the required properties in get entity type response
+type EntityType struct {
+	ID      string                 `json:"id"`
+	Name    string                 `json:"name"`
+	Nss     string                 `json:"nss"`
+	Version string                 `json:"version"`
+	Schema  map[string]interface{} `json:"schema"`
+}
+
 func convertMapToComponentStatus(componentStatusMap map[string]interface{}) (*ComponentStatus, error) {
 	componentStatusBytes, err := json.Marshal(componentStatusMap)
 	if err != nil {
@@ -117,7 +128,7 @@ func convertMapToComponentStatus(componentStatusMap map[string]interface{}) (*Co
 	return &cs, nil
 }
 
-func addToVCDResourceSet(component string, componentName string, componentVersion string, statusMap map[string]interface{}, vcdResource VCDResource) (map[string]interface{}, error) {
+func UpdateStatusMapWithVCDResourceSet(component string, componentName string, componentVersion string, statusMap map[string]interface{}, vcdResource VCDResource) (map[string]interface{}, error) {
 	// get the component info from the status
 	componentIf, ok := statusMap[component]
 	if !ok {
@@ -148,6 +159,8 @@ func addToVCDResourceSet(component string, componentName string, componentVersio
 		componentMap[ComponentStatusFieldVCDResourceSet] = []VCDResource{
 			vcdResource,
 		}
+		componentMap["name"] = componentName
+		componentMap["version"] = componentVersion
 		return statusMap, nil
 	}
 
@@ -514,6 +527,32 @@ func (rdeManager *RDEManager) AddToEventSet(ctx context.Context, componentSectio
 	return nil
 }
 
+func (rdeManager *RDEManager) IsCapvcdEntityTypeRegistered(version string) bool {
+	entityTypeID := strings.Join(
+		[]string{
+			CAPVCDEntityTypePrefix,
+			version,
+		},
+		":",
+	)
+	entityTypeListUrl, err := rdeManager.Client.VCDClient.Client.OpenApiBuildEndpoint(
+		"1.0.0/entityTypes/" + entityTypeID)
+	if err != nil {
+		klog.Errorf("failed to construct URL to get list of entity types")
+		return false
+	}
+	var output EntityType
+	err = rdeManager.Client.VCDClient.Client.OpenApiGetItem(
+		rdeManager.Client.VCDClient.Client.APIVersion, entityTypeListUrl,
+		url.Values{}, &output, nil)
+	if err != nil {
+		klog.Errorf("CAPVCD entity type [%s] not registered: [%v]", entityTypeID, err)
+		return false
+	}
+	klog.V(4).Info("Found CAPVCD entity type")
+	return true
+}
+
 // AddToVCDResourceSet adds a VCDResource to the VCDResourceSet of the component in the RDE
 func (rdeManager *RDEManager) AddToVCDResourceSet(ctx context.Context, component string, resourceType string,
 	resourceName string, resourceId string, additionalDetails map[string]interface{}) error {
@@ -539,14 +578,13 @@ func (rdeManager *RDEManager) AddToVCDResourceSet(ctx context.Context, component
 
 		// Only entity of type capvcdCluster should be updated.
 		if !IsCAPVCDEntityType(rde.EntityType) {
-			nonCapvcdEntityError := NonCAPVCDEntityError{
-				EntityTypeID: rde.EntityType,
-			}
-			return nonCapvcdEntityError
+			klog.V(3).Infof("entity type of RDE [%s] is [%s]. skipping adding resource [%s] of type [%s] to status of component [%s]",
+				rde.Id, rde.EntityType, resourceName, resourceType, component)
+			return nil
 		}
 		statusIf, ok := rde.Entity["status"]
 		if !ok {
-			return fmt.Errorf("failed to update RDE [%s] with VCDResourse set information", rdeManager.ClusterID)
+			return fmt.Errorf("failed to update RDE [%s] with VCDResource set information", rdeManager.ClusterID)
 		}
 		statusMap, ok := statusIf.(map[string]interface{})
 		if !ok {
@@ -558,7 +596,7 @@ func (rdeManager *RDEManager) AddToVCDResourceSet(ctx context.Context, component
 			Name:              resourceName,
 			AdditionalDetails: additionalDetails,
 		}
-		updatedStatusMap, err := addToVCDResourceSet(component, rdeManager.StatusComponentName,
+		updatedStatusMap, err := UpdateStatusMapWithVCDResourceSet(component, rdeManager.StatusComponentName,
 			rdeManager.StatusComponentVersion, statusMap, vcdResource)
 		if err != nil {
 			return fmt.Errorf("error occurred when updating VCDResource set of %s status in RDE [%s]: [%v]", rdeManager.ClusterID, component, err)

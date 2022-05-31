@@ -11,7 +11,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/cpisdk"
+	"github.com/vmware/cloud-provider-for-cloud-director/pkg/util"
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdsdk"
+	"github.com/vmware/cloud-provider-for-cloud-director/release"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -52,6 +54,53 @@ func newLoadBalancer(vcdClient *vcdsdk.Client, certAlias string, oneArm *vcdsdk.
 		ipamSubnet:       ipamSubnet,
 		clusterID:        clusterID,
 	}
+}
+
+func (lb *LBManager) addLBResourcesToRDE(ctx context.Context, resourcesAllocated *util.AllocatedResourcesMap, externalIP string) error {
+	rdeManager := vcdsdk.NewRDEManager(lb.vcdClient, lb.clusterID, release.CloudControllerManagerName, release.CpiVersion)
+	for _, key := range []string{vcdsdk.VcdResourceDNATRule, vcdsdk.VcdResourceLoadBalancerPool, vcdsdk.VcdResourceAppPortProfile} {
+		if values := resourcesAllocated.Get(key); values != nil {
+			for _, value := range values {
+				var additionalDetails map[string]interface{}
+				var err error
+				additionalDetails = nil
+				if key == vcdsdk.VcdResourceVirtualService {
+					additionalDetails = map[string]interface{} {
+						"virtualIP": externalIP,
+					}
+					cpiRdeManager := cpisdk.NewCPIRDEManager(rdeManager)
+					err = cpiRdeManager.AddVIPToVCDResourceSet(ctx, value.Name, value.Id, externalIP)
+				} else {
+					err = rdeManager.AddToVCDResourceSet(ctx, vcdsdk.ComponentCPI, key,
+						value.Name, value.Id, additionalDetails)
+				}
+				if err != nil {
+					return fmt.Errorf(
+						"failed to add resource [%s] of type [%s] to VCDResourceSet of RDE [%s]: [%v]",
+						value.Name, key, lb.clusterID, err)
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func (lb *LBManager) removeLBResourcesFromRDE(ctx context.Context, resourcesDeallocated *util.AllocatedResourcesMap) error {
+	rdeManager := vcdsdk.NewRDEManager(lb.vcdClient, lb.clusterID, release.CloudControllerManagerName, release.CpiVersion)
+	for _, key := range []string{vcdsdk.VcdResourceDNATRule, vcdsdk.VcdResourceVirtualService,
+		vcdsdk.VcdResourceLoadBalancerPool, vcdsdk.VcdResourceAppPortProfile} {
+		if values := resourcesDeallocated.Get(key); values != nil {
+			for _, value := range values {
+				err := rdeManager.RemoveFromVCDResourceSet(ctx, vcdsdk.ComponentCPI, key, value.Name)
+				if err != nil {
+					return fmt.Errorf(
+						"failed to add resource [%s] of type [%s] to VCDResourceSet of RDE [%s]: [%v]",
+						value.Name, key, lb.clusterID, err)
+				}
+			}
+		}
+	}
+	return nil
 }
 
 func (lb *LBManager) getNodeIPs(ctx context.Context) ([]string, error) {
@@ -129,12 +178,17 @@ func (lb *LBManager) UpdateLoadBalancer(ctx context.Context, clusterName string,
 		lbPoolName := fmt.Sprintf("%s-%s", lbPoolNamePrefix, portName)
 		virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, portName)
 		externalPort := typeToExternalPort[portName]
-		cgm, err := cpisdk.NewCpiGatewayManager(ctx, lb.vcdClient, lb.ovdcNetworkName, lb.ipamSubnet, lb.clusterID)
+		gm, err := vcdsdk.NewGatewayManager(ctx, lb.vcdClient, lb.ovdcNetworkName, lb.ipamSubnet)
 		if err != nil {
 			return fmt.Errorf("error while creating GatewayManager: [%v]", err)
 		}
 		klog.Infof("Updating pool [%s] with port [%s:%d]", lbPoolName, portName, internalPort)
-		if err := cgm.UpdateLoadBalancer(ctx, lbPoolName, virtualServiceName, nodeIps, internalPort, externalPort); err != nil {
+		resourcesAllocated := &util.AllocatedResourcesMap{}
+		vip, err := gm.UpdateLoadBalancer(ctx, lbPoolName, virtualServiceName, nodeIps, internalPort, externalPort, resourcesAllocated)
+		if rdeErr := lb.addLBResourcesToRDE(ctx, resourcesAllocated, vip); rdeErr != nil {
+			return fmt.Errorf("failed to add load balancer resources to RDE [%s]: [%v]", lb.clusterID, err)
+		}
+		if err != nil {
 			return fmt.Errorf("unable to update pool [%s] with port [%s:%d]: [%v]", lbPoolName, portName,
 				internalPort, err)
 		}
@@ -165,13 +219,13 @@ func (lb *LBManager) getLoadBalancer(ctx context.Context,
 
 	virtualServiceNamePrefix := lb.getLoadBalancerPrefix(ctx, service)
 	virtualIP := ""
-	cgm, err := cpisdk.NewCpiGatewayManager(ctx, lb.vcdClient, lb.ovdcNetworkName, lb.ipamSubnet, lb.clusterID)
+	gm, err := vcdsdk.NewGatewayManager(ctx, lb.vcdClient, lb.ovdcNetworkName, lb.ipamSubnet)
 	if err != nil {
 		return nil, false, fmt.Errorf("error while creating GatewayManager: [%v]", err)
 	}
 	for _, port := range service.Spec.Ports {
 		virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, port.Name)
-		virtualIP, err = cgm.GetLoadBalancer(ctx, virtualServiceName, lb.OneArm)
+		virtualIP, err = gm.GetLoadBalancer(ctx, virtualServiceName, lb.OneArm)
 		if err != nil {
 			return nil, false,
 				fmt.Errorf("unable to get virtual service summary for [%s]: [%v]",
@@ -259,14 +313,24 @@ func (lb *LBManager) deleteLoadBalancer(ctx context.Context, service *v1.Service
 	}
 	klog.Infof("Deleting loadbalancer for ports [%#v]\n", portDetailsList)
 
-	cgm, err := cpisdk.NewCpiGatewayManager(ctx, lb.vcdClient, lb.ovdcNetworkName, lb.ipamSubnet, lb.clusterID)
+	gm, err := vcdsdk.NewGatewayManager(ctx, lb.vcdClient, lb.ovdcNetworkName, lb.ipamSubnet)
 	if err != nil {
-		return fmt.Errorf("error while creating CpiGatewayManager: [%v]", err)
+		return fmt.Errorf("error while creating GatewayManager: [%v]", err)
 	}
-	err = cgm.DeleteLoadBalancer(ctx, virtualServiceName, lbPoolNamePrefix, portDetailsList, lb.OneArm)
+	resourcesDeallocated := &util.AllocatedResourcesMap{}
+	vip, err := gm.DeleteLoadBalancer(ctx, virtualServiceName, lbPoolNamePrefix, portDetailsList, lb.OneArm, resourcesDeallocated)
+	if rdeErr := lb.removeLBResourcesFromRDE(ctx, resourcesDeallocated); rdeErr != nil {
+		return fmt.Errorf("failed to remove loadbalancer resources from RDE [%s]: [%v]", lb.clusterID, rdeErr)
+	}
 	if err != nil {
-		return fmt.Errorf("Unable to delete load balancer for virtual-service [%s] and lb pool [%s]: [%v]",
+		return fmt.Errorf("unable to delete load balancer for virtual-service [%s] and lb pool [%s]: [%v]",
 			virtualServiceName, lbPoolNamePrefix, err)
+	}
+
+	cpiRdeManager := cpisdk.NewCPIRDEManager(vcdsdk.NewRDEManager(
+		lb.vcdClient, lb.clusterID, release.CloudControllerManagerName, release.CpiVersion))
+	if err := cpiRdeManager.RemoveVirtualIpFromRDE(ctx, vip); err != nil {
+		klog.Errorf("failed to remove virtual IP [%s] from the RDE [%s]: [%v]", vip, lb.clusterID, err)
 	}
 
 	return nil
@@ -309,9 +373,9 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 	if err != nil {
 		return nil, fmt.Errorf("unexpected error while querying for loadbalancer: [%v]", err)
 	}
-	cgm, err := cpisdk.NewCpiGatewayManager(ctx, lb.vcdClient, lb.ovdcNetworkName, lb.ipamSubnet, lb.clusterID)
+	gm, err := vcdsdk.NewGatewayManager(ctx, lb.vcdClient, lb.ovdcNetworkName, lb.ipamSubnet)
 	if err != nil {
-		return nil, fmt.Errorf("error while creating CpiGatewayManager: [%v]", err)
+		return nil, fmt.Errorf("error while creating GatewayManager: [%v]", err)
 	}
 	if lbExists {
 		// Update load balancer if there are changes in service properties
@@ -321,7 +385,12 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 			virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, portName)
 			externalPort := typeToExternalPortMap[portName]
 			klog.Infof("Updating pool [%s] with port [%s:%d:%d]", lbPoolName, portName, internalPort, externalPort)
-			if err := cgm.UpdateLoadBalancer(ctx, lbPoolName, virtualServiceName, nodeIPs, internalPort, externalPort); err != nil {
+			resourcesAllocated := &util.AllocatedResourcesMap{}
+			vip, err := gm.UpdateLoadBalancer(ctx, lbPoolName, virtualServiceName, nodeIPs, internalPort, externalPort, resourcesAllocated)
+			if rdeErr := lb.addLBResourcesToRDE(ctx, resourcesAllocated, vip); rdeErr != nil {
+				return nil, fmt.Errorf("failed to update RDE [%s] with load balancer resources: [%v]", lb.clusterID, err)
+			}
+			if err != nil {
 				return nil, fmt.Errorf("unable to update pool [%s] with port [%s:%d:%d]: [%v]", lbPoolName, portName,
 					internalPort, externalPort, err)
 			}
@@ -369,13 +438,25 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 		}
 	}
 	klog.Infof("Creating loadbalancer for ports [%#v]\n", portDetailsList)
-
 	// Create using VCD API
-	lbIP, err := cgm.CreateLoadBalancer(ctx, virtualServiceNamePrefix, lbPoolNamePrefix, nodeIPs, portDetailsList, lb.OneArm)
+	resourcesAllocated := &util.AllocatedResourcesMap{}
+	lbIP, err := gm.CreateLoadBalancer(ctx, virtualServiceNamePrefix, lbPoolNamePrefix,
+		nodeIPs, portDetailsList, lb.OneArm, resourcesAllocated)
+	if rdeErr := lb.addLBResourcesToRDE(ctx, resourcesAllocated, lbIP); rdeErr != nil {
+		return nil, fmt.Errorf("unable to add load balancer pool resources to RDE [%s]: [%v]", lb.clusterID, err)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("unable to create loadbalancer for ports [%#v]: [%v]", portDetailsList, err)
 	}
-	klog.Infof("Created loadbalancer with external IP [%s], ports [%#v]\n", lbIP, portDetailsList)
+	if lbIP != "" {
+		rdeManager := vcdsdk.NewRDEManager(lb.vcdClient, lb.clusterID, release.CloudControllerManagerName, release.CpiVersion)
+		cpiRdeManager := cpisdk.NewCPIRDEManager(rdeManager)
+		err = cpiRdeManager.AddVirtualIpToRDE(ctx, lbIP)
+		if err != nil {
+			klog.Errorf("error when adding virtual IP to RDE: [%v]", err)
+		}
+	}
+	klog.Infof("Created load balancer with external IP [%s], ports [%#v]\n", lbIP, portDetailsList)
 
 	return &v1.LoadBalancerStatus{
 		Ingress: []v1.LoadBalancerIngress{

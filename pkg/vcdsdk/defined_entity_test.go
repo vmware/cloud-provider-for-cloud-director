@@ -385,7 +385,7 @@ func TestAddToVCDResourceSet(t *testing.T) {
 		},
 	}
 	for _, tc := range testCaseList {
-		updatedStatusMap, err := addToVCDResourceSet(ComponentCPI, "ccm", "1.1.1", tc.StatusMap, tc.VCDResource)
+		updatedStatusMap, err := UpdateStatusMapWithVCDResourceSet(ComponentCPI, "ccm", "1.1.1", tc.StatusMap, tc.VCDResource)
 		assert.NoError(t, err, "Expected no error ", tc.Message)
 
 		actualJson, err := convertToJson(updatedStatusMap)
