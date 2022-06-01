@@ -54,6 +54,7 @@ type LBConfig struct {
 	CertificateAlias string  `yaml:"certAlias"`
 	VDCNetwork       string  `yaml:"network"`
 	VIPSubnet        string  `yaml:"vipSubnet"`
+	VSSharedIP		 bool 	 `yaml:"vSSharedIP"`
 }
 
 // CloudConfig contains the config that will be read from the secret
@@ -67,7 +68,11 @@ type CloudConfig struct {
 // ParseCloudConfig : parses config and env to fill in the CloudConfig struct
 func ParseCloudConfig(configReader io.Reader) (*CloudConfig, error) {
 	var err error
-	config := &CloudConfig{}
+	config := &CloudConfig{
+		LB: LBConfig{
+			VSSharedIP: false,
+		},
+	}
 
 	decoder := yaml.NewDecoder(configReader)
 	decoder.SetStrict(true)
