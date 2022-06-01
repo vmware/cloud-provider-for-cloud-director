@@ -273,11 +273,10 @@ func (cpiRDEManager *CPIRDEManager) UpgradeCPIStatusOfExistingRDE(ctx context.Co
 		return fmt.Errorf("failed to convert status section of RDE [%s] to map[string]interface{} during RDE upgrade",
 			rdeId)
 	}
-	upgradedStatusMap, err := UpgradeCPISectionInStatus(statusMap)
+	_, err = UpgradeCPISectionInStatus(statusMap)
 	if err != nil {
 		return fmt.Errorf("failed to upgrade CPI section in RDE [%s]: [%v]", rdeId, err)
 	}
-	rde.Entity[vcdsdk.ComponentCPI] = upgradedStatusMap
 
 	_, resp, err = client.APIClient.DefinedEntityApi.UpdateDefinedEntity(ctx, rde, etag, rdeId, nil)
 	if resp != nil && resp.StatusCode != http.StatusOK {

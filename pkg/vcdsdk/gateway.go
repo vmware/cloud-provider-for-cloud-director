@@ -1423,14 +1423,14 @@ func (gm *GatewayManager) CreateLoadBalancer(ctx context.Context, virtualService
 			}
 
 			klog.V(3).Infof("LoadBalancer Virtual Service [%s] already exists", virtualServiceName)
-			if err = gm.CheckIfVirtualServiceIsPending(ctx, virtualServiceName); err != nil {
-				return "", err
-			}
-
 			resourcesAllocated.Insert(VcdResourceVirtualService, &swaggerClient.EntityReference{
 				Name: vsSummary.Name,
 				Id:   vsSummary.Id,
 			})
+
+			if err = gm.CheckIfVirtualServiceIsPending(ctx, virtualServiceName); err != nil {
+				return "", err
+			}
 
 			continue
 		}
@@ -1648,6 +1648,9 @@ func (gm *GatewayManager) UpdateLoadBalancer(ctx context.Context, lbPoolName str
 	}
 	resourcesAllocated.Insert(VcdResourceLoadBalancerPool, lbPoolRef)
 	vsRef, err := gm.UpdateVirtualServicePort(ctx, virtualServiceName, externalPort)
+	if vsRef != nil {
+		resourcesAllocated.Insert(VcdResourceVirtualService, vsRef)
+	}
 	if err != nil {
 		if vsBusyErr, ok := err.(*VirtualServiceBusyError); ok {
 			klog.Errorf("update virtual service failed; virtual service [%s] is busy: [%v]", virtualServiceName, err)
@@ -1655,7 +1658,7 @@ func (gm *GatewayManager) UpdateLoadBalancer(ctx context.Context, lbPoolName str
 		}
 		return "", fmt.Errorf("unable to update virtual service [%s] with port [%d]: [%v]", virtualServiceName, externalPort, err)
 	}
-	resourcesAllocated.Insert(VcdResourceVirtualService, vsRef)
+
 	// update app port profile
 	dnatRuleName := GetDNATRuleName(virtualServiceName)
 	appPortProfileName := GetAppPortProfileName(dnatRuleName)
