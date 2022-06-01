@@ -254,8 +254,8 @@ func (rdeManager *RDEManager) AddToVCDResourceSet(ctx context.Context, component
 					vcdResource.Name, vcdResource.ID, component, rdeManager.ClusterID, http.StatusOK, resp.StatusCode, string(responseMessageBytes), err)
 			}
 			// resp.StatusCode is http.StatusOK
-			klog.Infof("successfully added resource [%s] having ID [%s] to VCDResourceSet of [%s] in RDE [%s]",
-				vcdResource.Name, vcdResource.ID, component, rdeManager.ClusterID)
+			klog.Infof("successfully added resource [%s] of type [%s] having ID [%s] to VCDResourceSet of [%s] in RDE [%s]",
+				vcdResource.Name, vcdResource.Type, vcdResource.ID, component, rdeManager.ClusterID)
 			return nil
 		} else if err != nil {
 			return fmt.Errorf("error while updating the RDE [%s]: [%v]", rdeManager.ClusterID, err)
