@@ -97,7 +97,7 @@ func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error
 			}
 		}
 		lb = newLoadBalancer(vcdClient, cloudConfig.LB.CertificateAlias, oneArm, cloudConfig.LB.VDCNetwork,
-			cloudConfig.LB.VIPSubnet, cloudConfig.ClusterID)
+			cloudConfig.LB.VIPSubnet, cloudConfig.ClusterID, cloudConfig.LB.VsSharedIP)
 	}
 
 	// cache for VM Info with an refresh of elements needed after 1 minute

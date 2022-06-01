@@ -34,7 +34,7 @@ func NewCpiGatewayManager(ctx context.Context, client *vcdsdk.Client, networkNam
 }
 
 func (cgm *CpiGatewayManager) CreateLoadBalancer(ctx context.Context, virtualServiceNamePrefix string, lbPoolNamePrefix string,
-	ips []string, portDetailsList []vcdsdk.PortDetails, oneArm *vcdsdk.OneArm) (string, error) {
+	ips []string, portDetailsList []vcdsdk.PortDetails, oneArm *vcdsdk.OneArm, useVsSharedIP bool, portNameToIP map[string]string) (string, error) {
 
 	gm := cgm.VcdGatewayManager
 	if gm == nil {
@@ -42,7 +42,7 @@ func (cgm *CpiGatewayManager) CreateLoadBalancer(ctx context.Context, virtualSer
 	}
 
 	externalIP, err := gm.CreateLoadBalancer(ctx, virtualServiceNamePrefix, lbPoolNamePrefix,
-		ips, portDetailsList, oneArm)
+		ips, portDetailsList, oneArm, useVsSharedIP, portNameToIP)
 	if err != nil {
 		return "", fmt.Errorf(
 			"unable to create load balancer with vs prefix [%s], lbpool prefix [%s], ips [%v], ports [%v]: [%v]",
