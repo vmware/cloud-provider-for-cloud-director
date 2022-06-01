@@ -128,7 +128,9 @@ func convertMapToComponentStatus(componentStatusMap map[string]interface{}) (*Co
 	return &cs, nil
 }
 
-func UpdateStatusMapWithVCDResourceSet(component string, componentName string, componentVersion string, statusMap map[string]interface{}, vcdResource VCDResource) (map[string]interface{}, error) {
+// AddVCDResourceToStatusMap updates the input status map with VCDResource created from the input parameters. This function doesn't make any
+// 	calls to VCD.
+func AddVCDResourceToStatusMap(component string, componentName string, componentVersion string, statusMap map[string]interface{}, vcdResource VCDResource) (map[string]interface{}, error) {
 	// get the component info from the status
 	componentIf, ok := statusMap[component]
 	if !ok {
@@ -596,7 +598,7 @@ func (rdeManager *RDEManager) AddToVCDResourceSet(ctx context.Context, component
 			Name:              resourceName,
 			AdditionalDetails: additionalDetails,
 		}
-		updatedStatusMap, err := UpdateStatusMapWithVCDResourceSet(component, rdeManager.StatusComponentName,
+		updatedStatusMap, err := AddVCDResourceToStatusMap(component, rdeManager.StatusComponentName,
 			rdeManager.StatusComponentVersion, statusMap, vcdResource)
 		if err != nil {
 			return fmt.Errorf("error occurred when updating VCDResource set of %s status in RDE [%s]: [%v]", rdeManager.ClusterID, component, err)
@@ -629,9 +631,9 @@ func (rdeManager *RDEManager) AddToVCDResourceSet(ctx context.Context, component
 	return nil
 }
 
-// removeFromVCDResourceSet removes a VCDResource from VCDResourceSet if type and name of the resource matches
+// RemoveVCDResourceSetFromStatusMap removes a VCDResource from VCDResourceSet if type and name of the resource matches
 // If the component is absent, an empty component is initialized.
-func removeFromVCDResourceSet(component string, componentName string, componentVersion string,
+func RemoveVCDResourceSetFromStatusMap(component string, componentName string, componentVersion string,
 	statusMap map[string]interface{}, vcdResource VCDResource) (map[string]interface{}, error) {
 	// get the component info from the status
 	componentIf, ok := statusMap[component]
@@ -714,7 +716,7 @@ func (rdeManager *RDEManager) RemoveFromVCDResourceSet(ctx context.Context, comp
 		if !ok {
 			return fmt.Errorf("failed to parse status in RDE [%s] into map[string]interface{} to remove [%s] from %s status", rdeManager.ClusterID, resourceName, component)
 		}
-		updatedStatus, err := removeFromVCDResourceSet(component, rdeManager.StatusComponentName,
+		updatedStatus, err := RemoveVCDResourceSetFromStatusMap(component, rdeManager.StatusComponentName,
 			rdeManager.StatusComponentVersion, statusMap, VCDResource{
 				Type: resourceType,
 				Name: resourceName,

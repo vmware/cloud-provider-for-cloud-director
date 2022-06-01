@@ -385,7 +385,7 @@ func TestAddToVCDResourceSet(t *testing.T) {
 		},
 	}
 	for _, tc := range testCaseList {
-		updatedStatusMap, err := UpdateStatusMapWithVCDResourceSet(ComponentCPI, "ccm", "1.1.1", tc.StatusMap, tc.VCDResource)
+		updatedStatusMap, err := AddVCDResourceToStatusMap(ComponentCPI, "ccm", "1.1.1", tc.StatusMap, tc.VCDResource)
 		assert.NoError(t, err, "Expected no error ", tc.Message)
 
 		actualJson, err := convertToJson(updatedStatusMap)
@@ -503,7 +503,7 @@ func TestRemoveFromCPIVCDResourceSet(t *testing.T) {
 		},
 	}
 	for _, tc := range testCaseList {
-		updatedStatusMap, err := removeFromVCDResourceSet(ComponentCPI, "ccm", "1.1.1",
+		updatedStatusMap, err := RemoveVCDResourceSetFromStatusMap(ComponentCPI, "ccm", "1.1.1",
 			tc.StatusMap,
 			VCDResource{
 				Type: tc.VCDResourceType,

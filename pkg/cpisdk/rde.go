@@ -344,7 +344,7 @@ func (cpiRDEManager *CPIRDEManager) AddVIPToVCDResourceSet(ctx context.Context, 
 				"virtualIP": externalIP,
 			},
 		}
-		updatedStatusMap, err := vcdsdk.UpdateStatusMapWithVCDResourceSet(vcdsdk.ComponentCPI, cpiRDEManager.RDEManager.StatusComponentName,
+		updatedStatusMap, err := vcdsdk.AddVCDResourceToStatusMap(vcdsdk.ComponentCPI, cpiRDEManager.RDEManager.StatusComponentName,
 			cpiRDEManager.RDEManager.StatusComponentVersion, statusMap, vcdResource)
 		if err != nil {
 			return fmt.Errorf("error occurred when updating VCDResource set of %s status in RDE [%s]: [%v]",
