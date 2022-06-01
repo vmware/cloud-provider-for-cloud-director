@@ -88,11 +88,11 @@ func TestDNATRuleCRUDE(t *testing.T) {
 	assert.NoError(t, err, "gateway manager should be created without error")
 
 	dnatRuleName := fmt.Sprintf("test-dnat-rule-%s", uuid.New().String())
-	err = gm.CreateDNATRule(ctx, dnatRuleName, "1.2.3.4", "1.2.3.5", 80, 36123)
+	err = gm.CreateDNATRule(ctx, dnatRuleName, "1.2.3.4", "1.2.3.5", 80, 36123, nil)
 	assert.NoError(t, err, "Unable to create dnat rule")
 
 	// repeated creation should not fail
-	err = gm.CreateDNATRule(ctx, dnatRuleName, "1.2.3.4", "1.2.3.5", 80, 36123)
+	err = gm.CreateDNATRule(ctx, dnatRuleName, "1.2.3.4", "1.2.3.5", 80, 36123, nil)
 	assert.NoError(t, err, "Unable to create dnat rule for the second time")
 
 	natRuleRef, err := gm.GetNATRuleRef(ctx, dnatRuleName)
@@ -326,7 +326,7 @@ func TestVirtualServiceHttpCRUDE(t *testing.T) {
 	virtualServiceName := fmt.Sprintf("test-virtual-service-%s", uuid.New().String())
 	internalIP := "2.3.4.5"
 	var vsRef *swagger.EntityReference
-	for i := 0; i < BusyRetries; i ++ {
+	for i := 0; i < BusyRetries; i++ {
 		vsRef, err = gm.CreateVirtualService(ctx, virtualServiceName, lbPoolRef, segRef,
 			internalIP, "HTTP", 80, false, "")
 		if err != nil {
@@ -334,7 +334,7 @@ func TestVirtualServiceHttpCRUDE(t *testing.T) {
 				break
 			}
 		}
-		time.Sleep(3*time.Second)
+		time.Sleep(3 * time.Second)
 	}
 	assert.NoError(t, err, "Unable to create virtual service")
 	require.NotNil(t, vsRef, "VirtualServiceRef should not be nil")
@@ -347,7 +347,7 @@ func TestVirtualServiceHttpCRUDE(t *testing.T) {
 	assert.NotEmpty(t, vsRefObtained.Id, "Virtual service ID should not be empty")
 
 	// repeated creation should not fail
-	for i := 0; i < BusyRetries; i ++ {
+	for i := 0; i < BusyRetries; i++ {
 		vsRef, err = gm.CreateVirtualService(ctx, virtualServiceName, lbPoolRef, segRef,
 			internalIP, "HTTP", 80, false, "")
 		if err != nil {
@@ -430,7 +430,7 @@ func TestVirtualServiceHttpsCRUDE(t *testing.T) {
 	}
 
 	var vsRef *swagger.EntityReference
-	for i := 0; i < BusyRetries; i ++ {
+	for i := 0; i < BusyRetries; i++ {
 		vsRef, err = gm.CreateVirtualService(ctx, virtualServiceName, lbPoolRef, segRef,
 			internalIP, "HTTP", 80, false, "")
 		if err != nil {
