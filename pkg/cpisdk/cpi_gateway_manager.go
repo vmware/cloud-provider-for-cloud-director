@@ -13,6 +13,25 @@ import (
 	swaggerClient "github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdswaggerclient"
 	"github.com/vmware/cloud-provider-for-cloud-director/release"
 	"k8s.io/klog"
+	"time"
+)
+
+const (
+	// Errors
+	CreateLoadbalancerError  = "CreateLoadbalancerError"
+	UpdateLoadbalancerError  = "UpdateLoadbalancerError"
+	DeleteLoadbalancerError  = "DeleteLoadbalancerError"
+	GetLoadbalancerError     = "GetLoadbalancerError"
+	CPIStatusUpgradeRdeError = "CPIStatusUpgradeRdeError"
+	RemoveVIPFromRdeError    = "RemoveVirtualIPFromRdeError"
+	AddVIPToRdeError         = "AddVirtualIPToRdeError"
+
+	// Events
+	ClientAuthenticated  = "ClientAuthenticated"
+	CreatedLoadbalancer  = "CreatedLoadbalancer"
+	UpdatedLoadbalancer  = "UpdatedLoadbalancer"
+	DeletedLoadbalancer  = "DeletedLoadbalancer"
+	CPIStatusRDEUpgraded = "CPIStatusRDEUpgraded"
 )
 
 // TODO(VCDA-3647): make RDE operations in CreateLoadBalancer, UpdateLoadBalancer, DeleteLoadBalancer and GetLoadBalancer
@@ -52,9 +71,16 @@ func (cgm *CpiGatewayManager) CreateLoadBalancer(ctx context.Context, virtualSer
 
 	resourceAllocationMap := &util.AllocatedResourcesMap{}
 
+	// TODO: In the future, if we want component level errors we will need to pass additional params to below function to determine the caller
+	// We could utilize a subErrorType in the additional details to handle different components (virtual service, DNAT, etc)
 	externalIP, err := gm.CreateLoadBalancer(ctx, virtualServiceNamePrefix, lbPoolNamePrefix,
 		ips, portDetailsList, oneArm, resourceAllocationMap)
+
 	if err != nil {
+		addToErrorSetErr := addToErrorSet(ctx, cpiRdeManager, CreateLoadbalancerError, cgm.ClusterID, err.Error())
+		if addToErrorSetErr != nil {
+			klog.Errorf("error adding CPI error to RDE: [%s], [%v]", cgm.ClusterID, addToErrorSetErr)
+		}
 		return "", fmt.Errorf(
 			"unable to create load balancer with vs prefix [%s], lbpool prefix [%s], ips [%v], ports [%v]: [%v]",
 			virtualServiceNamePrefix, lbPoolNamePrefix, ips, portDetailsList, err)
@@ -63,10 +89,26 @@ func (cgm *CpiGatewayManager) CreateLoadBalancer(ctx context.Context, virtualSer
 		virtualServiceNamePrefix, resourceAllocationMap)
 
 	if externalIP != "" {
+		// We can record this error so users can know that the RDE may not contain the external IP even though it exists
 		err = cpiRdeManager.addVirtualIpToRDE(ctx, externalIP)
 		if err != nil {
+			addToErrorSetErr := addToErrorSet(ctx, cpiRdeManager, AddVIPToRdeError, cgm.ClusterID, err.Error())
+			if addToErrorSetErr != nil {
+				klog.Errorf("error adding CPI error to RDE: [%s], [%v]", cgm.ClusterID, addToErrorSetErr)
+			}
 			klog.Errorf("error when adding virtual IP to RDE: [%v]", err)
 		}
+	}
+
+	// No errors and external IP exists, we can remove the create LB error
+	err = cpiRdeManager.RDEManager.RemoveErrorByNameOrIdFromErrorSet(ctx, vcdsdk.ComponentCPI, CreateLoadbalancerError, cgm.ClusterID)
+	if err != nil {
+		klog.Errorf("there was an error removing CPI error [%s] from RDE [%s], [%v]", CreateLoadbalancerError, cgm.ClusterID, err)
+	}
+
+	err = addToEventSet(ctx, cpiRdeManager, CreatedLoadbalancer, cgm.ClusterID, fmt.Sprintf("Created loadbalancer successfully for [%s] with external IP: [%s]", cgm.ClusterID, externalIP))
+	if err != nil {
+		klog.Errorf("error adding CPI event to RDE: [%v]", err)
 	}
 
 	return externalIP, nil
@@ -83,12 +125,29 @@ func (cgm *CpiGatewayManager) UpdateLoadBalancer(ctx context.Context, lbPoolName
 		return fmt.Errorf("GatewayManager cannot be nil")
 	}
 
+	vcdsdkRdeManager := vcdsdk.NewRDEManager(gm.Client, cgm.ClusterID,
+		release.CloudControllerManagerName, release.CpiVersion)
+	cpiRdeManager := NewCPIRDEManager(vcdsdkRdeManager)
+
 	if err := gm.UpdateLoadBalancer(ctx, lbPoolName, virtualServiceName, ips, internalPort, externalPort); err != nil {
+		addToErrorSetErr := addToErrorSet(ctx, cpiRdeManager, UpdateLoadbalancerError, virtualServiceName, err.Error())
+		if addToErrorSetErr != nil {
+			klog.Errorf("error adding CPI error to RDE: [%s], [%v]", cgm.ClusterID, addToErrorSetErr)
+		}
 		return fmt.Errorf(
-			"unable to create load balancer with vs [%s], lbpool [%s], ips [%v], ports [%d->%d]: [%v]",
+			"unable to update load balancer with vs [%s], lbpool [%s], ips [%v], ports [%d->%d]: [%v]",
 			virtualServiceName, lbPoolName, ips, externalPort, internalPort, err)
 	}
 
+	err := cpiRdeManager.RDEManager.RemoveErrorByNameOrIdFromErrorSet(ctx, vcdsdk.ComponentCPI, UpdateLoadbalancerError, virtualServiceName)
+	if err != nil {
+		klog.Errorf("there was an error removing CPI error [%s] from RDE [%s], [%v]", UpdateLoadbalancerError, cgm.ClusterID, err)
+	}
+
+	err = addToEventSet(ctx, cpiRdeManager, UpdatedLoadbalancer, virtualServiceName, fmt.Sprintf("Successfully updated loadbalancer with virtual service name [%s]: ", virtualServiceName))
+	if err != nil {
+		klog.Errorf("error adding CPI event to RDE: [%s], [%v]", cgm.ClusterID, err)
+	}
 	return nil
 }
 
@@ -99,20 +158,41 @@ func (cgm *CpiGatewayManager) DeleteLoadBalancer(ctx context.Context, virtualSer
 		return fmt.Errorf("GatewayManager cannot be nil")
 	}
 
+	vcdsdkRdeManager := vcdsdk.NewRDEManager(gm.Client, cgm.ClusterID,
+		release.CloudControllerManagerName, release.CpiVersion)
+	cpiRdeManager := NewCPIRDEManager(vcdsdkRdeManager)
+
 	rdeVIP, err := gm.DeleteLoadBalancer(ctx, virtualServiceNamePrefix, lbPoolNamePrefix, portDetailsList, oneArm)
 	if err != nil {
+		addToErrorSetErr := addToErrorSet(ctx, cpiRdeManager, DeleteLoadbalancerError, cgm.ClusterID, err.Error())
+		if addToErrorSetErr != nil {
+			klog.Errorf("error adding CPI error to RDE: [%v]", addToErrorSetErr)
+		}
+
 		return fmt.Errorf(
 			"unable to delete load balancer with vs prefix [%s], lbpool prefix [%s], ports [%v]: [%v]",
 			virtualServiceNamePrefix, lbPoolNamePrefix, portDetailsList, err)
 	}
-	rdeManager := vcdsdk.NewRDEManager(gm.Client, cgm.ClusterID,
-		release.CloudControllerManagerName, release.CpiVersion)
-	cpiRdeManager := NewCPIRDEManager(rdeManager)
+
 	err = cpiRdeManager.removeVirtualIpFromRDE(ctx, rdeVIP)
 	if err != nil {
+		addToErrorSetErr := addToErrorSet(ctx, cpiRdeManager, RemoveVIPFromRdeError, cgm.ClusterID, err.Error())
+		if addToErrorSetErr != nil {
+			klog.Errorf("unable to add CPI error to RDE: [%s], [%v]", cgm.ClusterID, addToErrorSetErr)
+		}
+
 		return fmt.Errorf("error when removing vip [%s] from RDE: [%v]", rdeVIP, err)
 	}
 
+	err = vcdsdkRdeManager.RemoveErrorByNameOrIdFromErrorSet(ctx, vcdsdk.ComponentCPI, DeleteLoadbalancerError, cgm.ClusterID)
+	if err != nil {
+		klog.Errorf("there was an error removing CPI error [%s] from RDE [%s], [%v]", DeleteLoadbalancerError, cgm.ClusterID, err)
+	}
+
+	err = addToEventSet(ctx, cpiRdeManager, DeletedLoadbalancer, cgm.ClusterID, fmt.Sprintf("Successfully deleted loadbalancer associated with [%s], deleted external IP [%s]", cgm.ClusterID, rdeVIP))
+	if err != nil {
+		klog.Errorf("error adding CPI event to RDE: [%v]", err)
+	}
 	return nil
 }
 
@@ -121,7 +201,25 @@ func (cgm *CpiGatewayManager) GetLoadBalancer(ctx context.Context, virtualServic
 	if gm == nil {
 		return "", fmt.Errorf("GatewayManager cannot be nil")
 	}
-	return gm.GetLoadBalancer(ctx, virtualServiceName, oneArm)
+
+	rdeManager := vcdsdk.NewRDEManager(gm.Client, cgm.ClusterID,
+		release.CloudControllerManagerName, release.CpiVersion)
+	cpiRdeManager := NewCPIRDEManager(rdeManager)
+
+	extIP, err := gm.GetLoadBalancer(ctx, virtualServiceName, oneArm)
+	if err != nil {
+		addToErrorSetErr := addToErrorSet(ctx, cpiRdeManager, GetLoadbalancerError, virtualServiceName, err.Error())
+		if addToErrorSetErr != nil {
+			klog.Errorf("unable to add CPI error to RDE [%v]", addToErrorSetErr)
+		}
+	}
+
+	removeErr := rdeManager.RemoveErrorByNameOrIdFromErrorSet(ctx, vcdsdk.ComponentCPI, GetLoadbalancerError, virtualServiceName)
+	if removeErr != nil {
+		klog.Errorf("there was an error removing CPI error [%s] from RDE [%s], [%v]", GetLoadbalancerError, cgm.ClusterID, err)
+	}
+
+	return extIP, err
 }
 
 func (cgm *CpiGatewayManager) GetLoadBalancerPool(ctx context.Context, lbPoolName string) (*swaggerClient.EntityReference, error) {
@@ -130,4 +228,24 @@ func (cgm *CpiGatewayManager) GetLoadBalancerPool(ctx context.Context, lbPoolNam
 		return nil, fmt.Errorf("GatewayManager cannot be nil")
 	}
 	return gm.GetLoadBalancerPool(ctx, lbPoolName)
+}
+
+func addToErrorSet(ctx context.Context, cpiRdeManager *CPIRDEManager, errorName, vcdResourceId, detailedErrorMessage string) error {
+	backendErr := vcdsdk.BackendError{
+		Name:              errorName,
+		OccurredAt:        time.Now(),
+		VcdResourceId:     vcdResourceId,
+		AdditionalDetails: map[string]interface{}{"Detailed Error": detailedErrorMessage},
+	}
+	return cpiRdeManager.RDEManager.AddToErrorSet(ctx, vcdsdk.ComponentCPI, backendErr, vcdsdk.DefaultRollingWindowSize)
+}
+
+func addToEventSet(ctx context.Context, cpiRdeManager *CPIRDEManager, eventName, vcdResourceId, detailedErrorMessage string) error {
+	backendEvent := vcdsdk.BackendEvent{
+		Name:              eventName,
+		OccurredAt:        time.Now(),
+		VcdResourceId:     vcdResourceId,
+		AdditionalDetails: map[string]interface{}{"Detailed Error": detailedErrorMessage},
+	}
+	return cpiRdeManager.RDEManager.AddToEventSet(ctx, vcdsdk.ComponentCPI, backendEvent, vcdsdk.DefaultRollingWindowSize)
 }
