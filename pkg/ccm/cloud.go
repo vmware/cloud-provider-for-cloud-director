@@ -82,6 +82,19 @@ func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error
 		time.Sleep(10 * time.Second)
 	}
 
+	backendEvent := vcdsdk.BackendEvent{
+		Name:          cpisdk.ClientAuthenticated,
+		OccurredAt:    time.Now(),
+		VcdResourceId: cloudConfig.ClusterID,
+	}
+
+	rdeManager := vcdsdk.NewRDEManager(vcdClient, cloudConfig.ClusterID, release.CloudControllerManagerName, release.CpiVersion)
+	cpiRdeManager := cpisdk.NewCPIRDEManager(rdeManager)
+	err = rdeManager.AddToEventSet(context.Background(), vcdsdk.ComponentCPI, backendEvent, vcdsdk.DefaultRollingWindowSize)
+	if err != nil {
+		klog.Errorf("failed to add CPI event [%s] to EventSet in RDE [%s], [%v]", cpisdk.ClientAuthenticated, cloudConfig.ClusterID, err)
+	}
+
 	// setup LB only if the gateway is not NSX-T
 	var lb cloudProvider.LoadBalancer = nil
 	gm, err := vcdsdk.NewGatewayManager(context.Background(), vcdClient, cloudConfig.LB.VDCNetwork, cloudConfig.LB.VIPSubnet)
@@ -108,15 +121,33 @@ func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error
 
 	// TODO: upgrade all CAPVCD RDEs here
 
-	rdeManager := vcdsdk.NewRDEManager(vcdClient, cloudConfig.ClusterID, release.CloudControllerManagerName, release.CpiVersion)
-	cpiRdeManager := cpisdk.NewCPIRDEManager(rdeManager)
 	err = cpiRdeManager.UpgradeCPIStatusOfExistingRDE(context.Background(), cloudConfig.ClusterID)
 	if err != nil {
 		klog.Errorf("failed to create CPI status in the RDE [%s]: [%v]", cloudConfig.ClusterID, err)
+		backendError := vcdsdk.BackendError{
+			Name:              cpisdk.CPIStatusUpgradeRdeError,
+			OccurredAt:        time.Now(),
+			VcdResourceId:     cloudConfig.ClusterID,
+			AdditionalDetails: map[string]interface{}{"Detailed Error": err.Error()},
+		}
+		err = rdeManager.AddToErrorSet(context.Background(), vcdsdk.ComponentCPI, backendError, vcdsdk.DefaultRollingWindowSize)
+		if err != nil {
+			klog.Errorf("failed to add CPI error [%s] to ErrorSet in RDE [%s], [%v]", cpisdk.CPIStatusUpgradeRdeError, cloudConfig.ClusterID, err)
+		}
 	} else {
 		klog.Infof("successfully created CPI status in RDE [%s]", cloudConfig.ClusterID)
+		event := vcdsdk.BackendEvent{
+			Name:          cpisdk.CPIStatusRDEUpgraded,
+			OccurredAt:    time.Now(),
+			VcdResourceId: cloudConfig.ClusterID,
+		}
+		err = rdeManager.AddToEventSet(context.Background(), vcdsdk.ComponentCPI, event, vcdsdk.DefaultRollingWindowSize)
+		if err != nil {
+			klog.Errorf("failed to add CPI event [%s] to EventSet in RDE [%s], [%v]", cpisdk.CPIStatusRDEUpgraded, cloudConfig.ClusterID, err)
+		}
 	}
 
+	// TODO: Do we need to record anything from instances from errors/events aspect?
 	return &VCDCloudProvider{
 		vcdClient: vcdClient,
 		lb:        lb,
