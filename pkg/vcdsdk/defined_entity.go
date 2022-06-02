@@ -14,8 +14,8 @@ import (
 const (
 	NoRdePrefix = `NO_RDE_`
 
-	MaxRDEUpdateRetries = 10
-
+	MaxRDEUpdateRetries                = 10
+	DefaultRollingWindowSize           = 10
 	ComponentStatusFieldVCDResourceSet = "vcdResourceSet"
 	ComponentStatusFieldErrorSet       = "errorSet"
 	ComponentStatusFieldEventSet       = "eventSet"
@@ -44,6 +44,11 @@ type VCDResource struct {
 	AdditionalDetails map[string]interface{} `json:"additionalDetails,omitempty"`
 }
 
+// TODO: In the future, add subErrorType to AdditionalDetails to handle/match deeper level components removal such as (virtualServiceError, dnatRuleUpdateError, etc)
+// We would need to make AdditionalDetails it's own struct, include a SubErrorType struct/string inside of it
+// During removal, we could match certain subErrorTypes such as delete all LB creation errors that were from subErrorType: virtualServiceFailures
+// AdditionalDetails structure would look something like:
+// additionalDetails : { subErrorType: DNATRuleFailed, additionalInfo: map[string]interface{} }
 type BackendError struct {
 	Name              string                 `json:"name,omitempty"`
 	OccurredAt        time.Time              `json:"occurredAt, omitempty"`
