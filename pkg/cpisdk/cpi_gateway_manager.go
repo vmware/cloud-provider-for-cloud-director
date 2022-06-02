@@ -252,23 +252,23 @@ func AddToErrorSetWithNameAndId(ctx context.Context, cpiRdeManager *CPIRDEManage
 	return cpiRdeManager.RDEManager.AddToErrorSet(ctx, vcdsdk.ComponentCPI, backendErr, vcdsdk.DefaultRollingWindowSize)
 }
 
-func AddToEventSet(ctx context.Context, cpiRdeManager *CPIRDEManager, eventName, vcdResourceId, detailedErrorMessage string) error {
+func AddToEventSet(ctx context.Context, cpiRdeManager *CPIRDEManager, eventName, vcdResourceId, detailedEventMsg string) error {
 	backendEvent := vcdsdk.BackendEvent{
 		Name:              eventName,
 		OccurredAt:        time.Now(),
 		VcdResourceId:     vcdResourceId,
-		AdditionalDetails: map[string]interface{}{"Detailed Event": detailedErrorMessage},
+		AdditionalDetails: map[string]interface{}{"Detailed Event": detailedEventMsg},
 	}
 	return cpiRdeManager.RDEManager.AddToEventSet(ctx, vcdsdk.ComponentCPI, backendEvent, vcdsdk.DefaultRollingWindowSize)
 }
 
-func AddToEventSetWithNameAndId(ctx context.Context, cpiRdeManager *CPIRDEManager, eventName, vcdResourceId, vcdResourceName, detailedErrorMessage string) error {
+func AddToEventSetWithNameAndId(ctx context.Context, cpiRdeManager *CPIRDEManager, eventName, vcdResourceId, vcdResourceName, detailedEventMsg string) error {
 	backendEvent := vcdsdk.BackendEvent{
 		Name:              eventName,
 		OccurredAt:        time.Now(),
 		VcdResourceId:     vcdResourceId,
 		VcdResourceName:   vcdResourceName,
-		AdditionalDetails: map[string]interface{}{"Detailed Event": detailedErrorMessage},
+		AdditionalDetails: map[string]interface{}{"Detailed Event": detailedEventMsg},
 	}
 	return cpiRdeManager.RDEManager.AddToEventSet(ctx, vcdsdk.ComponentCPI, backendEvent, vcdsdk.DefaultRollingWindowSize)
 }
