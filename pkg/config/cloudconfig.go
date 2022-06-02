@@ -142,6 +142,10 @@ func ValidateCloudConfig(config *CloudConfig) error {
 	if config.VAppName == "" {
 		return fmt.Errorf("need a valid vApp name")
 	}
+	if !config.LB.UseVsSharedIP && config.LB.OneArm == nil {
+		return fmt.Errorf("if not using virtual service shared IP feature, OneArm should be enabled")
+	}
+
 
 	return nil
 }
