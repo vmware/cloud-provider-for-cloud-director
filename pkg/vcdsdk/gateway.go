@@ -1568,7 +1568,7 @@ func (gm *GatewayManager) DeleteLoadBalancer(ctx context.Context, virtualService
 }
 
 func (gm *GatewayManager) UpdateLoadBalancer(ctx context.Context, lbPoolName string, virtualServiceName string,
-	ips []string, internalPort int32, externalPort int32) error {
+	ips []string, internalPort int32, externalPort int32, oneArm *OneArm, useVsSharedIP bool) error {
 
 	if gm == nil {
 		return fmt.Errorf("GatewayManager cannot be nil")
@@ -1594,22 +1594,24 @@ func (gm *GatewayManager) UpdateLoadBalancer(ctx context.Context, lbPoolName str
 		}
 		return fmt.Errorf("unable to update virtual service [%s] with port [%d]: [%v]", virtualServiceName, externalPort, err)
 	}
-	// update app port profile
-	dnatRuleName := GetDNATRuleName(virtualServiceName)
-	appPortProfileName := GetAppPortProfileName(dnatRuleName)
-	err = gm.UpdateAppPortProfile(appPortProfileName, externalPort)
-	if err != nil {
-		return fmt.Errorf("unable to update application port profile [%s] with external port [%d]: [%v]", appPortProfileName, externalPort, err)
-	}
+	if !(useVsSharedIP && oneArm == nil) { // dnat not used if vsSharedIP is used and oneArm is nil
+		// update app port profile
+		dnatRuleName := GetDNATRuleName(virtualServiceName)
+		appPortProfileName := GetAppPortProfileName(dnatRuleName)
+		err = gm.UpdateAppPortProfile(appPortProfileName, externalPort)
+		if err != nil {
+			return fmt.Errorf("unable to update application port profile [%s] with external port [%d]: [%v]", appPortProfileName, externalPort, err)
+		}
 
-	// update DNAT rule
-	dnatRuleRef, err := gm.GetNATRuleRef(ctx, dnatRuleName)
-	if err != nil {
-		return fmt.Errorf("unable to retrieve created dnat rule [%s]: [%v]", dnatRuleName, err)
-	}
-	err = gm.UpdateDNATRule(ctx, dnatRuleName, dnatRuleRef.ExternalIP, dnatRuleRef.InternalIP, externalPort)
-	if err != nil {
-		return fmt.Errorf("unable to update DNAT rule [%s]: [%v]", dnatRuleName, err)
+		// update DNAT rule
+		dnatRuleRef, err := gm.GetNATRuleRef(ctx, dnatRuleName)
+		if err != nil {
+			return fmt.Errorf("unable to retrieve created dnat rule [%s]: [%v]", dnatRuleName, err)
+		}
+		err = gm.UpdateDNATRule(ctx, dnatRuleName, dnatRuleRef.ExternalIP, dnatRuleRef.InternalIP, externalPort)
+		if err != nil {
+			return fmt.Errorf("unable to update DNAT rule [%s]: [%v]", dnatRuleName, err)
+		}
 	}
 	return nil
 }

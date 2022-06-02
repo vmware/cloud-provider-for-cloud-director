@@ -37,11 +37,11 @@ type LBManager struct {
 	ovdcNetworkName  string
 	ipamSubnet       string
 	clusterID        string
-	VsSharedIP		 bool
+	UseVsSharedIP	 bool
 }
 
 func newLoadBalancer(vcdClient *vcdsdk.Client, certAlias string, oneArm *vcdsdk.OneArm,
-	ovdcNetworkName string, ipamSubnet string, clusterID string, vsSharedIP bool) cloudProvider.LoadBalancer {
+	ovdcNetworkName string, ipamSubnet string, clusterID string, useVsSharedIP bool) cloudProvider.LoadBalancer {
 
 	return &LBManager{
 		vcdClient:        vcdClient,
@@ -52,7 +52,7 @@ func newLoadBalancer(vcdClient *vcdsdk.Client, certAlias string, oneArm *vcdsdk.
 		ovdcNetworkName:  ovdcNetworkName,
 		ipamSubnet:       ipamSubnet,
 		clusterID:        clusterID,
-		VsSharedIP: 	  vsSharedIP,
+		UseVsSharedIP: 	  useVsSharedIP,
 	}
 }
 
@@ -136,7 +136,8 @@ func (lb *LBManager) UpdateLoadBalancer(ctx context.Context, clusterName string,
 			return fmt.Errorf("error while creating GatewayManager: [%v]", err)
 		}
 		klog.Infof("Updating pool [%s] with port [%s:%d]", lbPoolName, portName, internalPort)
-		if err := cgm.UpdateLoadBalancer(ctx, lbPoolName, virtualServiceName, nodeIps, internalPort, externalPort); err != nil {
+		if err := cgm.UpdateLoadBalancer(ctx, lbPoolName, virtualServiceName, nodeIps, internalPort,
+			externalPort, lb.OneArm, lb.UseVsSharedIP); err != nil {
 			return fmt.Errorf("unable to update pool [%s] with port [%s:%d]: [%v]", lbPoolName, portName,
 				internalPort, err)
 		}
@@ -351,7 +352,8 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 			virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, portName)
 			externalPort := typeToExternalPortMap[portName]
 			klog.Infof("Updating pool [%s] with port [%s:%d:%d]", lbPoolName, portName, internalPort, externalPort)
-			if err := cgm.UpdateLoadBalancer(ctx, lbPoolName, virtualServiceName, nodeIPs, internalPort, externalPort); err != nil {
+			if err := cgm.UpdateLoadBalancer(ctx, lbPoolName, virtualServiceName, nodeIPs, internalPort,
+				externalPort, lb.OneArm, lb.UseVsSharedIP); err != nil {
 				return nil, fmt.Errorf("unable to update pool [%s] with port [%s:%d:%d]: [%v]", lbPoolName, portName,
 					internalPort, externalPort, err)
 			}
@@ -402,7 +404,7 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 
 	// Create using VCD API
 	lbIP, err := cgm.CreateLoadBalancer(ctx, virtualServiceNamePrefix, lbPoolNamePrefix, nodeIPs, portDetailsList,
-		lb.OneArm, lb.VsSharedIP, portNameToIPMap)
+		lb.OneArm, lb.UseVsSharedIP, portNameToIPMap)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create loadbalancer for ports [%#v]: [%v]", portDetailsList, err)
 	}

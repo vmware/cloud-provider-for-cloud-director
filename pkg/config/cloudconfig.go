@@ -53,8 +53,8 @@ type LBConfig struct {
 	Ports            Ports   `yaml:"ports"`
 	CertificateAlias string  `yaml:"certAlias"`
 	VDCNetwork       string  `yaml:"network"`
-	VIPSubnet        string  `yaml:"vipSubnet"`
-	VsSharedIP		 bool 	 `yaml:"vSSharedIP"`
+	VIPSubnet     string `yaml:"vipSubnet"`
+	UseVsSharedIP bool   `yaml:"useVsSharedIP"`
 }
 
 // CloudConfig contains the config that will be read from the secret
@@ -70,7 +70,7 @@ func ParseCloudConfig(configReader io.Reader) (*CloudConfig, error) {
 	var err error
 	config := &CloudConfig{
 		LB: LBConfig{
-			VsSharedIP: false,
+			UseVsSharedIP: false,
 		},
 	}
 

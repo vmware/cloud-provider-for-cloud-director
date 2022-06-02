@@ -19,7 +19,7 @@ data:
       network: NETWORK
       vipSubnet: VIP_SUBNET_CIDR
       certAlias: CLUSTER_ID-cert
-      vSSharedIP: true # supported for VCD >= 10.4
+      useVsSharedIP: true # supported for VCD >= 10.4
     clusterid: CLUSTER_ID
     vAppName: VAPP
 immutable: true
