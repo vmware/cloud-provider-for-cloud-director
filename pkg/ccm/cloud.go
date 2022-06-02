@@ -84,11 +84,6 @@ func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error
 
 	rdeManager := vcdsdk.NewRDEManager(vcdClient, cloudConfig.ClusterID, release.CloudControllerManagerName, release.CpiVersion)
 	cpiRdeManager := cpisdk.NewCPIRDEManager(rdeManager)
-	err = cpisdk.AddToEventSet(context.Background(), cpiRdeManager, cpisdk.ClientAuthenticated, cloudConfig.ClusterID,
-		fmt.Sprintf("client successfully authenticated as [%s] @ org [%s]", cloudConfig.VCD.User, cloudConfig.VCD.UserOrg))
-	if err != nil {
-		klog.Errorf("failed to add CPI event [%s] to EventSet in RDE [%s], [%v]", cpisdk.ClientAuthenticated, cloudConfig.ClusterID, err)
-	}
 
 	// setup LB only if the gateway is not NSX-T
 	var lb cloudProvider.LoadBalancer = nil
