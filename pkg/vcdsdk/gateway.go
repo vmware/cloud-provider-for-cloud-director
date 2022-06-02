@@ -1330,6 +1330,7 @@ func (gm *GatewayManager) CreateLoadBalancer(ctx context.Context, virtualService
 	// Separately loop through all DNAT rules to see if any exist, so that we can reuse the external IP in case a
 	// partial creation of load-balancer is continued and an externalIP was claimed earlier by a dnat rule
 	externalIP := ""
+	sharedInternalIP := ""
 	var err error
 	if oneArm != nil {
 		for _, portDetails := range portDetailsList {
@@ -1353,28 +1354,27 @@ func (gm *GatewayManager) CreateLoadBalancer(ctx context.Context, virtualService
 			}
 
 			externalIP = dnatRuleRef.ExternalIP
+			if useVsSharedIP {
+				sharedInternalIP = dnatRuleRef.InternalIP
+			}
 		}
 	}
 
 	// 3 variables: useVsSharedIP, oneArm, sharedIP
 	// if useVsSharedIP is true and oneArm is nil, no internal ip is used
 	// if useVsSharedIP is true and oneArm is not nil, an internal ip will be used and shared
-	sharedInternalIP := ""
 	if useVsSharedIP && oneArm == nil {  // no internal ip used
 		if sharedVirtualIP != "" { // shared virtual ip is an external ip
 			externalIP = sharedVirtualIP
 		}
 	} else if useVsSharedIP && oneArm != nil { // internal ip used, dnat rule is needed
-		if sharedVirtualIP != "" { // shared virtual ip is an internal ip
-			sharedInternalIP = sharedVirtualIP
-		} else {
+		if sharedInternalIP == "" { // no dnat rule has been created yet
 			sharedInternalIP, err = gm.GetUnusedInternalIPAddress(ctx, oneArm)
 			if err != nil {
 				return "", fmt.Errorf("unable to get internal IP address for one-arm mode: [%v]", err)
 			}
 		}
 	}
-
 
 	if externalIP == "" {
 		externalIP, err = gm.GetUnusedExternalIPAddress(ctx, gm.IPAMSubnet)
@@ -1383,7 +1383,6 @@ func (gm *GatewayManager) CreateLoadBalancer(ctx context.Context, virtualService
 				gm.IPAMSubnet, err)
 		}
 	}
-	klog.Infof("Using external IP [%s] for virtual service\n", externalIP)
 
 	for _, portDetails := range portDetailsList {
 		if portDetails.InternalPort == 0 {
