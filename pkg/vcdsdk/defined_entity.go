@@ -51,9 +51,9 @@ type VCDResource struct {
 // additionalDetails : { subErrorType: DNATRuleFailed, additionalInfo: map[string]interface{} }
 type BackendError struct {
 	Name              string                 `json:"name,omitempty"`
-	OccurredAt        time.Time              `json:"occurredAt, omitempty"`
-	VcdResourceId     string                 `json:"vcdResourceId, omitempty"`
-	VcdResourceName   string                 `json:"vcdResourceName, omitempty"`
+	OccurredAt        time.Time              `json:"occurredAt,omitempty"`
+	VcdResourceId     string                 `json:"vcdResourceId,omitempty"`
+	VcdResourceName   string                 `json:"vcdResourceName,omitempty"`
 	AdditionalDetails map[string]interface{} `json:"additionalDetails,omitempty"`
 }
 
@@ -61,7 +61,7 @@ type BackendEvent struct {
 	Name              string                 `json:"name,omitempty"`
 	OccurredAt        time.Time              `json:"occurredAt,omitempty"`
 	VcdResourceId     string                 `json:"vcdResourceId,omitempty"`
-	VcdResourceName   string                 `json:"vcdResourceName, omitempty"`
+	VcdResourceName   string                 `json:"vcdResourceName,omitempty"`
 	AdditionalDetails map[string]interface{} `json:"additionalDetails,omitempty"`
 }
 
