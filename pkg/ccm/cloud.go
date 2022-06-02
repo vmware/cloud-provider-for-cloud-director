@@ -82,15 +82,10 @@ func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error
 		time.Sleep(10 * time.Second)
 	}
 
-	backendEvent := vcdsdk.BackendEvent{
-		Name:          cpisdk.ClientAuthenticated,
-		OccurredAt:    time.Now(),
-		VcdResourceId: cloudConfig.ClusterID,
-	}
-
 	rdeManager := vcdsdk.NewRDEManager(vcdClient, cloudConfig.ClusterID, release.CloudControllerManagerName, release.CpiVersion)
 	cpiRdeManager := cpisdk.NewCPIRDEManager(rdeManager)
-	err = rdeManager.AddToEventSet(context.Background(), vcdsdk.ComponentCPI, backendEvent, vcdsdk.DefaultRollingWindowSize)
+	err = cpisdk.AddToEventSet(context.Background(), cpiRdeManager, cpisdk.ClientAuthenticated, cloudConfig.ClusterID,
+		fmt.Sprintf("client successfully authenticated as [%s] @ org [%s]", cloudConfig.VCD.User, cloudConfig.VCD.UserOrg))
 	if err != nil {
 		klog.Errorf("failed to add CPI event [%s] to EventSet in RDE [%s], [%v]", cpisdk.ClientAuthenticated, cloudConfig.ClusterID, err)
 	}
@@ -124,24 +119,13 @@ func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error
 	err = cpiRdeManager.UpgradeCPIStatusOfExistingRDE(context.Background(), cloudConfig.ClusterID)
 	if err != nil {
 		klog.Errorf("failed to create CPI status in the RDE [%s]: [%v]", cloudConfig.ClusterID, err)
-		backendError := vcdsdk.BackendError{
-			Name:              cpisdk.CPIStatusUpgradeRdeError,
-			OccurredAt:        time.Now(),
-			VcdResourceId:     cloudConfig.ClusterID,
-			AdditionalDetails: map[string]interface{}{"Detailed Error": err.Error()},
-		}
-		err = rdeManager.AddToErrorSet(context.Background(), vcdsdk.ComponentCPI, backendError, vcdsdk.DefaultRollingWindowSize)
+		err = cpisdk.AddToErrorSet(context.Background(), cpiRdeManager, cpisdk.CPIStatusUpgradeRdeError, cloudConfig.ClusterID, err.Error())
 		if err != nil {
 			klog.Errorf("failed to add CPI error [%s] to ErrorSet in RDE [%s], [%v]", cpisdk.CPIStatusUpgradeRdeError, cloudConfig.ClusterID, err)
 		}
 	} else {
 		klog.Infof("successfully created CPI status in RDE [%s]", cloudConfig.ClusterID)
-		event := vcdsdk.BackendEvent{
-			Name:          cpisdk.CPIStatusRDEUpgraded,
-			OccurredAt:    time.Now(),
-			VcdResourceId: cloudConfig.ClusterID,
-		}
-		err = rdeManager.AddToEventSet(context.Background(), vcdsdk.ComponentCPI, event, vcdsdk.DefaultRollingWindowSize)
+		err = cpisdk.AddToEventSet(context.Background(), cpiRdeManager, cpisdk.CPIStatusRDEUpgraded, cloudConfig.ClusterID, fmt.Sprintf("CPI status section successfully updagraded from RDE [%s]", cloudConfig.ClusterID))
 		if err != nil {
 			klog.Errorf("failed to add CPI event [%s] to EventSet in RDE [%s], [%v]", cpisdk.CPIStatusRDEUpgraded, cloudConfig.ClusterID, err)
 		}
