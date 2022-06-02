@@ -79,7 +79,7 @@ func (cgm *CpiGatewayManager) CreateLoadBalancer(ctx context.Context, virtualSer
 	if err != nil {
 		addToErrorSetErr := AddToErrorSet(ctx, cpiRdeManager, CreateLoadbalancerError, cgm.ClusterID, err.Error())
 		if addToErrorSetErr != nil {
-			klog.Errorf("error adding CPI error to RDE: [%s], [%v]", cgm.ClusterID, addToErrorSetErr)
+			klog.Errorf("error adding CPI error [%s] to RDE: [%s], [%v]", CreateLoadbalancerError, cgm.ClusterID, addToErrorSetErr)
 		}
 		return "", fmt.Errorf(
 			"unable to create load balancer with vs prefix [%s], lbpool prefix [%s], ips [%v], ports [%v]: [%v]",
@@ -94,7 +94,7 @@ func (cgm *CpiGatewayManager) CreateLoadBalancer(ctx context.Context, virtualSer
 		if err != nil {
 			addToErrorSetErr := AddToErrorSet(ctx, cpiRdeManager, AddVIPToRdeError, cgm.ClusterID, err.Error())
 			if addToErrorSetErr != nil {
-				klog.Errorf("error adding CPI error to RDE: [%s], [%v]", cgm.ClusterID, addToErrorSetErr)
+				klog.Errorf("error adding CPI error [%s] to RDE: [%s], [%v]", AddVIPToRdeError, cgm.ClusterID, addToErrorSetErr)
 			}
 			klog.Errorf("error when adding virtual IP to RDE: [%v]", err)
 		}
@@ -108,7 +108,7 @@ func (cgm *CpiGatewayManager) CreateLoadBalancer(ctx context.Context, virtualSer
 
 	err = AddToEventSet(ctx, cpiRdeManager, CreatedLoadbalancer, cgm.ClusterID, fmt.Sprintf("Created loadbalancer successfully for [%s] with external IP: [%s]", cgm.ClusterID, externalIP))
 	if err != nil {
-		klog.Errorf("error adding CPI event to RDE: [%v]", err)
+		klog.Errorf("error adding CPI event [%s] to RDE: [%v]", CreatedLoadbalancer, err)
 	}
 
 	return externalIP, nil
@@ -132,7 +132,7 @@ func (cgm *CpiGatewayManager) UpdateLoadBalancer(ctx context.Context, lbPoolName
 	if err := gm.UpdateLoadBalancer(ctx, lbPoolName, virtualServiceName, ips, internalPort, externalPort); err != nil {
 		addToErrorSetErr := AddToErrorSet(ctx, cpiRdeManager, UpdateLoadbalancerError, virtualServiceName, err.Error())
 		if addToErrorSetErr != nil {
-			klog.Errorf("error adding CPI error to RDE: [%s], [%v]", cgm.ClusterID, addToErrorSetErr)
+			klog.Errorf("error adding CPI error [%s] to RDE: [%s], [%v]", UpdateLoadbalancerError, cgm.ClusterID, addToErrorSetErr)
 		}
 		return fmt.Errorf(
 			"unable to update load balancer with vs [%s], lbpool [%s], ips [%v], ports [%d->%d]: [%v]",
@@ -146,7 +146,7 @@ func (cgm *CpiGatewayManager) UpdateLoadBalancer(ctx context.Context, lbPoolName
 
 	err = AddToEventSet(ctx, cpiRdeManager, UpdatedLoadbalancer, virtualServiceName, fmt.Sprintf("Successfully updated loadbalancer with virtual service name [%s]: ", virtualServiceName))
 	if err != nil {
-		klog.Errorf("error adding CPI event to RDE: [%s], [%v]", cgm.ClusterID, err)
+		klog.Errorf("error adding CPI event [%s] to RDE: [%s], [%v]", UpdatedLoadbalancer, cgm.ClusterID, err)
 	}
 	return nil
 }
@@ -166,7 +166,7 @@ func (cgm *CpiGatewayManager) DeleteLoadBalancer(ctx context.Context, virtualSer
 	if err != nil {
 		addToErrorSetErr := AddToErrorSet(ctx, cpiRdeManager, DeleteLoadbalancerError, cgm.ClusterID, err.Error())
 		if addToErrorSetErr != nil {
-			klog.Errorf("error adding CPI error to RDE: [%v]", addToErrorSetErr)
+			klog.Errorf("error adding CPI error [%s] to RDE: [%v]", DeleteLoadbalancerError, addToErrorSetErr)
 		}
 
 		return fmt.Errorf(
@@ -191,7 +191,7 @@ func (cgm *CpiGatewayManager) DeleteLoadBalancer(ctx context.Context, virtualSer
 
 	err = AddToEventSet(ctx, cpiRdeManager, DeletedLoadbalancer, cgm.ClusterID, fmt.Sprintf("Successfully deleted loadbalancer associated with [%s], deleted external IP [%s]", cgm.ClusterID, rdeVIP))
 	if err != nil {
-		klog.Errorf("error adding CPI event to RDE: [%v]", err)
+		klog.Errorf("error adding CPI event [%s] to RDE: [%v]", DeletedLoadbalancer, err)
 	}
 	return nil
 }
@@ -210,8 +210,9 @@ func (cgm *CpiGatewayManager) GetLoadBalancer(ctx context.Context, virtualServic
 	if err != nil {
 		addToErrorSetErr := AddToErrorSet(ctx, cpiRdeManager, GetLoadbalancerError, virtualServiceName, err.Error())
 		if addToErrorSetErr != nil {
-			klog.Errorf("unable to add CPI error to RDE [%v]", addToErrorSetErr)
+			klog.Errorf("unable to add CPI error [%s] to RDE [%v]", GetLoadbalancerError, addToErrorSetErr)
 		}
+		return extIP, err
 	}
 
 	removeErr := rdeManager.RemoveErrorByNameOrIdFromErrorSet(ctx, vcdsdk.ComponentCPI, GetLoadbalancerError, virtualServiceName)
