@@ -320,6 +320,7 @@ func (lb *LBManager) deleteLoadBalancer(ctx context.Context, service *v1.Service
 	resourcesDeallocated := &util.AllocatedResourcesMap{}
 	vip, err := gm.DeleteLoadBalancer(ctx, virtualServiceName, lbPoolNamePrefix, portDetailsList, lb.OneArm, resourcesDeallocated)
 	if rdeErr := lb.removeLBResourcesFromRDE(ctx, resourcesDeallocated); rdeErr != nil {
+		klog.Errorf("failed to remove loadbalancer resources from RDE [%s]: [%v]", lb.clusterID, rdeErr)
 		return fmt.Errorf("failed to remove loadbalancer resources from RDE [%s]: [%v]", lb.clusterID, rdeErr)
 	}
 	if err != nil {

@@ -293,7 +293,7 @@ func (cpiRDEManager *CPIRDEManager) UpgradeCPIStatusOfExistingRDE(ctx context.Co
 	return nil
 }
 
-// AddVIPToVCDResourceSet adds virtual IP to the RDE and removes the VIP from older "status.persistentVolumes" section if present
+// AddVIPToVCDResourceSet adds virtual IP to the RDE and removes the VIP from older "status.virtualIPs" section if present
 func (cpiRDEManager *CPIRDEManager) AddVIPToVCDResourceSet(ctx context.Context, vsName string, vsID string, externalIP string) error {
 	if cpiRDEManager.RDEManager == nil {
 		return fmt.Errorf("RDEManager not initialized in [%T]", cpiRDEManager)

@@ -1600,10 +1600,9 @@ func (gm *GatewayManager) DeleteLoadBalancer(ctx context.Context, virtualService
 			}
 			return "", fmt.Errorf("unable to delete load balancer pool [%s]: [%v]", lbPoolName, err)
 		}
-		loadBalancerPoolRef := &swaggerClient.EntityReference{
+		resourcesDeallocated.Insert(VcdResourceLoadBalancerPool, &swaggerClient.EntityReference{
 			Name: lbPoolName,
-		}
-		resourcesDeallocated.Insert(VcdResourceLoadBalancerPool, loadBalancerPoolRef)
+		})
 
 		if oneArm != nil {
 			err = gm.DeleteDNATRule(ctx, dnatRuleName, false)
@@ -1667,11 +1666,10 @@ func (gm *GatewayManager) UpdateLoadBalancer(ctx context.Context, lbPoolName str
 		return "", fmt.Errorf("unable to update application port profile [%s] with external port [%d]: [%v]", appPortProfileName, externalPort, err)
 	}
 	if appPortProfileRef != nil && appPortProfileRef.NsxtAppPortProfile != nil {
-		appPortProfileRef := &swaggerClient.EntityReference{
+		resourcesAllocated.Insert(VcdResourceAppPortProfile, &swaggerClient.EntityReference{
 			Name: appPortProfileName,
 			Id: appPortProfileRef.NsxtAppPortProfile.ID,
-		}
-		resourcesAllocated.Insert(VcdResourceAppPortProfile, appPortProfileRef)
+		})
 	}
 
 	// update DNAT rule
