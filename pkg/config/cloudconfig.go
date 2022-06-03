@@ -53,8 +53,8 @@ type LBConfig struct {
 	Ports            Ports   `yaml:"ports"`
 	CertificateAlias string  `yaml:"certAlias"`
 	VDCNetwork       string  `yaml:"network"`
-	VIPSubnet     string `yaml:"vipSubnet"`
-	UseVsSharedIP bool   `yaml:"useVsSharedIP"`
+	VIPSubnet        string  `yaml:"vipSubnet"`
+	UseVsSharedIP    bool    `yaml:"useVsSharedIP"`
 }
 
 // CloudConfig contains the config that will be read from the secret
@@ -145,7 +145,6 @@ func ValidateCloudConfig(config *CloudConfig) error {
 	if !config.LB.UseVsSharedIP && config.LB.OneArm == nil {
 		return fmt.Errorf("if not using virtual service shared IP feature, OneArm should be enabled")
 	}
-
 
 	return nil
 }

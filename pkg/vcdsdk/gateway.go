@@ -1363,7 +1363,9 @@ func (gm *GatewayManager) CreateLoadBalancer(ctx context.Context, virtualService
 	// 3 variables: useVsSharedIP, oneArm, sharedIP
 	// if useVsSharedIP is true and oneArm is nil, no internal ip is used
 	// if useVsSharedIP is true and oneArm is not nil, an internal ip will be used and shared
-	if useVsSharedIP && oneArm == nil {  // no internal ip used
+	// if useVsSharedIP is false and oneArm is nil: this is an error case which is handled earlier
+	// if useVsSharedIP is false and oneArm is not nil, a pair of internal IPs will be used and not shared
+	if useVsSharedIP && oneArm == nil {  // no internal ip used so no dnat rule needed
 		if sharedVirtualIP != "" { // shared virtual ip is an external ip
 			externalIP = sharedVirtualIP
 		}

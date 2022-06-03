@@ -186,7 +186,7 @@ func (lb *LBManager) getLoadBalancer(ctx context.Context,
 		if virtualIP != "" {
 			if ingressVirtualIP != "" && ingressVirtualIP != virtualIP {
 				return nil, nil,
-				fmt.Errorf("more than one virtual ip found: [%s] and [%s]", virtualIP, ingressVirtualIP)
+					fmt.Errorf("more than one virtual ip found: [%s] and [%s]", virtualIP, ingressVirtualIP)
 			}
 			ingressVirtualIP = virtualIP
 		}
@@ -337,14 +337,14 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 	}
 
 	// golang doesn't have the set data structure
-	portNamesToCreate := make(map[string]bool)
-	for portName, ip := range portNameToIPMap {
+	lbExists := true
+	for _, ip := range portNameToIPMap {
 		if ip == "" {
-			portNamesToCreate[portName] = true
+			lbExists = false
 		}
 	}
 
-	if len(portNamesToCreate) == 0 { // lb fully exists
+	if lbExists {
 		// Update load balancer if there are changes in service properties
 		typeToInternalPortMap, typeToExternalPortMap := lb.getServicePortMap(service)
 		for portName, internalPort := range typeToInternalPortMap {
