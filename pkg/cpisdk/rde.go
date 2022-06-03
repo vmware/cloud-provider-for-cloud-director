@@ -10,6 +10,25 @@ import (
 	"k8s.io/klog"
 	"net/http"
 	"strings"
+	"time"
+)
+
+const (
+	// Errors
+	CreateLoadbalancerError  = "CreateLoadbalancerError"
+	UpdateLoadbalancerError  = "UpdateLoadbalancerError"
+	DeleteLoadbalancerError  = "DeleteLoadbalancerError"
+	GetLoadbalancerError     = "GetLoadbalancerError"
+	CPIStatusUpgradeRdeError = "CPIStatusUpgradeRdeError"
+	RemoveVIPFromRdeError    = "RemoveVirtualIPFromRdeError"
+	AddVIPToRdeError         = "AddVirtualIPToRdeError"
+
+	// Events
+	ClientAuthenticated  = "ClientAuthenticated"
+	CreatedLoadbalancer  = "CreatedLoadbalancer"
+	UpdatedLoadbalancer  = "UpdatedLoadbalancer"
+	DeletedLoadbalancer  = "DeletedLoadbalancer"
+	CPIStatusRDEUpgraded = "CPIStatusRDEUpgraded"
 )
 
 type CPIRDEManager struct {
@@ -210,6 +229,7 @@ func UpgradeCPISectionInStatus(statusMap map[string]interface{}) (map[string]int
 	cpiStatus := &vcdsdk.CPIStatus{
 		VCDResourceSet: nil,
 		Errors:         nil,
+		Events:         nil,
 		VirtualIPs:     nil,
 	}
 	cpiStatusEntity, ok := statusMap[vcdsdk.ComponentCPI]
@@ -336,9 +356,9 @@ func (cpiRDEManager *CPIRDEManager) AddVIPToVCDResourceSet(ctx context.Context, 
 			return fmt.Errorf("failed to convert RDE status [%s] to map[string]interface{}", cpiRDEManager.RDEManager.ClusterID)
 		}
 		vcdResource := vcdsdk.VCDResource{
-			Type:              vcdsdk.VcdResourceVirtualService,
-			ID:                vsID,
-			Name:              vsName,
+			Type: vcdsdk.VcdResourceVirtualService,
+			ID:   vsID,
+			Name: vsName,
 			AdditionalDetails: map[string]interface{}{
 				"virtualIP": externalIP,
 			},
@@ -405,4 +425,45 @@ func (cpiRDEManager *CPIRDEManager) AddVIPToVCDResourceSet(ctx context.Context, 
 
 	return fmt.Errorf("failed to update RDE [%s] with VCDResourceSet [%s] of type [%s] in [%s] status section",
 		cpiRDEManager.RDEManager.ClusterID, vsName, vcdsdk.VcdResourceVirtualService, vcdsdk.ComponentCPI)
+}
+func (cpiRdeManager *CPIRDEManager) AddToErrorSet(ctx context.Context, errorName, vcdResourceId, detailedErrorMessage string) error {
+	backendErr := vcdsdk.BackendError{
+		Name:              errorName,
+		OccurredAt:        time.Now(),
+		VcdResourceId:     vcdResourceId,
+		AdditionalDetails: map[string]interface{}{"Detailed Error": detailedErrorMessage},
+	}
+	return cpiRdeManager.RDEManager.AddToErrorSet(ctx, vcdsdk.ComponentCPI, backendErr, vcdsdk.DefaultRollingWindowSize)
+}
+
+func (cpiRdeManager *CPIRDEManager) AddToErrorSetWithNameAndId(ctx context.Context, errorName, vcdResourceId, vcdResourceName, detailedErrorMessage string) error {
+	backendErr := vcdsdk.BackendError{
+		Name:              errorName,
+		OccurredAt:        time.Now(),
+		VcdResourceId:     vcdResourceId,
+		VcdResourceName:   vcdResourceName,
+		AdditionalDetails: map[string]interface{}{"Detailed Error": detailedErrorMessage},
+	}
+	return cpiRdeManager.RDEManager.AddToErrorSet(ctx, vcdsdk.ComponentCPI, backendErr, vcdsdk.DefaultRollingWindowSize)
+}
+
+func (cpiRdeManager *CPIRDEManager) AddToEventSet(ctx context.Context, eventName, vcdResourceId, detailedEventMsg string) error {
+	backendEvent := vcdsdk.BackendEvent{
+		Name:              eventName,
+		OccurredAt:        time.Now(),
+		VcdResourceId:     vcdResourceId,
+		AdditionalDetails: map[string]interface{}{"Detailed Event": detailedEventMsg},
+	}
+	return cpiRdeManager.RDEManager.AddToEventSet(ctx, vcdsdk.ComponentCPI, backendEvent, vcdsdk.DefaultRollingWindowSize)
+}
+
+func (cpiRdeManager *CPIRDEManager) AddToEventSetWithNameAndId(ctx context.Context, eventName, vcdResourceId, vcdResourceName, detailedEventMsg string) error {
+	backendEvent := vcdsdk.BackendEvent{
+		Name:              eventName,
+		OccurredAt:        time.Now(),
+		VcdResourceId:     vcdResourceId,
+		VcdResourceName:   vcdResourceName,
+		AdditionalDetails: map[string]interface{}{"Detailed Event": detailedEventMsg},
+	}
+	return cpiRdeManager.RDEManager.AddToEventSet(ctx, vcdsdk.ComponentCPI, backendEvent, vcdsdk.DefaultRollingWindowSize)
 }

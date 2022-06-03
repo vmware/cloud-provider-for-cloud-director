@@ -85,6 +85,11 @@ func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error
 	rdeManager := vcdsdk.NewRDEManager(vcdClient, cloudConfig.ClusterID, release.CloudControllerManagerName, release.CpiVersion)
 	cpiRdeManager := cpisdk.NewCPIRDEManager(rdeManager)
 
+	err = cpiRdeManager.AddToEventSet(context.Background(), cpisdk.ClientAuthenticated, cloudConfig.ClusterID, fmt.Sprintf("successfully authenticated into vcdclient from secrets"))
+	if err != nil {
+		klog.Errorf("error adding CPI event [%s] to RDE: [%v]", cpisdk.ClientAuthenticated, err)
+	}
+
 	// setup LB only if the gateway is not NSX-T
 	var lb cloudProvider.LoadBalancer = nil
 	gm, err := vcdsdk.NewGatewayManager(context.Background(), vcdClient, cloudConfig.LB.VDCNetwork, cloudConfig.LB.VIPSubnet)
@@ -114,15 +119,20 @@ func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error
 	err = cpiRdeManager.UpgradeCPIStatusOfExistingRDE(context.Background(), cloudConfig.ClusterID)
 	if err != nil {
 		klog.Errorf("failed to create CPI status in the RDE [%s]: [%v]", cloudConfig.ClusterID, err)
-		err = cpisdk.AddToErrorSet(context.Background(), cpiRdeManager, cpisdk.CPIStatusUpgradeRdeError, cloudConfig.ClusterID, err.Error())
+		err = cpiRdeManager.AddToErrorSet(context.Background(), cpisdk.CPIStatusUpgradeRdeError, cloudConfig.ClusterID, err.Error())
 		if err != nil {
 			klog.Errorf("failed to add CPI error [%s] to ErrorSet in RDE [%s], [%v]", cpisdk.CPIStatusUpgradeRdeError, cloudConfig.ClusterID, err)
 		}
 	} else {
 		klog.Infof("successfully created CPI status in RDE [%s]", cloudConfig.ClusterID)
-		err = cpisdk.AddToEventSet(context.Background(), cpiRdeManager, cpisdk.CPIStatusRDEUpgraded, cloudConfig.ClusterID, fmt.Sprintf("CPI status section successfully updagraded from RDE [%s]", cloudConfig.ClusterID))
+		err = cpiRdeManager.AddToEventSet(context.Background(), cpisdk.CPIStatusRDEUpgraded, cloudConfig.ClusterID, fmt.Sprintf("CPI status section successfully updagraded from RDE [%s]", cloudConfig.ClusterID))
 		if err != nil {
 			klog.Errorf("failed to add CPI event [%s] to EventSet in RDE [%s], [%v]", cpisdk.CPIStatusRDEUpgraded, cloudConfig.ClusterID, err)
+		}
+
+		err = cpiRdeManager.RDEManager.RemoveErrorByNameOrIdFromErrorSet(context.Background(), vcdsdk.ComponentCPI, cpisdk.CPIStatusUpgradeRdeError, cloudConfig.ClusterID, "")
+		if err != nil {
+			klog.Errorf("failed to remove CPI error [%s] from ErrorSet in RDE [%s], [%v]", cpisdk.CPIStatusUpgradeRdeError, cloudConfig.ClusterID, err)
 		}
 	}
 

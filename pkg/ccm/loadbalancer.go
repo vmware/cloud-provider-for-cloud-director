@@ -1,9 +1,10 @@
+//go:build !testing
+// +build !testing
+
 /*
    Copyright 2021 VMware, Inc.
    SPDX-License-Identifier: Apache-2.0
 */
-
-// +build !testing
 
 package ccm
 
@@ -65,7 +66,7 @@ func (lb *LBManager) addLBResourcesToRDE(ctx context.Context, resourcesAllocated
 				var err error
 				additionalDetails = nil
 				if key == vcdsdk.VcdResourceVirtualService {
-					additionalDetails = map[string]interface{} {
+					additionalDetails = map[string]interface{}{
 						"virtualIP": externalIP,
 					}
 					cpiRdeManager := cpisdk.NewCPIRDEManager(rdeManager)
@@ -174,6 +175,9 @@ func (lb *LBManager) UpdateLoadBalancer(ctx context.Context, clusterName string,
 	lbPoolNamePrefix := lb.getLBPoolNamePrefix(ctx, service)
 	virtualServiceNamePrefix := lb.getVirtualServicePrefix(ctx, service)
 	typeToInternalPortMap, typeToExternalPort := lb.getServicePortMap(service)
+	rdeManager := vcdsdk.NewRDEManager(lb.vcdClient, lb.clusterID, release.CloudControllerManagerName, release.CpiVersion)
+	cpiRdeManager := cpisdk.NewCPIRDEManager(rdeManager)
+
 	for portName, internalPort := range typeToInternalPortMap {
 		lbPoolName := fmt.Sprintf("%s-%s", lbPoolNamePrefix, portName)
 		virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, portName)
@@ -185,12 +189,34 @@ func (lb *LBManager) UpdateLoadBalancer(ctx context.Context, clusterName string,
 		klog.Infof("Updating pool [%s] with port [%s:%d]", lbPoolName, portName, internalPort)
 		resourcesAllocated := &util.AllocatedResourcesMap{}
 		vip, err := gm.UpdateLoadBalancer(ctx, lbPoolName, virtualServiceName, nodeIps, internalPort, externalPort, resourcesAllocated)
+		// TODO: Should we record this error as well?
 		if rdeErr := lb.addLBResourcesToRDE(ctx, resourcesAllocated, vip); rdeErr != nil {
 			return fmt.Errorf("failed to add load balancer resources to RDE [%s]: [%v]", lb.clusterID, err)
 		}
+
+		vsSummary, getVsErr := gm.GetVirtualService(ctx, virtualServiceName)
+		if getVsErr != nil {
+			return fmt.Errorf("failed to get virtual service [%s], [%v]", virtualServiceName, getVsErr)
+		}
+
 		if err != nil {
+			addToErrorSetErr := cpiRdeManager.AddToErrorSetWithNameAndId(ctx, cpisdk.UpdateLoadbalancerError, vsSummary.Id, vsSummary.Name, err.Error())
+			if addToErrorSetErr != nil {
+				klog.Errorf("error adding CPI error [%s] to RDE: [%s], [%v]", cpisdk.UpdateLoadbalancerError, lb.clusterID, addToErrorSetErr)
+			}
 			return fmt.Errorf("unable to update pool [%s] with port [%s:%d]: [%v]", lbPoolName, portName,
 				internalPort, err)
+		}
+
+		// TODO: This may need to be optimized in the future as we are making len(ports) API calls
+		err = cpiRdeManager.AddToEventSetWithNameAndId(ctx, cpisdk.UpdatedLoadbalancer, vsSummary.Id, vsSummary.Name, fmt.Sprintf("Successfully updated loadbalancer with virtual service name [%s]: ", vsSummary.Name))
+		if err != nil {
+			klog.Errorf("error adding CPI event [%s] to RDE: [%s], [%v]", cpisdk.UpdatedLoadbalancer, lb.clusterID, err)
+		}
+
+		err = cpiRdeManager.RDEManager.RemoveErrorByNameOrIdFromErrorSet(ctx, vcdsdk.ComponentCPI, cpisdk.UpdateLoadbalancerError, vsSummary.Id, vsSummary.Name)
+		if err != nil {
+			klog.Errorf("there was an error removing CPI error [%s] from RDE [%s], [%v]", cpisdk.UpdateLoadbalancerError, lb.clusterID, err)
 		}
 	}
 
@@ -223,13 +249,25 @@ func (lb *LBManager) getLoadBalancer(ctx context.Context,
 	if err != nil {
 		return nil, false, fmt.Errorf("error while creating GatewayManager: [%v]", err)
 	}
+
+	cpiRdeManager := cpisdk.NewCPIRDEManager(vcdsdk.NewRDEManager(
+		lb.vcdClient, lb.clusterID, release.CloudControllerManagerName, release.CpiVersion))
+
 	for _, port := range service.Spec.Ports {
 		virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, port.Name)
 		virtualIP, err = gm.GetLoadBalancer(ctx, virtualServiceName, lb.OneArm)
 		if err != nil {
+			addToErrorSetErr := cpiRdeManager.AddToErrorSetWithNameAndId(ctx, cpisdk.GetLoadbalancerError, "", virtualServiceName, err.Error())
+			if addToErrorSetErr != nil {
+				klog.Errorf("unable to add CPI error [%s] to RDE [%s], [%v]", cpisdk.GetLoadbalancerError, lb.clusterID, addToErrorSetErr)
+			}
 			return nil, false,
 				fmt.Errorf("unable to get virtual service summary for [%s]: [%v]",
 					virtualServiceName, err)
+		}
+		removeErr := cpiRdeManager.RDEManager.RemoveErrorByNameOrIdFromErrorSet(ctx, vcdsdk.ComponentCPI, cpisdk.GetLoadbalancerError, "", virtualServiceName)
+		if removeErr != nil {
+			klog.Errorf("there was an error removing CPI error [%s] from RDE [%s], [%v]", cpisdk.GetLoadbalancerError, lb.clusterID, err)
 		}
 		if virtualIP == "" {
 			// if any lb that is expected is not created, return false to retry creation
@@ -323,15 +361,40 @@ func (lb *LBManager) deleteLoadBalancer(ctx context.Context, service *v1.Service
 		klog.Errorf("failed to remove loadbalancer resources from RDE [%s]: [%v]", lb.clusterID, rdeErr)
 		return fmt.Errorf("failed to remove loadbalancer resources from RDE [%s]: [%v]", lb.clusterID, rdeErr)
 	}
+
+	cpiRdeManager := cpisdk.NewCPIRDEManager(vcdsdk.NewRDEManager(
+		lb.vcdClient, lb.clusterID, release.CloudControllerManagerName, release.CpiVersion))
+
 	if err != nil {
+		addToErrorSetErr := cpiRdeManager.AddToErrorSetWithNameAndId(ctx, cpisdk.DeleteLoadbalancerError, "", virtualServiceName, err.Error())
+		if addToErrorSetErr != nil {
+			klog.Errorf("error adding CPI error [%s] to RDE: [%v]", cpisdk.DeleteLoadbalancerError, addToErrorSetErr)
+		}
 		return fmt.Errorf("unable to delete load balancer for virtual-service [%s] and lb pool [%s]: [%v]",
 			virtualServiceName, lbPoolNamePrefix, err)
 	}
 
-	cpiRdeManager := cpisdk.NewCPIRDEManager(vcdsdk.NewRDEManager(
-		lb.vcdClient, lb.clusterID, release.CloudControllerManagerName, release.CpiVersion))
 	if err := cpiRdeManager.RemoveVirtualIpFromRDE(ctx, vip); err != nil {
+		addToErrorSetErr := cpiRdeManager.AddToErrorSet(ctx, cpisdk.RemoveVIPFromRdeError, lb.clusterID, err.Error())
+		if addToErrorSetErr != nil {
+			klog.Errorf("unable to add CPI error [%s] to RDE: [%s], [%v]", cpisdk.RemoveVIPFromRdeError, lb.clusterID, addToErrorSetErr)
+		}
 		klog.Errorf("failed to remove virtual IP [%s] from the RDE [%s]: [%v]", vip, lb.clusterID, err)
+	}
+
+	err = cpiRdeManager.RDEManager.RemoveErrorByNameOrIdFromErrorSet(ctx, vcdsdk.ComponentCPI, cpisdk.RemoveVIPFromRdeError, lb.clusterID, "")
+	if err != nil {
+		klog.Errorf("error removing CPI error [%s] from RDE: [%v]", cpisdk.RemoveVIPFromRdeError, lb.clusterID, err)
+	}
+
+	err = cpiRdeManager.AddToEventSetWithNameAndId(ctx, cpisdk.DeletedLoadbalancer, "", virtualServiceName, fmt.Sprintf("Successfully deleted loadbalancer associated with [%s], deleted external IP [%s]", lb.clusterID, vip))
+	if err != nil {
+		klog.Errorf("error adding CPI event [%s] to RDE: [%v]", cpisdk.DeletedLoadbalancer, err)
+	}
+
+	err = cpiRdeManager.RDEManager.RemoveErrorByNameOrIdFromErrorSet(ctx, vcdsdk.ComponentCPI, cpisdk.DeleteLoadbalancerError, "", virtualServiceName)
+	if err != nil {
+		klog.Errorf("there was an error removing CPI error [%s] from RDE [%s], [%v]", cpisdk.DeleteLoadbalancerError, lb.clusterID, err)
 	}
 
 	return nil
@@ -371,6 +434,8 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 	lbPoolNamePrefix := lb.getLBPoolNamePrefix(ctx, service)
 	virtualServiceNamePrefix := lb.getVirtualServicePrefix(ctx, service)
 	lbStatus, lbExists, err := lb.getLoadBalancer(ctx, service)
+	rdeManager := vcdsdk.NewRDEManager(lb.vcdClient, lb.clusterID, release.CloudControllerManagerName, release.CpiVersion)
+	cpiRdeManager := cpisdk.NewCPIRDEManager(rdeManager)
 	if err != nil {
 		return nil, fmt.Errorf("unexpected error while querying for loadbalancer: [%v]", err)
 	}
@@ -391,9 +456,29 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 			if rdeErr := lb.addLBResourcesToRDE(ctx, resourcesAllocated, vip); rdeErr != nil {
 				return nil, fmt.Errorf("failed to update RDE [%s] with load balancer resources: [%v]", lb.clusterID, err)
 			}
+
+			vsSummary, getVsErr := gm.GetVirtualService(ctx, virtualServiceName)
+			if getVsErr != nil {
+				return nil, fmt.Errorf("failed to get virtual service [%s], [%v]", virtualServiceName, getVsErr)
+			}
 			if err != nil {
+				addToErrorSetErr := cpiRdeManager.AddToErrorSetWithNameAndId(ctx, cpisdk.UpdateLoadbalancerError, vsSummary.Id, vsSummary.Name, err.Error())
+				if addToErrorSetErr != nil {
+					klog.Errorf("error adding CPI error [%s] to RDE: [%s], [%v]", cpisdk.UpdateLoadbalancerError, lb.clusterID, addToErrorSetErr)
+				}
 				return nil, fmt.Errorf("unable to update pool [%s] with port [%s:%d:%d]: [%v]", lbPoolName, portName,
 					internalPort, externalPort, err)
+			}
+
+			// TODO: This may need to be optimized in the future as we are making len(ports) API calls
+			err = cpiRdeManager.AddToEventSetWithNameAndId(ctx, cpisdk.UpdatedLoadbalancer, vsSummary.Id, vsSummary.Name, fmt.Sprintf("Successfully updated loadbalancer with virtual service name [%s]: ", vsSummary.Name))
+			if err != nil {
+				klog.Errorf("error adding CPI event [%s] to RDE: [%s], [%v]", cpisdk.UpdatedLoadbalancer, lb.clusterID, err)
+			}
+
+			err = cpiRdeManager.RDEManager.RemoveErrorByNameOrIdFromErrorSet(ctx, vcdsdk.ComponentCPI, cpisdk.UpdateLoadbalancerError, vsSummary.Id, vsSummary.Name)
+			if err != nil {
+				klog.Errorf("there was an error removing CPI error [%s] from RDE [%s], [%v]", cpisdk.UpdateLoadbalancerError, lb.clusterID, err)
 			}
 		}
 		return lbStatus, nil
@@ -443,20 +528,40 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 	resourcesAllocated := &util.AllocatedResourcesMap{}
 	lbIP, err := gm.CreateLoadBalancer(ctx, virtualServiceNamePrefix, lbPoolNamePrefix,
 		nodeIPs, portDetailsList, lb.OneArm, resourcesAllocated)
+
 	if rdeErr := lb.addLBResourcesToRDE(ctx, resourcesAllocated, lbIP); rdeErr != nil {
 		return nil, fmt.Errorf("unable to add load balancer pool resources to RDE [%s]: [%v]", lb.clusterID, err)
 	}
 	if err != nil {
+		addToErrorSetErr := cpiRdeManager.AddToErrorSet(ctx, cpisdk.CreateLoadbalancerError, lb.clusterID, err.Error())
+		if addToErrorSetErr != nil {
+			klog.Errorf("error adding CPI error [%s] to RDE: [%s], [%v]", cpisdk.CreateLoadbalancerError, lb.clusterID, addToErrorSetErr)
+		}
 		return nil, fmt.Errorf("unable to create loadbalancer for ports [%#v]: [%v]", portDetailsList, err)
 	}
+
 	if lbIP != "" {
-		rdeManager := vcdsdk.NewRDEManager(lb.vcdClient, lb.clusterID, release.CloudControllerManagerName, release.CpiVersion)
-		cpiRdeManager := cpisdk.NewCPIRDEManager(rdeManager)
 		err = cpiRdeManager.AddVirtualIpToRDE(ctx, lbIP)
 		if err != nil {
+			addToErrorSetErr := cpiRdeManager.AddToErrorSet(ctx, cpisdk.AddVIPToRdeError, lb.clusterID, err.Error())
+			if addToErrorSetErr != nil {
+				klog.Errorf("error adding CPI error [%s] to RDE: [%s], [%v]", cpisdk.AddVIPToRdeError, lb.clusterID, addToErrorSetErr)
+			}
 			klog.Errorf("error when adding virtual IP to RDE: [%v]", err)
 		}
 	}
+
+	err = cpiRdeManager.AddToEventSet(ctx, cpisdk.CreatedLoadbalancer, lb.clusterID, fmt.Sprintf("Created loadbalancer successfully for [%s] with external IP: [%s]", lb.clusterID, lbIP))
+	if err != nil {
+		klog.Errorf("error adding CPI event [%s] to RDE: [%v]", cpisdk.CreatedLoadbalancer, err)
+	}
+
+	// No errors and external IP exists, we can remove the create LB error; empty vcdResourceName as we only have access to the external IP
+	err = cpiRdeManager.RDEManager.RemoveErrorByNameOrIdFromErrorSet(ctx, vcdsdk.ComponentCPI, cpisdk.CreateLoadbalancerError, lb.clusterID, "")
+	if err != nil {
+		klog.Errorf("there was an error removing CPI error [%s] from RDE [%s], [%v]", cpisdk.CreateLoadbalancerError, lb.clusterID, err)
+	}
+
 	klog.Infof("Created load balancer with external IP [%s], ports [%#v]\n", lbIP, portDetailsList)
 
 	return &v1.LoadBalancerStatus{
