@@ -57,6 +57,7 @@ func newLoadBalancer(vcdClient *vcdsdk.Client, certAlias string, oneArm *vcdsdk.
 	}
 }
 
+// TODO: Should we add errors from this method to errorSet as it gives a few hard error returns?
 func (lb *LBManager) addLBResourcesToRDE(ctx context.Context, resourcesAllocated *util.AllocatedResourcesMap, externalIP string) error {
 	rdeManager := vcdsdk.NewRDEManager(lb.vcdClient, lb.clusterID, release.CloudControllerManagerName, release.CpiVersion)
 	for _, key := range []string{vcdsdk.VcdResourceDNATRule, vcdsdk.VcdResourceLoadBalancerPool, vcdsdk.VcdResourceAppPortProfile, vcdsdk.VcdResourceVirtualService} {
@@ -86,6 +87,7 @@ func (lb *LBManager) addLBResourcesToRDE(ctx context.Context, resourcesAllocated
 	return nil
 }
 
+// TODO: Should we add errors from this method to errorSet as it gives a few hard error returns?
 func (lb *LBManager) removeLBResourcesFromRDE(ctx context.Context, resourcesDeallocated *util.AllocatedResourcesMap) error {
 	rdeManager := vcdsdk.NewRDEManager(lb.vcdClient, lb.clusterID, release.CloudControllerManagerName, release.CpiVersion)
 	for _, key := range []string{vcdsdk.VcdResourceDNATRule, vcdsdk.VcdResourceVirtualService,
@@ -368,7 +370,7 @@ func (lb *LBManager) deleteLoadBalancer(ctx context.Context, service *v1.Service
 	if err != nil {
 		addToErrorSetErr := cpiRdeManager.AddToErrorSetWithNameAndId(ctx, cpisdk.DeleteLoadbalancerError, "", virtualServiceName, err.Error())
 		if addToErrorSetErr != nil {
-			klog.Errorf("error adding CPI error [%s] to RDE: [%v]", cpisdk.DeleteLoadbalancerError, addToErrorSetErr)
+			klog.Errorf("error adding CPI error [%s] to RDE: [%v]", cpisdk.DeleteLoadbalancerError, lb.clusterID)
 		}
 		return fmt.Errorf("unable to delete load balancer for virtual-service [%s] and lb pool [%s]: [%v]",
 			virtualServiceName, lbPoolNamePrefix, err)
@@ -437,7 +439,17 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 	rdeManager := vcdsdk.NewRDEManager(lb.vcdClient, lb.clusterID, release.CloudControllerManagerName, release.CpiVersion)
 	cpiRdeManager := cpisdk.NewCPIRDEManager(rdeManager)
 	if err != nil {
+		addToErrorSetErr := cpiRdeManager.AddToErrorSetWithNameAndId(ctx, cpisdk.GetLoadbalancerError, "", virtualServiceNamePrefix, err.Error())
+		if addToErrorSetErr != nil {
+			klog.Errorf("error adding CPI error [%s] to the RDE [%s], [%v]", cpisdk.GetLoadbalancerError, lb.clusterID, addToErrorSetErr)
+		}
 		return nil, fmt.Errorf("unexpected error while querying for loadbalancer: [%v]", err)
+	}
+
+	// TODO: is it worth adding loadbalancer query to event?
+	removeErr := cpiRdeManager.RDEManager.RemoveErrorByNameOrIdFromErrorSet(ctx, vcdsdk.ComponentCPI, cpisdk.GetLoadbalancerError, "", virtualServiceNamePrefix)
+	if removeErr != nil {
+		klog.Errorf("error adding CPI error [%s] to the RDE [%s], [%v]", cpisdk.GetLoadbalancerError, lb.clusterID, removeErr)
 	}
 	gm, err := vcdsdk.NewGatewayManager(ctx, lb.vcdClient, lb.ovdcNetworkName, lb.ipamSubnet)
 	if err != nil {
@@ -528,7 +540,6 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 	resourcesAllocated := &util.AllocatedResourcesMap{}
 	lbIP, err := gm.CreateLoadBalancer(ctx, virtualServiceNamePrefix, lbPoolNamePrefix,
 		nodeIPs, portDetailsList, lb.OneArm, resourcesAllocated)
-
 	if rdeErr := lb.addLBResourcesToRDE(ctx, resourcesAllocated, lbIP); rdeErr != nil {
 		return nil, fmt.Errorf("unable to add load balancer pool resources to RDE [%s]: [%v]", lb.clusterID, err)
 	}
