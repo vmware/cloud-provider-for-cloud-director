@@ -66,7 +66,7 @@ func (cpiRDEManager *CPIRDEManager) updateRDEVirtualIps(ctx context.Context, upd
 	return httpResponse, nil
 }
 
-func (cpiRDEManager *CPIRDEManager) addVirtualIpToRDE(ctx context.Context, addIp string) error {
+func (cpiRDEManager *CPIRDEManager) AddVirtualIpToRDE(ctx context.Context, addIp string) error {
 	if addIp == "" {
 		klog.Infof("VIP is empty, hence not adding anything to RDE")
 		return nil
@@ -119,7 +119,7 @@ func (cpiRDEManager *CPIRDEManager) addVirtualIpToRDE(ctx context.Context, addIp
 	return fmt.Errorf("unable to update rde due to incorrect etag after [%d]] tries", numRetries)
 }
 
-func (cpiRDEManager *CPIRDEManager) removeVirtualIpFromRDE(ctx context.Context, removeIp string) error {
+func (cpiRDEManager *CPIRDEManager) RemoveVirtualIpFromRDE(ctx context.Context, removeIp string) error {
 	if removeIp == "" {
 		klog.Infof("VIP is empty, hence not removing anything from RDE")
 		return nil
@@ -273,11 +273,10 @@ func (cpiRDEManager *CPIRDEManager) UpgradeCPIStatusOfExistingRDE(ctx context.Co
 		return fmt.Errorf("failed to convert status section of RDE [%s] to map[string]interface{} during RDE upgrade",
 			rdeId)
 	}
-	upgradedStatusMap, err := UpgradeCPISectionInStatus(statusMap)
+	_, err = UpgradeCPISectionInStatus(statusMap)
 	if err != nil {
 		return fmt.Errorf("failed to upgrade CPI section in RDE [%s]: [%v]", rdeId, err)
 	}
-	rde.Entity[vcdsdk.ComponentCPI] = upgradedStatusMap
 
 	_, resp, err = client.APIClient.DefinedEntityApi.UpdateDefinedEntity(ctx, rde, etag, rdeId, nil)
 	if resp != nil && resp.StatusCode != http.StatusOK {
@@ -292,4 +291,118 @@ func (cpiRDEManager *CPIRDEManager) UpgradeCPIStatusOfExistingRDE(ctx context.Co
 		return fmt.Errorf("error while getting the RDE [%s]: [%v]", rdeId, err)
 	}
 	return nil
+}
+
+// AddVIPToVCDResourceSet adds virtual IP to the RDE and removes the VIP from older "status.virtualIPs" section if present
+func (cpiRDEManager *CPIRDEManager) AddVIPToVCDResourceSet(ctx context.Context, vsName string, vsID string, externalIP string) error {
+	if cpiRDEManager.RDEManager == nil {
+		return fmt.Errorf("RDEManager not initialized in [%T]", cpiRDEManager)
+	}
+	// - remove the VIP from status["virtualIP"] which matches "externalIP" value
+	// - add VIP to vcdresourceset[]
+	// - update rde
+	if cpiRDEManager.RDEManager.ClusterID == "" || strings.HasPrefix(cpiRDEManager.RDEManager.ClusterID, vcdsdk.NoRdePrefix) {
+		// Indicates that the RDE ID is either empty or it was auto-generated.
+		klog.Infof("ClusterID [%s] is empty or generated, hence not adding VCDResource [%s] of type [%s] from RDE",
+			vsName, vcdsdk.VcdResourceVirtualService, vsID)
+		return nil
+	}
+	for i := vcdsdk.MaxRDEUpdateRetries; i > 1; i-- {
+		rde, resp, etag, err := cpiRDEManager.RDEManager.Client.APIClient.DefinedEntityApi.GetDefinedEntity(
+			ctx, cpiRDEManager.RDEManager.ClusterID)
+		if resp != nil && resp.StatusCode != http.StatusOK {
+			var responseMessageBytes []byte
+			if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
+				responseMessageBytes = gsErr.Body()
+			}
+			return fmt.Errorf(
+				"failed to get RDE [%s] when adding resourse to VCD resource set ; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]",
+				cpiRDEManager.RDEManager.ClusterID, http.StatusOK, resp.StatusCode, string(responseMessageBytes), err)
+		} else if err != nil {
+			return fmt.Errorf("error while updating the RDE [%s]: [%v]", cpiRDEManager.RDEManager.ClusterID, err)
+		}
+		// Only entity of type capvcdCluster should be updated.
+		if !vcdsdk.IsCAPVCDEntityType(rde.EntityType) {
+			klog.V(3).Infof("entity type of RDE [%s] is [%s]. skipping adding resource [%s] of type [%s] to status of component [%s]",
+				rde.Id, rde.EntityType, vsName, vcdsdk.VcdResourceVirtualService, vcdsdk.ComponentCPI)
+			return nil
+		}
+		statusIf, ok := rde.Entity["status"]
+		if !ok {
+			return fmt.Errorf("failed to update RDE [%s] with VCDResource set information", cpiRDEManager.RDEManager.ClusterID)
+		}
+		statusMap, ok := statusIf.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("failed to convert RDE status [%s] to map[string]interface{}", cpiRDEManager.RDEManager.ClusterID)
+		}
+		vcdResource := vcdsdk.VCDResource{
+			Type:              vcdsdk.VcdResourceVirtualService,
+			ID:                vsID,
+			Name:              vsName,
+			AdditionalDetails: map[string]interface{}{
+				"virtualIP": externalIP,
+			},
+		}
+		updatedStatusMap, err := vcdsdk.AddVCDResourceToStatusMap(vcdsdk.ComponentCPI, cpiRDEManager.RDEManager.StatusComponentName,
+			cpiRDEManager.RDEManager.StatusComponentVersion, statusMap, vcdResource)
+		if err != nil {
+			return fmt.Errorf("error occurred when updating VCDResource set of %s status in RDE [%s]: [%v]",
+				cpiRDEManager.RDEManager.ClusterID, vcdsdk.ComponentCPI, err)
+		}
+
+		// remove the VIP from old "status.virtualIPs" key if present
+		if virtualIPsIf, ok := updatedStatusMap["virtualIPs"]; ok {
+			if virtualIPsArr, ok := virtualIPsIf.([]interface{}); ok {
+				updatedVIPs := make([]string, 0)
+				for _, vipIf := range virtualIPsArr {
+					vipStr, ok := vipIf.(string)
+					if ok && vipStr != externalIP {
+						updatedVIPs = append(updatedVIPs, vipStr)
+					}
+					if !ok {
+						klog.V(3).Infof("failed to convert VIP [%v] in RDE [%s] to string",
+							vipIf, cpiRDEManager.RDEManager.ClusterID)
+					}
+				}
+				if len(updatedVIPs) == 0 {
+					delete(updatedStatusMap, "virtualIPs")
+				} else {
+					updatedStatusMap["virtualIPs"] = updatedVIPs
+				}
+			}
+		}
+
+		rde.Entity["status"] = updatedStatusMap
+
+		_, resp, err = cpiRDEManager.RDEManager.Client.APIClient.DefinedEntityApi.UpdateDefinedEntity(ctx, rde, etag,
+			cpiRDEManager.RDEManager.ClusterID, nil)
+		if resp != nil {
+			if resp.StatusCode == http.StatusPreconditionFailed {
+				klog.Errorf("wrong etag while adding [%v] to VCDResourceSet in RDE [%s]. Retry attempts remaining: [%d]",
+					vcdResource, cpiRDEManager.RDEManager.ClusterID, i-1)
+				continue
+			} else if resp.StatusCode != http.StatusOK {
+				var responseMessageBytes []byte
+				if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
+					responseMessageBytes = gsErr.Body()
+				}
+				return fmt.Errorf(
+					"failed to add resource [%s] having ID [%s] to VCDResourseSet of %s in RDE [%s]; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]",
+					vcdResource.Name, vcdResource.ID, vcdsdk.ComponentCPI, cpiRDEManager.RDEManager.ClusterID,
+					http.StatusOK, resp.StatusCode, string(responseMessageBytes), err)
+			}
+			// resp.StatusCode is http.StatusOK
+			klog.Infof("successfully added resource [%s] having ID [%s] to VCDResourceSet of [%s] in RDE [%s]",
+				vcdResource.Name, vcdResource.ID, vcdsdk.ComponentCPI, cpiRDEManager.RDEManager.ClusterID)
+			return nil
+		} else if err != nil {
+			return fmt.Errorf("error while updating the RDE [%s]: [%v]", cpiRDEManager.RDEManager.ClusterID, err)
+		} else {
+			return fmt.Errorf("invalid response obtained when updating VCDResoruceSet of %s in RDE [%s]",
+				vcdsdk.ComponentCPI, cpiRDEManager.RDEManager.ClusterID)
+		}
+	}
+
+	return fmt.Errorf("failed to update RDE [%s] with VCDResourceSet [%s] of type [%s] in [%s] status section",
+		cpiRDEManager.RDEManager.ClusterID, vsName, vcdsdk.VcdResourceVirtualService, vcdsdk.ComponentCPI)
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/vmware/cloud-provider-for-cloud-director/pkg/util"
 	swagger "github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdswaggerclient"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
@@ -486,3 +487,127 @@ func TestVirtualServiceHttpsCRUDE(t *testing.T) {
 
 	return
 }
+
+func TestLoadBalancerCRUDE(t *testing.T) {
+
+	authFile := filepath.Join(gitRoot, "testdata/auth_test.yaml")
+	authFileContent, err := ioutil.ReadFile(authFile)
+	assert.NoError(t, err, "There should be no error reading the auth file contents.")
+
+	var authDetails authorizationDetails
+	err = yaml.Unmarshal(authFileContent, &authDetails)
+	assert.NoError(t, err, "There should be no error parsing auth file content.")
+
+	testConfig, err := getTestVCDConfig()
+	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
+
+	vcdClient, err := getTestVCDClient(testConfig, map[string]interface{}{
+		"user":         authDetails.Username,
+		"secret":       authDetails.Password,
+		"userOrg":      authDetails.UserOrg,
+		"getVdcClient": true,
+	})
+	assert.NoError(t, err, "Unable to get VCD client")
+	require.NotNil(t, vcdClient, "VCD Client should not be nil")
+
+	ctx := context.Background()
+
+	gm, err := NewGatewayManager(ctx, vcdClient, testConfig.OvdcNetwork, testConfig.VIPSubnet)
+	assert.NoError(t, err, "gateway manager should be created without error")
+
+	virtualServiceNamePrefix := fmt.Sprintf("test-virtual-service-https-%s", uuid.New().String())
+	lbPoolNamePrefix := fmt.Sprintf("test-lb-pool-%s", uuid.New().String())
+	certName := testConfig.CertificateAlias
+	if certName == "" {
+		certName = fmt.Sprintf("%s-cert", testConfig.ClusterID)
+	}
+	portDetailsList := []PortDetails{
+		{
+			PortSuffix:   `http`,
+			ExternalPort: 80,
+			InternalPort: 31234,
+			Protocol:     "HTTP",
+			UseSSL:       false,
+		},
+		{
+			PortSuffix:   `https`,
+			ExternalPort: 443,
+			InternalPort: 31235,
+			Protocol:     "HTTPS",
+			UseSSL:       true,
+			CertAlias:    certName,
+		},
+	}
+	freeIP := ""
+
+	oneArm := &OneArm{
+		StartIP: "192.168.8.2",
+		EndIP: "192.168.8.100",
+	}
+	freeIP, err = gm.CreateLoadBalancer(ctx, virtualServiceNamePrefix,
+		lbPoolNamePrefix, []string{"1.2.3.4", "1.2.3.5"}, portDetailsList, oneArm, &util.AllocatedResourcesMap{})
+	assert.NoError(t, err, "Load Balancer should be created")
+	assert.NotEmpty(t, freeIP, "There should be a non-empty IP returned")
+
+	virtualServiceNameHttp := fmt.Sprintf("%s-http", virtualServiceNamePrefix)
+	freeIPObtained, err := gm.GetLoadBalancer(ctx, virtualServiceNameHttp, oneArm)
+	assert.NoError(t, err, "Load Balancer should be found")
+	assert.Equal(t, freeIP, freeIPObtained, "The IPs should match")
+
+	virtualServiceNameHttps := fmt.Sprintf("%s-https", virtualServiceNamePrefix)
+	freeIPObtained, err = gm.GetLoadBalancer(ctx, virtualServiceNameHttps, oneArm)
+	assert.NoError(t, err, "Load Balancer should be found")
+	assert.Equal(t, freeIP, freeIPObtained, "The IPs should match")
+
+	freeIP, err = gm.CreateLoadBalancer(ctx, virtualServiceNamePrefix,
+		lbPoolNamePrefix, []string{"1.2.3.4", "1.2.3.5"}, portDetailsList, oneArm, &util.AllocatedResourcesMap{})
+	assert.NoError(t, err, "Load Balancer should be created even on second attempt")
+	assert.NotEmpty(t, freeIP, "There should be a non-empty IP returned")
+
+	updatedIps := []string{"5.5.5.5"}
+	updatedInternalPort := int32(55555)
+	// update IPs and internal port
+	_, err = gm.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-http", virtualServiceNamePrefix+"-http", updatedIps, updatedInternalPort, 80, &util.AllocatedResourcesMap{})
+	assert.NoError(t, err, "HTTP Load Balancer should be updated")
+
+	_, err = gm.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-https", virtualServiceNamePrefix+"-https", updatedIps, updatedInternalPort, 443, &util.AllocatedResourcesMap{})
+	assert.NoError(t, err, "HTTPS Load Balancer should be updated")
+
+	// update external port only
+	updatedExternalPortHttp := int32(8080)
+	updatedExternalPortHttps := int32(8443)
+	_, err = gm.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-http", virtualServiceNamePrefix+"-http", updatedIps, updatedInternalPort, updatedExternalPortHttp, &util.AllocatedResourcesMap{})
+	assert.NoError(t, err, "HTTP Load Balancer should be updated")
+
+	_, err = gm.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-https", virtualServiceNamePrefix+"-https", updatedIps, updatedInternalPort, updatedExternalPortHttps, &util.AllocatedResourcesMap{})
+	assert.NoError(t, err, "HTTPS Load Balancer should be updated")
+
+	// No error on repeated update
+	_, err = gm.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-http", virtualServiceNamePrefix+"-http", updatedIps, updatedInternalPort, updatedExternalPortHttp, &util.AllocatedResourcesMap{})
+	assert.NoError(t, err, "HTTP Load Balancer should be updated")
+
+	_, err = gm.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-https", virtualServiceNamePrefix+"-https", updatedIps, updatedInternalPort, updatedExternalPortHttps, &util.AllocatedResourcesMap{})
+	assert.NoError(t, err, "HTTPS Load Balancer should be updated")
+
+	_, err = gm.DeleteLoadBalancer(ctx, virtualServiceNamePrefix, lbPoolNamePrefix, portDetailsList, oneArm, &util.AllocatedResourcesMap{})
+	assert.NoError(t, err, "Load Balancer should be deleted")
+
+	freeIPObtained, err = gm.GetLoadBalancer(ctx, virtualServiceNameHttp, oneArm)
+	assert.NoError(t, err, "Load Balancer should not be found")
+	assert.Empty(t, freeIPObtained, "The VIP should not be found")
+
+	freeIPObtained, err = gm.GetLoadBalancer(ctx, virtualServiceNameHttps, oneArm)
+	assert.NoError(t, err, "Load Balancer should not be found")
+	assert.Empty(t, freeIPObtained, "The VIP should not be found")
+
+	_, err = gm.DeleteLoadBalancer(ctx, virtualServiceNamePrefix, lbPoolNamePrefix, portDetailsList, oneArm, &util.AllocatedResourcesMap{})
+	assert.NoError(t, err, "Repeated deletion of Load Balancer should not fail")
+
+	_, err = gm.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-http", virtualServiceNamePrefix+"-http", updatedIps, updatedInternalPort, 80, &util.AllocatedResourcesMap{})
+	assert.Error(t, err, "updating deleted HTTP Load Balancer should be an error")
+	_, err = gm.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-https", virtualServiceNamePrefix+"https", updatedIps, updatedInternalPort, 43, &util.AllocatedResourcesMap{})
+	assert.Error(t, err, "updating deleted HTTPS Load Balancer should be an error")
+
+	return
+}
+
