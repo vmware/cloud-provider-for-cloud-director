@@ -206,6 +206,12 @@ status:
      errorSet:
        - <newError>
 */
+
+// TODO requested from Sahithi:
+// 1. Implement a method that takes list of errors (or) list of events
+// 2. When 1 is implemented, modify removeErrorByNameOrIdFromErrorSet to sort elements by timestamps before removal
+// as the order coming in are not necessary sorted by timestamps
+// 3.A method that will remove errors and addition of success event at the same time
 func (rdeManager *RDEManager) AddToErrorSet(ctx context.Context, componentSectionName string, newError BackendError, rollingWindowSize int) error {
 	if rdeManager.ClusterID == "" || strings.HasPrefix(rdeManager.ClusterID, NoRdePrefix) {
 		// Indicates that the RDE ID is either empty or it was auto-generated.
