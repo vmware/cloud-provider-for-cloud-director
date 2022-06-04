@@ -42,7 +42,7 @@ func (cgm *CpiGatewayManager) CreateLoadBalancer(ctx context.Context, virtualSer
 	}
 
 	externalIP, err := gm.CreateLoadBalancer(ctx, virtualServiceNamePrefix, lbPoolNamePrefix,
-		ips, portDetailsList, oneArm, enableVirtualServiceSharedIP, portNameToIP)
+		ips, portDetailsList, oneArm, false, enableVirtualServiceSharedIP, portNameToIP)
 	if err != nil {
 		return "", fmt.Errorf(
 			"unable to create load balancer with vs prefix [%s], lbpool prefix [%s], ips [%v], ports [%v]: [%v]",
