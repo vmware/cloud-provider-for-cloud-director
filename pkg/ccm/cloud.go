@@ -1,9 +1,10 @@
+//go:build !testing
+// +build !testing
+
 /*
    Copyright 2021 VMware, Inc.
    SPDX-License-Identifier: Apache-2.0
 */
-
-// +build !testing
 
 package ccm
 
@@ -89,15 +90,15 @@ func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error
 		klog.Infof("Gateway of network [%s] not backed by NSX-T. Hence LB will not be initialized.",
 			cloudConfig.LB.VDCNetwork)
 	} else {
+		var oneArm *vcdsdk.OneArm
 		if cloudConfig.LB.OneArm != nil {
-			lb = newLoadBalancer(vcdClient, cloudConfig.LB.CertificateAlias, &vcdsdk.OneArm{
+			oneArm = &vcdsdk.OneArm{
 				StartIP: cloudConfig.LB.OneArm.StartIP,
 				EndIP:   cloudConfig.LB.OneArm.EndIP,
-			}, cloudConfig.LB.VDCNetwork, cloudConfig.LB.VIPSubnet, cloudConfig.ClusterID)
-		} else {
-			klog.Errorf("failed to initialize create LoadBalancerManager; OneArm details not found in the config")
-			return nil, fmt.Errorf("failed to initialize create LoadBalancerManager; OneArm details not found in the config")
+			}
 		}
+		lb = newLoadBalancer(vcdClient, cloudConfig.LB.CertificateAlias, oneArm, cloudConfig.LB.VDCNetwork,
+			cloudConfig.LB.VIPSubnet, cloudConfig.ClusterID, cloudConfig.LB.EnableVirtualServiceSharedIP)
 	}
 
 	// cache for VM Info with an refresh of elements needed after 1 minute

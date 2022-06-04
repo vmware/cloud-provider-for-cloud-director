@@ -1,9 +1,10 @@
+//go:build !testing
+// +build !testing
+
 /*
    Copyright 2021 VMware, Inc.
    SPDX-License-Identifier: Apache-2.0
 */
-
-// +build !testing
 
 package ccm
 
@@ -28,29 +29,31 @@ const (
 
 //LBManager -
 type LBManager struct {
-	gatewayManager   *vcdsdk.GatewayManager
-	vcdClient        *vcdsdk.Client
-	kubeClient       *kubernetes.Clientset
-	namespace        string
-	CertificateAlias string
-	OneArm           *vcdsdk.OneArm
-	ovdcNetworkName  string
-	ipamSubnet       string
-	clusterID        string
+	gatewayManager               *vcdsdk.GatewayManager
+	vcdClient                    *vcdsdk.Client
+	kubeClient                   *kubernetes.Clientset
+	namespace                    string
+	CertificateAlias             string
+	OneArm                       *vcdsdk.OneArm
+	ovdcNetworkName              string
+	ipamSubnet                   string
+	clusterID                    string
+	EnableVirtualServiceSharedIP bool
 }
 
 func newLoadBalancer(vcdClient *vcdsdk.Client, certAlias string, oneArm *vcdsdk.OneArm,
-	ovdcNetworkName string, ipamSubnet string, clusterID string) cloudProvider.LoadBalancer {
+	ovdcNetworkName string, ipamSubnet string, clusterID string, enableVirtualServiceSharedIP bool) cloudProvider.LoadBalancer {
 
 	return &LBManager{
-		vcdClient:        vcdClient,
-		kubeClient:       GetK8SClient(),
-		namespace:        "default",
-		CertificateAlias: certAlias,
-		OneArm:           oneArm,
-		ovdcNetworkName:  ovdcNetworkName,
-		ipamSubnet:       ipamSubnet,
-		clusterID:        clusterID,
+		vcdClient:                    vcdClient,
+		kubeClient:                   GetK8SClient(),
+		namespace:                    "default",
+		CertificateAlias:             certAlias,
+		OneArm:                       oneArm,
+		ovdcNetworkName:              ovdcNetworkName,
+		ipamSubnet:                   ipamSubnet,
+		clusterID:                    clusterID,
+		EnableVirtualServiceSharedIP: enableVirtualServiceSharedIP,
 	}
 }
 
@@ -134,7 +137,8 @@ func (lb *LBManager) UpdateLoadBalancer(ctx context.Context, clusterName string,
 			return fmt.Errorf("error while creating GatewayManager: [%v]", err)
 		}
 		klog.Infof("Updating pool [%s] with port [%s:%d]", lbPoolName, portName, internalPort)
-		if err := cgm.UpdateLoadBalancer(ctx, lbPoolName, virtualServiceName, nodeIps, internalPort, externalPort); err != nil {
+		if err := cgm.UpdateLoadBalancer(ctx, lbPoolName, virtualServiceName, nodeIps, internalPort,
+			externalPort, lb.OneArm, lb.EnableVirtualServiceSharedIP); err != nil {
 			return fmt.Errorf("unable to update pool [%s] with port [%s:%d]: [%v]", lbPoolName, portName,
 				internalPort, err)
 		}
@@ -161,39 +165,45 @@ func (lb *LBManager) EnsureLoadBalancerDeleted(ctx context.Context, clusterName 
 }
 
 func (lb *LBManager) getLoadBalancer(ctx context.Context,
-	service *v1.Service) (status *v1.LoadBalancerStatus, exists bool, err error) {
+	service *v1.Service) (status *v1.LoadBalancerStatus, portNameToIPMap map[string]string, err error) {
 
 	virtualServiceNamePrefix := lb.getLoadBalancerPrefix(ctx, service)
 	virtualIP := ""
 	cgm, err := cpisdk.NewCpiGatewayManager(ctx, lb.vcdClient, lb.ovdcNetworkName, lb.ipamSubnet, lb.clusterID)
 	if err != nil {
-		return nil, false, fmt.Errorf("error while creating GatewayManager: [%v]", err)
+		return nil, nil, fmt.Errorf("error while creating GatewayManager: [%v]", err)
 	}
+	portNameToIP := make(map[string]string)
+	ingressVirtualIP := ""
 	for _, port := range service.Spec.Ports {
 		virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, port.Name)
 		virtualIP, err = cgm.GetLoadBalancer(ctx, virtualServiceName, lb.OneArm)
 		if err != nil {
-			return nil, false,
+			return nil, nil,
 				fmt.Errorf("unable to get virtual service summary for [%s]: [%v]",
 					virtualServiceName, err)
 		}
-		if virtualIP == "" {
-			// if any lb that is expected is not created, return false to retry creation
-			return nil, false, nil
+		portNameToIP[port.Name] = virtualIP
+		if virtualIP != "" {
+			if ingressVirtualIP != "" && ingressVirtualIP != virtualIP {
+				return nil, nil,
+					fmt.Errorf("more than one virtual ip found: [%s] and [%s]", virtualIP, ingressVirtualIP)
+			}
+			ingressVirtualIP = virtualIP
 		}
 	}
-	if virtualIP == "" {
+	if len(portNameToIP) == 0 {
 		// this implies that no port was specified
-		return nil, false, nil
+		return nil, nil, nil
 	}
 
 	return &v1.LoadBalancerStatus{
 		Ingress: []v1.LoadBalancerIngress{
 			{
-				IP: virtualIP,
+				IP: ingressVirtualIP,
 			},
 		},
-	}, true, nil
+	}, portNameToIP, nil
 
 }
 
@@ -207,7 +217,20 @@ func (lb *LBManager) GetLoadBalancer(ctx context.Context, clusterName string,
 	if err = lb.vcdClient.RefreshBearerToken(); err != nil {
 		return nil, false, fmt.Errorf("error while obtaining access token: [%v]", err)
 	}
-	return lb.getLoadBalancer(ctx, service)
+	status, portNameToIPMap, err := lb.getLoadBalancer(ctx, service)
+	if err != nil {
+		return nil, false, fmt.Errorf("error while getting load balancer: [%v]", err)
+	}
+	if portNameToIPMap == nil {
+		return nil, false, nil
+	}
+
+	for _, ip := range portNameToIPMap {
+		if ip == "" {
+			return nil, false, nil // returning false to retry creation
+		}
+	}
+	return status, true, nil
 }
 
 // getTrimmedClusterID: this is a mitigation to not overflow VCD name length limits. There is a clearer
@@ -305,7 +328,7 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 
 	lbPoolNamePrefix := lb.getLBPoolNamePrefix(ctx, service)
 	virtualServiceNamePrefix := lb.getVirtualServicePrefix(ctx, service)
-	lbStatus, lbExists, err := lb.getLoadBalancer(ctx, service)
+	lbStatus, portNameToIPMap, err := lb.getLoadBalancer(ctx, service)
 	if err != nil {
 		return nil, fmt.Errorf("unexpected error while querying for loadbalancer: [%v]", err)
 	}
@@ -313,6 +336,16 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 	if err != nil {
 		return nil, fmt.Errorf("error while creating CpiGatewayManager: [%v]", err)
 	}
+
+	// golang doesn't have the set data structure
+	lbExists := true
+	for _, ip := range portNameToIPMap {
+		if ip == "" {
+			lbExists = false
+			break
+		}
+	}
+
 	if lbExists {
 		// Update load balancer if there are changes in service properties
 		typeToInternalPortMap, typeToExternalPortMap := lb.getServicePortMap(service)
@@ -321,7 +354,8 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 			virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, portName)
 			externalPort := typeToExternalPortMap[portName]
 			klog.Infof("Updating pool [%s] with port [%s:%d:%d]", lbPoolName, portName, internalPort, externalPort)
-			if err := cgm.UpdateLoadBalancer(ctx, lbPoolName, virtualServiceName, nodeIPs, internalPort, externalPort); err != nil {
+			if err := cgm.UpdateLoadBalancer(ctx, lbPoolName, virtualServiceName, nodeIPs, internalPort,
+				externalPort, lb.OneArm, lb.EnableVirtualServiceSharedIP); err != nil {
 				return nil, fmt.Errorf("unable to update pool [%s] with port [%s:%d:%d]: [%v]", lbPoolName, portName,
 					internalPort, externalPort, err)
 			}
@@ -371,7 +405,8 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 	klog.Infof("Creating loadbalancer for ports [%#v]\n", portDetailsList)
 
 	// Create using VCD API
-	lbIP, err := cgm.CreateLoadBalancer(ctx, virtualServiceNamePrefix, lbPoolNamePrefix, nodeIPs, portDetailsList, lb.OneArm)
+	lbIP, err := cgm.CreateLoadBalancer(ctx, virtualServiceNamePrefix, lbPoolNamePrefix, nodeIPs, portDetailsList,
+		lb.OneArm, lb.EnableVirtualServiceSharedIP, portNameToIPMap)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create loadbalancer for ports [%#v]: [%v]", portDetailsList, err)
 	}

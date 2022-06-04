@@ -325,7 +325,7 @@ func TestVirtualServiceHttpCRUDE(t *testing.T) {
 	virtualServiceName := fmt.Sprintf("test-virtual-service-%s", uuid.New().String())
 	internalIP := "2.3.4.5"
 	var vsRef *swagger.EntityReference
-	for i := 0; i < BusyRetries; i ++ {
+	for i := 0; i < BusyRetries; i++ {
 		vsRef, err = gm.CreateVirtualService(ctx, virtualServiceName, lbPoolRef, segRef,
 			internalIP, "HTTP", 80, false, "")
 		if err != nil {
@@ -345,7 +345,7 @@ func TestVirtualServiceHttpCRUDE(t *testing.T) {
 	assert.NotEmpty(t, vsRefObtained.Id, "Virtual service ID should not be empty")
 
 	// repeated creation should not fail
-	for i := 0; i < BusyRetries; i ++ {
+	for i := 0; i < BusyRetries; i++ {
 		vsRef, err = gm.CreateVirtualService(ctx, virtualServiceName, lbPoolRef, segRef,
 			internalIP, "HTTP", 80, false, "")
 		if err != nil {
@@ -417,7 +417,7 @@ func TestVirtualServiceHttpsCRUDE(t *testing.T) {
 	}
 
 	var vsRef *swagger.EntityReference
-	for i := 0; i < BusyRetries; i ++ {
+	for i := 0; i < BusyRetries; i++ {
 		vsRef, err = gm.CreateVirtualService(ctx, virtualServiceName, lbPoolRef, segRef,
 			internalIP, "HTTP", 80, false, "")
 		if err != nil {

@@ -158,12 +158,11 @@ func TestGetUnusedIPAddressInRange(t *testing.T) {
 	return
 }
 
-
 func TestCheckIfIPIsAvailable(t *testing.T) {
 	type TestCase struct {
-		IPAddress   string
-		IPRanges []IPRange
-		RetVal bool
+		IPAddress string
+		IPRanges  []IPRange
+		RetVal    bool
 	}
 
 	testCaseList := []TestCase{
@@ -172,7 +171,7 @@ func TestCheckIfIPIsAvailable(t *testing.T) {
 			IPRanges: []IPRange{
 				{
 					StartIP: "1.2.3.1",
-					EndIP: "1.2.3.10",
+					EndIP:   "1.2.3.10",
 				},
 			},
 			RetVal: true,
@@ -182,7 +181,7 @@ func TestCheckIfIPIsAvailable(t *testing.T) {
 			IPRanges: []IPRange{
 				{
 					StartIP: "2.1.3.1",
-					EndIP: "2.1.3.3",
+					EndIP:   "2.1.3.3",
 				},
 			},
 			RetVal: false,
@@ -192,7 +191,7 @@ func TestCheckIfIPIsAvailable(t *testing.T) {
 			IPRanges: []IPRange{
 				{
 					StartIP: "1.2.3.4",
-					EndIP: "1.2.3.4",
+					EndIP:   "1.2.3.4",
 				},
 			},
 			RetVal: true,
@@ -202,7 +201,7 @@ func TestCheckIfIPIsAvailable(t *testing.T) {
 			IPRanges: []IPRange{
 				{
 					StartIP: "1.2.3.1",
-					EndIP: "1.2.3.4",
+					EndIP:   "1.2.3.4",
 				},
 			},
 			RetVal: true,
@@ -212,7 +211,7 @@ func TestCheckIfIPIsAvailable(t *testing.T) {
 			IPRanges: []IPRange{
 				{
 					StartIP: "1.2.3.4",
-					EndIP: "1.2.3.10",
+					EndIP:   "1.2.3.10",
 				},
 			},
 			RetVal: true,
@@ -222,7 +221,7 @@ func TestCheckIfIPIsAvailable(t *testing.T) {
 			IPRanges: []IPRange{
 				{
 					StartIP: "1.2.3.1",
-					EndIP: "1.2.4.1",
+					EndIP:   "1.2.4.1",
 				},
 			},
 			RetVal: true,
@@ -232,7 +231,7 @@ func TestCheckIfIPIsAvailable(t *testing.T) {
 			IPRanges: []IPRange{
 				{
 					StartIP: "1.2.3.1",
-					EndIP: "1.2.3.255",
+					EndIP:   "1.2.3.255",
 				},
 			},
 			RetVal: false,
@@ -242,7 +241,7 @@ func TestCheckIfIPIsAvailable(t *testing.T) {
 			IPRanges: []IPRange{
 				{
 					StartIP: "1.2.3.1",
-					EndIP: "1.2.3.255",
+					EndIP:   "1.2.3.255",
 				},
 			},
 			RetVal: false,
@@ -252,7 +251,7 @@ func TestCheckIfIPIsAvailable(t *testing.T) {
 			IPRanges: []IPRange{
 				{
 					StartIP: "1.2.3.1",
-					EndIP: "1.2.3.255",
+					EndIP:   "1.2.3.255",
 				},
 			},
 			RetVal: true,
