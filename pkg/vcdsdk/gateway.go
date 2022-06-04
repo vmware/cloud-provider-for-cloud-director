@@ -1371,7 +1371,7 @@ func (gm *GatewayManager) CreateLoadBalancer(ctx context.Context, virtualService
 		}
 	} else if enableVirtualServiceSharedIP && oneArm != nil { // internal ip used, dnat rule is needed
 		if sharedInternalIP == "" { // no dnat rule has been created yet
-			sharedInternalIP, err = gm.GetUnusedInternalIPAddress(ctx, oneArm)
+			sharedInternalIP, err = gm.GetUnusedInternalIPAddress(ctx, oneArm, nil)
 			if err != nil {
 				return "", fmt.Errorf("unable to get internal IP address for one-arm mode: [%v]", err)
 			}
