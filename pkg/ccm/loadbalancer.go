@@ -1,9 +1,10 @@
+//go:build !testing
+// +build !testing
+
 /*
    Copyright 2021 VMware, Inc.
    SPDX-License-Identifier: Apache-2.0
 */
-
-// +build !testing
 
 package ccm
 
@@ -28,31 +29,31 @@ const (
 
 //LBManager -
 type LBManager struct {
-	gatewayManager   *vcdsdk.GatewayManager
-	vcdClient        *vcdsdk.Client
-	kubeClient       *kubernetes.Clientset
-	namespace        string
-	CertificateAlias string
-	OneArm           *vcdsdk.OneArm
-	ovdcNetworkName  string
-	ipamSubnet       string
-	clusterID        string
-	UseVsSharedIP	 bool
+	gatewayManager               *vcdsdk.GatewayManager
+	vcdClient                    *vcdsdk.Client
+	kubeClient                   *kubernetes.Clientset
+	namespace                    string
+	CertificateAlias             string
+	OneArm                       *vcdsdk.OneArm
+	ovdcNetworkName              string
+	ipamSubnet                   string
+	clusterID                    string
+	EnableVirtualServiceSharedIP bool
 }
 
 func newLoadBalancer(vcdClient *vcdsdk.Client, certAlias string, oneArm *vcdsdk.OneArm,
-	ovdcNetworkName string, ipamSubnet string, clusterID string, useVsSharedIP bool) cloudProvider.LoadBalancer {
+	ovdcNetworkName string, ipamSubnet string, clusterID string, enableVirtualServiceSharedIP bool) cloudProvider.LoadBalancer {
 
 	return &LBManager{
-		vcdClient:        vcdClient,
-		kubeClient:       GetK8SClient(),
-		namespace:        "default",
-		CertificateAlias: certAlias,
-		OneArm:           oneArm,
-		ovdcNetworkName:  ovdcNetworkName,
-		ipamSubnet:       ipamSubnet,
-		clusterID:        clusterID,
-		UseVsSharedIP: 	  useVsSharedIP,
+		vcdClient:                    vcdClient,
+		kubeClient:                   GetK8SClient(),
+		namespace:                    "default",
+		CertificateAlias:             certAlias,
+		OneArm:                       oneArm,
+		ovdcNetworkName:              ovdcNetworkName,
+		ipamSubnet:                   ipamSubnet,
+		clusterID:                    clusterID,
+		EnableVirtualServiceSharedIP: enableVirtualServiceSharedIP,
 	}
 }
 
@@ -137,7 +138,7 @@ func (lb *LBManager) UpdateLoadBalancer(ctx context.Context, clusterName string,
 		}
 		klog.Infof("Updating pool [%s] with port [%s:%d]", lbPoolName, portName, internalPort)
 		if err := cgm.UpdateLoadBalancer(ctx, lbPoolName, virtualServiceName, nodeIps, internalPort,
-			externalPort, lb.OneArm, lb.UseVsSharedIP); err != nil {
+			externalPort, lb.OneArm, lb.EnableVirtualServiceSharedIP); err != nil {
 			return fmt.Errorf("unable to update pool [%s] with port [%s:%d]: [%v]", lbPoolName, portName,
 				internalPort, err)
 		}
@@ -353,7 +354,7 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 			externalPort := typeToExternalPortMap[portName]
 			klog.Infof("Updating pool [%s] with port [%s:%d:%d]", lbPoolName, portName, internalPort, externalPort)
 			if err := cgm.UpdateLoadBalancer(ctx, lbPoolName, virtualServiceName, nodeIPs, internalPort,
-				externalPort, lb.OneArm, lb.UseVsSharedIP); err != nil {
+				externalPort, lb.OneArm, lb.EnableVirtualServiceSharedIP); err != nil {
 				return nil, fmt.Errorf("unable to update pool [%s] with port [%s:%d:%d]: [%v]", lbPoolName, portName,
 					internalPort, externalPort, err)
 			}
@@ -404,7 +405,7 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 
 	// Create using VCD API
 	lbIP, err := cgm.CreateLoadBalancer(ctx, virtualServiceNamePrefix, lbPoolNamePrefix, nodeIPs, portDetailsList,
-		lb.OneArm, lb.UseVsSharedIP, portNameToIPMap)
+		lb.OneArm, lb.EnableVirtualServiceSharedIP, portNameToIPMap)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create loadbalancer for ports [%#v]: [%v]", portDetailsList, err)
 	}

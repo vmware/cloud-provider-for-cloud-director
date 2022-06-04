@@ -29,6 +29,5 @@ func TestSet(t *testing.T) {
 	assert.Equal(t, len(set.GetElements()), 4)
 	assert.False(t, set.Contains("a"), "Set should not contain `a`")
 
-
 	return
 }

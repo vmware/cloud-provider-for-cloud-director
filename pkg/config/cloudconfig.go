@@ -49,12 +49,12 @@ type OneArm struct {
 
 // LBConfig :
 type LBConfig struct {
-	OneArm           *OneArm `yaml:"oneArm,omitempty"`
-	Ports            Ports   `yaml:"ports"`
-	CertificateAlias string  `yaml:"certAlias"`
-	VDCNetwork       string  `yaml:"network"`
-	VIPSubnet        string  `yaml:"vipSubnet"`
-	UseVsSharedIP    bool    `yaml:"useVsSharedIP"`
+	OneArm                       *OneArm `yaml:"oneArm,omitempty"`
+	Ports                        Ports   `yaml:"ports"`
+	CertificateAlias             string  `yaml:"certAlias"`
+	VDCNetwork                   string  `yaml:"network"`
+	VIPSubnet                    string  `yaml:"vipSubnet"`
+	EnableVirtualServiceSharedIP bool    `yaml:"enableVirtualServiceSharedIP"`
 }
 
 // CloudConfig contains the config that will be read from the secret
@@ -70,7 +70,7 @@ func ParseCloudConfig(configReader io.Reader) (*CloudConfig, error) {
 	var err error
 	config := &CloudConfig{
 		LB: LBConfig{
-			UseVsSharedIP: false,
+			EnableVirtualServiceSharedIP: false,
 		},
 	}
 
@@ -142,7 +142,7 @@ func ValidateCloudConfig(config *CloudConfig) error {
 	if config.VAppName == "" {
 		return fmt.Errorf("need a valid vApp name")
 	}
-	if !config.LB.UseVsSharedIP && config.LB.OneArm == nil {
+	if !config.LB.EnableVirtualServiceSharedIP && config.LB.OneArm == nil {
 		return fmt.Errorf("if not using virtual service shared IP feature, OneArm should be enabled")
 	}
 
