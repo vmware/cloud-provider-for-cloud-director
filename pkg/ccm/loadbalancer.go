@@ -342,6 +342,7 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 	for _, ip := range portNameToIPMap {
 		if ip == "" {
 			lbExists = false
+			break
 		}
 	}
 
