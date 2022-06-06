@@ -171,11 +171,11 @@ func TestCRUDOnErrorSet(t *testing.T) {
 	assert.Equal(t, 5, len(errorSet), "Length of error set must match with error additions requested")
 
 	// remove few errors from rde.status.capvcd.errorSet
-	err = rdeManager.RemoveErrorByNameOrIdFromErrorSet(ctx, "capvcd", "LoadBalancerError", "")
+	err = rdeManager.RemoveErrorByNameOrIdFromErrorSet(ctx, "capvcd", "LoadBalancerError", "", "")
 	assert.NoError(t, err, "failed to remove error from the errorset")
-	err = rdeManager.RemoveErrorByNameOrIdFromErrorSet(ctx, "capvcd", "CloudInitError", "")
+	err = rdeManager.RemoveErrorByNameOrIdFromErrorSet(ctx, "capvcd", "CloudInitError", "", "")
 	assert.NoError(t, err, "failed to remove error from the errorset")
-	err = rdeManager.RemoveErrorByNameOrIdFromErrorSet(ctx, "capvcd", "ControlPlaneError", "")
+	err = rdeManager.RemoveErrorByNameOrIdFromErrorSet(ctx, "capvcd", "ControlPlaneError", "", "")
 	assert.NoError(t, err, "failed to remove error from the errorset")
 
 	// get the rde and check if the length of the errorSet after removing errors is same as expected
