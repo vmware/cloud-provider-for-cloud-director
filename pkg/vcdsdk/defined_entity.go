@@ -780,9 +780,11 @@ func (rdeManager *RDEManager) removeErrorsfromComponentMap(componentRdeSectionNa
 	// errorName and vcdResourceId
 	matchingErrorsRemoved := false
 	for i := 0; i < len(componentStatus.ErrorSet); i++ {
-		// If vcdResourceId is present, it takes the precedence, else match the entry against vcdResourceName as well.
-		if (vcdResourceId == "" && componentStatus.ErrorSet[i].Name == errorName && (vcdResourceName != "" && componentStatus.ErrorSet[i].VcdResourceName == vcdResourceName)) ||
-			(vcdResourceId != "" && componentStatus.ErrorSet[i].Name == errorName && componentStatus.ErrorSet[i].VcdResourceId == vcdResourceId) {
+		// If both vcdResourceId and vcdResourceName are empty, just match the entry with errorName
+		// If vcdResourceId is present, it takes the precedence, else match the entry against vcdResourceName.
+		if (vcdResourceId == "" && vcdResourceName == "" && componentStatus.ErrorSet[i].Name == errorName) ||
+			(vcdResourceId != "" && componentStatus.ErrorSet[i].Name == errorName && componentStatus.ErrorSet[i].VcdResourceId == vcdResourceId) ||
+			(vcdResourceId == "" && componentStatus.ErrorSet[i].Name == errorName && vcdResourceName != "" && componentStatus.ErrorSet[i].VcdResourceName == vcdResourceName) {
 			componentStatus.ErrorSet = append(componentStatus.ErrorSet[:i], componentStatus.ErrorSet[i+1:]...)
 			i--
 			matchingErrorsRemoved = true
