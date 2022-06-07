@@ -544,7 +544,7 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 		return nil, fmt.Errorf("unable to add load balancer pool resources to RDE [%s]: [%v]", lb.clusterID, err)
 	}
 	if err != nil {
-		addToErrorSetErr := cpiRdeManager.AddToErrorSet(ctx, cpisdk.CreateLoadbalancerError, lb.clusterID, err.Error())
+		addToErrorSetErr := cpiRdeManager.AddToErrorSetWithNameAndId(ctx, cpisdk.CreateLoadbalancerError, "", virtualServiceNamePrefix, err.Error())
 		if addToErrorSetErr != nil {
 			klog.Errorf("error adding CPI error [%s] to RDE: [%s], [%v]", cpisdk.CreateLoadbalancerError, lb.clusterID, addToErrorSetErr)
 		}
@@ -562,13 +562,13 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 		}
 	}
 
-	err = cpiRdeManager.AddToEventSet(ctx, cpisdk.CreatedLoadbalancer, lb.clusterID, fmt.Sprintf("Created loadbalancer successfully for [%s] with external IP: [%s]", lb.clusterID, lbIP))
+	err = cpiRdeManager.AddToEventSetWithNameAndId(ctx, cpisdk.CreatedLoadbalancer, "", virtualServiceNamePrefix, fmt.Sprintf("Created loadbalancer successfully for [%s] with external IP: [%s]", lb.clusterID, lbIP))
 	if err != nil {
 		klog.Errorf("error adding CPI event [%s] to RDE: [%v]", cpisdk.CreatedLoadbalancer, err)
 	}
 
 	// No errors and external IP exists, we can remove the create LB error; empty vcdResourceName as we only have access to the external IP
-	err = cpiRdeManager.RDEManager.RemoveErrorByNameOrIdFromErrorSet(ctx, vcdsdk.ComponentCPI, cpisdk.CreateLoadbalancerError, lb.clusterID, "")
+	err = cpiRdeManager.RDEManager.RemoveErrorByNameOrIdFromErrorSet(ctx, vcdsdk.ComponentCPI, cpisdk.CreateLoadbalancerError, "", virtualServiceNamePrefix)
 	if err != nil {
 		klog.Errorf("there was an error removing CPI error [%s] from RDE [%s], [%v]", cpisdk.CreateLoadbalancerError, lb.clusterID, err)
 	}
