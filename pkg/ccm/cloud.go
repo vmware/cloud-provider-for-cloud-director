@@ -85,7 +85,7 @@ func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error
 	rdeManager := vcdsdk.NewRDEManager(vcdClient, cloudConfig.ClusterID, release.CloudControllerManagerName, release.CpiVersion)
 	cpiRdeManager := cpisdk.NewCPIRDEManager(rdeManager)
 
-	err = cpiRdeManager.AddToEventSet(context.Background(), cpisdk.ClientAuthenticated, cloudConfig.ClusterID, fmt.Sprintf("successfully authenticated into vcdclient from secrets"))
+	err = cpiRdeManager.AddToEventSet(context.Background(), cpisdk.ClientAuthenticated, cloudConfig.ClusterID, "successfully authenticated into vcdclient from secrets")
 	if err != nil {
 		klog.Errorf("error adding CPI event [%s] to RDE: [%v]", cpisdk.ClientAuthenticated, err)
 	}
@@ -125,7 +125,7 @@ func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error
 		}
 	} else {
 		klog.Infof("successfully created CPI status in RDE [%s]", cloudConfig.ClusterID)
-		err = cpiRdeManager.AddToEventSet(context.Background(), cpisdk.CPIStatusRDEUpgraded, cloudConfig.ClusterID, fmt.Sprintf("CPI status section successfully updagraded from RDE [%s]", cloudConfig.ClusterID))
+		err = cpiRdeManager.AddToEventSet(context.Background(), cpisdk.CPIStatusRDEUpgraded, cloudConfig.ClusterID, fmt.Sprintf("CPI status section successfully upgraded from RDE [%s]", cloudConfig.ClusterID))
 		if err != nil {
 			klog.Errorf("failed to add CPI event [%s] to EventSet in RDE [%s], [%v]", cpisdk.CPIStatusRDEUpgraded, cloudConfig.ClusterID, err)
 		}
