@@ -1299,7 +1299,8 @@ func (gm *GatewayManager) GetLoadBalancerPoolMemberIPs(ctx context.Context, lbPo
 }
 
 func (gm *GatewayManager) CreateLoadBalancer(ctx context.Context, virtualServiceNamePrefix string, lbPoolNamePrefix string,
-	ips []string, portDetailsList []PortDetails, oneArm *OneArm, noTier0 bool, enableVirtualServiceSharedIP bool, portNameToIP map[string]string) (string, error) {
+	ips []string, portDetailsList []PortDetails, oneArm *OneArm, noTier0 bool, enableVirtualServiceSharedIP bool,
+	portNameToIP map[string]string, providedIP string) (string, error) {
 	if len(portDetailsList) == 0 {
 		// nothing to do here
 		klog.Infof("There is no port specified. Hence nothing to do.")
@@ -1309,6 +1310,8 @@ func (gm *GatewayManager) CreateLoadBalancer(ctx context.Context, virtualService
 	if gm.GatewayRef == nil {
 		return "", fmt.Errorf("gateway reference should not be nil")
 	}
+
+	klog.Infof("Using provided IP [%s]\n", providedIP)
 
 	client := gm.Client
 	client.RWLock.Lock()
@@ -1329,7 +1332,7 @@ func (gm *GatewayManager) CreateLoadBalancer(ctx context.Context, virtualService
 
 	// Separately loop through all DNAT rules to see if any exist, so that we can reuse the external IP in case a
 	// partial creation of load-balancer is continued and an externalIP was claimed earlier by a dnat rule
-	externalIP := ""
+	externalIP := providedIP
 	sharedInternalIP := ""
 	var err error
 	if oneArm != nil {
@@ -1395,7 +1398,7 @@ func (gm *GatewayManager) CreateLoadBalancer(ctx context.Context, virtualService
 			}
 		}
 	}
-	klog.Infof("Using mIP [%s] for virtual service\n", externalIP)
+	klog.Infof("Using VIP [%s] for virtual service\n", externalIP)
 
 	for _, portDetails := range portDetailsList {
 		if portDetails.InternalPort == 0 {
