@@ -124,8 +124,7 @@ func (gm *GatewayManager) GetUnusedExternalIPAddress(ctx context.Context, allowe
 	return freeIP, nil
 }
 
-func (gm *GatewayManager) GetUnusedInternalIPAddress(ctx context.Context, oneArm *OneArm,
-	skipAddresses []string) (string, error) {
+func (gm *GatewayManager) GetUnusedInternalIPAddress(ctx context.Context, oneArm *OneArm) (string, error) {
 	if oneArm == nil {
 		return "", fmt.Errorf("unable to get unused internal IP address as oneArm is nil")
 	}
@@ -136,10 +135,6 @@ func (gm *GatewayManager) GetUnusedInternalIPAddress(ctx context.Context, oneArm
 	client := gm.Client
 
 	usedIPAddresses := make(map[string]bool)
-	for _, skipAddress := range skipAddresses {
-		usedIPAddresses[skipAddress] = true
-	}
-
 	pageNum := int32(1)
 	for {
 		lbVSSummaries, resp, err := client.APIClient.EdgeGatewayLoadBalancerVirtualServicesApi.GetVirtualServiceSummariesForGateway(
