@@ -1299,7 +1299,7 @@ func (gm *GatewayManager) GetLoadBalancerPoolMemberIPs(ctx context.Context, lbPo
 }
 
 func (gm *GatewayManager) CreateLoadBalancer(ctx context.Context, virtualServiceNamePrefix string, lbPoolNamePrefix string,
-	ips []string, portDetailsList []PortDetails, oneArm *OneArm, noTier0 bool, enableVirtualServiceSharedIP bool,
+	ips []string, portDetailsList []PortDetails, oneArm *OneArm, enableVirtualServiceSharedIP bool,
 	portNameToIP map[string]string, providedIP string) (string, error) {
 	if len(portDetailsList) == 0 {
 		// nothing to do here
@@ -1374,28 +1374,18 @@ func (gm *GatewayManager) CreateLoadBalancer(ctx context.Context, virtualService
 		}
 	} else if enableVirtualServiceSharedIP && oneArm != nil { // internal ip used, dnat rule is needed
 		if sharedInternalIP == "" { // no dnat rule has been created yet
-			sharedInternalIP, err = gm.GetUnusedInternalIPAddress(ctx, oneArm, nil)
+			sharedInternalIP, err = gm.GetUnusedInternalIPAddress(ctx, oneArm)
 			if err != nil {
 				return "", fmt.Errorf("unable to get internal IP address for one-arm mode: [%v]", err)
 			}
 		}
 	}
 
-	skipIPAddress := externalIP
 	if externalIP == "" {
-		if noTier0 {
-			externalIP, err = gm.GetUnusedInternalIPAddress(ctx, oneArm, nil)
-			if err != nil {
-				return "", fmt.Errorf("unable to get unused internal IP address from onearm range [%v]: [%v]",
-					oneArm, err)
-			}
-			skipIPAddress = externalIP
-		} else {
-			externalIP, err = gm.GetUnusedExternalIPAddress(ctx, gm.IPAMSubnet)
-			if err != nil {
-				return "", fmt.Errorf("unable to get unused IP address from subnet [%s]: [%v]",
-					gm.IPAMSubnet, err)
-			}
+		externalIP, err = gm.GetUnusedExternalIPAddress(ctx, gm.IPAMSubnet)
+		if err != nil {
+			return "", fmt.Errorf("unable to get unused IP address from subnet [%s]: [%v]",
+				gm.IPAMSubnet, err)
 		}
 	}
 	klog.Infof("Using VIP [%s] for virtual service\n", externalIP)
@@ -1437,7 +1427,7 @@ func (gm *GatewayManager) CreateLoadBalancer(ctx context.Context, virtualService
 				// created with the same IP and different ports
 				internalIP = sharedInternalIP
 			} else {
-				internalIP, err = gm.GetUnusedInternalIPAddress(ctx, oneArm, []string{skipIPAddress})
+				internalIP, err = gm.GetUnusedInternalIPAddress(ctx, oneArm)
 				if err != nil {
 					return "", fmt.Errorf("unable to get internal IP address for one-arm mode: [%v]", err)
 				}
