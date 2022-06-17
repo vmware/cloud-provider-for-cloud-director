@@ -101,14 +101,18 @@ func (lb *LBManager) getNodeInternalIps(nodes []*v1.Node) []string {
 	return nodeIps
 }
 
-func (lb *LBManager) getServicePortMap(service *v1.Service) (map[string]int32, map[string]int32) {
+func (lb *LBManager) getServicePortMap(service *v1.Service) (map[string]int32, map[string]int32, map[string]string) {
 	typeToInternalPort := make(map[string]int32)
 	typeToExternalPort := make(map[string]int32)
+	nameToProtocol := make(map[string]string)
 	for _, port := range service.Spec.Ports {
 		typeToInternalPort[strings.ToLower(port.Name)] = port.NodePort
 		typeToExternalPort[strings.ToLower(port.Name)] = port.Port
+		if port.AppProtocol != nil {
+			nameToProtocol[strings.ToLower(port.Name)] = strings.ToUpper(*port.AppProtocol)
+		}
 	}
-	return typeToInternalPort, typeToExternalPort
+	return typeToInternalPort, typeToExternalPort, nameToProtocol
 }
 
 // UpdateLoadBalancer updates hosts under the specified load balancer.
@@ -127,7 +131,7 @@ func (lb *LBManager) UpdateLoadBalancer(ctx context.Context, clusterName string,
 
 	lbPoolNamePrefix := lb.getLBPoolNamePrefix(ctx, service)
 	virtualServiceNamePrefix := lb.getVirtualServicePrefix(ctx, service)
-	typeToInternalPortMap, typeToExternalPort := lb.getServicePortMap(service)
+	typeToInternalPortMap, typeToExternalPort, nameToProtocol := lb.getServicePortMap(service)
 	for portName, internalPort := range typeToInternalPortMap {
 		lbPoolName := fmt.Sprintf("%s-%s", lbPoolNamePrefix, portName)
 		virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, portName)
@@ -137,8 +141,9 @@ func (lb *LBManager) UpdateLoadBalancer(ctx context.Context, clusterName string,
 			return fmt.Errorf("error while creating GatewayManager: [%v]", err)
 		}
 		klog.Infof("Updating pool [%s] with port [%s:%d]", lbPoolName, portName, internalPort)
+		protocol, _ := nameToProtocol[portName]
 		if err := cgm.UpdateLoadBalancer(ctx, lbPoolName, virtualServiceName, nodeIps, internalPort,
-			externalPort, lb.OneArm, lb.EnableVirtualServiceSharedIP); err != nil {
+			externalPort, lb.OneArm, lb.EnableVirtualServiceSharedIP, protocol); err != nil {
 			return fmt.Errorf("unable to update pool [%s] with port [%s:%d]: [%v]", lbPoolName, portName,
 				internalPort, err)
 		}
@@ -348,14 +353,15 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 
 	if lbExists {
 		// Update load balancer if there are changes in service properties
-		typeToInternalPortMap, typeToExternalPortMap := lb.getServicePortMap(service)
+		typeToInternalPortMap, typeToExternalPortMap, nameToProtocol := lb.getServicePortMap(service)
 		for portName, internalPort := range typeToInternalPortMap {
 			lbPoolName := fmt.Sprintf("%s-%s", lbPoolNamePrefix, portName)
 			virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, portName)
 			externalPort := typeToExternalPortMap[portName]
+			protocol, _ := nameToProtocol[portName]
 			klog.Infof("Updating pool [%s] with port [%s:%d:%d]", lbPoolName, portName, internalPort, externalPort)
 			if err := cgm.UpdateLoadBalancer(ctx, lbPoolName, virtualServiceName, nodeIPs, internalPort,
-				externalPort, lb.OneArm, lb.EnableVirtualServiceSharedIP); err != nil {
+				externalPort, lb.OneArm, lb.EnableVirtualServiceSharedIP, protocol); err != nil {
 				return nil, fmt.Errorf("unable to update pool [%s] with port [%s:%d:%d]: [%v]", lbPoolName, portName,
 					internalPort, externalPort, err)
 			}

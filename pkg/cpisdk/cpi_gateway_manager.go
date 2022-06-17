@@ -62,14 +62,16 @@ func (cgm *CpiGatewayManager) CreateLoadBalancer(ctx context.Context, virtualSer
 }
 
 func (cgm *CpiGatewayManager) UpdateLoadBalancer(ctx context.Context, lbPoolName string, virtualServiceName string,
-	ips []string, internalPort int32, externalPort int32, oneArm *vcdsdk.OneArm, enableVirtualServiceSharedIP bool) error {
+	ips []string, internalPort int32, externalPort int32, oneArm *vcdsdk.OneArm, enableVirtualServiceSharedIP bool,
+	protocol string) error {
 
 	gm := cgm.VcdGatewayManager
 	if gm == nil {
 		return fmt.Errorf("GatewayManager cannot be nil")
 	}
 
-	if err := gm.UpdateLoadBalancer(ctx, lbPoolName, virtualServiceName, ips, internalPort, externalPort, oneArm, enableVirtualServiceSharedIP); err != nil {
+	if err := gm.UpdateLoadBalancer(ctx, lbPoolName, virtualServiceName, ips, internalPort, externalPort,
+		oneArm, enableVirtualServiceSharedIP, protocol); err != nil {
 		return fmt.Errorf(
 			"unable to create load balancer with vs [%s], lbpool [%s], ips [%v], ports [%d->%d]: [%v]",
 			virtualServiceName, lbPoolName, ips, externalPort, internalPort, err)
