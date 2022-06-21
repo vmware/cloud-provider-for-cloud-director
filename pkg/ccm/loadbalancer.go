@@ -267,7 +267,9 @@ func (lb *LBManager) getLoadBalancer(ctx context.Context,
 	ingressVirtualIP := ""
 	for _, port := range service.Spec.Ports {
 		virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, port.Name)
-		virtualIP, err = gm.GetLoadBalancer(ctx, virtualServiceName, lb.OneArm)
+		lbPoolNamePrefix := lb.getLBPoolNamePrefix(ctx, service)
+		lbPoolName := fmt.Sprintf("%s-%s", lbPoolNamePrefix, port.Name)
+		virtualIP, _, err = gm.GetLoadBalancer(ctx, virtualServiceName, lbPoolName, lb.OneArm)
 		if err != nil {
 			addToErrorSetErr := cpiRdeManager.AddToErrorSetWithNameAndId(ctx, cpisdk.GetLoadbalancerError, "", virtualServiceName, err.Error())
 			if addToErrorSetErr != nil {
