@@ -38,7 +38,7 @@ then
     echo ""
     echo "Required arguments:"   
     echo ""
-    echo "  PROJECT_NAME           Either 'terraform-provider-vcd' or 'go-vcloud-director'"
+    echo "  PROJECT_NAME           Either 'cloud-director-named-disk-csi-driver' or 'cloud-provider-for-cloud-director'"
     echo "  GIT REF                Git reference to checkout (ie: HEAD, a commit hash, a branch, a tag...)"
     echo "  JENKINS_BUILD_NUMBER   Jenkins build number, ie: '248'"
     echo ""
@@ -52,7 +52,7 @@ jenkins_build_number="$3"
 # Right now only our two main projects are supported, otherwise the script will fail
 if [[ "${project}" != 'cloud-provider-for-cloud-director' ]] && [[ "${project}" != 'cloud-director-named-disk-csi-driver' ]]
 then
-    >&2 echo "[ERROR] Project name must be either 'cloud-director-named-disk-csi-driver' or 'cloud-director-named-disk-csi-driver' but it was '${project}'"
+    >&2 echo "[ERROR] Project name must be either 'cloud-provider-for-cloud-director' or 'cloud-director-named-disk-csi-driver' but it was '${project}'"
     exit 1
 fi
 
@@ -75,7 +75,7 @@ chmod +x srp-tools/observer/bin/observer_agent.bash
 echo "[INFO] SRP cli version: $(./srp-tools/srp --version)"
 
 # Generate SRP UIDs. The convention is described at https://confluence.eng.vmware.com/display/SRPIPELINE/How+to+create+a+SRP+UID
-jenkins_job_name="${project}-provenance"
+jenkins_job_name="${project}-prov-pipeline"
 jenkins_instance='sp-taas-vcd-butler.svc.eng.vmware.com'
 timestamp="$(date +%Y%m%d%H%M%S)"
 
