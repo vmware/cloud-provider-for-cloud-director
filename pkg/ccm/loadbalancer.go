@@ -209,6 +209,10 @@ func (lb *LBManager) UpdateLoadBalancer(ctx context.Context, clusterName string,
 			return fmt.Errorf("failed to get virtual service [%s], [%v]", virtualServiceName, getVsErr)
 		}
 
+		if vsSummary == nil {
+			return fmt.Errorf("unable to get summary of virtual service [%s]: [%v]", virtualServiceName, getVsErr)
+		}
+
 		if err != nil {
 			addToErrorSetErr := cpiRdeManager.AddToErrorSetWithNameAndId(ctx, cpisdk.UpdateLoadbalancerError, vsSummary.Id, vsSummary.Name, err.Error())
 			if addToErrorSetErr != nil {
@@ -520,6 +524,11 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 			if getVsErr != nil {
 				return nil, fmt.Errorf("failed to get virtual service [%s], [%v]", virtualServiceName, getVsErr)
 			}
+
+			if vsSummary == nil {
+				return nil, fmt.Errorf("unable to get summary of virtual service [%s]: [%v]", virtualServiceName, getVsErr)
+			}
+
 			if err != nil {
 				addToErrorSetErr := cpiRdeManager.AddToErrorSetWithNameAndId(ctx, cpisdk.UpdateLoadbalancerError, vsSummary.Id, vsSummary.Name, err.Error())
 				if addToErrorSetErr != nil {
