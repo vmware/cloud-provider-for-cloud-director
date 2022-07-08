@@ -287,12 +287,6 @@ func (lb *LBManager) getLoadBalancer(ctx context.Context,
 		if removeErr != nil {
 			klog.Errorf("there was an error removing CPI error [%s] from RDE [%s], [%v]", cpisdk.GetLoadbalancerError, lb.clusterID, err)
 		}
-		if virtualIP == "" {
-			// if any lb that is expected is not created, return false to retry creation
-			return nil, nil,
-				fmt.Errorf("unable to get virtual service summary for [%s]: [%v]",
-					virtualServiceName, err)
-		}
 		portNameToIP[port.Name] = virtualIP
 		if virtualIP != "" {
 			if ingressVirtualIP != "" && ingressVirtualIP != virtualIP {
