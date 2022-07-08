@@ -210,7 +210,7 @@ func (lb *LBManager) UpdateLoadBalancer(ctx context.Context, clusterName string,
 		}
 
 		if vsSummary == nil {
-			return fmt.Errorf("unable to get summary of virtual service [%s]", virtualServiceName)
+			return fmt.Errorf("virtual service [%s] does not exist", virtualServiceName)
 		}
 
 		if err != nil {
@@ -526,7 +526,7 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 			}
 
 			if vsSummary == nil {
-				return nil, fmt.Errorf("unable to get summary of virtual service [%s]", virtualServiceName)
+				return nil, fmt.Errorf("virtual service [%s] does not exist", virtualServiceName)
 			}
 
 			if err != nil {
