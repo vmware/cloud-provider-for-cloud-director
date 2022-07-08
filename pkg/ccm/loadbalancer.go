@@ -209,6 +209,10 @@ func (lb *LBManager) UpdateLoadBalancer(ctx context.Context, clusterName string,
 			return fmt.Errorf("failed to get virtual service [%s], [%v]", virtualServiceName, getVsErr)
 		}
 
+		if vsSummary == nil {
+			return fmt.Errorf("virtual service [%s] does not exist", virtualServiceName)
+		}
+
 		if err != nil {
 			addToErrorSetErr := cpiRdeManager.AddToErrorSetWithNameAndId(ctx, cpisdk.UpdateLoadbalancerError, vsSummary.Id, vsSummary.Name, err.Error())
 			if addToErrorSetErr != nil {
@@ -282,12 +286,6 @@ func (lb *LBManager) getLoadBalancer(ctx context.Context,
 		removeErr := cpiRdeManager.RDEManager.RemoveErrorByNameOrIdFromErrorSet(ctx, vcdsdk.ComponentCPI, cpisdk.GetLoadbalancerError, "", virtualServiceName)
 		if removeErr != nil {
 			klog.Errorf("there was an error removing CPI error [%s] from RDE [%s], [%v]", cpisdk.GetLoadbalancerError, lb.clusterID, err)
-		}
-		if virtualIP == "" {
-			// if any lb that is expected is not created, return false to retry creation
-			return nil, nil,
-				fmt.Errorf("unable to get virtual service summary for [%s]: [%v]",
-					virtualServiceName, err)
 		}
 		portNameToIP[port.Name] = virtualIP
 		if virtualIP != "" {
@@ -520,6 +518,11 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 			if getVsErr != nil {
 				return nil, fmt.Errorf("failed to get virtual service [%s], [%v]", virtualServiceName, getVsErr)
 			}
+
+			if vsSummary == nil {
+				return nil, fmt.Errorf("virtual service [%s] does not exist", virtualServiceName)
+			}
+
 			if err != nil {
 				addToErrorSetErr := cpiRdeManager.AddToErrorSetWithNameAndId(ctx, cpisdk.UpdateLoadbalancerError, vsSummary.Id, vsSummary.Name, err.Error())
 				if addToErrorSetErr != nil {
