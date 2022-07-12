@@ -258,7 +258,7 @@ func (vdc *VdcManager) GetOrCreateVApp(VAppName string, ovdcNetworkName string) 
 	}
 
 	//add extra waiting time for network completion
-	//Todo: Further operation should be discussed and conducted post beta
+	//Todo: Further behavior: VCDA-4054 root cause the original issue and identify the correct fix at correct place
 	time.Sleep(15 * time.Second)
 	vApp, err = vdc.Vdc.GetVAppByName(VAppName, true)
 	if err != nil {
