@@ -12,10 +12,10 @@ build-within-docker:
 	go build -ldflags "-X github.com/vmware/cloud-provider-for-cloud-director/version.Version=$(version)" -o /build/vcloud/cloud-provider-for-cloud-director cmd/ccm/main.go
 
 ccm: $(GO_CODE)
-	docker build -f Dockerfile . -t cloud-provider-for-cloud-director:$(version).latest
-	docker tag cloud-provider-for-cloud-director:$(version).latest $(REGISTRY)/cloud-provider-for-cloud-director:$(version).latest
-	# docker tag cloud-provider-for-cloud-director:$(version).latest $(REGISTRY)/cloud-provider-for-cloud-director:$(version).$$(docker images cloud-provider-for-cloud-director:$(version).latest -q)
-	docker push $(REGISTRY)/cloud-provider-for-cloud-director:$(version).latest
+	docker build -f Dockerfile . -t cloud-provider-for-cloud-director:$(version)
+	docker tag cloud-provider-for-cloud-director:$(version) $(REGISTRY)/cloud-provider-for-cloud-director:$(version)
+	# docker tag cloud-provider-for-cloud-director:$(version).latest $(REGISTRY)/cloud-provider-for-cloud-director:$(version).$$(docker images cloud-provider-for-cloud-director:$(version) -q)
+	docker push $(REGISTRY)/cloud-provider-for-cloud-director:$(version)
 	touch out/$@
 
 all: ccm

@@ -7,10 +7,14 @@ package vcdsdk
 import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
+	"path/filepath"
 	"testing"
 )
 
 func TestVApp(t *testing.T) {
+
 	vcdConfig, err := getTestVCDConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
@@ -58,22 +62,32 @@ func TestDeleteVapp(t *testing.T) {
 }
 
 func TestVdcManager_CacheVdcDetails(t *testing.T) {
-	vcdConfig, err := getTestVCDConfig()
+	authFile := filepath.Join(gitRoot, "testdata/auth_test.yaml")
+	authFileContent, err := ioutil.ReadFile(authFile)
+	assert.NoError(t, err, "There should be no error reading the auth file contents.")
+
+	var authDetails authorizationDetails
+	err = yaml.Unmarshal(authFileContent, &authDetails)
 	assert.NoError(t, err, "There should be no error parsing auth file content.")
+
+	vcdConfig, err := getTestVCDConfig()
+	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
 
 	vcdClient, err := getTestVCDClient(vcdConfig, nil)
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
+
 	vdcManager, err := NewVDCManager(vcdClient, vcdClient.ClusterOrgName, vcdClient.ClusterOVDCName)
 	err = vdcManager.cacheVdcDetails()
 	assert.NoError(t, err, "There should no error while caching VDC details")
 }
 
 func TestVMCreation(t *testing.T) {
-	// get client
+
 	vcdConfig, err := getTestVCDConfig()
-	assert.NoError(t, err, "No error creating VCD config")
-	assert.NotNil(t, err, "[%T] should not be nil", vcdConfig)
+	assert.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
+
+	// get client
 	vcdClient, err := getTestVCDClient(vcdConfig, nil)
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
