@@ -58,6 +58,10 @@ func (config *VCDAuthConfig) GetBearerToken() (*govcd.VCDClient, *http.Response,
 				klog.Errorf("failed to authenticate using refresh token")
 				return nil, nil, fmt.Errorf("failed to set authorization header: [%v]", err)
 			}
+		} else {
+			// No error while authenticating with "system" org.
+			// The persisted userorg should be changed to "system"
+			config.UserOrg = "system"
 		}
 		config.IsSysAdmin = vcdClient.Client.IsSysAdmin
 
