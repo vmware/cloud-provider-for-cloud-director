@@ -18,7 +18,7 @@ data:
         https: 443
       network: NETWORK
       vipSubnet: VIP_SUBNET_CIDR
-      certAlias: CLUSTER_ID-cert
+      certAlias: CERT_ALIAS
       enableVirtualServiceSharedIP: false # supported for VCD >= 10.4
     clusterid: CLUSTER_ID
     vAppName: VAPP
