@@ -12,6 +12,7 @@ import (
 	"io"
 	"io/ioutil"
 	"k8s.io/klog"
+	"os"
 	"strings"
 )
 
@@ -81,6 +82,16 @@ func ParseCloudConfig(configReader io.Reader) (*CloudConfig, error) {
 		return nil, fmt.Errorf("unable to decode yaml file: [%v]", err)
 	}
 	config.VCD.Host = strings.TrimRight(config.VCD.Host, "/")
+
+	if config.ClusterID == "" {
+		config.ClusterID = os.Getenv("CLUSTER_ID")
+		klog.Infof("Using ClusterID [%s] from env since config has an empty string", config.ClusterID)
+	}
+	if config.LB.CertificateAlias == "" {
+		config.LB.CertificateAlias = fmt.Sprintf("%s-cert", config.ClusterID)
+		klog.Infof("Using certAlias [%s] from env since config has an empty string", config.LB.CertificateAlias)
+	}
+
 	return config, nil
 }
 
