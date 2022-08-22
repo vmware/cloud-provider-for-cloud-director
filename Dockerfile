@@ -24,6 +24,9 @@ COPY --from=builder /go/src/github.com/vmware/cloud-provider-for-cloud-director/
 COPY --from=builder /build/vcloud/cloud-provider-for-cloud-director .
 
 RUN chmod +x /opt/vcloud/bin/cloud-provider-for-cloud-director
+RUN mkdir /opt/vcloud/logs
+RUN touch /opt/vcloud/logs/cpi-wire-log.txt
+RUN chmod 666 /opt/vcloud/logs/cpi-wire-log.txt
 
 # USER nobody
 ENTRYPOINT ["/bin/bash", "-l", "-c"]
