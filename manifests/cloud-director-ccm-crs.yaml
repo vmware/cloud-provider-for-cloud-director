@@ -148,6 +148,10 @@ spec:
       dnsPolicy: Default
       hostNetwork: true
       serviceAccountName: cloud-controller-manager
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 3000
+        fsGroup: 2000
       containers:
         - name: vmware-cloud-director-ccm
           image: harbor-repo.vmware.com/vcloud/cloud-provider-for-cloud-director:main-branch

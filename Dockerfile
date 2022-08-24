@@ -25,5 +25,5 @@ COPY --from=builder /build/vcloud/cloud-provider-for-cloud-director .
 
 RUN chmod +x /opt/vcloud/bin/cloud-provider-for-cloud-director
 
-# USER nobody
+USER nobody
 ENTRYPOINT ["/bin/bash", "-l", "-c"]
