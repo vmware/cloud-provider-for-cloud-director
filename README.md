@@ -87,6 +87,21 @@ To upgrade CPI to v1.1.1, please execute the following command
 kubectl patch deployment -n kube-system vmware-cloud-director-ccm -p '{"spec": {"template": {"spec": {"containers": [{"name": "vmware-cloud-director-ccm", "image": "projects.registry.vmware.com/vmware-cloud-director/cloud-provider-for-cloud-director:1.1.1.latest"}]}}}}'
 ```
 
+## Troubleshooting
+### Log VCD requests and responses
+
+Execute the following command to log HTTP requests to VCD and HTTP responses from VCD -
+```shell
+kubectl set env -n kube-system deployment/vmware-cloud-director-ccm GOVCD_LOG_ON_SCREEN=true -oyaml
+```
+Once the above command is executed, CPI will start logging the HTTP requests and HTTP responses made via go-vcloud-director SDK.
+The container logs can be obtained using the command `kubectl logs -n kube-system <CPI Pod>`
+
+To stop logging the HTTP requests and responses from VCD, the following command can be executed -
+```shell
+kubectl set env -n kube-system deployment/vmware-cloud-director-ccm GOVCD_LOG_ON_SCREEN-
+```
+
 ## Contributing
 Please see [CONTRIBUTING.md](CONTRIBUTING.md) for instructions on how to contribute.
 
