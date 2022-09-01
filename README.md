@@ -102,6 +102,7 @@ To stop logging the HTTP requests and responses from VCD, the following command 
 kubectl set env -n kube-system deployment/vmware-cloud-director-ccm GOVCD_LOG_ON_SCREEN-
 ```
 
+NOTE: NOTE: Please make sure to collect the logs before and after enabling the wire log. The above commands update the CPI deployment, which creates a new CPI pod. The logs present in the old pod will be lost.
 ## Contributing
 Please see [CONTRIBUTING.md](CONTRIBUTING.md) for instructions on how to contribute.
 
