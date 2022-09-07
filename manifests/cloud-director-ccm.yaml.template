@@ -154,7 +154,7 @@ spec:
         fsGroup: 2000
       containers:
         - name: vmware-cloud-director-ccm
-          image: harbor-repo.vmware.com/vcloud/cloud-provider-for-cloud-director:main-branch.81b03e6
+          image: harbor-repo.vmware.com/vcloud/cloud-provider-for-cloud-director:main-branch.__GIT_COMMIT__
           imagePullPolicy: IfNotPresent
           command:
             - /opt/vcloud/bin/cloud-provider-for-cloud-director
@@ -166,12 +166,6 @@ spec:
               mountPath: /etc/kubernetes/vcloud
             - name: vcloud-ccm-vcloud-basic-auth-volume
               mountPath: /etc/kubernetes/vcloud/basic-auth
-          env:
-          - name: CLUSTER_ID
-            valueFrom:
-              secretKeyRef:
-                name: vcloud-clusterid-secret
-                key: clusterid
       tolerations:
         - key: node.cloudprovider.kubernetes.io/uninitialized
           value: "true"

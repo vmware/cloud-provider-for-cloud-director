@@ -14,11 +14,18 @@ build-within-docker:
 ccm: $(GO_CODE)
 	docker build -f Dockerfile . -t cloud-provider-for-cloud-director:$(version)
 	docker tag cloud-provider-for-cloud-director:$(version) $(REGISTRY)/cloud-provider-for-cloud-director:$(version)
-	# docker tag cloud-provider-for-cloud-director:$(version).latest $(REGISTRY)/cloud-provider-for-cloud-director:$(version).$$(docker images cloud-provider-for-cloud-director:$(version) -q)
+	docker tag cloud-provider-for-cloud-director:$(version) $(REGISTRY)/cloud-provider-for-cloud-director:$(version).$(GITCOMMIT)
 	docker push $(REGISTRY)/cloud-provider-for-cloud-director:$(version)
 	touch out/$@
 
-all: ccm
+prod: ccm
+	sed -e "s/\.__GIT_COMMIT__//g" manifests/cloud-director-ccm.yaml.template > manifests/cloud-director-ccm.yaml
+	sed -e "s/\.__GIT_COMMIT__//g" manifests/cloud-director-ccm-crs.yaml.template > manifests/cloud-director-ccm-crs.yaml
+
+dev: ccm
+	docker push $(REGISTRY)/cloud-provider-for-cloud-director:$(version).$(GITCOMMIT)
+	sed -e "s/__GIT_COMMIT__/$(GITCOMMIT)/g" manifests/cloud-director-ccm.yaml.template > manifests/cloud-director-ccm.yaml
+	sed -e "s/__GIT_COMMIT__/$(GITCOMMIT)/g" manifests/cloud-director-ccm-crs.yaml.template > manifests/cloud-director-ccm-crs.yaml
 
 vendor:
 	go mod edit -go=1.17
