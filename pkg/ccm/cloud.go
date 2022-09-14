@@ -10,6 +10,7 @@ package ccm
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/config"
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/cpisdk"
@@ -121,7 +122,11 @@ func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error
 		klog.Errorf("failed to create CPI status in the RDE [%s]: [%v]", cloudConfig.ClusterID, err)
 		err = cpiRdeManager.AddToErrorSet(context.Background(), cpisdk.CPIStatusUpgradeRdeError, cloudConfig.ClusterID, err.Error())
 		if err != nil {
-			klog.Errorf("failed to add CPI error [%s] to ErrorSet in RDE [%s], [%v]", cpisdk.CPIStatusUpgradeRdeError, cloudConfig.ClusterID, err)
+			if _, ok := err.(vcdsdk.NonCAPVCDEntityError); !ok {
+				msg := fmt.Sprintf("failed to add CPI error [%s] to ErrorSet in RDE [%s], [%v]", cpisdk.CPIStatusUpgradeRdeError, cloudConfig.ClusterID, err)
+				klog.Error(msg)
+				return nil, errors.New(msg)
+			}
 		}
 	} else {
 		klog.Infof("successfully created CPI status in RDE [%s]", cloudConfig.ClusterID)

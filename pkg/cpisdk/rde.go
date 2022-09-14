@@ -263,54 +263,60 @@ func UpgradeCPISectionInStatus(statusMap map[string]interface{}) (map[string]int
 func (cpiRDEManager *CPIRDEManager) UpgradeCPIStatusOfExistingRDE(ctx context.Context, rdeId string) error {
 	klog.Infof("upgrading CPI section in RDE")
 	client := cpiRDEManager.RDEManager.Client
-	rde, resp, etag, err := client.APIClient.DefinedEntityApi.GetDefinedEntity(ctx, rdeId)
-	if resp != nil && resp.StatusCode != http.StatusOK {
-		var responseMessageBytes []byte
-		if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
-			responseMessageBytes = gsErr.Body()
+	for retries := 0; retries < vcdsdk.MaxRDEUpdateRetries; retries++ {
+		rde, resp, etag, err := client.APIClient.DefinedEntityApi.GetDefinedEntity(ctx, rdeId)
+		if resp != nil && resp.StatusCode != http.StatusOK {
+			var responseMessageBytes []byte
+			if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
+				responseMessageBytes = gsErr.Body()
+			}
+			return fmt.Errorf(
+				"failed to get RDE with id [%s] when upgrading CPI status; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]",
+				rdeId, http.StatusOK, resp.StatusCode, string(responseMessageBytes), err)
+		} else if err != nil {
+			return fmt.Errorf("error while getting the RDE [%s]: [%v]", rdeId, err)
 		}
-		return fmt.Errorf(
-			"failed to get RDE with id [%s] when upgrading CPI status; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]",
-			rdeId, http.StatusOK, resp.StatusCode, string(responseMessageBytes), err)
-	} else if err != nil {
-		return fmt.Errorf("error while getting the RDE [%s]: [%v]", rdeId, err)
-	}
 
-	if !vcdsdk.IsCAPVCDEntityType(rde.EntityType) {
-		nonCapvcdEntityError := vcdsdk.NonCAPVCDEntityError{
-			EntityTypeID: rde.EntityType,
+		if !vcdsdk.IsCAPVCDEntityType(rde.EntityType) {
+			nonCapvcdEntityError := vcdsdk.NonCAPVCDEntityError{
+				EntityTypeID: rde.EntityType,
+			}
+			return nonCapvcdEntityError
 		}
-		return nonCapvcdEntityError
-	}
 
-	statusEntity, ok := rde.Entity["status"]
-	if !ok {
-		return fmt.Errorf("failed to fetch status section in RDE [%s] when upgrading CPI section",
-			rdeId)
-	}
-	statusMap, ok := statusEntity.(map[string]interface{})
-	if !ok {
-		return fmt.Errorf("failed to convert status section of RDE [%s] to map[string]interface{} during RDE upgrade",
-			rdeId)
-	}
-	_, err = UpgradeCPISectionInStatus(statusMap)
-	if err != nil {
-		return fmt.Errorf("failed to upgrade CPI section in RDE [%s]: [%v]", rdeId, err)
-	}
-
-	_, resp, err = client.APIClient.DefinedEntityApi.UpdateDefinedEntity(ctx, rde, etag, rdeId, nil)
-	if resp != nil && resp.StatusCode != http.StatusOK {
-		var responseMessageBytes []byte
-		if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
-			responseMessageBytes = gsErr.Body()
+		statusEntity, ok := rde.Entity["status"]
+		if !ok {
+			return fmt.Errorf("failed to fetch status section in RDE [%s] when upgrading CPI section",
+				rdeId)
 		}
-		return fmt.Errorf(
-			"failed to create CPI status for RDE [%s]; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]",
-			rdeId, http.StatusOK, resp.StatusCode, string(responseMessageBytes), err)
-	} else if err != nil {
-		return fmt.Errorf("error while getting the RDE [%s]: [%v]", rdeId, err)
+		statusMap, ok := statusEntity.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("failed to convert status section of RDE [%s] to map[string]interface{} during RDE upgrade",
+				rdeId)
+		}
+		_, err = UpgradeCPISectionInStatus(statusMap)
+		if err != nil {
+			return fmt.Errorf("failed to upgrade CPI section in RDE [%s]: [%v]", rdeId, err)
+		}
+
+		_, resp, err = client.APIClient.DefinedEntityApi.UpdateDefinedEntity(ctx, rde, etag, rdeId, nil)
+		if resp != nil && resp.StatusCode != http.StatusOK {
+			var responseMessageBytes []byte
+			if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
+				responseMessageBytes = gsErr.Body()
+			}
+			klog.Errorf(
+				"failed to create CPI status for RDE [%s]; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]. Remaining retry attempts: [%d]",
+				rdeId, http.StatusOK, resp.StatusCode, string(responseMessageBytes), err, vcdsdk.MaxRDEUpdateRetries-retries+1)
+			continue
+		} else if err != nil {
+			klog.Errorf("error while getting the RDE [%s]: [%v]. Remaining retry attempts: [%d]", rdeId, err, vcdsdk.MaxRDEUpdateRetries-retries+1)
+			continue
+		}
+		klog.Infof("successfully upgraded CPI status section of the RDE [%s]", rdeId)
+		return nil
 	}
-	return nil
+	return fmt.Errorf("failed to upgrade CPI status section of the RDE [%s] after [%d] retries", rdeId, vcdsdk.MaxRDEUpdateRetries)
 }
 
 // AddVIPToVCDResourceSet adds virtual IP to the RDE and removes the VIP from older "status.virtualIPs" section if present
