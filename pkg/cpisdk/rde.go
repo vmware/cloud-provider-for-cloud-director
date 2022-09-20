@@ -305,12 +305,12 @@ func (cpiRDEManager *CPIRDEManager) UpgradeCPIStatusOfExistingRDE(ctx context.Co
 			if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
 				responseMessageBytes = gsErr.Body()
 			}
-			klog.Errorf(
+			klog.Warningf(
 				"failed to create CPI status for RDE [%s]; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]. Remaining retry attempts: [%d]",
 				rdeId, http.StatusOK, resp.StatusCode, string(responseMessageBytes), err, vcdsdk.MaxRDEUpdateRetries-retries+1)
 			continue
 		} else if err != nil {
-			klog.Errorf("error while getting the RDE [%s]: [%v]. Remaining retry attempts: [%d]", rdeId, err, vcdsdk.MaxRDEUpdateRetries-retries+1)
+			klog.Warningf("error while getting the RDE [%s]: [%v]. Remaining retry attempts: [%d]", rdeId, err, vcdsdk.MaxRDEUpdateRetries-retries+1)
 			continue
 		}
 		klog.Infof("successfully upgraded CPI status section of the RDE [%s]", rdeId)
