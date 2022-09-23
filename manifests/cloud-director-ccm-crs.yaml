@@ -154,7 +154,7 @@ spec:
         fsGroup: 2000
       containers:
         - name: vmware-cloud-director-ccm
-          image: harbor-repo.vmware.com/vcloud/cloud-provider-for-cloud-director:main-branch.f05891c
+          image: projects.registry.vmware.com/vmware-cloud-director/cloud-provider-for-cloud-director:main-branch.98f137e
           imagePullPolicy: IfNotPresent
           command:
             - /opt/vcloud/bin/cloud-provider-for-cloud-director
