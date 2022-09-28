@@ -89,11 +89,14 @@ func TestDNATRuleCRUDE(t *testing.T) {
 	assert.NoError(t, err, "gateway manager should be created without error")
 
 	dnatRuleName := fmt.Sprintf("test-dnat-rule-%s", uuid.New().String())
-	err = gm.CreateDNATRule(ctx, dnatRuleName, "1.2.3.4", "1.2.3.5", 80, 36123, nil)
+	appPortProfile, err := gm.CreateAppPortProfile(GetAppPortProfileName(dnatRuleName), 80)
+	assert.NoError(t, err, "Unable to create App Port Profile")
+
+	err = gm.CreateDNATRule(ctx, dnatRuleName, "1.2.3.4", "1.2.3.5", 80, 36123, appPortProfile)
 	assert.NoError(t, err, "Unable to create dnat rule")
 
 	// repeated creation should not fail
-	err = gm.CreateDNATRule(ctx, dnatRuleName, "1.2.3.4", "1.2.3.5", 80, 36123, nil)
+	err = gm.CreateDNATRule(ctx, dnatRuleName, "1.2.3.4", "1.2.3.5", 80, 36123, appPortProfile)
 	assert.NoError(t, err, "Unable to create dnat rule for the second time")
 
 	natRuleRef, err := gm.GetNATRuleRef(ctx, dnatRuleName)
@@ -552,12 +555,14 @@ func TestLoadBalancerCRUDE(t *testing.T) {
 	virtualServiceNameHttp := fmt.Sprintf("%s-http", virtualServiceNamePrefix)
 
 	// using _ to escape the *util.AllocatedResourcesMap
-	freeIPObtained, _, err := gm.GetLoadBalancer(ctx, virtualServiceNameHttp, "", oneArm)
+	lbPoolNameHttp := fmt.Sprintf("%s-http", lbPoolNamePrefix)
+	freeIPObtained, _, err := gm.GetLoadBalancer(ctx, virtualServiceNameHttp, lbPoolNameHttp, oneArm)
 	assert.NoError(t, err, "Load Balancer should be found")
 	assert.Equal(t, freeIP, freeIPObtained, "The IPs should match")
 
 	virtualServiceNameHttps := fmt.Sprintf("%s-https", virtualServiceNamePrefix)
-	freeIPObtained, _, err = gm.GetLoadBalancer(ctx, virtualServiceNameHttps, "", oneArm)
+	lbPoolNameHttps := fmt.Sprintf("%s-https", lbPoolNamePrefix)
+	freeIPObtained, _, err = gm.GetLoadBalancer(ctx, virtualServiceNameHttps, lbPoolNameHttps, oneArm)
 	assert.NoError(t, err, "Load Balancer should be found")
 	assert.Equal(t, freeIP, freeIPObtained, "The IPs should match")
 
