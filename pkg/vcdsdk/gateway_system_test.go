@@ -577,7 +577,7 @@ func TestLoadBalancerCRUDE(t *testing.T) {
 	_, err = gm.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-http", virtualServiceNamePrefix+"-http", updatedIps, updatedInternalPort, 80, nil, false, "HTTP", &util.AllocatedResourcesMap{})
 	assert.NoError(t, err, "HTTP Load Balancer should be updated")
 
-	_, err = gm.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-https", virtualServiceNamePrefix+"-https", updatedIps, updatedInternalPort, 443, nil, false, "HTTP", &util.AllocatedResourcesMap{})
+	_, err = gm.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-https", virtualServiceNamePrefix+"-https", updatedIps, updatedInternalPort, 443, nil, false, "HTTPS", &util.AllocatedResourcesMap{})
 	assert.NoError(t, err, "HTTPS Load Balancer should be updated")
 
 	// update external port only
@@ -587,24 +587,24 @@ func TestLoadBalancerCRUDE(t *testing.T) {
 	_, err = gm.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-http", virtualServiceNamePrefix+"-http", updatedIps, updatedInternalPort, updatedExternalPortHttp, nil, false, "HTTP", &util.AllocatedResourcesMap{})
 	assert.NoError(t, err, "HTTP Load Balancer should be updated")
 
-	_, err = gm.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-https", virtualServiceNamePrefix+"-https", updatedIps, updatedInternalPort, updatedExternalPortHttps, nil, false, "HTTP", &util.AllocatedResourcesMap{})
+	_, err = gm.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-https", virtualServiceNamePrefix+"-https", updatedIps, updatedInternalPort, updatedExternalPortHttps, nil, false, "HTTPS", &util.AllocatedResourcesMap{})
 	assert.NoError(t, err, "HTTPS Load Balancer should be updated")
 
 	// No error on repeated update
 	_, err = gm.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-http", virtualServiceNamePrefix+"-http", updatedIps, updatedInternalPort, updatedExternalPortHttp, nil, false, "HTTP", &util.AllocatedResourcesMap{})
 	assert.NoError(t, err, "HTTP Load Balancer should be updated")
 
-	_, err = gm.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-https", virtualServiceNamePrefix+"-https", updatedIps, updatedInternalPort, updatedExternalPortHttps, nil, false, "HTTP", &util.AllocatedResourcesMap{})
+	_, err = gm.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-https", virtualServiceNamePrefix+"-https", updatedIps, updatedInternalPort, updatedExternalPortHttps, nil, false, "HTTPS", &util.AllocatedResourcesMap{})
 	assert.NoError(t, err, "HTTPS Load Balancer should be updated")
 
 	_, err = gm.DeleteLoadBalancer(ctx, virtualServiceNamePrefix, lbPoolNamePrefix, portDetailsList, oneArm, &util.AllocatedResourcesMap{})
 	assert.NoError(t, err, "Load Balancer should be deleted")
 
-	freeIPObtained, _, err = gm.GetLoadBalancer(ctx, virtualServiceNameHttp, "", oneArm)
+	freeIPObtained, _, err = gm.GetLoadBalancer(ctx, virtualServiceNameHttp, lbPoolNameHttp, oneArm)
 	assert.NoError(t, err, "Load Balancer should not be found")
 	assert.Empty(t, freeIPObtained, "The VIP should not be found")
 
-	freeIPObtained, _, err = gm.GetLoadBalancer(ctx, virtualServiceNameHttps, "", oneArm)
+	freeIPObtained, _, err = gm.GetLoadBalancer(ctx, virtualServiceNameHttps, lbPoolNameHttps, oneArm)
 	assert.NoError(t, err, "Load Balancer should not be found")
 	assert.Empty(t, freeIPObtained, "The VIP should not be found")
 
@@ -613,7 +613,7 @@ func TestLoadBalancerCRUDE(t *testing.T) {
 
 	_, err = gm.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-http", virtualServiceNamePrefix+"-http", updatedIps, updatedInternalPort, 80, nil, false, "HTTP", &util.AllocatedResourcesMap{})
 	assert.Error(t, err, "updating deleted HTTP Load Balancer should be an error")
-	_, err = gm.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-https", virtualServiceNamePrefix+"https", updatedIps, updatedInternalPort, 43, nil, false, "HTTP", &util.AllocatedResourcesMap{})
+	_, err = gm.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-https", virtualServiceNamePrefix+"https", updatedIps, updatedInternalPort, 43, nil, false, "HTTPS", &util.AllocatedResourcesMap{})
 	assert.Error(t, err, "updating deleted HTTPS Load Balancer should be an error")
 
 	return
