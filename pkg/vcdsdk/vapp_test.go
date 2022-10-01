@@ -24,7 +24,7 @@ func TestVApp(t *testing.T) {
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
 
 	// create vApp
-	vAppName := "manual-vapp"
+	vAppName := "test-vapp"
 	vdcManager, err := NewVDCManager(vcdClient, vcdClient.ClusterOrgName, vcdClient.ClusterOVDCName)
 	assert.NoError(t, err, "error creating VDCManager")
 
@@ -32,6 +32,13 @@ func TestVApp(t *testing.T) {
 	vappObj, err := vdcManager.GetOrCreateVApp(vAppName, vcdConfig.OvdcNetwork)
 	assert.NoError(t, err, "error creating VApp")
 	assert.NotNil(t, vappObj, "vApp created should not be nil")
+
+	// create VM
+	vmNamePrefix := "test-vm"
+	err = vdcManager.AddNewVM(vmNamePrefix, vAppName, 1, "cse",
+		"Ubuntu 20.04 and Kubernetes v1.21.11+vmware.1", "", "4core4gb",
+		"", "", true)
+	assert.NoError(t, err, "should create vm correctly")
 
 	vms, err := vdcManager.FindAllVMsInVapp(vAppName)
 	assert.NoError(t, err, "unable to find VMs in vApp")
