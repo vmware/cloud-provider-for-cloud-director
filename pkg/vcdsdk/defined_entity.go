@@ -622,7 +622,7 @@ func (rdeManager *RDEManager) AddToVCDResourceSet(ctx context.Context, component
 			return fmt.Errorf("error occurred when updating VCDResource set of %s status in RDE [%s]: [%v]", rdeManager.ClusterID, component, err)
 		}
 		if !rdeUpdateRequried {
-			klog.V(3).Info("VCD resource set for the RDE [%s(%s)] already has the resource [%v] in the status of the component [%s]",
+			klog.V(3).Infof("VCD resource set for the RDE [%s(%s)] already has the resource [%v] in the status of the component [%s]",
 				rde.Name, rde.Id, vcdResource, component)
 			return nil
 		}

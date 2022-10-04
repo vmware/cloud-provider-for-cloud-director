@@ -228,6 +228,7 @@ func TestAddToVCDResourceSet(t *testing.T) {
 		VCDResource    VCDResource
 		ExpectedStatus map[string]interface{}
 		Message        string
+		ExpectedUpdateRequired bool
 	}
 	testCaseList := []TestCase{
 		{
@@ -286,6 +287,7 @@ func TestAddToVCDResourceSet(t *testing.T) {
 					"key1": "value1",
 				},
 			},
+			ExpectedUpdateRequired: true,
 		},
 		{
 			Message: "do not add duplicate resource when it is already present in VCD resource set",
@@ -341,6 +343,7 @@ func TestAddToVCDResourceSet(t *testing.T) {
 					"key1": "value1",
 				},
 			},
+			ExpectedUpdateRequired:  false,
 		},
 		{
 			Message: "recreate CPI status if absent",
@@ -382,11 +385,13 @@ func TestAddToVCDResourceSet(t *testing.T) {
 					"key1": "value1",
 				},
 			},
+			ExpectedUpdateRequired: true,
 		},
 	}
 	for _, tc := range testCaseList {
-		updatedStatusMap, err := AddVCDResourceToStatusMap(ComponentCPI, "ccm", "1.1.1", tc.StatusMap, tc.VCDResource)
+		updatedStatusMap, updateRequired, err := AddVCDResourceToStatusMap(ComponentCPI, "ccm", "1.1.1", tc.StatusMap, tc.VCDResource)
 		assert.NoError(t, err, "Expected no error ", tc.Message)
+		assert.Equal(t, tc.ExpectedUpdateRequired, updateRequired, "Update required flag returned was not as expected")
 
 		actualJson, err := convertToJson(updatedStatusMap)
 		assert.NoError(t, err, tc.Message, "expected no error converting updatedStatusMap to json")
