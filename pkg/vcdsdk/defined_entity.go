@@ -616,12 +616,12 @@ func (rdeManager *RDEManager) AddToVCDResourceSet(ctx context.Context, component
 			Name:              resourceName,
 			AdditionalDetails: additionalDetails,
 		}
-		updatedStatusMap, rdeUpdateRequried, err := AddVCDResourceToStatusMap(component, rdeManager.StatusComponentName,
+		updatedStatusMap, rdeUpdateRequired, err := AddVCDResourceToStatusMap(component, rdeManager.StatusComponentName,
 			rdeManager.StatusComponentVersion, statusMap, vcdResource)
 		if err != nil {
 			return fmt.Errorf("error occurred when updating VCDResource set of %s status in RDE [%s]: [%v]", rdeManager.ClusterID, component, err)
 		}
-		if !rdeUpdateRequried {
+		if !rdeUpdateRequired {
 			klog.V(3).Infof("VCD resource set for the RDE [%s(%s)] already has the resource [%v] in the status of the component [%s]",
 				rde.Name, rde.Id, vcdResource, component)
 			return nil
