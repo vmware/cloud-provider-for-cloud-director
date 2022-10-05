@@ -89,11 +89,14 @@ func TestDNATRuleCRUDE(t *testing.T) {
 	assert.NoError(t, err, "gateway manager should be created without error")
 
 	dnatRuleName := fmt.Sprintf("test-dnat-rule-%s", uuid.New().String())
-	err = gm.CreateDNATRule(ctx, dnatRuleName, "1.2.3.4", "1.2.3.5", 80, 36123, nil)
+	appPortProfile, err := gm.CreateAppPortProfile(GetAppPortProfileName(dnatRuleName), 80)
+	assert.NoError(t, err, "Unable to create App Port Profile")
+
+	err = gm.CreateDNATRule(ctx, dnatRuleName, "1.2.3.4", "1.2.3.5", 80, 36123, appPortProfile)
 	assert.NoError(t, err, "Unable to create dnat rule")
 
 	// repeated creation should not fail
-	err = gm.CreateDNATRule(ctx, dnatRuleName, "1.2.3.4", "1.2.3.5", 80, 36123, nil)
+	err = gm.CreateDNATRule(ctx, dnatRuleName, "1.2.3.4", "1.2.3.5", 80, 36123, appPortProfile)
 	assert.NoError(t, err, "Unable to create dnat rule for the second time")
 
 	natRuleRef, err := gm.GetNATRuleRef(ctx, dnatRuleName)
@@ -152,13 +155,13 @@ func TestLBPoolCRUDE(t *testing.T) {
 	assert.NoError(t, err, "gateway manager should be created without error")
 
 	lbPoolName := fmt.Sprintf("test-lb-pool-%s", uuid.New().String())
-	lbPoolRef, err := gm.CreateLoadBalancerPool(ctx, lbPoolName, []string{"1.2.3.4", "1.2.3.5"}, 31234)
+	lbPoolRef, err := gm.CreateLoadBalancerPool(ctx, lbPoolName, []string{"1.2.3.4", "1.2.3.5"}, 31234, "HTTP")
 	assert.NoError(t, err, "Unable to create lb pool")
 	require.NotNil(t, lbPoolRef, "LB Pool reference should not be nil")
 	assert.Equal(t, lbPoolName, lbPoolRef.Name, "LB Pool name should match")
 
 	// repeated creation should not fail
-	lbPoolRef, err = gm.CreateLoadBalancerPool(ctx, lbPoolName, []string{"1.2.3.4", "1.2.3.5"}, 31234)
+	lbPoolRef, err = gm.CreateLoadBalancerPool(ctx, lbPoolName, []string{"1.2.3.4", "1.2.3.5"}, 31234, "HTTP")
 	assert.NoError(t, err, "Unable to create lb pool for the second time")
 	require.NotNil(t, lbPoolRef, "LB Pool reference should not be nil")
 	assert.Equal(t, lbPoolName, lbPoolRef.Name, "LB Pool name should match")
@@ -170,14 +173,14 @@ func TestLBPoolCRUDE(t *testing.T) {
 	assert.NotEmpty(t, lbPoolRefObtained.Id, "LB Pool ID should not be empty")
 
 	updatedIps := []string{"5.5.5.5"}
-	lbPoolRefUpdated, err := gm.UpdateLoadBalancerPool(ctx, lbPoolName, updatedIps, 55555)
+	lbPoolRefUpdated, err := gm.UpdateLoadBalancerPool(ctx, lbPoolName, updatedIps, 55555, "HTTP")
 	assert.NoError(t, err, "No lbPool ref for updated lbPool")
 	require.NotNil(t, lbPoolRefUpdated, "LB Pool reference should not be nil")
 	assert.Equal(t, lbPoolRefUpdated.Name, lbPoolRef.Name, "LB Pool name should match")
 	assert.NotEmpty(t, lbPoolRefUpdated.Id, "LB Pool ID should not be empty")
 
 	// repeated update should work
-	lbPoolRefUpdated, err = gm.UpdateLoadBalancerPool(ctx, lbPoolName, updatedIps, 55555)
+	lbPoolRefUpdated, err = gm.UpdateLoadBalancerPool(ctx, lbPoolName, updatedIps, 55555, "HTTP")
 	assert.NoError(t, err, "There should be no error on repeated LB pool update")
 	require.NotNil(t, lbPoolRefUpdated, "LB Pool reference should not be nil on repeated update")
 	assert.Equal(t, lbPoolRefUpdated.Name, lbPoolRef.Name, "LB Pool name should match on repeated update")
@@ -201,7 +204,7 @@ func TestLBPoolCRUDE(t *testing.T) {
 	assert.NoError(t, err, "Get should not fail when lb pool is absent")
 	assert.Nil(t, lbPoolRef, "Deleted lb pool reference should be nil")
 
-	lbPoolRef, err = gm.UpdateLoadBalancerPool(ctx, lbPoolName, updatedIps, 55555)
+	lbPoolRef, err = gm.UpdateLoadBalancerPool(ctx, lbPoolName, updatedIps, 55555, "HTTP")
 	assert.Error(t, err, "Updating deleted lb pool should fail")
 	assert.Nil(t, lbPoolRef, "Deleted lb pool reference should be nil")
 
@@ -318,7 +321,7 @@ func TestVirtualServiceHttpCRUDE(t *testing.T) {
 	assert.NoError(t, err, "gateway manager should be created without error")
 
 	lbPoolName := fmt.Sprintf("test-lb-pool-%s", uuid.New().String())
-	lbPoolRef, err := gm.CreateLoadBalancerPool(ctx, lbPoolName, []string{"1.2.3.4", "1.2.3.5"}, 31234)
+	lbPoolRef, err := gm.CreateLoadBalancerPool(ctx, lbPoolName, []string{"1.2.3.4", "1.2.3.5"}, 31234, "HTTP")
 	assert.NoError(t, err, "Unable to create lb pool")
 
 	segRef, err := gm.GetLoadBalancerSEG(ctx)
@@ -416,7 +419,7 @@ func TestVirtualServiceHttpsCRUDE(t *testing.T) {
 	assert.NoError(t, err, "gateway manager should be created without error")
 
 	lbPoolName := fmt.Sprintf("test-lb-pool-%s", uuid.New().String())
-	lbPoolRef, err := gm.CreateLoadBalancerPool(ctx, lbPoolName, []string{"1.2.3.4", "1.2.3.5"}, 31234)
+	lbPoolRef, err := gm.CreateLoadBalancerPool(ctx, lbPoolName, []string{"1.2.3.4", "1.2.3.5"}, 31234, "HTTPS")
 	assert.NoError(t, err, "Unable to create lb pool")
 
 	segRef, err := gm.GetLoadBalancerSEG(ctx)
@@ -542,72 +545,76 @@ func TestLoadBalancerCRUDE(t *testing.T) {
 
 	oneArm := &OneArm{
 		StartIP: "192.168.8.2",
-		EndIP: "192.168.8.100",
+		EndIP:   "192.168.8.100",
 	}
 	freeIP, err = gm.CreateLoadBalancer(ctx, virtualServiceNamePrefix,
-		lbPoolNamePrefix, []string{"1.2.3.4", "1.2.3.5"}, portDetailsList, oneArm, &util.AllocatedResourcesMap{})
+		lbPoolNamePrefix, []string{"1.2.3.4", "1.2.3.5"}, portDetailsList, oneArm, false, nil, "", &util.AllocatedResourcesMap{})
 	assert.NoError(t, err, "Load Balancer should be created")
 	assert.NotEmpty(t, freeIP, "There should be a non-empty IP returned")
 
 	virtualServiceNameHttp := fmt.Sprintf("%s-http", virtualServiceNamePrefix)
-	freeIPObtained, err := gm.GetLoadBalancer(ctx, virtualServiceNameHttp, oneArm)
+
+	// using _ to escape the *util.AllocatedResourcesMap
+	lbPoolNameHttp := fmt.Sprintf("%s-http", lbPoolNamePrefix)
+	freeIPObtained, _, err := gm.GetLoadBalancer(ctx, virtualServiceNameHttp, lbPoolNameHttp, oneArm)
 	assert.NoError(t, err, "Load Balancer should be found")
 	assert.Equal(t, freeIP, freeIPObtained, "The IPs should match")
 
 	virtualServiceNameHttps := fmt.Sprintf("%s-https", virtualServiceNamePrefix)
-	freeIPObtained, err = gm.GetLoadBalancer(ctx, virtualServiceNameHttps, oneArm)
+	lbPoolNameHttps := fmt.Sprintf("%s-https", lbPoolNamePrefix)
+	freeIPObtained, _, err = gm.GetLoadBalancer(ctx, virtualServiceNameHttps, lbPoolNameHttps, oneArm)
 	assert.NoError(t, err, "Load Balancer should be found")
 	assert.Equal(t, freeIP, freeIPObtained, "The IPs should match")
 
 	freeIP, err = gm.CreateLoadBalancer(ctx, virtualServiceNamePrefix,
-		lbPoolNamePrefix, []string{"1.2.3.4", "1.2.3.5"}, portDetailsList, oneArm, &util.AllocatedResourcesMap{})
+		lbPoolNamePrefix, []string{"1.2.3.4", "1.2.3.5"}, portDetailsList, oneArm, false, nil, "", &util.AllocatedResourcesMap{})
 	assert.NoError(t, err, "Load Balancer should be created even on second attempt")
 	assert.NotEmpty(t, freeIP, "There should be a non-empty IP returned")
 
 	updatedIps := []string{"5.5.5.5"}
 	updatedInternalPort := int32(55555)
 	// update IPs and internal port
-	_, err = gm.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-http", virtualServiceNamePrefix+"-http", updatedIps, updatedInternalPort, 80, &util.AllocatedResourcesMap{})
+	_, err = gm.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-http", virtualServiceNamePrefix+"-http", updatedIps, updatedInternalPort, 80, nil, false, "HTTP", &util.AllocatedResourcesMap{})
 	assert.NoError(t, err, "HTTP Load Balancer should be updated")
 
-	_, err = gm.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-https", virtualServiceNamePrefix+"-https", updatedIps, updatedInternalPort, 443, &util.AllocatedResourcesMap{})
+	_, err = gm.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-https", virtualServiceNamePrefix+"-https", updatedIps, updatedInternalPort, 443, nil, false, "HTTPS", &util.AllocatedResourcesMap{})
 	assert.NoError(t, err, "HTTPS Load Balancer should be updated")
 
 	// update external port only
 	updatedExternalPortHttp := int32(8080)
 	updatedExternalPortHttps := int32(8443)
-	_, err = gm.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-http", virtualServiceNamePrefix+"-http", updatedIps, updatedInternalPort, updatedExternalPortHttp, &util.AllocatedResourcesMap{})
+
+	_, err = gm.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-http", virtualServiceNamePrefix+"-http", updatedIps, updatedInternalPort, updatedExternalPortHttp, nil, false, "HTTP", &util.AllocatedResourcesMap{})
 	assert.NoError(t, err, "HTTP Load Balancer should be updated")
 
-	_, err = gm.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-https", virtualServiceNamePrefix+"-https", updatedIps, updatedInternalPort, updatedExternalPortHttps, &util.AllocatedResourcesMap{})
+	_, err = gm.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-https", virtualServiceNamePrefix+"-https", updatedIps, updatedInternalPort, updatedExternalPortHttps, nil, false, "HTTPS", &util.AllocatedResourcesMap{})
 	assert.NoError(t, err, "HTTPS Load Balancer should be updated")
 
 	// No error on repeated update
-	_, err = gm.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-http", virtualServiceNamePrefix+"-http", updatedIps, updatedInternalPort, updatedExternalPortHttp, &util.AllocatedResourcesMap{})
+	_, err = gm.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-http", virtualServiceNamePrefix+"-http", updatedIps, updatedInternalPort, updatedExternalPortHttp, nil, false, "HTTP", &util.AllocatedResourcesMap{})
 	assert.NoError(t, err, "HTTP Load Balancer should be updated")
 
-	_, err = gm.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-https", virtualServiceNamePrefix+"-https", updatedIps, updatedInternalPort, updatedExternalPortHttps, &util.AllocatedResourcesMap{})
+	_, err = gm.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-https", virtualServiceNamePrefix+"-https", updatedIps, updatedInternalPort, updatedExternalPortHttps, nil, false, "HTTPS", &util.AllocatedResourcesMap{})
 	assert.NoError(t, err, "HTTPS Load Balancer should be updated")
 
 	_, err = gm.DeleteLoadBalancer(ctx, virtualServiceNamePrefix, lbPoolNamePrefix, portDetailsList, oneArm, &util.AllocatedResourcesMap{})
 	assert.NoError(t, err, "Load Balancer should be deleted")
 
-	freeIPObtained, err = gm.GetLoadBalancer(ctx, virtualServiceNameHttp, oneArm)
+	freeIPObtained, _, err = gm.GetLoadBalancer(ctx, virtualServiceNameHttp, lbPoolNameHttp, oneArm)
 	assert.NoError(t, err, "Load Balancer should not be found")
 	assert.Empty(t, freeIPObtained, "The VIP should not be found")
 
-	freeIPObtained, err = gm.GetLoadBalancer(ctx, virtualServiceNameHttps, oneArm)
+	freeIPObtained, _, err = gm.GetLoadBalancer(ctx, virtualServiceNameHttps, lbPoolNameHttps, oneArm)
 	assert.NoError(t, err, "Load Balancer should not be found")
 	assert.Empty(t, freeIPObtained, "The VIP should not be found")
 
 	_, err = gm.DeleteLoadBalancer(ctx, virtualServiceNamePrefix, lbPoolNamePrefix, portDetailsList, oneArm, &util.AllocatedResourcesMap{})
 	assert.NoError(t, err, "Repeated deletion of Load Balancer should not fail")
 
-	_, err = gm.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-http", virtualServiceNamePrefix+"-http", updatedIps, updatedInternalPort, 80, &util.AllocatedResourcesMap{})
+	_, err = gm.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-http", virtualServiceNamePrefix+"-http", updatedIps, updatedInternalPort, 80, nil, false, "HTTP", &util.AllocatedResourcesMap{})
 	assert.Error(t, err, "updating deleted HTTP Load Balancer should be an error")
-	_, err = gm.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-https", virtualServiceNamePrefix+"https", updatedIps, updatedInternalPort, 43, &util.AllocatedResourcesMap{})
+	_, err = gm.UpdateLoadBalancer(ctx, lbPoolNamePrefix+"-https", virtualServiceNamePrefix+"https", updatedIps, updatedInternalPort, 43, nil, false, "HTTPS", &util.AllocatedResourcesMap{})
 	assert.Error(t, err, "updating deleted HTTPS Load Balancer should be an error")
 
 	return
 }
-

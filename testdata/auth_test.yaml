@@ -1,4 +1,4 @@
-username: "tenant-user-name"
+username: "user"
 password: "tenant-password"
 userOrg: "tenant-org"
 refreshToken: "tenant-user-refresh-token"
