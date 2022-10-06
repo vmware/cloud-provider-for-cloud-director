@@ -100,8 +100,16 @@ func (gatewayManager *GatewayManager) getOVDCNetwork(ctx context.Context, networ
 	ovdcNetworksAPI := client.APIClient.OrgVdcNetworksApi
 	pageNum := int32(1)
 	ovdcNetworkID := ""
+	org, err := client.VCDClient.GetOrgByName(client.ClusterOrgName)
+	if err != nil {
+		return nil, fmt.Errorf("error getting org by name for org [%s]: [%v]", client.ClusterOrgName, err)
+	}
+	if org == nil || org.Org == nil {
+		return nil, fmt.Errorf("obtained nil org when getting org by name [%s]", client.ClusterOrgName)
+	}
+	networkFound := false
 	for {
-		ovdcNetworks, resp, err := ovdcNetworksAPI.GetAllVdcNetworks(ctx, pageNum, 32, nil)
+		ovdcNetworks, resp, err := ovdcNetworksAPI.GetAllVdcNetworks(ctx, pageNum, 32, org.Org.ID, nil)
 		if err != nil {
 			// TODO: log resp in debug mode only
 			return nil, fmt.Errorf("unable to get all ovdc networks: [%+v]: [%v]", resp, err)
@@ -112,15 +120,15 @@ func (gatewayManager *GatewayManager) getOVDCNetwork(ctx context.Context, networ
 		}
 
 		for _, ovdcNetwork := range ovdcNetworks.Values {
+			if networkFound {
+				return nil, fmt.Errorf("found more than one network with the name [%s] found in the org [%s] - please ensure the network name is unique within an org", gatewayManager.NetworkName, client.ClusterOrgName)
+			}
 			if ovdcNetwork.Name == gatewayManager.NetworkName {
 				ovdcNetworkID = ovdcNetwork.Id
-				break
+				networkFound = true
 			}
 		}
 
-		if ovdcNetworkID != "" {
-			break
-		}
 		pageNum++
 	}
 	if ovdcNetworkID == "" {
@@ -129,7 +137,7 @@ func (gatewayManager *GatewayManager) getOVDCNetwork(ctx context.Context, networ
 	}
 
 	ovdcNetworkAPI := client.APIClient.OrgVdcNetworkApi
-	ovdcNetwork, resp, err := ovdcNetworkAPI.GetOrgVdcNetwork(ctx, ovdcNetworkID)
+	ovdcNetwork, resp, err := ovdcNetworkAPI.GetOrgVdcNetwork(ctx, ovdcNetworkID, org.Org.ID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get network for id [%s]: [%+v]: [%v]", ovdcNetworkID, resp, err)
 	}
@@ -145,10 +153,17 @@ func (gatewayManager *GatewayManager) GetLoadBalancerSEG(ctx context.Context) (*
 
 	client := gatewayManager.Client
 	pageNum := int32(1)
+	org, err := client.VCDClient.GetOrgByName(client.ClusterOrgName)
+	if err != nil {
+		return nil, fmt.Errorf("error getting org by name for org [%s]: [%v]", client.ClusterOrgName, err)
+	}
+	if org == nil || org.Org == nil {
+		return nil, fmt.Errorf("obtained nil org when getting org by name [%s]", client.ClusterOrgName)
+	}
 	var chosenSEGAssignment *swaggerClient.LoadBalancerServiceEngineGroupAssignment = nil
 	for {
 		segAssignments, resp, err := client.APIClient.LoadBalancerServiceEngineGroupAssignmentsApi.GetServiceEngineGroupAssignments(
-			ctx, pageNum, 25,
+			ctx, pageNum, 25, org.Org.ID,
 			&swaggerClient.LoadBalancerServiceEngineGroupAssignmentsApiGetServiceEngineGroupAssignmentsOpts{
 				Filter: optional.NewString(fmt.Sprintf("gatewayRef.id==%s", gatewayManager.GatewayRef.Id)),
 			},
@@ -237,9 +252,16 @@ func (gatewayManager *GatewayManager) GetNATRuleRef(ctx context.Context, natRule
 	client := gatewayManager.Client
 	var natRuleRef *NatRuleRef = nil
 	cursor := optional.EmptyString()
+	org, err := client.VCDClient.GetOrgByName(client.ClusterOrgName)
+	if err != nil {
+		return nil, fmt.Errorf("error getting org by name for org [%s]: [%v]", client.ClusterOrgName, err)
+	}
+	if org == nil || org.Org == nil {
+		return nil, fmt.Errorf("obtained nil org when getting org by name [%s]", client.ClusterOrgName)
+	}
 	for {
 		natRules, resp, err := client.APIClient.EdgeGatewayNatRulesApi.GetNatRules(
-			ctx, 128, gatewayManager.GatewayRef.Id,
+			ctx, 128, gatewayManager.GatewayRef.Id, org.Org.ID,
 			&swaggerClient.EdgeGatewayNatRulesApiGetNatRulesOpts{
 				Cursor: cursor,
 			})
@@ -393,6 +415,13 @@ func (gatewayManager *GatewayManager) CreateDNATRule(ctx context.Context, dnatRu
 		return fmt.Errorf("empty app port profile")
 	}
 
+	org, err := client.VCDClient.GetOrgByName(client.ClusterOrgName)
+	if err != nil {
+		return fmt.Errorf("error getting org by name for org [%s]: [%v]", client.ClusterOrgName, err)
+	}
+	if org == nil || org.Org == nil {
+		return fmt.Errorf("obtained nil org when getting org by name [%s]", client.ClusterOrgName)
+	}
 	ruleType := swaggerClient.DNAT_NatRuleType
 	edgeNatRule := swaggerClient.EdgeNatRule{
 		Name:              dnatRuleName,
@@ -406,7 +435,7 @@ func (gatewayManager *GatewayManager) CreateDNATRule(ctx context.Context, dnatRu
 			Id:   appPortProfile.NsxtAppPortProfile.ID,
 		},
 	}
-	resp, err := client.APIClient.EdgeGatewayNatRulesApi.CreateNatRule(ctx, edgeNatRule, gatewayManager.GatewayRef.Id)
+	resp, err := client.APIClient.EdgeGatewayNatRulesApi.CreateNatRule(ctx, edgeNatRule, gatewayManager.GatewayRef.Id, org.Org.ID)
 	if err != nil {
 		return fmt.Errorf("unable to create dnat rule [%s]: [%s:%d]=>[%s:%d]: [%v]", dnatRuleName,
 			externalIP, externalPort, internalIP, internalPort, err)
@@ -481,10 +510,17 @@ func (gatewayManager *GatewayManager) UpdateDNATRule(ctx context.Context, dnatRu
 		return nil, fmt.Errorf("unexpected error while looking for nat rule [%s] in gateway [%s]: [%v]",
 			dnatRuleName, gatewayManager.GatewayRef.Name, err)
 	}
+	org, err := client.VCDClient.GetOrgByName(client.ClusterOrgName)
+	if err != nil {
+		return nil, fmt.Errorf("error getting org by name for org [%s]: [%v]", client.ClusterOrgName, err)
+	}
+	if org == nil || org.Org == nil {
+		return nil, fmt.Errorf("obtained nil org when getting org by name [%s]", client.ClusterOrgName)
+	}
 	if dnatRuleRef == nil {
 		return nil, fmt.Errorf("failed to get DNAT rule name [%s]", dnatRuleName)
 	}
-	dnatRule, resp, err := client.APIClient.EdgeGatewayNatRuleApi.GetNatRule(ctx, gatewayManager.GatewayRef.Id, dnatRuleRef.ID)
+	dnatRule, resp, err := client.APIClient.EdgeGatewayNatRuleApi.GetNatRule(ctx, gatewayManager.GatewayRef.Id, dnatRuleRef.ID, org.Org.ID)
 	if resp != nil && resp.StatusCode != http.StatusOK {
 		var responseMessageBytes []byte
 		if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
@@ -506,7 +542,7 @@ func (gatewayManager *GatewayManager) UpdateDNATRule(ctx context.Context, dnatRu
 	dnatRule.ExternalAddresses = externalIP
 	dnatRule.InternalAddresses = internalIP
 	dnatRule.DnatExternalPort = fmt.Sprintf("%d", externalPort)
-	resp, err = client.APIClient.EdgeGatewayNatRuleApi.UpdateNatRule(ctx, dnatRule, gatewayManager.GatewayRef.Id, dnatRuleRef.ID)
+	resp, err = client.APIClient.EdgeGatewayNatRuleApi.UpdateNatRule(ctx, dnatRule, gatewayManager.GatewayRef.Id, dnatRuleRef.ID, org.Org.ID)
 	if resp != nil && resp.StatusCode != http.StatusAccepted {
 		var responseMessageBytes []byte
 		if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
@@ -594,6 +630,13 @@ func (gatewayManager *GatewayManager) DeleteDNATRule(ctx context.Context, dnatRu
 		return fmt.Errorf("gateway reference should not be nil")
 	}
 
+	org, err := client.VCDClient.GetOrgByName(client.ClusterOrgName)
+	if err != nil {
+		return fmt.Errorf("error getting org by name for org [%s]: [%v]", client.ClusterOrgName, err)
+	}
+	if org == nil || org.Org == nil {
+		return fmt.Errorf("obtained nil org when getting org by name [%s]", client.ClusterOrgName)
+	}
 	dnatRuleRef, err := gatewayManager.GetNATRuleRef(ctx, dnatRuleName)
 	if err != nil {
 		return fmt.Errorf("unexpected error while finding dnat rule [%s]: [%v]", dnatRuleName, err)
@@ -606,7 +649,7 @@ func (gatewayManager *GatewayManager) DeleteDNATRule(ctx context.Context, dnatRu
 		klog.Infof("DNAT rule [%s] does not exist", dnatRuleName)
 	} else {
 		resp, err := client.APIClient.EdgeGatewayNatRuleApi.DeleteNatRule(ctx,
-			gatewayManager.GatewayRef.Id, dnatRuleRef.ID)
+			gatewayManager.GatewayRef.Id, dnatRuleRef.ID, org.Org.ID)
 		if resp.StatusCode != http.StatusAccepted {
 			var responseMessageBytes []byte
 			if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
@@ -635,9 +678,16 @@ func (gatewayManager *GatewayManager) getLoadBalancerPoolSummary(ctx context.Con
 	}
 
 	client := gatewayManager.Client
+	org, err := client.VCDClient.GetOrgByName(client.ClusterOrgName)
+	if err != nil {
+		return nil, fmt.Errorf("error getting org by name for org [%s]: [%v]", client.ClusterOrgName, err)
+	}
+	if org == nil || org.Org == nil {
+		return nil, fmt.Errorf("obtained nil org when getting org by name [%s]", client.ClusterOrgName)
+	}
 	// This should return exactly one result, so no need to accumulate results
 	lbPoolSummaries, resp, err := client.APIClient.EdgeGatewayLoadBalancerPoolsApi.GetPoolSummariesForGateway(
-		ctx, 1, 25, gatewayManager.GatewayRef.Id,
+		ctx, 1, 25, gatewayManager.GatewayRef.Id, org.Org.ID,
 		&swaggerClient.EdgeGatewayLoadBalancerPoolsApiGetPoolSummariesForGatewayOpts{
 			Filter: optional.NewString(fmt.Sprintf("name==%s", lbPoolName)),
 		},
@@ -706,6 +756,14 @@ func (gatewayManager *GatewayManager) CreateLoadBalancerPool(ctx context.Context
 		return nil, fmt.Errorf("gateway reference should not be nil")
 	}
 
+	org, err := client.VCDClient.GetOrgByName(client.ClusterOrgName)
+	if err != nil {
+		return nil, fmt.Errorf("error getting org by name for org [%s]: [%v]", client.ClusterOrgName, err)
+	}
+	if org == nil || org.Org == nil {
+		return nil, fmt.Errorf("obtained nil org when getting org by name [%s]", client.ClusterOrgName)
+	}
+
 	lbPoolRef, err := gatewayManager.getLoadBalancerPool(ctx, lbPoolName)
 	if err != nil {
 		return nil, fmt.Errorf("unexpected error when querying for pool [%s]: [%v]",
@@ -722,7 +780,8 @@ func (gatewayManager *GatewayManager) CreateLoadBalancerPool(ctx context.Context
 	}
 	lbPoolUniqueIPList := util.NewSet(lbPoolIPList).GetElements()
 	lbPool, lbPoolMembers := gatewayManager.formLoadBalancerPool(lbPoolName, lbPoolUniqueIPList, internalPort, healthMonitor)
-	resp, err := client.APIClient.EdgeGatewayLoadBalancerPoolsApi.CreateLoadBalancerPool(ctx, lbPool)
+	resp, err := client.APIClient.EdgeGatewayLoadBalancerPoolsApi.CreateLoadBalancerPool(ctx, lbPool, org.Org.ID)
+
 	if err != nil {
 		return nil, fmt.Errorf("unable to create loadbalancer pool with name [%s], members [%+v]: resp [%+v]: [%v]",
 			lbPoolName, lbPoolMembers, resp, err)
@@ -776,12 +835,19 @@ func (gatewayManager *GatewayManager) DeleteLoadBalancerPool(ctx context.Context
 
 		return nil
 	}
+	org, err := client.VCDClient.GetOrgByName(client.ClusterOrgName)
+	if err != nil {
+		return fmt.Errorf("error getting org by name for org [%s]: [%v]", client.ClusterOrgName, err)
+	}
+	if org == nil || org.Org == nil {
+		return fmt.Errorf("obtained nil org when getting org by name [%s]", client.ClusterOrgName)
+	}
 
 	if err = gatewayManager.checkIfLBPoolIsReady(ctx, lbPoolName); err != nil {
 		return err
 	}
 
-	resp, err := client.APIClient.EdgeGatewayLoadBalancerPoolApi.DeleteLoadBalancerPool(ctx, lbPoolRef.Id)
+	resp, err := client.APIClient.EdgeGatewayLoadBalancerPoolApi.DeleteLoadBalancerPool(ctx, lbPoolRef.Id, org.Org.ID)
 	if resp.StatusCode != http.StatusAccepted {
 		return fmt.Errorf("unable to delete lb pool; expected http response [%v], obtained [%v]",
 			http.StatusAccepted, resp.StatusCode)
@@ -826,7 +892,15 @@ func (gatewayManager *GatewayManager) UpdateLoadBalancerPool(ctx context.Context
 		return nil, fmt.Errorf("no lb pool found with name [%s]: [%v]", lbPoolName, err)
 	}
 
-	lbPool, resp, err := client.APIClient.EdgeGatewayLoadBalancerPoolApi.GetLoadBalancerPool(ctx, lbPoolRef.Id)
+	org, err := client.VCDClient.GetOrgByName(client.ClusterOrgName)
+	if err != nil {
+		return nil, fmt.Errorf("error getting org by name for org [%s]: [%v]", client.ClusterOrgName, err)
+	}
+	if org == nil || org.Org == nil {
+		return nil, fmt.Errorf("obtained nil org when getting org by name [%s]", client.ClusterOrgName)
+	}
+
+	lbPool, resp, err := client.APIClient.EdgeGatewayLoadBalancerPoolApi.GetLoadBalancerPool(ctx, lbPoolRef.Id, org.Org.ID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get loadbalancer pool with id [%s]: [%v]", lbPoolRef.Id, err)
 	}
@@ -846,7 +920,7 @@ func (gatewayManager *GatewayManager) UpdateLoadBalancerPool(ctx context.Context
 		klog.Errorf("failed to update DNAT rule; gateway [%s] is busy", gatewayManager.GatewayRef.Name)
 		return nil, fmt.Errorf("unable to update loadbalancer pool [%s]; gateway is busy: [%s]", lbPoolName, err)
 	}
-	lbPool, resp, err = client.APIClient.EdgeGatewayLoadBalancerPoolApi.GetLoadBalancerPool(ctx, lbPoolRef.Id)
+	lbPool, resp, err = client.APIClient.EdgeGatewayLoadBalancerPoolApi.GetLoadBalancerPool(ctx, lbPoolRef.Id, org.Org.ID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get loadbalancer pool with id [%s]: [%v]", lbPoolRef.Id, err)
 	}
@@ -859,7 +933,7 @@ func (gatewayManager *GatewayManager) UpdateLoadBalancerPool(ctx context.Context
 		healthMonitor = &swaggerClient.EdgeLoadBalancerHealthMonitor{Type_: protocol}
 	}
 	updatedLBPool, lbPoolMembers := gatewayManager.formLoadBalancerPool(lbPoolName, lbPoolUniqueIPList, internalPort, healthMonitor)
-	resp, err = client.APIClient.EdgeGatewayLoadBalancerPoolApi.UpdateLoadBalancerPool(ctx, updatedLBPool, lbPoolRef.Id)
+	resp, err = client.APIClient.EdgeGatewayLoadBalancerPoolApi.UpdateLoadBalancerPool(ctx, updatedLBPool, lbPoolRef.Id, org.Org.ID)
 	if resp != nil && resp.StatusCode != http.StatusAccepted {
 		var responseMessageBytes []byte
 		if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
@@ -904,9 +978,16 @@ func (gatewayManager *GatewayManager) GetVirtualService(ctx context.Context,
 		return nil, fmt.Errorf("gateway reference should not be nil")
 	}
 
+	org, err := client.VCDClient.GetOrgByName(client.ClusterOrgName)
+	if err != nil {
+		return nil, fmt.Errorf("error getting org by name for org [%s]: [%v]", client.ClusterOrgName, err)
+	}
+	if org == nil || org.Org == nil {
+		return nil, fmt.Errorf("obtained nil org when getting org by name [%s]", client.ClusterOrgName)
+	}
 	// This should return exactly one result, so no need to accumulate results
 	lbVSSummaries, resp, err := client.APIClient.EdgeGatewayLoadBalancerVirtualServicesApi.GetVirtualServiceSummariesForGateway(
-		ctx, 1, 25, gatewayManager.GatewayRef.Id,
+		ctx, 1, 25, gatewayManager.GatewayRef.Id, org.Org.ID,
 		&swaggerClient.EdgeGatewayLoadBalancerVirtualServicesApiGetVirtualServiceSummariesForGatewayOpts{
 			Filter: optional.NewString(fmt.Sprintf("name==%s", virtualServiceName)),
 		},
@@ -993,7 +1074,14 @@ func (gatewayManager *GatewayManager) checkIfLBPoolIsReady(ctx context.Context, 
 
 func (gatewayManager *GatewayManager) checkIfGatewayIsReady(ctx context.Context) error {
 	client := gatewayManager.Client
-	edgeGateway, resp, err := client.APIClient.EdgeGatewayApi.GetEdgeGateway(ctx, gatewayManager.GatewayRef.Id)
+	org, err := client.VCDClient.GetOrgByName(client.ClusterOrgName)
+	if err != nil {
+		return fmt.Errorf("error getting org by name for org [%s]: [%v]", client.ClusterOrgName, err)
+	}
+	if org == nil || org.Org == nil {
+		return fmt.Errorf("obtained nil org when getting org by name [%s]", client.ClusterOrgName)
+	}
+	edgeGateway, resp, err := client.APIClient.EdgeGatewayApi.GetEdgeGateway(ctx, gatewayManager.GatewayRef.Id, org.Org.ID)
 	if resp != nil && resp.StatusCode != http.StatusOK {
 		var responseMessageBytes []byte
 		if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
@@ -1027,6 +1115,13 @@ func (gatewayManager *GatewayManager) UpdateVirtualServicePort(ctx context.Conte
 	if len(vsSummary.ServicePorts) == 0 {
 		return nil, fmt.Errorf("virtual service [%s] has no service ports", virtualServiceName)
 	}
+	org, err := client.VCDClient.GetOrgByName(client.ClusterOrgName)
+	if err != nil {
+		return nil, fmt.Errorf("error getting org by name for org [%s]: [%v]", client.ClusterOrgName, err)
+	}
+	if org == nil || org.Org == nil {
+		return nil, fmt.Errorf("obtained nil org when getting org by name [%s]", client.ClusterOrgName)
+	}
 
 	if vsSummary.ServicePorts[0].PortStart == externalPort {
 		klog.Infof("virtual service [%s] is already configured with port [%d]", virtualServiceName, externalPort)
@@ -1038,7 +1133,7 @@ func (gatewayManager *GatewayManager) UpdateVirtualServicePort(ctx context.Conte
 	if err = gatewayManager.checkIfVirtualServiceIsReady(ctx, virtualServiceName); err != nil {
 		return nil, err
 	}
-	vs, _, err := client.APIClient.EdgeGatewayLoadBalancerVirtualServiceApi.GetVirtualService(ctx, vsSummary.Id)
+	vs, _, err := client.APIClient.EdgeGatewayLoadBalancerVirtualServiceApi.GetVirtualService(ctx, vsSummary.Id, org.Org.ID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get virtual service with ID [%s]", vsSummary.Id)
 	}
@@ -1047,7 +1142,7 @@ func (gatewayManager *GatewayManager) UpdateVirtualServicePort(ctx context.Conte
 		vs.ServicePorts[0].PortStart = externalPort
 		vs.ServicePorts[0].PortEnd = externalPort
 	}
-	resp, err := client.APIClient.EdgeGatewayLoadBalancerVirtualServiceApi.UpdateVirtualService(ctx, vs, vsSummary.Id)
+	resp, err := client.APIClient.EdgeGatewayLoadBalancerVirtualServiceApi.UpdateVirtualService(ctx, vs, vsSummary.Id, org.Org.ID)
 	if resp != nil && resp.StatusCode != http.StatusAccepted {
 		var responseMessageBytes []byte
 		if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
@@ -1159,15 +1254,14 @@ func (gatewayManager *GatewayManager) CreateVirtualService(ctx context.Context, 
 		return nil, fmt.Errorf("unhandled virtual service type [%s]", vsType)
 	}
 
+	clusterOrg, err := client.VCDClient.GetOrgByName(client.ClusterOrgName)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get org for org [%s]: [%v]", client.ClusterOrgName, err)
+	}
+	if clusterOrg == nil || clusterOrg.Org == nil {
+		return nil, fmt.Errorf("obtained nil org for name [%s]", client.ClusterOrgName)
+	}
 	if useSSL {
-		clusterOrg, err := client.VCDClient.GetOrgByName(client.ClusterOrgName)
-		if err != nil {
-			return nil, fmt.Errorf("unable to get org for org [%s]: [%v]", client.ClusterOrgName, err)
-		}
-		if clusterOrg == nil || clusterOrg.Org == nil {
-			return nil, fmt.Errorf("obtained nil org for name [%s]", client.ClusterOrgName)
-		}
-
 		certLibItems, resp, err := client.APIClient.CertificateLibraryApi.QueryCertificateLibrary(ctx,
 			1, 128,
 			&swaggerClient.CertificateLibraryApiQueryCertificateLibraryOpts{
@@ -1189,7 +1283,7 @@ func (gatewayManager *GatewayManager) CreateVirtualService(ctx context.Context, 
 		}
 	}
 
-	resp, gsErr := client.APIClient.EdgeGatewayLoadBalancerVirtualServicesApi.CreateVirtualService(ctx, *virtualServiceConfig)
+	resp, gsErr := client.APIClient.EdgeGatewayLoadBalancerVirtualServicesApi.CreateVirtualService(ctx, *virtualServiceConfig, clusterOrg.Org.ID)
 	if resp != nil && resp.StatusCode != http.StatusAccepted {
 		return nil, fmt.Errorf(
 			"unable to create virtual service; expected http response [%v], obtained [%v]: resp: [%#v]: [%v]: [%v]",
@@ -1250,6 +1344,13 @@ func (gatewayManager *GatewayManager) DeleteVirtualService(ctx context.Context, 
 
 		return nil
 	}
+	clusterOrg, err := client.VCDClient.GetOrgByName(client.ClusterOrgName)
+	if err != nil {
+		return fmt.Errorf("unable to get org for org [%s]: [%v]", client.ClusterOrgName, err)
+	}
+	if clusterOrg == nil || clusterOrg.Org == nil {
+		return fmt.Errorf("obtained nil org for name [%s]", client.ClusterOrgName)
+	}
 
 	err = gatewayManager.checkIfVirtualServiceIsReady(ctx, virtualServiceName)
 	if err != nil {
@@ -1258,7 +1359,7 @@ func (gatewayManager *GatewayManager) DeleteVirtualService(ctx context.Context, 
 	}
 
 	resp, err := client.APIClient.EdgeGatewayLoadBalancerVirtualServiceApi.DeleteVirtualService(
-		ctx, vsSummary.Id)
+		ctx, vsSummary.Id, clusterOrg.Org.ID)
 	if resp != nil && resp.StatusCode != http.StatusAccepted {
 		var responseMessageBytes []byte
 		if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
@@ -1373,7 +1474,14 @@ func (gatewayManager *GatewayManager) GetLoadBalancerPoolMemberIPs(ctx context.C
 	if lbPoolRef == nil {
 		return nil, govcd.ErrorEntityNotFound
 	}
-	lbPool, resp, err := client.APIClient.EdgeGatewayLoadBalancerPoolApi.GetLoadBalancerPool(ctx, lbPoolRef.Id)
+	clusterOrg, err := client.VCDClient.GetOrgByName(client.ClusterOrgName)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get org for org [%s]: [%v]", client.ClusterOrgName, err)
+	}
+	if clusterOrg == nil || clusterOrg.Org == nil {
+		return nil, fmt.Errorf("obtained nil org for name [%s]", client.ClusterOrgName)
+	}
+	lbPool, resp, err := client.APIClient.EdgeGatewayLoadBalancerPoolApi.GetLoadBalancerPool(ctx, lbPoolRef.Id, clusterOrg.Org.ID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get the details for LB pool [%s]: [%+v]: [%v]",
 			lbPoolRef.Name, resp, err)

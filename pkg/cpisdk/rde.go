@@ -49,7 +49,14 @@ func (cpiRDEManager *CPIRDEManager) GetRDEVirtualIps(ctx context.Context) ([]str
 	}
 
 	client := cpiRDEManager.RDEManager.Client
-	defEnt, _, etag, err := client.APIClient.DefinedEntityApi.GetDefinedEntity(ctx, cpiRDEManager.RDEManager.ClusterID)
+	clusterOrg, err := client.VCDClient.GetOrgByName(client.ClusterOrgName)
+	if err != nil {
+		return nil, "", nil, fmt.Errorf("unable to get org for org [%s]: [%v]", client.ClusterOrgName, err)
+	}
+	if clusterOrg == nil || clusterOrg.Org == nil {
+		return nil, "", nil, fmt.Errorf("obtained nil org for name [%s]", client.ClusterOrgName)
+	}
+	defEnt, _, etag, err := client.APIClient.DefinedEntityApi.GetDefinedEntity(ctx, cpiRDEManager.RDEManager.ClusterID, clusterOrg.Org.ID)
 	if err != nil {
 		return nil, "", nil, fmt.Errorf("error when getting defined entity: [%v]", err)
 	}
@@ -77,8 +84,15 @@ func (cpiRDEManager *CPIRDEManager) updateRDEVirtualIps(ctx context.Context, upd
 		return nil, fmt.Errorf("failed to locally edit RDE with ID [%s] with virtual IPs: [%v]", cpiRDEManager.RDEManager.ClusterID, err)
 	}
 	client := cpiRDEManager.RDEManager.Client
+	clusterOrg, err := client.VCDClient.GetOrgByName(client.ClusterOrgName)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get org for org [%s]: [%v]", client.ClusterOrgName, err)
+	}
+	if clusterOrg == nil || clusterOrg.Org == nil {
+		return nil, fmt.Errorf("obtained nil org for name [%s]", client.ClusterOrgName)
+	}
 	// can pass invokeHooks
-	_, httpResponse, err := client.APIClient.DefinedEntityApi.UpdateDefinedEntity(ctx, *defEnt, etag, cpiRDEManager.RDEManager.ClusterID, nil)
+	_, httpResponse, err := client.APIClient.DefinedEntityApi.UpdateDefinedEntity(ctx, *defEnt, etag, cpiRDEManager.RDEManager.ClusterID, clusterOrg.Org.ID,nil)
 	if err != nil {
 		return httpResponse, fmt.Errorf("error when updating defined entity [%s]: [%v]", cpiRDEManager.RDEManager.ClusterID, err)
 	}
@@ -263,8 +277,15 @@ func UpgradeCPISectionInStatus(statusMap map[string]interface{}) (map[string]int
 func (cpiRDEManager *CPIRDEManager) UpgradeCPIStatusOfExistingRDE(ctx context.Context, rdeId string) error {
 	klog.Infof("upgrading CPI section in RDE")
 	client := cpiRDEManager.RDEManager.Client
+	clusterOrg, err := client.VCDClient.GetOrgByName(client.ClusterOrgName)
+	if err != nil {
+		return fmt.Errorf("unable to get org for org [%s]: [%v]", client.ClusterOrgName, err)
+	}
+	if clusterOrg == nil || clusterOrg.Org == nil {
+		return fmt.Errorf("obtained nil org for name [%s]", client.ClusterOrgName)
+	}
 	for retries := 0; retries < vcdsdk.MaxRDEUpdateRetries; retries++ {
-		rde, resp, etag, err := client.APIClient.DefinedEntityApi.GetDefinedEntity(ctx, rdeId)
+		rde, resp, etag, err := client.APIClient.DefinedEntityApi.GetDefinedEntity(ctx, rdeId, clusterOrg.Org.ID)
 		if resp != nil && resp.StatusCode != http.StatusOK {
 			var responseMessageBytes []byte
 			if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
@@ -299,7 +320,7 @@ func (cpiRDEManager *CPIRDEManager) UpgradeCPIStatusOfExistingRDE(ctx context.Co
 			return fmt.Errorf("failed to upgrade CPI section in RDE [%s]: [%v]", rdeId, err)
 		}
 
-		_, resp, err = client.APIClient.DefinedEntityApi.UpdateDefinedEntity(ctx, rde, etag, rdeId, nil)
+		_, resp, err = client.APIClient.DefinedEntityApi.UpdateDefinedEntity(ctx, rde, etag, rdeId, clusterOrg.Org.ID, nil)
 		if resp != nil && resp.StatusCode != http.StatusOK {
 			var responseMessageBytes []byte
 			if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
@@ -333,9 +354,17 @@ func (cpiRDEManager *CPIRDEManager) AddVIPToVCDResourceSet(ctx context.Context, 
 			vsName, vcdsdk.VcdResourceVirtualService, vsID)
 		return nil
 	}
+	client := cpiRDEManager.RDEManager.Client
+	clusterOrg, err := client.VCDClient.GetOrgByName(client.ClusterOrgName)
+	if err != nil {
+		return fmt.Errorf("unable to get org for org [%s]: [%v]", client.ClusterOrgName, err)
+	}
+	if clusterOrg == nil || clusterOrg.Org == nil {
+		return fmt.Errorf("obtained nil org for name [%s]", client.ClusterOrgName)
+	}
 	for i := vcdsdk.MaxRDEUpdateRetries; i > 1; i-- {
 		rde, resp, etag, err := cpiRDEManager.RDEManager.Client.APIClient.DefinedEntityApi.GetDefinedEntity(
-			ctx, cpiRDEManager.RDEManager.ClusterID)
+			ctx, cpiRDEManager.RDEManager.ClusterID, clusterOrg.Org.ID)
 		if resp != nil && resp.StatusCode != http.StatusOK {
 			var responseMessageBytes []byte
 			if gsErr, ok := err.(swaggerClient.GenericSwaggerError); ok {
@@ -406,7 +435,7 @@ func (cpiRDEManager *CPIRDEManager) AddVIPToVCDResourceSet(ctx context.Context, 
 		rde.Entity["status"] = updatedStatusMap
 
 		_, resp, err = cpiRDEManager.RDEManager.Client.APIClient.DefinedEntityApi.UpdateDefinedEntity(ctx, rde, etag,
-			cpiRDEManager.RDEManager.ClusterID, nil)
+			cpiRDEManager.RDEManager.ClusterID, clusterOrg.Org.ID, nil)
 		if resp != nil {
 			if resp.StatusCode == http.StatusPreconditionFailed {
 				klog.Errorf("wrong etag while adding [%v] to VCDResourceSet in RDE [%s]. Retry attempts remaining: [%d]",
