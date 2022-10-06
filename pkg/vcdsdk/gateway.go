@@ -39,10 +39,6 @@ type GatewayManager struct {
 
 // CacheGatewayDetails get gateway reference and cache some details in client object
 func (gatewayManager *GatewayManager) cacheGatewayDetails(ctx context.Context) error {
-	if gatewayManager.Client.VDC == nil || gatewayManager.Client.VDC.Vdc == nil {
-		return fmt.Errorf("VDC cannot be nil")
-	}
-
 	if gatewayManager.NetworkName == "" {
 		return fmt.Errorf("network name should not be empty")
 	}
@@ -124,7 +120,7 @@ func (gatewayManager *GatewayManager) getOVDCNetwork(ctx context.Context, networ
 
 		for _, ovdcNetwork := range ovdcNetworks.Values {
 			if networkFound {
-				return nil, fmt.Errorf("found more than one network with the name [%s] found in the org [%s] - please ensure the network name is unique within an org", gatewayManager.NetworkName, client.ClusterOrgName)
+				return nil, fmt.Errorf("found more than one network with the name [%s] in the org [%s] - please ensure the network name is unique within an org", gatewayManager.NetworkName, client.ClusterOrgName)
 			}
 			if ovdcNetwork.Name == gatewayManager.NetworkName {
 				ovdcNetworkID = ovdcNetwork.Id
