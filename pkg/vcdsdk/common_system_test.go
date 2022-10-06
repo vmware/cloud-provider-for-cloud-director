@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 var (
@@ -109,7 +110,7 @@ func getTestVCDClient(vcdConfig *VcdConfig, inputMap map[string]interface{}) (*C
 	}
 
 	return NewVCDClientFromSecrets(
-		vcdConfigCopy.Host,
+		strings.TrimRight(vcdConfigCopy.Host, "/"),
 		vcdConfigCopy.TenantOrg,
 		vcdConfigCopy.TenantVdc,
 		vcdConfigCopy.UserOrg,
