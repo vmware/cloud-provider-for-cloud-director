@@ -265,7 +265,7 @@ func (rdeManager *RDEManager) AddToErrorSet(ctx context.Context, componentSectio
 		_, resp, err = rdeManager.Client.APIClient.DefinedEntityApi.UpdateDefinedEntity(ctx, rde, etag, rdeManager.ClusterID, nil)
 		if resp != nil {
 			if resp.StatusCode == http.StatusPreconditionFailed {
-				klog.V(4).Infof("wrong etag while adding newError [%v] in RDE [%s]. Retry attempts remaining: [%d]", newError, rdeManager.ClusterID, i-1)
+				klog.V(4).Infof("wrong etag [%s] while adding newError [%s] in RDE [%s]. Retry attempts remaining: [%d]", etag, newError.Name, rdeManager.ClusterID, i-1)
 				continue
 			} else if resp.StatusCode != http.StatusOK {
 				var responseMessageBytes []byte
