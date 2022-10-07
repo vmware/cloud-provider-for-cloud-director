@@ -84,7 +84,7 @@ func (a *EdgeGatewayNatRulesApiService) CreateNatRule(ctx context.Context, edgeN
 		}
 	}
 	if orgID != "" {
-		localVarHeaderParams["X-VMWARE-VCLOUD-TENANT-CONTEXT"] = orgID
+		localVarHeaderParams[TenantContextHeader] = orgID
 	}
 	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFileName, localVarFileBytes)
 	if err != nil {
@@ -220,7 +220,7 @@ func (a *EdgeGatewayNatRulesApiService) GetNatRules(ctx context.Context, pageSiz
 		}
 	}
 	if orgID != "" {
-		localVarHeaderParams["X-VMWARE-VCLOUD-TENANT-CONTEXT"] = orgID
+		localVarHeaderParams[TenantContextHeader] = orgID
 	}
 	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFileName, localVarFileBytes)
 	if err != nil {

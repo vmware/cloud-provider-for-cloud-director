@@ -185,7 +185,7 @@ func (a *EdgeGatewayApiService) GetEdgeGateway(ctx context.Context, gatewayId st
 		}
 	}
 	if orgID != "" {
-		localVarHeaderParams["X-VMWARE-VCLOUD-TENANT-CONTEXT"] = orgID
+		localVarHeaderParams[TenantContextHeader] = orgID
 	}
 	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFileName, localVarFileBytes)
 	if err != nil {
@@ -332,7 +332,7 @@ func (a *EdgeGatewayApiService) GetUsedIpAddresses(ctx context.Context, page int
 		}
 	}
 	if orgID != "" {
-		localVarHeaderParams["X-VMWARE-VCLOUD-TENANT-CONTEXT"] = orgID
+		localVarHeaderParams[TenantContextHeader] = orgID
 	}
 	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFileName, localVarFileBytes)
 	if err != nil {
