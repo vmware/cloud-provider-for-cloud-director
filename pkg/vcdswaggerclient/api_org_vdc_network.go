@@ -328,7 +328,7 @@ func (a *OrgVdcNetworkApiService) GetOrgVdcNetwork(ctx context.Context, vdcNetwo
 		}
 	}
 	if orgID != "" {
-		localVarHeaderParams["X-VMWARE-VCLOUD-TENANT-CONTEXT"] = orgID
+		localVarHeaderParams[TenantContextHeader] = orgID
 	}
 	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFileName, localVarFileBytes)
 	if err != nil {

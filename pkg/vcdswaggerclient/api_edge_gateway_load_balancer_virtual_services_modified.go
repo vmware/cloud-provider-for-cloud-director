@@ -83,7 +83,7 @@ func (a *EdgeGatewayLoadBalancerVirtualServicesApiService) CreateVirtualService(
 		}
 	}
 	if orgID != "" {
-		localVarHeaderParams["X-VMWARE-VCLOUD-TENANT-CONTEXT"] = orgID
+		localVarHeaderParams[TenantContextHeader] = orgID
 	}
 	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFileName, localVarFileBytes)
 	if err != nil {
@@ -208,7 +208,7 @@ func (a *EdgeGatewayLoadBalancerVirtualServicesApiService) GetVirtualServiceSumm
 		}
 	}
 	if orgID != "" {
-		localVarHeaderParams["X-VMWARE-VCLOUD-TENANT-CONTEXT"] = orgID
+		localVarHeaderParams[TenantContextHeader] = orgID
 	}
 	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFileName, localVarFileBytes)
 	if err != nil {
