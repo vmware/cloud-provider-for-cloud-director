@@ -1,4 +1,3 @@
-
 /*
  * VMware Cloud Director OpenAPI
  *
@@ -41,7 +40,6 @@ func (a *LoadBalancerServiceEngineGroupAssignmentsApiService) CreateServiceEngin
 		localVarPostBody   interface{}
 		localVarFileName   string
 		localVarFileBytes  []byte
-
 	)
 
 	// create path and map variables
@@ -99,10 +97,9 @@ func (a *LoadBalancerServiceEngineGroupAssignmentsApiService) CreateServiceEngin
 		return localVarHttpResponse, err
 	}
 
-
 	if localVarHttpResponse.StatusCode >= 300 {
 		newErr := GenericSwaggerError{
-			body: localVarBody,
+			body:  localVarBody,
 			error: localVarHttpResponse.Status,
 		}
 
@@ -132,7 +129,7 @@ type LoadBalancerServiceEngineGroupAssignmentsApiGetServiceEngineGroupAssignment
 	SortDesc optional.String
 }
 
-func (a *LoadBalancerServiceEngineGroupAssignmentsApiService) GetServiceEngineGroupAssignments(ctx context.Context, page int32, pageSize int32, localVarOptionals *LoadBalancerServiceEngineGroupAssignmentsApiGetServiceEngineGroupAssignmentsOpts) (LoadBalancerServiceEngineGroupAssignments, *http.Response, error) {
+func (a *LoadBalancerServiceEngineGroupAssignmentsApiService) GetServiceEngineGroupAssignments(ctx context.Context, page int32, pageSize int32, orgID string, localVarOptionals *LoadBalancerServiceEngineGroupAssignmentsApiGetServiceEngineGroupAssignmentsOpts) (LoadBalancerServiceEngineGroupAssignments, *http.Response, error) {
 	var (
 		localVarHttpMethod = strings.ToUpper("Get")
 		localVarPostBody   interface{}
@@ -197,6 +194,9 @@ func (a *LoadBalancerServiceEngineGroupAssignmentsApiService) GetServiceEngineGr
 			localVarHeaderParams["Authorization"] = key
 
 		}
+	}
+	if orgID != "" {
+		localVarHeaderParams[TenantContextHeader] = orgID
 	}
 	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFileName, localVarFileBytes)
 	if err != nil {

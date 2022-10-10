@@ -1,4 +1,3 @@
-
 /*
  * VMware Cloud Director OpenAPI
  *
@@ -36,7 +35,7 @@ Create a new Virtual Service for a specific Edge Gateway.
 
 
 */
-func (a *EdgeGatewayLoadBalancerVirtualServicesApiService) CreateVirtualService(ctx context.Context, virtualServiceConfig EdgeLoadBalancerVirtualService) (*http.Response, *GenericSwaggerError) {
+func (a *EdgeGatewayLoadBalancerVirtualServicesApiService) CreateVirtualService(ctx context.Context, virtualServiceConfig EdgeLoadBalancerVirtualService, orgID string) (*http.Response, *GenericSwaggerError) {
 	var (
 		localVarHttpMethod = strings.ToUpper("Post")
 		localVarPostBody   interface{}
@@ -83,6 +82,9 @@ func (a *EdgeGatewayLoadBalancerVirtualServicesApiService) CreateVirtualService(
 			localVarHeaderParams["Authorization"] = key
 
 		}
+	}
+	if orgID != "" {
+		localVarHeaderParams[TenantContextHeader] = orgID
 	}
 	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFileName, localVarFileBytes)
 	if err != nil {
@@ -140,7 +142,7 @@ type EdgeGatewayLoadBalancerVirtualServicesApiGetVirtualServiceSummariesForGatew
 	SortDesc optional.String
 }
 
-func (a *EdgeGatewayLoadBalancerVirtualServicesApiService) GetVirtualServiceSummariesForGateway(ctx context.Context, page int32, pageSize int32, gatewayId string, localVarOptionals *EdgeGatewayLoadBalancerVirtualServicesApiGetVirtualServiceSummariesForGatewayOpts) (EdgeLoadBalancerVirtualServiceSummaries, *http.Response, error) {
+func (a *EdgeGatewayLoadBalancerVirtualServicesApiService) GetVirtualServiceSummariesForGateway(ctx context.Context, page int32, pageSize int32, gatewayId string, orgID string, localVarOptionals *EdgeGatewayLoadBalancerVirtualServicesApiGetVirtualServiceSummariesForGatewayOpts) (EdgeLoadBalancerVirtualServiceSummaries, *http.Response, error) {
 	var (
 		localVarHttpMethod = strings.ToUpper("Get")
 		localVarPostBody   interface{}
@@ -206,6 +208,9 @@ func (a *EdgeGatewayLoadBalancerVirtualServicesApiService) GetVirtualServiceSumm
 			localVarHeaderParams["Authorization"] = key
 
 		}
+	}
+	if orgID != "" {
+		localVarHeaderParams[TenantContextHeader] = orgID
 	}
 	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFileName, localVarFileBytes)
 	if err != nil {

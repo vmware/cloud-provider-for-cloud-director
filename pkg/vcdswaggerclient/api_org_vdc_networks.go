@@ -1,4 +1,3 @@
-
 /*
  * VMware Cloud Director OpenAPI
  *
@@ -40,7 +39,6 @@ func (a *OrgVdcNetworksApiService) CreateNetwork(ctx context.Context, vdcNetwork
 		localVarPostBody   interface{}
 		localVarFileName   string
 		localVarFileBytes  []byte
-
 	)
 
 	// create path and map variables
@@ -107,7 +105,7 @@ func (a *OrgVdcNetworksApiService) CreateNetwork(ctx context.Context, vdcNetwork
 
 		if localVarHttpResponse.StatusCode == 400 {
 			var v ModelError
-			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"));
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
 				return localVarHttpResponse, newErr
@@ -137,12 +135,12 @@ Get all Org vDC networks. If \&quot;ownerRef\&quot; property is not specified in
 */
 
 type OrgVdcNetworksApiGetAllVdcNetworksOpts struct {
-	Filter optional.String
-	SortAsc optional.String
+	Filter   optional.String
+	SortAsc  optional.String
 	SortDesc optional.String
 }
 
-func (a *OrgVdcNetworksApiService) GetAllVdcNetworks(ctx context.Context, page int32, pageSize int32, localVarOptionals *OrgVdcNetworksApiGetAllVdcNetworksOpts) (VdcNetworks, *http.Response, error) {
+func (a *OrgVdcNetworksApiService) GetAllVdcNetworks(ctx context.Context, orgID string, page int32, pageSize int32, localVarOptionals *OrgVdcNetworksApiGetAllVdcNetworksOpts) (VdcNetworks, *http.Response, error) {
 	var (
 		localVarHttpMethod = strings.ToUpper("Get")
 		localVarPostBody   interface{}
@@ -207,6 +205,9 @@ func (a *OrgVdcNetworksApiService) GetAllVdcNetworks(ctx context.Context, page i
 			localVarHeaderParams["Authorization"] = key
 
 		}
+	}
+	if orgID != "" {
+		localVarHeaderParams[TenantContextHeader] = orgID
 	}
 	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFileName, localVarFileBytes)
 	if err != nil {

@@ -1,4 +1,3 @@
-
 /*
  * VMware Cloud Director OpenAPI
  *
@@ -283,7 +282,7 @@ OrgVdcNetworkApiService Retrieves a specific Org vDC network.
 
 @return VdcNetwork
 */
-func (a *OrgVdcNetworkApiService) GetOrgVdcNetwork(ctx context.Context, vdcNetworkId string) (VdcNetwork, *http.Response, error) {
+func (a *OrgVdcNetworkApiService) GetOrgVdcNetwork(ctx context.Context, vdcNetworkId string, orgID string) (VdcNetwork, *http.Response, error) {
 	var (
 		localVarHttpMethod = strings.ToUpper("Get")
 		localVarPostBody   interface{}
@@ -330,6 +329,9 @@ func (a *OrgVdcNetworkApiService) GetOrgVdcNetwork(ctx context.Context, vdcNetwo
 
 		}
 	}
+	if orgID != "" {
+		localVarHeaderParams[TenantContextHeader] = orgID
+	}
 	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFileName, localVarFileBytes)
 	if err != nil {
 		return localVarReturnValue, nil, err
@@ -348,7 +350,7 @@ func (a *OrgVdcNetworkApiService) GetOrgVdcNetwork(ctx context.Context, vdcNetwo
 
 	if localVarHttpResponse.StatusCode < 300 {
 		// If we succeed, return the data, otherwise pass on to decode error.
-		err = a.client.decode(&localVarReturnValue, localVarBody, localVarHttpResponse.Header.Get("Content-Type"));
+		err = a.client.decode(&localVarReturnValue, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
 		return localVarReturnValue, localVarHttpResponse, err
 	}
 
