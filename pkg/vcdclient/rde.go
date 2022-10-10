@@ -20,7 +20,15 @@ func (client *Client) GetRDEVirtualIps(ctx context.Context) ([]string, string, *
 		return nil, "", nil, nil
 	}
 
-	defEnt, _, etag, err := client.apiClient.DefinedEntityApi.GetDefinedEntity(ctx, client.ClusterID)
+	clusterOrg, err := client.vcdClient.GetOrgByName(client.ClusterOrgName)
+	if err != nil {
+		return nil, "", nil, fmt.Errorf("unable to get org for org [%s]: [%v]", client.ClusterOrgName, err)
+	}
+	if clusterOrg == nil || clusterOrg.Org == nil {
+		return nil, "", nil, fmt.Errorf("obtained nil org for name [%s]", client.ClusterOrgName)
+	}
+
+	defEnt, _, etag, err := client.apiClient.DefinedEntityApi.GetDefinedEntity(ctx, client.ClusterID, clusterOrg.Org.ID)
 	if err != nil {
 		return nil, "", nil, fmt.Errorf("error when getting defined entity: [%v]", err)
 	}
@@ -40,8 +48,15 @@ func (client *Client) updateRDEVirtualIps(ctx context.Context, updatedIps []stri
 	if err != nil {
 		return nil, fmt.Errorf("failed to locally edit RDE with ID [%s] with virtual IPs: [%v]", client.ClusterID, err)
 	}
+	clusterOrg, err := client.vcdClient.GetOrgByName(client.ClusterOrgName)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get org for org [%s]: [%v]", client.ClusterOrgName, err)
+	}
+	if clusterOrg == nil || clusterOrg.Org == nil {
+		return nil, fmt.Errorf("obtained nil org for name [%s]", client.ClusterOrgName)
+	}
 	// can pass invokeHooks
-	_, httpResponse, err := client.apiClient.DefinedEntityApi.UpdateDefinedEntity(ctx, *defEnt, etag, client.ClusterID, nil)
+	_, httpResponse, err := client.apiClient.DefinedEntityApi.UpdateDefinedEntity(ctx, *defEnt, etag, client.ClusterID, clusterOrg.Org.ID, nil)
 	if err != nil {
 		return httpResponse, fmt.Errorf("error when updating defined entity [%s]: [%v]", client.ClusterID, err)
 	}
