@@ -50,7 +50,7 @@ func (client *Client) getOVDCNetwork(ctx context.Context, networkName string) (*
 		}
 
 		for _, ovdcNetwork := range ovdcNetworks.Values {
-			if ovdcNetworkID == ovdcNetwork.Id {
+			if networkName == ovdcNetwork.Name {
 				if networkFound {
 					return nil, fmt.Errorf("found more than one network with the name [%s] in the org [%s] - please ensure the network name is unique within an org", networkName, client.ClusterOrgName)
 				}
