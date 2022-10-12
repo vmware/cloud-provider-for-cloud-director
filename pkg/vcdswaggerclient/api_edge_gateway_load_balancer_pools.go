@@ -1,4 +1,3 @@
-
 /*
  * VMware Cloud Director OpenAPI
  *
@@ -35,7 +34,7 @@ EdgeGatewayLoadBalancerPoolsApiService Creates a Load Balancer Pool.
 
 
 */
-func (a *EdgeGatewayLoadBalancerPoolsApiService) CreateLoadBalancerPool(ctx context.Context, loadBalancerPool EdgeLoadBalancerPool) (*http.Response, error) {
+func (a *EdgeGatewayLoadBalancerPoolsApiService) CreateLoadBalancerPool(ctx context.Context, loadBalancerPool EdgeLoadBalancerPool, orgID string) (*http.Response, error) {
 	var (
 		localVarHttpMethod = strings.ToUpper("Post")
 		localVarPostBody   interface{}
@@ -82,6 +81,9 @@ func (a *EdgeGatewayLoadBalancerPoolsApiService) CreateLoadBalancerPool(ctx cont
 			localVarHeaderParams["Authorization"] = key
 
 		}
+	}
+	if orgID != "" {
+		localVarHeaderParams[TenantContextHeader] = orgID
 	}
 	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFileName, localVarFileBytes)
 	if err != nil {
@@ -133,7 +135,7 @@ type EdgeGatewayLoadBalancerPoolsApiGetPoolSummariesForGatewayOpts struct {
 	SortDesc optional.String
 }
 
-func (a *EdgeGatewayLoadBalancerPoolsApiService) GetPoolSummariesForGateway(ctx context.Context, page int32, pageSize int32, gatewayId string, localVarOptionals *EdgeGatewayLoadBalancerPoolsApiGetPoolSummariesForGatewayOpts) (EdgeLoadBalancerPoolSummaries, *http.Response, error) {
+func (a *EdgeGatewayLoadBalancerPoolsApiService) GetPoolSummariesForGateway(ctx context.Context, page int32, pageSize int32, gatewayId string, orgID string, localVarOptionals *EdgeGatewayLoadBalancerPoolsApiGetPoolSummariesForGatewayOpts) (EdgeLoadBalancerPoolSummaries, *http.Response, error) {
 	var (
 		localVarHttpMethod = strings.ToUpper("Get")
 		localVarPostBody   interface{}
@@ -199,6 +201,9 @@ func (a *EdgeGatewayLoadBalancerPoolsApiService) GetPoolSummariesForGateway(ctx 
 			localVarHeaderParams["Authorization"] = key
 
 		}
+	}
+	if orgID != "" {
+		localVarHeaderParams[TenantContextHeader] = orgID
 	}
 	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFileName, localVarFileBytes)
 	if err != nil {

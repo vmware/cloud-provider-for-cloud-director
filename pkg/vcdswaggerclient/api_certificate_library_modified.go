@@ -1,4 +1,3 @@
-
 /*
  * VMware Cloud Director OpenAPI
  *
@@ -627,7 +626,7 @@ func (a *CertificateLibraryApiService) QueryCertificateLibrary(ctx context.Conte
 
 	// if there is an orgID set, use the appropriate header
 	if orgID != "" {
-		localVarHeaderParams["X-VMWARE-VCLOUD-TENANT-CONTEXT"] = orgID
+		localVarHeaderParams[TenantContextHeader] = orgID
 	}
 
 	if ctx != nil {

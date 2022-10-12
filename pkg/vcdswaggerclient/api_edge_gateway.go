@@ -1,4 +1,3 @@
-
 /*
  * VMware Cloud Director OpenAPI
  *
@@ -140,7 +139,7 @@ EdgeGatewayApiService Retrieves a specific Edge Gateway
 
 @return EdgeGateway
 */
-func (a *EdgeGatewayApiService) GetEdgeGateway(ctx context.Context, gatewayId string) (EdgeGateway, *http.Response, error) {
+func (a *EdgeGatewayApiService) GetEdgeGateway(ctx context.Context, gatewayId string, orgID string) (EdgeGateway, *http.Response, error) {
 	var (
 		localVarHttpMethod = strings.ToUpper("Get")
 		localVarPostBody   interface{}
@@ -186,6 +185,9 @@ func (a *EdgeGatewayApiService) GetEdgeGateway(ctx context.Context, gatewayId st
 			localVarHeaderParams["Authorization"] = key
 
 		}
+	}
+	if orgID != "" {
+		localVarHeaderParams[TenantContextHeader] = orgID
 	}
 	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFileName, localVarFileBytes)
 	if err != nil {
@@ -264,7 +266,7 @@ type EdgeGatewayApiGetUsedIpAddressesOpts struct {
 	SortDesc optional.String
 }
 
-func (a *EdgeGatewayApiService) GetUsedIpAddresses(ctx context.Context, page int32, pageSize int32, gatewayId string, localVarOptionals *EdgeGatewayApiGetUsedIpAddressesOpts) (GatewayUsedIpAddresses, *http.Response, error) {
+func (a *EdgeGatewayApiService) GetUsedIpAddresses(ctx context.Context, page int32, pageSize int32, gatewayId string, orgID string, localVarOptionals *EdgeGatewayApiGetUsedIpAddressesOpts) (GatewayUsedIpAddresses, *http.Response, error) {
 	var (
 		localVarHttpMethod = strings.ToUpper("Get")
 		localVarPostBody   interface{}
@@ -330,6 +332,9 @@ func (a *EdgeGatewayApiService) GetUsedIpAddresses(ctx context.Context, page int
 			localVarHeaderParams["Authorization"] = key
 
 		}
+	}
+	if orgID != "" {
+		localVarHeaderParams[TenantContextHeader] = orgID
 	}
 	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFileName, localVarFileBytes)
 	if err != nil {

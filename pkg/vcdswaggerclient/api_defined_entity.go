@@ -1,4 +1,3 @@
-
 /*
  * VMware Cloud Director OpenAPI
  *
@@ -44,7 +43,7 @@ type DefinedEntityApiCreateDefinedEntityOpts struct {
 	InvokeHooks optional.Interface
 }
 
-func (a *DefinedEntityApiService) CreateDefinedEntity(ctx context.Context, entity DefinedEntity, id string, localVarOptionals *DefinedEntityApiCreateDefinedEntityOpts) (*http.Response, error) {
+func (a *DefinedEntityApiService) CreateDefinedEntity(ctx context.Context, entity DefinedEntity, id string, orgID string, localVarOptionals *DefinedEntityApiCreateDefinedEntityOpts) (*http.Response, error) {
 	var (
 		localVarHttpMethod = strings.ToUpper("Post")
 		localVarPostBody   interface{}
@@ -95,6 +94,9 @@ func (a *DefinedEntityApiService) CreateDefinedEntity(ctx context.Context, entit
 			localVarHeaderParams["Authorization"] = key
 
 		}
+	}
+	if orgID != "" {
+		localVarHeaderParams[TenantContextHeader] = orgID
 	}
 	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFileName, localVarFileBytes)
 	if err != nil {
@@ -151,13 +153,12 @@ type DefinedEntityApiDeleteDefinedEntityOpts struct {
 	InvokeHooks optional.Interface
 }
 
-func (a *DefinedEntityApiService) DeleteDefinedEntity(ctx context.Context, id string, localVarOptionals *DefinedEntityApiDeleteDefinedEntityOpts) (*http.Response, error) {
+func (a *DefinedEntityApiService) DeleteDefinedEntity(ctx context.Context, id string, orgID string, localVarOptionals *DefinedEntityApiDeleteDefinedEntityOpts) (*http.Response, error) {
 	var (
 		localVarHttpMethod = strings.ToUpper("Delete")
 		localVarPostBody   interface{}
 		localVarFileName   string
 		localVarFileBytes  []byte
-
 	)
 
 	// create path and map variables
@@ -200,6 +201,9 @@ func (a *DefinedEntityApiService) DeleteDefinedEntity(ctx context.Context, id st
 			localVarHeaderParams["Authorization"] = key
 
 		}
+	}
+	if orgID != "" {
+		localVarHeaderParams[TenantContextHeader] = orgID
 	}
 	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFileName, localVarFileBytes)
 	if err != nil {
@@ -253,7 +257,7 @@ type DefinedEntityApiGetDefinedEntitiesByEntityTypeOpts struct {
 	SortDesc optional.String
 }
 
-func (a *DefinedEntityApiService) GetDefinedEntitiesByEntityType(ctx context.Context, vendor string, nss string, version string, page int32, pageSize int32, localVarOptionals *DefinedEntityApiGetDefinedEntitiesByEntityTypeOpts) (DefinedEntities, *http.Response, error) {
+func (a *DefinedEntityApiService) GetDefinedEntitiesByEntityType(ctx context.Context, vendor string, nss string, version string, orgID string, page int32, pageSize int32, localVarOptionals *DefinedEntityApiGetDefinedEntitiesByEntityTypeOpts) (DefinedEntities, *http.Response, error) {
 	var (
 		localVarHttpMethod = strings.ToUpper("Get")
 		localVarPostBody   interface{}
@@ -331,6 +335,9 @@ func (a *DefinedEntityApiService) GetDefinedEntitiesByEntityType(ctx context.Con
 
 		}
 	}
+	if orgID != "" {
+		localVarHeaderParams[TenantContextHeader] = orgID
+	}
 	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFileName, localVarFileBytes)
 	if err != nil {
 		return localVarReturnValue, nil, err
@@ -399,7 +406,7 @@ type DefinedEntityApiGetDefinedEntitiesByInterfaceOpts struct {
 	SortDesc optional.String
 }
 
-func (a *DefinedEntityApiService) GetDefinedEntitiesByInterface(ctx context.Context, vendor string, nss string, version string, page int32, pageSize int32, localVarOptionals *DefinedEntityApiGetDefinedEntitiesByInterfaceOpts) (DefinedEntities, *http.Response, error) {
+func (a *DefinedEntityApiService) GetDefinedEntitiesByInterface(ctx context.Context, vendor string, nss string, version string, orgID string, page int32, pageSize int32, localVarOptionals *DefinedEntityApiGetDefinedEntitiesByInterfaceOpts) (DefinedEntities, *http.Response, error) {
 	var (
 		localVarHttpMethod = strings.ToUpper("Get")
 		localVarPostBody   interface{}
@@ -477,6 +484,9 @@ func (a *DefinedEntityApiService) GetDefinedEntitiesByInterface(ctx context.Cont
 
 		}
 	}
+	if orgID != "" {
+		localVarHeaderParams[TenantContextHeader] = orgID
+	}
 	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFileName, localVarFileBytes)
 	if err != nil {
 		return localVarReturnValue, nil, err
@@ -530,7 +540,7 @@ Gets the defined entity with the unique identifier (URN)
 
 @return DefinedEntity
 */
-func (a *DefinedEntityApiService) GetDefinedEntity(ctx context.Context, id string) (DefinedEntity, *http.Response, string, error) {
+func (a *DefinedEntityApiService) GetDefinedEntity(ctx context.Context, id string, orgID string) (DefinedEntity, *http.Response, string, error) {
 	var (
 		localVarHttpMethod = strings.ToUpper("Get")
 		localVarPostBody   interface{}
@@ -577,6 +587,9 @@ func (a *DefinedEntityApiService) GetDefinedEntity(ctx context.Context, id strin
 
 		}
 	}
+	if orgID != "" {
+		localVarHeaderParams[TenantContextHeader] = orgID
+	}
 	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFileName, localVarFileBytes)
 	if err != nil {
 		return localVarReturnValue, nil, "", err
@@ -608,8 +621,6 @@ func (a *DefinedEntityApiService) GetDefinedEntity(ctx context.Context, id strin
 	}
 }
 
-
-
 /*
 DefinedEntityApiService Validates the defined entity against the entity type schema.
 Validates the defined entity against the entity type schema. If the validation is successful, the entity will transition to a \&quot;RESOLVED\&quot; state. Otherwise, it will transition to an \&quot;ERROR\&quot; state.
@@ -618,7 +629,7 @@ Validates the defined entity against the entity type schema. If the validation i
 
 @return EntityState
 */
-func (a *DefinedEntityApiService) ResolveDefinedEntity(ctx context.Context, id string) (EntityState, *http.Response, error) {
+func (a *DefinedEntityApiService) ResolveDefinedEntity(ctx context.Context, id string, orgID string) (EntityState, *http.Response, error) {
 	var (
 		localVarHttpMethod = strings.ToUpper("Post")
 		localVarPostBody   interface{}
@@ -664,6 +675,9 @@ func (a *DefinedEntityApiService) ResolveDefinedEntity(ctx context.Context, id s
 			localVarHeaderParams["Authorization"] = key
 
 		}
+	}
+	if orgID != "" {
+		localVarHeaderParams[TenantContextHeader] = orgID
 	}
 	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFileName, localVarFileBytes)
 	if err != nil {
@@ -726,7 +740,7 @@ type DefinedEntityApiUpdateDefinedEntityOpts struct {
 	InvokeHooks optional.Interface
 }
 
-func (a *DefinedEntityApiService) UpdateDefinedEntity(ctx context.Context, entity DefinedEntity, etag string, id string, localVarOptionals *DefinedEntityApiUpdateDefinedEntityOpts) (DefinedEntity, *http.Response, error) {
+func (a *DefinedEntityApiService) UpdateDefinedEntity(ctx context.Context, entity DefinedEntity, etag string, id string, orgID string, localVarOptionals *DefinedEntityApiUpdateDefinedEntityOpts) (DefinedEntity, *http.Response, error) {
 	var (
 		localVarHttpMethod = strings.ToUpper("Put")
 		localVarPostBody   interface{}
@@ -781,6 +795,9 @@ func (a *DefinedEntityApiService) UpdateDefinedEntity(ctx context.Context, entit
 			localVarHeaderParams["Authorization"] = key
 
 		}
+	}
+	if orgID != "" {
+		localVarHeaderParams[TenantContextHeader] = orgID
 	}
 	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFileName, localVarFileBytes)
 	if err != nil {
