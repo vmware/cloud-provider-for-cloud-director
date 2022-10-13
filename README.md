@@ -10,6 +10,7 @@ The version of the VMware Cloud Director API and Installation that are compatibl
 | 1.0.2 | 36.0+ | 10.3.1+ <br/>(10.3.1 needs hot-patch to prevent VCD cell crashes in multi-cell environments) | <ul><li>Added fix to allow multiple http and https ports to be allowed in load-balancer (d67c19b)</li></ul> |<ul><li>1.21</li><li>1.20</li><li>1.19</li></ul>|
 | 1.1.0 | 36.0+ | 10.3.1+ <br/>(10.3.1 needs hot-patch to prevent VCD cell crashes in multi-cell environments) | <ul><li>Remove legacy Kubernetes dependencies.</li><li>Application port profiles added to DNAT rules (Fixes #43)</li><li>L4, HTTP and HTTPS services supported using `appProtocol` and annotations (Fixes #44).</li><li>Allow per-service certificates.</li><li>Multiple(>2) service fixes within the same LoadBalancer service</li><li>Support for CAPVCD RDEs.</li><li>Detect and handle `PENDING` Avi LoadBalancer state to allow better controller functionality.</li></ul> |<ul><li>1.21</li><li>1.20</li><li>1.19</li></ul>|
 | 1.1.1 | 36.0+ | 10.3.1+ <br/>(10.3.1 needs hot-patch to prevent VCD cell crashes in multi-cell environments) | <ul><li>Fixed refresh-token based authentication issue observed when VCD cells are fronted by a load balancer (Fixes #37).</li><li>Updates to nodePort and port of LoadBalancer services are now supported (Fixes #49).</li></ul> |<ul><li>1.21</li><li>1.20</li><li>1.19</li></ul>|
+| 1.1.2 | 36.0+ | 10.3.1+ <br/>(10.3.1 needs hot-patch to prevent VCD cell crashes in multi-cell environments) | <ul><li>Fixed issue with clusters created using system administrator credentials where external IP addresses for application Load Balancers are picked from edge gateway of an unintended tenant.</li></ul> |<ul><li>1.21</li><li>1.20</li><li>1.19</li></ul>|
 
 This extension is intended to be installed into a Kubernetes cluster installed with [VMware Cloud Director](https://www.vmware.com/products/cloud-director.html) as a Cloud Provider, by a user that has the rights as described in the sections below.
 
@@ -84,7 +85,7 @@ From v1.1.0 onwards, certificates can have user-defined names. Each service coul
 ## Upgrade CPI
 To upgrade CPI to v1.1.1, please execute the following command
 ```shell
-kubectl patch deployment -n kube-system vmware-cloud-director-ccm -p '{"spec": {"template": {"spec": {"containers": [{"name": "vmware-cloud-director-ccm", "image": "projects.registry.vmware.com/vmware-cloud-director/cloud-provider-for-cloud-director:1.1.1.latest"}]}}}}'
+kubectl patch deployment -n kube-system vmware-cloud-director-ccm -p '{"spec": {"template": {"spec": {"containers": [{"name": "vmware-cloud-director-ccm", "image": "projects.registry.vmware.com/vmware-cloud-director/cloud-provider-for-cloud-director:1.1.2.latest"}]}}}}'
 ```
 
 ## Troubleshooting
