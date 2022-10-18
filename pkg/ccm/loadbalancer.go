@@ -194,6 +194,7 @@ func (lb *LBManager) UpdateLoadBalancer(ctx context.Context, clusterName string,
 	}
 
 	nodeIps := lb.getWorkerNodeInternalIps(nodes)
+	klog.Infof("UpdateLoadBalancer Node Ips: %v", nodeIps)
 
 	lbPoolNamePrefix := lb.getLBPoolNamePrefix(ctx, service)
 	virtualServiceNamePrefix := lb.getVirtualServicePrefix(ctx, service)
