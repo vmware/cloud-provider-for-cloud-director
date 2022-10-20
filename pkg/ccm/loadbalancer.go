@@ -169,7 +169,8 @@ func (lb *LBManager) getWorkerNodeInternalIps(nodes []*v1.Node) []string {
 	var workerNodeInternalIps []string
 	for _, node := range nodes {
 		nodeLabelMap := node.ObjectMeta.Labels
-		// If we can find it from the nodeLabelMap we will take it, but if it is missing labels, we will just let it go instead of adding it.
+		// If we can find the worker node from the missing controlPlaneLabel in nodeLabelMap we will take it,
+		// but if the node is missing labels, we will just let it go instead of adding it.
 		if nodeLabelMap != nil {
 			if _, ok := nodeLabelMap[controlPlaneLabel]; !ok {
 				for _, addr := range node.Status.Addresses {
