@@ -27,6 +27,8 @@ import (
 const (
 	sslPortsAnnotation     = `service.beta.kubernetes.io/vcloud-avi-ssl-ports`
 	sslCertAliasAnnotation = `service.beta.kubernetes.io/vcloud-avi-ssl-cert-alias`
+	// TODO: Update controlPlaneLabel to use default K8s constants if available
+	controlPlaneLabel = `node-role.kubernetes.io/control-plane`
 )
 
 //LBManager -
@@ -132,10 +134,7 @@ func (lb *LBManager) EnsureLoadBalancer(ctx context.Context, clusterName string,
 	if err = lb.vcdClient.RefreshBearerToken(); err != nil {
 		return nil, fmt.Errorf("error while obtaining access token: [%v]", err)
 	}
-	nodeIPs, err := lb.getNodeIPs(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("unable to get nodes in cluster: [%v]", err)
-	}
+	nodeIPs := lb.getWorkerNodeInternalIps(nodes)
 	return lb.createLoadBalancer(ctx, service, nodeIPs)
 }
 
@@ -166,6 +165,27 @@ func (lb *LBManager) getServicePortMap(service *v1.Service) (map[string]int32, m
 	return typeToInternalPort, typeToExternalPort, nameToProtocol
 }
 
+func (lb *LBManager) getWorkerNodeInternalIps(nodes []*v1.Node) []string {
+	var workerNodeInternalIps []string
+	for _, node := range nodes {
+		nodeLabelMap := node.ObjectMeta.Labels
+		// If we can find the worker node from the missing controlPlaneLabel in nodeLabelMap we will take it,
+		// but if the node is missing labels, we will just let it go instead of adding it.
+		if nodeLabelMap != nil {
+			if _, ok := nodeLabelMap[controlPlaneLabel]; !ok {
+				for _, addr := range node.Status.Addresses {
+					if addr.Type == v1.NodeInternalIP {
+						klog.Infof("Worker Node Internal IP found: %s", addr.Address)
+						workerNodeInternalIps = append(workerNodeInternalIps, addr.Address)
+						break
+					}
+				}
+			}
+		}
+	}
+	return workerNodeInternalIps
+}
+
 // UpdateLoadBalancer updates hosts under the specified load balancer.
 // Implementations must treat the *v1.Service and *v1.Node
 // parameters as read-only and not modify them.
@@ -177,7 +197,7 @@ func (lb *LBManager) UpdateLoadBalancer(ctx context.Context, clusterName string,
 		return fmt.Errorf("error while obtaining access token: [%v]", err)
 	}
 
-	nodeIps := lb.getNodeInternalIps(nodes)
+	nodeIps := lb.getWorkerNodeInternalIps(nodes)
 	klog.Infof("UpdateLoadBalancer Node Ips: %v", nodeIps)
 
 	lbPoolNamePrefix := lb.getLBPoolNamePrefix(ctx, service)
