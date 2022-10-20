@@ -27,7 +27,8 @@ import (
 const (
 	sslPortsAnnotation     = `service.beta.kubernetes.io/vcloud-avi-ssl-ports`
 	sslCertAliasAnnotation = `service.beta.kubernetes.io/vcloud-avi-ssl-cert-alias`
-	controlPlaneLabel      = `node-role.kubernetes.io/control-plane`
+	// TODO: Update controlPlaneLabel to use default K8s constants if available
+	controlPlaneLabel = `node-role.kubernetes.io/control-plane`
 )
 
 //LBManager -
@@ -168,10 +169,12 @@ func (lb *LBManager) getWorkerNodeInternalIps(nodes []*v1.Node) []string {
 	var workerNodeInternalIps []string
 	for _, node := range nodes {
 		nodeLabelMap := node.ObjectMeta.Labels
+		// If we can find it from the nodeLabelMap we will take it, but if it is missing labels, we will just let it go instead of adding it.
 		if nodeLabelMap != nil {
 			if _, ok := nodeLabelMap[controlPlaneLabel]; !ok {
 				for _, addr := range node.Status.Addresses {
 					if addr.Type == v1.NodeInternalIP {
+						klog.Infof("Worker Node Internal IP found: %s", addr.Address)
 						workerNodeInternalIps = append(workerNodeInternalIps, addr.Address)
 						break
 					}
