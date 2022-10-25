@@ -273,7 +273,7 @@ func (rdeManager *RDEManager) AddToErrorSet(ctx context.Context, componentSectio
 		_, resp, err = rdeManager.Client.APIClient.DefinedEntityApi.UpdateDefinedEntity(ctx, rde, etag, rdeManager.ClusterID, clusterOrg.Org.ID, nil)
 		if resp != nil {
 			if resp.StatusCode == http.StatusPreconditionFailed {
-				klog.V(4).Infof("wrong etag [%s] while adding newError [%s] in RDE [%s]. Retry attempts remaining: [%d]", etag, newError.Name, rdeManager.ClusterID, i-1)
+				klog.V(4).Infof("etag mismatch [%s] while adding newError [%s] in RDE [%s]. Retry attempts remaining: [%d]", etag, newError.Name, rdeManager.ClusterID, i-1)
 				continue
 			} else if resp.StatusCode != http.StatusOK {
 				var responseMessageBytes []byte
@@ -375,7 +375,7 @@ func (rdeManager *RDEManager) RemoveErrorByNameOrIdFromErrorSet(ctx context.Cont
 		_, resp, err = rdeManager.Client.APIClient.DefinedEntityApi.UpdateDefinedEntity(ctx, rde, etag, rdeManager.ClusterID, clusterOrg.Org.ID, nil)
 		if resp != nil {
 			if resp.StatusCode == http.StatusPreconditionFailed {
-				klog.V(4).Infof("wrong etag while removing error(s) of name [%s] in RDE [%s]. Retry attempts remaining: [%d]", errorName, rdeManager.ClusterID, i-1)
+				klog.V(4).Infof("etag while removing error(s) of name [%s] in RDE [%s]. Retry attempts remaining: [%d]", errorName, rdeManager.ClusterID, i-1)
 				continue
 			} else if resp.StatusCode != http.StatusOK {
 				var responseMessageBytes []byte
@@ -546,7 +546,7 @@ func (rdeManager *RDEManager) AddToEventSet(ctx context.Context, componentSectio
 		_, resp, err = rdeManager.Client.APIClient.DefinedEntityApi.UpdateDefinedEntity(ctx, rde, etag, rdeManager.ClusterID, clusterOrg.Org.ID, nil)
 		if resp != nil {
 			if resp.StatusCode == http.StatusPreconditionFailed {
-				klog.V(4).Infof("wrong etag [%s] while adding newEvent [%s] in RDE [%s]. Retry attempts remaining: [%d]", etag, newEvent.Name, rdeManager.ClusterID, i-1)
+				klog.V(4).Infof("etag mismatch [%s] while adding newEvent [%s] in RDE [%s]. Retry attempts remaining: [%d]", etag, newEvent.Name, rdeManager.ClusterID, i-1)
 				continue
 			} else if resp.StatusCode != http.StatusOK {
 				var responseMessageBytes []byte
@@ -662,7 +662,7 @@ func (rdeManager *RDEManager) AddToVCDResourceSet(ctx context.Context, component
 		_, resp, err = rdeManager.Client.APIClient.DefinedEntityApi.UpdateDefinedEntity(ctx, rde, etag, rdeManager.ClusterID, clusterOrg.Org.ID, nil)
 		if resp != nil {
 			if resp.StatusCode == http.StatusPreconditionFailed {
-				klog.V(4).Infof("wrong etag [%s] while adding [%s/%s] to VCDResourceSet in RDE [%s]. Retry attempts remaining: [%d]", etag, vcdResource.Type, vcdResource.Name, rdeManager.ClusterID, i-1)
+				klog.V(4).Infof("etag mismatch [%s] while adding [%s/%s] to VCDResourceSet in RDE [%s]. Retry attempts remaining: [%d]", etag, vcdResource.Type, vcdResource.Name, rdeManager.ClusterID, i-1)
 				continue
 			} else if resp.StatusCode != http.StatusOK {
 				var responseMessageBytes []byte
@@ -792,7 +792,7 @@ func (rdeManager *RDEManager) RemoveFromVCDResourceSet(ctx context.Context, comp
 		_, resp, err = rdeManager.Client.APIClient.DefinedEntityApi.UpdateDefinedEntity(ctx, rde, etag, rdeManager.ClusterID, clusterOrg.Org.ID, nil)
 		if resp != nil {
 			if resp.StatusCode == http.StatusPreconditionFailed {
-				klog.V(4).Infof("wrong etag [%s] while removing [%s/%s] from VCDResourceSet in RDE [%s]. Retry attempts remaining: [%d]", etag, resourceType, resourceName, rdeManager.ClusterID, i-1)
+				klog.V(4).Infof("etag mismatch [%s] while removing [%s/%s] from VCDResourceSet in RDE [%s]. Retry attempts remaining: [%d]", etag, resourceType, resourceName, rdeManager.ClusterID, i-1)
 				continue
 			} else if resp.StatusCode != http.StatusOK {
 				var responseMessageBytes []byte
