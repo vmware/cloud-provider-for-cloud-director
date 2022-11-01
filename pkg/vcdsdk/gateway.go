@@ -478,6 +478,7 @@ func (gatewayManager *GatewayManager) UpdateAppPortProfile(appPortProfileName st
 	}
 	appPortProfile, err := org.GetNsxtAppPortProfileByName(appPortProfileName, types.ApplicationPortProfileScopeTenant)
 	if err != nil {
+		klog.Errorf("NSX-T app port profile with the name [%s] is not found: [%v]", appPortProfileName, err)
 		return nil, govcd.ErrorEntityNotFound
 	}
 	if appPortProfile == nil || appPortProfile.NsxtAppPortProfile == nil || len(appPortProfile.NsxtAppPortProfile.ApplicationPorts) == 0 || len(appPortProfile.NsxtAppPortProfile.ApplicationPorts[0].DestinationPorts) == 0 {
