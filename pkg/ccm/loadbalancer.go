@@ -595,7 +595,11 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 			Protocol:     strings.ToUpper(string(port.Protocol)),
 		}
 		if port.AppProtocol != nil && *port.AppProtocol != "" {
-			portDetailsList[idx].Protocol = strings.ToUpper(*port.AppProtocol)
+			switch strings.ToUpper(*port.AppProtocol) {
+			// allow override in case of known protocols such as HTTP/HTTPS/TCP which are directly supported in Avi
+			case "HTTP", "HTTPS", "TCP":
+				portDetailsList[idx].Protocol = strings.ToUpper(*port.AppProtocol)
+			}
 		}
 		if _, ok := portsMap[port.Port]; ok {
 			portDetailsList[idx].UseSSL = true
