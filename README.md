@@ -53,7 +53,9 @@ The `Access Control` right is needed in order to generate refresh tokens for the
 
 Note: For CSE 4.0, a user created from the `Kubernetes Cluster Author` role will have these additional rights.
 
-In order to create an https ingress([Creating LoadBalancer using third-party ingress](#lb-ingress)), the following right is also required:
+In order to create an https ingress([Creating LoadBalancer using third-party ingress](#creation-of-a-loadBalancer-using-a-third-party-ingress)),
+the following right is also required:
+
 1. General =>
    1. Manage Certificates Library
 
@@ -74,7 +76,7 @@ The LoadBalancer section of the Edge Gateway for a Tenant should be enabled, and
 #### Tenant Setup
 A ServiceEngineGroup needs to be added to the gateway of the OVDC within which the Kubernetes cluster is to be created. The overall steps to achieve that are documented at [Enable Load Balancer on an NSX-T Data Center Edge Gateway](https://docs.vmware.com/en/VMware-Cloud-Director/10.3/VMware-Cloud-Director-Service-Provider-Admin-Portal-Guide/GUID-1784B96B-20F8-4E4D-BF33-86D2264EDBCF.html)
 
-#### [Creation of a LoadBalancer using a third-party ingress][lb-ingress]
+#### Creation of a LoadBalancer using a third-party ingress
 Any third party ingress such as Contour could be used with the CPI in order to create an L7 ingress and NSX Advanced Load Balancer with Avi will act as the L4 LoadBalancer.
 
 **Note**: In order to create a HTTPS Ingress using the Avi LoadBalancer, a certificate needs to be used. The following steps present an overview **from CPI 1.1.0 onwards**:
