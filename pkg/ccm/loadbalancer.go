@@ -159,7 +159,6 @@ func (lb *LBManager) getLoadBalancer(ctx context.Context,
 			// if any lb that is expected is not created, return false to retry creation
 			return nil, false, nil
 		}
-		// If we've reached here, then there must've been at least 1 virtualIp belonging to a certain port in the service
 	}
 	if virtualIP == "" {
 		// this implies that no port was specified
