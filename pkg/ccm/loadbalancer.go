@@ -143,29 +143,27 @@ func (lb *LBManager) EnsureLoadBalancerDeleted(ctx context.Context, clusterName 
 }
 
 func (lb *LBManager) getLoadBalancer(ctx context.Context,
-	service *v1.Service) (status *v1.LoadBalancerStatus, exists bool, hasVirtualIp bool, err error) {
+	service *v1.Service) (status *v1.LoadBalancerStatus, exists bool, err error) {
 
 	virtualServiceNamePrefix := lb.getLoadBalancerPrefix(ctx, service)
 	virtualIP := ""
-	virtualIpExists := false // This variable is used to let controller.GetLoadBalancer() there are resources to clean up
 	for _, port := range service.Spec.Ports {
 		virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, port.Name)
 		virtualIP, err = lb.vcdClient.GetLoadBalancer(ctx, virtualServiceName)
 		if err != nil {
-			return nil, false, virtualIpExists,
+			return nil, false,
 				fmt.Errorf("unable to get virtual service summary for [%s]: [%v]",
 					virtualServiceName, err)
 		}
 		if virtualIP == "" {
 			// if any lb that is expected is not created, return false to retry creation
-			return nil, false, virtualIpExists, nil
+			return nil, false, nil
 		}
 		// If we've reached here, then there must've been at least 1 virtualIp belonging to a certain port in the service
-		virtualIpExists = true
 	}
 	if virtualIP == "" {
 		// this implies that no port was specified
-		return nil, false, virtualIpExists, nil
+		return nil, false, nil
 	}
 
 	return &v1.LoadBalancerStatus{
@@ -174,7 +172,7 @@ func (lb *LBManager) getLoadBalancer(ctx context.Context,
 				IP: virtualIP,
 			},
 		},
-	}, true, virtualIpExists, nil
+	}, true, nil
 
 }
 
@@ -188,17 +186,22 @@ func (lb *LBManager) GetLoadBalancer(ctx context.Context, clusterName string,
 	if err = lb.vcdClient.RefreshBearerToken(); err != nil {
 		return nil, false, fmt.Errorf("error while obtaining access token: [%v]", err)
 	}
-	lbStatus, lbExists, hasOneOrMoreVirtualIp, err := lb.getLoadBalancer(ctx, service)
-
-	// If our loadbalancer doesn't exist, we want to check if any virtualIp was given, for example given for HTTP, and if there is 1 we want to return true
-	// for `exists` to ensure delete will clean up properly even if loadbalancer failed to ensure.
+	lbStatus, lbExists, err := lb.getLoadBalancer(ctx, service)
 
 	// In error case, it does not matter if exists is true or false as controller returns on any errors before checking if LB exists.
-	// If `lbExists` is false, then we should check if was at least 1 virtualIp given, if so we should return true for `exists` for clean up.
-	// If `lbExists` returns false from lb.getLoadBalancer(), `lbStatus` will always be nil.
-	// If `lbExists` is false, and does not have a virtualIp, then we will return false and no clean up will occur. This indicates lbStatus is nil.
-	//
-	return lbStatus, lbExists || hasOneOrMoreVirtualIp, err
+	if err != nil {
+		return nil, false, err
+	}
+
+	// if lbExists is false, then that means loadbalancer did not come up fully, but may have created some resources. Which also means lbStatus is nil, hence we can
+	// return nil for the status back to controller.
+	// In this case, we would need to check if there is any VCD resources, if so we can return true for 'exists' to controller to call EnsureLoadBalancerDeleted()
+	if !lbExists {
+		hasVcdResources, vcdResourceCheckErr := lb.hasVcdResources(ctx, service)
+		return nil, hasVcdResources, vcdResourceCheckErr
+	}
+
+	return lbStatus, lbExists, err
 }
 
 // getTrimmedClusterID: this is a mitigation to not overflow VCD name length limits. There is a clearer
@@ -292,7 +295,7 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 
 	lbPoolNamePrefix := lb.getLBPoolNamePrefix(ctx, service)
 	virtualServiceNamePrefix := lb.getVirtualServicePrefix(ctx, service)
-	lbStatus, lbExists, _, err := lb.getLoadBalancer(ctx, service)
+	lbStatus, lbExists, err := lb.getLoadBalancer(ctx, service)
 	if err != nil {
 		return nil, fmt.Errorf("unexpected error while querying for loadbalancer: [%v]", err)
 	}
@@ -367,4 +370,23 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 			},
 		},
 	}, nil
+}
+
+// hasVcdResources checks for any CPI created components, such as virtual service, LB pool, and NAT rule refs for determining GetLoadBalancer()
+// to be returned true for VCD resource clean up by the controller
+func (lb *LBManager) hasVcdResources(ctx context.Context, service *v1.Service) (bool, error) {
+	virtualServiceNamePrefix := lb.getVirtualServicePrefix(ctx, service)
+	lbPoolNamePrefix := lb.getLBPoolNamePrefix(ctx, service)
+	klog.Infof("Checking VCD Resources with virtual service [%s] and lb pool [%s]", virtualServiceNamePrefix, lbPoolNamePrefix)
+
+	portDetailsList := make([]vcdclient.PortDetails, len(service.Spec.Ports))
+	for idx, port := range service.Spec.Ports {
+		portDetailsList[idx] = vcdclient.PortDetails{
+			PortSuffix: port.Name,
+			ExternalPort: port.Port,
+			InternalPort: port.NodePort,
+			Protocol: string(port.Protocol),
+		}
+	}
+	return lb.vcdClient.HasVCDResources(ctx, virtualServiceNamePrefix, lbPoolNamePrefix, portDetailsList)
 }
