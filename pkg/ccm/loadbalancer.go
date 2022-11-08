@@ -196,7 +196,7 @@ func (lb *LBManager) GetLoadBalancer(ctx context.Context, clusterName string,
 	// return nil for the status back to controller.
 	// In this case, we would need to check if there is any VCD resources, if so we can return true for 'exists' to controller to call EnsureLoadBalancerDeleted()
 	if !lbExists {
-		hasVcdResources, vcdResourceCheckErr := lb.verifyVCDResourcesForAppliationLB(ctx, service)
+		hasVcdResources, vcdResourceCheckErr := lb.verifyVCDResourcesForApplicationLB(ctx, service)
 		return nil, hasVcdResources, vcdResourceCheckErr
 	}
 
@@ -371,9 +371,9 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 	}, nil
 }
 
-// verifyVCDResourcesForAppliationLB checks for any CPI created components, such as virtual service, LB pool, and NAT rule refs for determining GetLoadBalancer()
+// verifyVCDResourcesForApplicationLB checks for any CPI created components, such as virtual service, LB pool, and NAT rule refs for determining GetLoadBalancer()
 // to be returned true for VCD resource clean up by the controller
-func (lb *LBManager) verifyVCDResourcesForAppliationLB (ctx context.Context, service *v1.Service) (bool, error) {
+func (lb *LBManager) verifyVCDResourcesForApplicationLB(ctx context.Context, service *v1.Service) (bool, error) {
 	virtualServiceNamePrefix := lb.getVirtualServicePrefix(ctx, service)
 	lbPoolNamePrefix := lb.getLBPoolNamePrefix(ctx, service)
 	klog.Infof("Checking VCD Resources with virtual service [%s] and lb pool [%s]", virtualServiceNamePrefix, lbPoolNamePrefix)
