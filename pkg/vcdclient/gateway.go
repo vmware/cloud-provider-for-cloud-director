@@ -1741,7 +1741,7 @@ func (client *Client) IsNSXTBackedGateway() bool {
 	return isNSXTBackedGateway
 }
 
-func (client *Client) HasVCDResources(ctx context.Context, virtualServiceNamePrefix string,
+func (client *Client) VerifyVCDResourcesForApplicationLB (ctx context.Context, virtualServiceNamePrefix string,
 	lbPoolNamePrefix string, portDetailsList []PortDetails) (bool, error) {
 	for _, portDetails := range portDetailsList {
 		if portDetails.InternalPort == 0 {

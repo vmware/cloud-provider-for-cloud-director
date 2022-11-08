@@ -387,5 +387,5 @@ func (lb *LBManager) hasVcdResources(ctx context.Context, service *v1.Service) (
 			Protocol: string(port.Protocol),
 		}
 	}
-	return lb.vcdClient.HasVCDResources(ctx, virtualServiceNamePrefix, lbPoolNamePrefix, portDetailsList)
+	return lb.vcdClient.VerifyVCDResourcesForApplicationLB(ctx, virtualServiceNamePrefix, lbPoolNamePrefix, portDetailsList)
 }
