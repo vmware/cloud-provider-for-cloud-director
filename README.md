@@ -11,7 +11,6 @@ The version of the VMware Cloud Director API and Installation that are compatibl
 | 1.1.0 | 36.0+ | 10.3.1+ <br/>(10.3.1 needs hot-patch to prevent VCD cell crashes in multi-cell environments) | <ul><li>Remove legacy Kubernetes dependencies.</li><li>Application port profiles added to DNAT rules (Fixes #43)</li><li>L4, HTTP and HTTPS services supported using `appProtocol` and annotations (Fixes #44).</li><li>Allow per-service certificates.</li><li>Multiple(>2) service fixes within the same LoadBalancer service</li><li>Support for CAPVCD RDEs.</li><li>Detect and handle `PENDING` Avi LoadBalancer state to allow better controller functionality.</li></ul> |<ul><li>1.21</li><li>1.20</li><li>1.19</li></ul>|
 | 1.1.1 | 36.0+ | 10.3.1+ <br/>(10.3.1 needs hot-patch to prevent VCD cell crashes in multi-cell environments) | <ul><li>Fixed refresh-token based authentication issue observed when VCD cells are fronted by a load balancer (Fixes #37).</li><li>Updates to nodePort and port of LoadBalancer services are now supported (Fixes #49).</li></ul> |<ul><li>1.21</li><li>1.20</li><li>1.19</li></ul>|
 | 1.1.2 | 36.0+ | 10.3.1+ <br/>(10.3.1 needs hot-patch to prevent VCD cell crashes in multi-cell environments) | <ul><li>Fixed issue with clusters created using system administrator credentials where external IP addresses for application Load Balancers are picked from edge gateway of an unintended tenant.</li></ul> |<ul><li>1.21</li><li>1.20</li><li>1.19</li></ul>|
-| 1.2.0 | 36.0+ | 10.3.1+ <br/>(10.3.1 needs hot-patch to prevent VCD cell crashes in multi-cell environments) | <ul><li>For VCD >= 10.4.0, support for multiple virtual services sharing the same ip (`enableVirtualServiceSharedIP`)</li><li>Added tenant context header to cloud api calls</li><li>Added secret-based way to get cluster-id for CRS</li></ul> |<ul><li>1.21</li><li>1.20</li><li>1.19</li></ul>|
 
 This extension is intended to be installed into a Kubernetes cluster installed with [VMware Cloud Director](https://www.vmware.com/products/cloud-director.html) as a Cloud Provider, by a user that has the rights as described in the sections below.
 
@@ -28,9 +27,6 @@ Note: The cloud-provider is not impacted by the Apache Log4j open source compone
    2. Edit: CSE:NATIVECLUSTER
    3. View: CSE:NATIVECLUSTER
 3. ClusterAdminUser: For CPI functionality, there needs to be a set of additional rights added to the `ClusterAdminRole` as described in the "Additional Rights for CPI" section below. The Kubernetes Cluster needs to be **created** by a user belonging to this **enhanced** `ClusterAdminRole`. For convenience, let us term this user as the `ClusterAdminUser`.
-
-Note: For CSE 4.0, a user created from the `Kubernetes Cluster Author` role will have the necessary `CAPVCDCLUSTER` and additional CPI rights
-needed to deploy a cluster.
 
 ## VMware Cloud Director Configuration
 In this section, we assume that the Kubernetes cluster is created using the [Container Service Extension](https://github.com/vmware/container-service-extension). However that is not a mandatory requirement.
@@ -51,16 +47,6 @@ This `ClusterAdminUser` needs to be created from a `ClusterAdminRole` with the f
 
 The `Access Control` right is needed in order to generate refresh tokens for the `ClusterAdminUser`.
 
-Note: For CSE 4.0, a user created from the `Kubernetes Cluster Author` role will have these additional rights.
-
-In order to create an https ingress([Creating LoadBalancer using third-party ingress](#creation-of-a-loadBalancer-using-a-third-party-ingress)),
-the following right is also required:
-
-1. General =>
-   1. Manage Certificates Library
-
-Note: For CSE 4.0, this right is not part of the `Kubernetes Cluster Author` role.
-
 ### Instances Interface: Node Lifecycle Management (LCM)
 There is no particular configuration needed in order to use the Node LCM.
 
@@ -80,7 +66,7 @@ A ServiceEngineGroup needs to be added to the gateway of the OVDC within which t
 Any third party ingress such as Contour could be used with the CPI in order to create an L7 ingress and NSX Advanced Load Balancer with Avi will act as the L4 LoadBalancer.
 
 **Note**: In order to create a HTTPS Ingress using the Avi LoadBalancer, a certificate needs to be used. The following steps present an overview **from CPI 1.1.0 onwards**:
-1. As a user with OrgAdmin role, upload a certificate into the Certificates Library of the Organization using the VCD UI. Let this certificate be called `my-service-cert`.
+1. As a user with OrgAdmin role, upload a certificate into the Trusted Certificates of the Organization using the VCD UI. Let this certificate be called `my-service-cert`.
 
 2. Add the following annotations to the ingress loadbalancer service. Depending on the installation method used (helm etc), the location of addition of these annotations may be different. The annotation mentions the _comma-separated list of ports_ that need SSL and the (single) certificate to be used for it.
 ```
@@ -101,12 +87,6 @@ To upgrade CPI to v1.1.2, please execute the following command
 ```shell
 kubectl patch deployment -n kube-system vmware-cloud-director-ccm -p '{"spec": {"template": {"spec": {"containers": [{"name": "vmware-cloud-director-ccm", "image": "projects.registry.vmware.com/vmware-cloud-director/cloud-provider-for-cloud-director:1.1.2.latest"}]}}}}'
 ```
-
-### Virtual Service Shared IP (VCD >= 10.4)
-As of CPI 1.2, the `enableVirtualServiceSharedIP` feature allows utilizing a feature in VCD >= 10.4 in which multiple virtual services can be created with the same external ip and different ports. This removes the need to create a dnat rule.
-`enableVirtualServiceSharedIP` must be set to `true` to use this feature.
-
-Note: if `enableVirtualServiceSharedIP`  is set to `true` and `oneArm` is not `nil`, this means that the virtual services will share an internal ip instead of an external ip. DNAT rules are used to map the shared internal ip to an external ip.
 
 ## Troubleshooting
 ### Log VCD requests and responses
