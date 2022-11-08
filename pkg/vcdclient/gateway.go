@@ -1751,7 +1751,6 @@ func (client *Client) VerifyVCDResourcesForApplicationLB (ctx context.Context, v
 		}
 		virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, portDetails.PortSuffix)
 		lbPoolName := fmt.Sprintf("%s-%s", lbPoolNamePrefix, portDetails.PortSuffix)
-		dnatRuleName := getDNATRuleName(virtualServiceName)
 
 		vsSummary, err := client.getVirtualService(ctx, virtualServiceName)
 		if err != nil {
@@ -1772,13 +1771,16 @@ func (client *Client) VerifyVCDResourcesForApplicationLB (ctx context.Context, v
 			return true, nil
 		}
 
-		dnatRuleRef, err := client.getNATRuleRef(ctx, dnatRuleName)
-		if err != nil {
-			return false, fmt.Errorf("error getting dnat rule ref for [%s]: [%v]", dnatRuleName, err)
-		}
-		if dnatRuleRef != nil {
-			klog.Infof("DNAT Rule Ref found: [%s]", lbPoolName)
-			return true, nil
+		if client.OneArm != nil {
+			dnatRuleName := getDNATRuleName(virtualServiceName)
+			dnatRuleRef, err := client.getNATRuleRef(ctx, dnatRuleName)
+			if err != nil {
+				return false, fmt.Errorf("error getting dnat rule ref for [%s]: [%v]", dnatRuleName, err)
+			}
+			if dnatRuleRef != nil {
+				klog.Infof("DNAT Rule Ref found: [%s]", lbPoolName)
+				return true, nil
+			}
 		}
 	}
 	return false, nil
