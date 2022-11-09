@@ -96,12 +96,6 @@ This will enable the HTTPS ingresses of the Kubernetes cluster to use the fore-m
 **Note:**
 From v1.1.0 onwards, certificates can have user-defined names. Each service could use its own certificate and there does not need to be one common certificate used across services.
 
-## Upgrade CPI
-To upgrade CPI to v1.1.2, please execute the following command
-```shell
-kubectl patch deployment -n kube-system vmware-cloud-director-ccm -p '{"spec": {"template": {"spec": {"containers": [{"name": "vmware-cloud-director-ccm", "image": "projects.registry.vmware.com/vmware-cloud-director/cloud-provider-for-cloud-director:1.1.2.latest"}]}}}}'
-```
-
 ### Virtual Service Shared IP (VCD >= 10.4)
 As of CPI 1.2, the `enableVirtualServiceSharedIP` feature allows utilizing a feature in VCD >= 10.4 in which multiple virtual services can be created with the same external ip and different ports. This removes the need to create a dnat rule.
 `enableVirtualServiceSharedIP` must be set to `true` to use this feature.
