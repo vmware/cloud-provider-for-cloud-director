@@ -29,9 +29,6 @@ Note: The cloud-provider is not impacted by the Apache Log4j open source compone
    3. View: CSE:NATIVECLUSTER
 3. ClusterAdminUser: For CPI functionality, there needs to be a set of additional rights added to the `ClusterAdminRole` as described in the "Additional Rights for CPI" section below. The Kubernetes Cluster needs to be **created** by a user belonging to this **enhanced** `ClusterAdminRole`. For convenience, let us term this user as the `ClusterAdminUser`.
 
-Note: For CSE 4.0, a user created from the `Kubernetes Cluster Author` role will have the necessary `CAPVCDCLUSTER` and additional CPI rights
-needed to deploy a cluster.
-
 ## VMware Cloud Director Configuration
 In this section, we assume that the Kubernetes cluster is created using the [Container Service Extension](https://github.com/vmware/container-service-extension). However that is not a mandatory requirement.
 
@@ -50,16 +47,6 @@ This `ClusterAdminUser` needs to be created from a `ClusterAdminRole` with the f
    1. User => Manage user's own API TOKEN
 
 The `Access Control` right is needed in order to generate refresh tokens for the `ClusterAdminUser`.
-
-Note: For CSE 4.0, a user created from the `Kubernetes Cluster Author` role will have these additional rights.
-
-In order to create an https ingress([Creating LoadBalancer using third-party ingress](#creation-of-a-loadBalancer-using-a-third-party-ingress)),
-the following right is also required:
-
-1. General =>
-   1. Manage Certificates Library
-
-Note: For CSE 4.0, this right is not part of the `Kubernetes Cluster Author` role.
 
 ### Instances Interface: Node Lifecycle Management (LCM)
 There is no particular configuration needed in order to use the Node LCM.
@@ -80,7 +67,7 @@ A ServiceEngineGroup needs to be added to the gateway of the OVDC within which t
 Any third party ingress such as Contour could be used with the CPI in order to create an L7 ingress and NSX Advanced Load Balancer with Avi will act as the L4 LoadBalancer.
 
 **Note**: In order to create a HTTPS Ingress using the Avi LoadBalancer, a certificate needs to be used. The following steps present an overview **from CPI 1.1.0 onwards**:
-1. As a user with OrgAdmin role, upload a certificate into the Certificates Library of the Organization using the VCD UI. Let this certificate be called `my-service-cert`.
+1. As a user with OrgAdmin role, upload a certificate into the Trusted Certificates of the Organization using the VCD UI. Let this certificate be called `my-service-cert`.
 
 2. Add the following annotations to the ingress loadbalancer service. Depending on the installation method used (helm etc), the location of addition of these annotations may be different. The annotation mentions the _comma-separated list of ports_ that need SSL and the (single) certificate to be used for it.
 ```
