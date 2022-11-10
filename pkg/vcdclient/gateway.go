@@ -1740,3 +1740,48 @@ func (client *Client) IsNSXTBackedGateway() bool {
 
 	return isNSXTBackedGateway
 }
+
+func (client *Client) VerifyVCDResourcesForApplicationLB (ctx context.Context, virtualServiceNamePrefix string,
+	lbPoolNamePrefix string, portDetailsList []PortDetails) (bool, error) {
+	for _, portDetails := range portDetailsList {
+		if portDetails.InternalPort == 0 {
+			klog.Infof("No internal port specified for [%s], hence loadbalancer not created\n",
+				portDetails.PortSuffix)
+			continue
+		}
+		virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, portDetails.PortSuffix)
+		lbPoolName := fmt.Sprintf("%s-%s", lbPoolNamePrefix, portDetails.PortSuffix)
+
+		vsSummary, err := client.getVirtualService(ctx, virtualServiceName)
+		if err != nil {
+			return false, fmt.Errorf("error getting virtual service [%s]: [%v]", virtualServiceName, err)
+		}
+
+		if vsSummary != nil {
+			klog.Infof("Virtual Service found: [%s]", virtualServiceName)
+			return true, nil
+		}
+
+		lbPool, err := client.getLoadBalancerPool(ctx, lbPoolName)
+		if err != nil {
+			return false, fmt.Errorf("error getting loadbalancer pool for [%s]: [%v]", lbPoolName, err)
+		}
+		if lbPool != nil {
+			klog.Infof("Load balancer pool found: [%s]", lbPoolName)
+			return true, nil
+		}
+
+		if client.OneArm != nil {
+			dnatRuleName := getDNATRuleName(virtualServiceName)
+			dnatRuleRef, err := client.getNATRuleRef(ctx, dnatRuleName)
+			if err != nil {
+				return false, fmt.Errorf("error getting dnat rule ref for [%s]: [%v]", dnatRuleName, err)
+			}
+			if dnatRuleRef != nil {
+				klog.Infof("DNAT Rule Ref found: [%s]", lbPoolName)
+				return true, nil
+			}
+		}
+	}
+	return false, nil
+}

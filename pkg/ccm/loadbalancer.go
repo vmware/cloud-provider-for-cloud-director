@@ -185,7 +185,22 @@ func (lb *LBManager) GetLoadBalancer(ctx context.Context, clusterName string,
 	if err = lb.vcdClient.RefreshBearerToken(); err != nil {
 		return nil, false, fmt.Errorf("error while obtaining access token: [%v]", err)
 	}
-	return lb.getLoadBalancer(ctx, service)
+	lbStatus, lbExists, err := lb.getLoadBalancer(ctx, service)
+
+	// In error case, it does not matter if exists is true or false as controller returns on any errors before checking if LB exists.
+	if err != nil {
+		return nil, false, err
+	}
+
+	// if lbExists is false, then that means loadbalancer did not come up fully, but may have created some resources. Which also means lbStatus is nil, hence we can
+	// return nil for the status back to controller.
+	// In this case, we would need to check if there is any VCD resources, if so we can return true for 'exists' to controller to call EnsureLoadBalancerDeleted()
+	if !lbExists {
+		hasVcdResources, vcdResourceCheckErr := lb.verifyVCDResourcesForApplicationLB(ctx, service)
+		return nil, hasVcdResources, vcdResourceCheckErr
+	}
+
+	return lbStatus, lbExists, err
 }
 
 // getTrimmedClusterID: this is a mitigation to not overflow VCD name length limits. There is a clearer
@@ -354,4 +369,23 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 			},
 		},
 	}, nil
+}
+
+// verifyVCDResourcesForApplicationLB checks for any CPI created components, such as virtual service, LB pool, and NAT rule refs for determining GetLoadBalancer()
+// to be returned true for VCD resource clean up by the controller
+func (lb *LBManager) verifyVCDResourcesForApplicationLB(ctx context.Context, service *v1.Service) (bool, error) {
+	virtualServiceNamePrefix := lb.getVirtualServicePrefix(ctx, service)
+	lbPoolNamePrefix := lb.getLBPoolNamePrefix(ctx, service)
+	klog.Infof("Checking VCD Resources with virtual service [%s] and lb pool [%s]", virtualServiceNamePrefix, lbPoolNamePrefix)
+
+	portDetailsList := make([]vcdclient.PortDetails, len(service.Spec.Ports))
+	for idx, port := range service.Spec.Ports {
+		portDetailsList[idx] = vcdclient.PortDetails{
+			PortSuffix: port.Name,
+			ExternalPort: port.Port,
+			InternalPort: port.NodePort,
+			Protocol: string(port.Protocol),
+		}
+	}
+	return lb.vcdClient.VerifyVCDResourcesForApplicationLB(ctx, virtualServiceNamePrefix, lbPoolNamePrefix, portDetailsList)
 }
