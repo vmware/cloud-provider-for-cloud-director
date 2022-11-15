@@ -85,10 +85,19 @@ This will enable the HTTPS ingresses of the Kubernetes cluster to use the fore-m
 From v1.1.0 onwards, certificates can have user-defined names. Each service could use its own certificate and there does not need to be one common certificate used across services.
 
 ## Upgrade CPI
-To upgrade CPI to v1.1.3, please execute the following command
+To upgrade CPI to v1.1.3 for existing clusters, please execute the following command for each cluster:
 ```shell
 kubectl patch deployment -n kube-system vmware-cloud-director-ccm -p '{"spec": {"template": {"spec": {"containers": [{"name": "vmware-cloud-director-ccm", "image": "projects.registry.vmware.com/vmware-cloud-director/cloud-provider-for-cloud-director:1.1.3.latest"}]}}}}'
 ```
+
+To upgrade CPI to v1.1.3 for new clusters created by CSE 3.1.x, please update the CSE configuration file:
+```yaml
+extra_options:
+  cpi_version: "1.1.3"
+```
+Reference: [CSE 3.1.4 Documentation - Optional Configuration Section](https://docs.vmware.com/en/VMware-Cloud-Director-Container-Service-Extension/3.1.4/VMware-Cloud-Director-Container-Service-Extension-Install-provider/GUID-6BD65A98-C23B-4B96-AF82-02B8D6084616.html)
+
+
 
 ## Contributing
 Please see [CONTRIBUTING.md](CONTRIBUTING.md) for instructions on how to contribute.
