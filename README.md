@@ -86,7 +86,12 @@ This will enable the HTTPS ingresses of the Kubernetes cluster to use the fore-m
 
 ### Virtual Service Shared IP (VCD >= 10.4.0)
 As of CPI 1.2.0, the `enableVirtualServiceSharedIP` feature allows utilizing a feature in VCD >= 10.4.0 in which multiple virtual services can be created with the same external ip and different ports. This removes the need to create a dnat rule.
-`enableVirtualServiceSharedIP` must be set to `true` to use this feature.
+`enableVirtualServiceSharedIP` must be set to `true` in the configmap to use this feature:
+
+```
+loadbalancer:
+   enableVirtualServiceSharedIP: true
+```
 
 Note: if `enableVirtualServiceSharedIP`  is set to `true` and `oneArm` is not `nil`, this means that the virtual services will share an internal ip instead of an external ip. DNAT rules are used to map the shared internal ip to an external ip.
 
