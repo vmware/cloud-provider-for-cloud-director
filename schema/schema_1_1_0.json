@@ -1,0 +1,42 @@
+{
+  "components": {
+    "cpi": {
+      "type": "object",
+      "description": "schema for the CPI status section in capvcdCluster defined entity.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "name of the CPI component"
+        },
+        "version": {
+          "type": "string",
+          "description": "version of the CPI used"
+        },
+        "eventSet": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {}
+          },
+          "description": "list of most recent events from CPI"
+        },
+        "vcdResourceSet": {
+          "type": "array",
+          "description": "list of VCD resources created by CPI. Virtual IP for the ALB created by CPI will be part of additionalDetails section of the 'virtual-service' resource.",
+          "items": {
+            "type": "object",
+            "properties": {}
+          }
+        },
+        "errorSet": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {}
+          }
+        }
+      }
+    }
+  }
+}
+
