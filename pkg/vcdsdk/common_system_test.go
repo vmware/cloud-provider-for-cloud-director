@@ -30,6 +30,7 @@ type VcdConfig struct {
 	VIPSubnet        string `yaml:"vipSubnet"`
 	CertificateAlias string `yaml:"certificateAlias"`
 	ClusterID        string `yaml:"clusterID"`
+	FreeExternalIP   string `yaml:"freeExternalIP"`
 }
 
 type authorizationDetails struct {
