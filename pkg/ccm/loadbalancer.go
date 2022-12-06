@@ -688,8 +688,7 @@ func (lb *LBManager) verifyVCDResourcesForApplicationLB(ctx context.Context, vir
 
 	for _, portDetails := range portDetailsList {
 		if portDetails.InternalPort == 0 {
-			klog.Infof("No internal port specified for [%s], hence loadbalancer not created\n",
-				portDetails.PortSuffix)
+			klog.Infof("No internal port specified for [%s], hence loadbalancer not created", portDetails.PortSuffix)
 			continue
 		}
 		virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, portDetails.PortSuffix)
@@ -697,7 +696,7 @@ func (lb *LBManager) verifyVCDResourcesForApplicationLB(ctx context.Context, vir
 
 		vsSummary, err := gatewayMgr.GetVirtualService(ctx, virtualServiceNamePrefix)
 		if err != nil {
-			return false, fmt.Errorf("error getting virtual service [%s]: [%v]", virtualServiceName, err)
+			return false, fmt.Errorf("error getting virtual service [%s]: [%v] during VCD resources verification", virtualServiceName, err)
 		}
 
 		if vsSummary != nil {
@@ -707,7 +706,7 @@ func (lb *LBManager) verifyVCDResourcesForApplicationLB(ctx context.Context, vir
 
 		lbPool, err := gatewayMgr.GetLoadBalancerPool(ctx, lbPoolName)
 		if err != nil {
-			return false, fmt.Errorf("error getting loadbalancer pool for [%s]: [%v]", lbPoolName, err)
+			return false, fmt.Errorf("error getting loadbalancer pool for [%s]: [%v] during VCD resources verification", lbPoolName, err)
 		}
 		if lbPool != nil {
 			klog.Infof("Load balancer pool found: [%s]", lbPoolName)
@@ -718,7 +717,7 @@ func (lb *LBManager) verifyVCDResourcesForApplicationLB(ctx context.Context, vir
 			dnatRuleName := vcdsdk.GetDNATRuleName(virtualServiceName)
 			dnatRuleRef, err := gatewayMgr.GetNATRuleRef(ctx, dnatRuleName)
 			if err != nil {
-				return false, fmt.Errorf("error getting dnat rule ref for [%s]: [%v]", dnatRuleName, err)
+				return false, fmt.Errorf("error getting dnat rule ref for [%s]: [%v] during VCD resources verification", dnatRuleName, err)
 			}
 			if dnatRuleRef != nil {
 				klog.Infof("DNAT Rule Ref found: [%s]", lbPoolName)
