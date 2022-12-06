@@ -351,7 +351,10 @@ func (lb *LBManager) GetLoadBalancer(ctx context.Context, clusterName string,
 
 	for _, ip := range portNameToIPMap {
 		if ip == "" {
-			return nil, false, nil // returning false to retry creation
+			// If we have an empty IP for a specific port, there may be resources allocated in other ports so we will do resource check to return for delete.
+			// As if there is vcd resources, we should return a nil status, but true for lb exists to the controller to pick up for deletion.
+			hasVcdResources, vcdResourceCheckErr := lb.VerifyVCDResourcesForApplicationLB(ctx, service)
+			return nil, hasVcdResources, vcdResourceCheckErr
 		}
 	}
 	return status, true, nil
@@ -656,4 +659,72 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 			},
 		},
 	}, nil
+}
+
+func (lb *LBManager) VerifyVCDResourcesForApplicationLB(ctx context.Context, service *v1.Service) (bool, error) {
+	virtualServiceNamePrefix := lb.getVirtualServicePrefix(ctx, service)
+	lbPoolNamePrefix := lb.getLBPoolNamePrefix(ctx, service)
+	klog.Infof("Checking VCD Resources with virtual service [%s] and lb pool [%s]", virtualServiceNamePrefix, lbPoolNamePrefix)
+
+	portDetailsList := make([]vcdsdk.PortDetails, len(service.Spec.Ports))
+	for idx, port := range service.Spec.Ports {
+		portDetailsList[idx] = vcdsdk.PortDetails{
+			PortSuffix:   port.Name,
+			ExternalPort: port.Port,
+			InternalPort: port.NodePort,
+			Protocol:     string(port.Protocol),
+		}
+	}
+	return lb.verifyVCDResourcesForApplicationLB(ctx, virtualServiceNamePrefix, lbPoolNamePrefix, portDetailsList, lb.OneArm)
+}
+
+func (lb *LBManager) verifyVCDResourcesForApplicationLB(ctx context.Context, virtualServiceNamePrefix string,
+	lbPoolNamePrefix string, portDetailsList []vcdsdk.PortDetails, oneArm *vcdsdk.OneArm) (bool, error) {
+
+	gatewayMgr, err := vcdsdk.NewGatewayManager(ctx, lb.vcdClient, lb.ovdcNetworkName, lb.ipamSubnet)
+	if err != nil {
+		return false, fmt.Errorf("error creating new gateway manager [%v]", err)
+	}
+
+	for _, portDetails := range portDetailsList {
+		if portDetails.InternalPort == 0 {
+			klog.Infof("No internal port specified for [%s], hence loadbalancer not created\n",
+				portDetails.PortSuffix)
+			continue
+		}
+		virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, portDetails.PortSuffix)
+		lbPoolName := fmt.Sprintf("%s-%s", lbPoolNamePrefix, portDetails.PortSuffix)
+
+		vsSummary, err := gatewayMgr.GetVirtualService(ctx, virtualServiceNamePrefix)
+		if err != nil {
+			return false, fmt.Errorf("error getting virtual service [%s]: [%v]", virtualServiceName, err)
+		}
+
+		if vsSummary != nil {
+			klog.Infof("Virtual Service found: [%s]", virtualServiceName)
+			return true, nil
+		}
+
+		lbPool, err := gatewayMgr.GetLoadBalancerPool(ctx, lbPoolName)
+		if err != nil {
+			return false, fmt.Errorf("error getting loadbalancer pool for [%s]: [%v]", lbPoolName, err)
+		}
+		if lbPool != nil {
+			klog.Infof("Load balancer pool found: [%s]", lbPoolName)
+			return true, nil
+		}
+
+		if oneArm != nil {
+			dnatRuleName := vcdsdk.GetDNATRuleName(virtualServiceName)
+			dnatRuleRef, err := gatewayMgr.GetNATRuleRef(ctx, dnatRuleName)
+			if err != nil {
+				return false, fmt.Errorf("error getting dnat rule ref for [%s]: [%v]", dnatRuleName, err)
+			}
+			if dnatRuleRef != nil {
+				klog.Infof("DNAT Rule Ref found: [%s]", lbPoolName)
+				return true, nil
+			}
+		}
+	}
+	return false, nil
 }
