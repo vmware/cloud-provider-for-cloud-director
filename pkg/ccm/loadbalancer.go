@@ -300,7 +300,7 @@ func (lb *LBManager) getLoadBalancer(ctx context.Context,
 				klog.Errorf("unable to add CPI error [%s] to RDE [%s], [%v]", cpisdk.GetLoadbalancerError, lb.clusterID, addToErrorSetErr)
 			}
 			return nil, nil,
-				fmt.Errorf("unable to get virtual service summary for [%s]: [%v]",
+				fmt.Errorf("unable to get load balancer information for the service [%s]: [%v]",
 					virtualServiceName, err)
 		}
 		removeErr := cpiRdeManager.RDEManager.RemoveErrorByNameOrIdFromErrorSet(ctx, vcdsdk.ComponentCPI, cpisdk.GetLoadbalancerError, "", virtualServiceName)
@@ -354,6 +354,7 @@ func (lb *LBManager) GetLoadBalancer(ctx context.Context, clusterName string,
 			// If we have an empty IP for a specific port, there may be resources allocated in other ports so we will do resource check to return for delete.
 			// As if there is vcd resources, we should return a nil status, but true for lb exists to the controller to pick up for deletion.
 			hasVcdResources, vcdResourceCheckErr := lb.VerifyVCDResourcesForApplicationLB(ctx, service)
+			klog.Errorf("error occurred while checking vcd resource for application LB in GetLoadBalancer: [%v]", vcdResourceCheckErr)
 			return nil, hasVcdResources, vcdResourceCheckErr
 		}
 	}
