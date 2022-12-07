@@ -735,7 +735,7 @@ func (lb *LBManager) verifyVCDResourcesForApplicationLB(ctx context.Context, vir
 				return false, fmt.Errorf("error getting dnat rule ref for [%s]: [%v] during VCD resources verification", dnatRuleName, err)
 			}
 			if dnatRuleRef != nil {
-				klog.Infof("DNAT Rule Ref found: [%s]", lbPoolName)
+				klog.Infof("DNAT Rule Ref found: [%s]", dnatRuleName)
 				return true, nil
 			}
 			appPortProfileName := vcdsdk.GetAppPortProfileName(dnatRuleName)
