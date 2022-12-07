@@ -10,7 +10,7 @@ import (
 
 type TestClient struct {
 	VcdClient *vcdsdk.Client
-	Cs        *kubernetes.Clientset
+	Cs        kubernetes.Interface
 	ClusterId string
 }
 
