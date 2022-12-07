@@ -355,6 +355,10 @@ func (lb *LBManager) GetLoadBalancer(ctx context.Context, clusterName string,
 		if ip == "" {
 			// If we have an empty IP for a specific port, there may be resources allocated in other ports so we will do resource check to return for delete.
 			// As if there is vcd resources, we should return a nil status, but true for lb exists to the controller to pick up for deletion.
+
+			// In the event we do get an actual vcdResourceCheck error, then hasVcdResource (lbExists) may be false. The controller will return and reconcile
+			// as there is an error check first. If there is an error, the controller will return the delete operation immediately and continue to indicate lb has been deleted.
+			// Only if there is no error then it will check if hasVcdResource (lbExists), and if it exists, then it will ensure the deletion.
 			hasVcdResources, vcdResourceCheckErr := lb.VerifyVCDResourcesForApplicationLB(ctx, service)
 			klog.Errorf("error occurred while checking vcd resource for application LB in GetLoadBalancer: [%v]", vcdResourceCheckErr)
 			return nil, hasVcdResources, vcdResourceCheckErr
@@ -681,6 +685,11 @@ func (lb *LBManager) VerifyVCDResourcesForApplicationLB(ctx context.Context, ser
 	return lb.verifyVCDResourcesForApplicationLB(ctx, virtualServiceNamePrefix, lbPoolNamePrefix, portDetailsList, lb.OneArm)
 }
 
+/**
+In GetVirtualService(), we will always expect 1 virtual service back only. This is due to virtual service names
+being unique as there cannot have two of the same virtual service names, and in GetVirtualService() we have a FIQL name==%s filter
+to search for a virtual service of %s name.
+*/
 func (lb *LBManager) verifyVCDResourcesForApplicationLB(ctx context.Context, virtualServiceNamePrefix string,
 	lbPoolNamePrefix string, portDetailsList []vcdsdk.PortDetails, oneArm *vcdsdk.OneArm) (bool, error) {
 
@@ -697,7 +706,9 @@ func (lb *LBManager) verifyVCDResourcesForApplicationLB(ctx context.Context, vir
 		virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, portDetails.PortSuffix)
 		lbPoolName := fmt.Sprintf("%s-%s", lbPoolNamePrefix, portDetails.PortSuffix)
 
-		vsSummary, err := gatewayMgr.GetVirtualService(ctx, virtualServiceNamePrefix)
+		// GetVirtualService() will always return 1 virtual service named virtualServiceName, as VCD doesn't allow duplicate VS names.
+		// In the event where a virtual service name is not found in GetVirtualService(), it will return nil for both error and vsSummary.
+		vsSummary, err := gatewayMgr.GetVirtualService(ctx, virtualServiceName)
 		if err != nil {
 			return false, fmt.Errorf("error getting virtual service [%s]: [%v] during VCD resources verification", virtualServiceName, err)
 		}
@@ -707,6 +718,7 @@ func (lb *LBManager) verifyVCDResourcesForApplicationLB(ctx context.Context, vir
 			return true, nil
 		}
 
+		// GetLoadBalancerPool() will return nil, error if lbPool is not found.
 		lbPool, err := gatewayMgr.GetLoadBalancerPool(ctx, lbPoolName)
 		if err != nil && err != govcd.ErrorEntityNotFound {
 			return false, fmt.Errorf("error getting loadbalancer pool for [%s]: [%v] during VCD resources verification", lbPoolName, err)
