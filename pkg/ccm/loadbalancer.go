@@ -15,6 +15,8 @@ import (
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/util"
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdsdk"
 	"github.com/vmware/cloud-provider-for-cloud-director/release"
+	"github.com/vmware/go-vcloud-director/v2/govcd"
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -706,7 +708,7 @@ func (lb *LBManager) verifyVCDResourcesForApplicationLB(ctx context.Context, vir
 		}
 
 		lbPool, err := gatewayMgr.GetLoadBalancerPool(ctx, lbPoolName)
-		if err != nil {
+		if err != nil && err != govcd.ErrorEntityNotFound {
 			return false, fmt.Errorf("error getting loadbalancer pool for [%s]: [%v] during VCD resources verification", lbPoolName, err)
 		}
 		if lbPool != nil {
@@ -722,6 +724,19 @@ func (lb *LBManager) verifyVCDResourcesForApplicationLB(ctx context.Context, vir
 			}
 			if dnatRuleRef != nil {
 				klog.Infof("DNAT Rule Ref found: [%s]", lbPoolName)
+				return true, nil
+			}
+			appPortProfileName := vcdsdk.GetAppPortProfileName(dnatRuleName)
+			org, err := lb.vcdClient.VCDClient.GetOrgByName(lb.vcdClient.ClusterOrgName)
+			if err != nil {
+				return false, fmt.Errorf("unable to find org [%s] by name: [%v]", lb.vcdClient.ClusterOrgName, err)
+			}
+			appPortProfile, err := org.GetNsxtAppPortProfileByName(appPortProfileName, types.ApplicationPortProfileScopeTenant)
+			// We are doing a string check here because it returns a formatted error instead of govcd.ErrorEntityNotFound
+			if err != nil && !strings.Contains(err.Error(), "[ENF] entity not found") {
+				return false, fmt.Errorf("unable to get app port profile [%s]: [%v]", appPortProfileName, err)
+			}
+			if appPortProfile != nil {
 				return true, nil
 			}
 		}
