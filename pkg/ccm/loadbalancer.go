@@ -706,7 +706,7 @@ func (lb *LBManager) verifyVCDResourcesForApplicationLB(ctx context.Context, vir
 		virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, portDetails.PortSuffix)
 		lbPoolName := fmt.Sprintf("%s-%s", lbPoolNamePrefix, portDetails.PortSuffix)
 
-		// GetVirtualService() will always return 1 virtual service named virtualServiceName, as VCD doesn't allow duplicate VS names.
+		// GetVirtualService() will always look for 1 virtual service named virtualServiceName, as VCD doesn't allow duplicate VS names.
 		// In the event where a virtual service name is not found in GetVirtualService(), it will return nil for both error and vsSummary.
 		vsSummary, err := gatewayMgr.GetVirtualService(ctx, virtualServiceName)
 		if err != nil {
