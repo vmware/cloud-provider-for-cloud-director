@@ -360,7 +360,9 @@ func (lb *LBManager) GetLoadBalancer(ctx context.Context, clusterName string,
 			// as there is an error check first. If there is an error, the controller will return the delete operation immediately and will not continue to indicate lb has been deleted.
 			// Only if there is no error then it will check if hasVcdResource (lbExists), and if it exists, then it will ensure the deletion.
 			hasVcdResources, vcdResourceCheckErr := lb.VerifyVCDResourcesForApplicationLB(ctx, service)
-			klog.Errorf("error occurred while checking vcd resource for application LB in GetLoadBalancer: [%v]", vcdResourceCheckErr)
+			if vcdResourceCheckErr != nil {
+				klog.Errorf("error occurred while checking vcd resource for application LB in GetLoadBalancer: [%v]", vcdResourceCheckErr)
+			}
 			return nil, hasVcdResources, vcdResourceCheckErr
 		}
 	}
