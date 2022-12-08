@@ -25,8 +25,8 @@ var (
 )
 
 func isPvcReady(ctx context.Context, k8sClient *kubernetes.Clientset, nameSpace string, pvcName string) (bool, error) {
-	const retryInterval = 10 * time.Second
-	const retryTimeout = 60 * time.Second
+	retryInterval := 10 * time.Second
+	retryTimeout := 60 * time.Second
 	err := wait.PollImmediate(retryInterval, retryTimeout, func() (bool, error) {
 		ready := false
 		pvc, err := getPVC(ctx, k8sClient, nameSpace, pvcName)
