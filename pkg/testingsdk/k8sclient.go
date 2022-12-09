@@ -1,4 +1,4 @@
-package Testingsdk
+package testingsdk
 
 import (
 	"context"
@@ -12,6 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilnet "k8s.io/apimachinery/pkg/util/net"
 	"k8s.io/apimachinery/pkg/util/wait"
+
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog"
 	"strings"
@@ -19,20 +20,22 @@ import (
 )
 
 var (
-	ResourceExisted   = errors.New("[REX] resource is already existed")
-	ResourceNotFound  = errors.New("[RNF] resource is not found")
-	ResourceNameNulll = errors.New("[RNN] resource name is null")
+	ResourceExisted          = errors.New("[REX] resource is already existed")
+	ResourceNotFound         = errors.New("[RNF] resource is not found")
+	ResourceNameNull         = errors.New("[RNN] resource name is null")
+	ControlPlaneLabel        = "node-role.kubernetes.io/control-plane"
+	defaultRetryInterval     = 20 * time.Second
+	defaultRetryTimeout      = 160 * time.Second
+	defaultLongRetryInterval = 60 * time.Second
+	defaultLongRetryTimeout  = 300 * time.Second
 )
 
 func isPvcReady(ctx context.Context, k8sClient *kubernetes.Clientset, nameSpace string, pvcName string) (bool, error) {
-	retryInterval := 10 * time.Second
-	retryTimeout := 60 * time.Second
-	err := wait.PollImmediate(retryInterval, retryTimeout, func() (bool, error) {
+	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
 		ready := false
 		pvc, err := getPVC(ctx, k8sClient, nameSpace, pvcName)
 		if err != nil {
-			if apierrs.IsInternalError(err) || apierrs.IsTimeout(err) || apierrs.IsServerTimeout(err) ||
-				apierrs.IsTooManyRequests(err) || utilnet.IsProbableEOF(err) || utilnet.IsConnectionReset(err) {
+			if IsRetryableError(err) {
 				return false, nil
 			}
 			return false, fmt.Errorf("unexpected error occurred while getting pvc [%s]", pvcName)
@@ -40,7 +43,7 @@ func isPvcReady(ctx context.Context, k8sClient *kubernetes.Clientset, nameSpace 
 		if err != nil {
 			return false, nil
 		}
-		if pvc != nil && pvc.Status.Phase == "Bound" {
+		if pvc != nil && pvc.Status.Phase == apiv1.ClaimBound {
 			ready = true
 		}
 		if !ready {
@@ -56,14 +59,10 @@ func isPvcReady(ctx context.Context, k8sClient *kubernetes.Clientset, nameSpace 
 }
 
 func isDeploymentReady(ctx context.Context, k8sClient *kubernetes.Clientset, nameSpace string, deployName string) (bool, error) {
-	retryInterval := 20 * time.Second
-	retryTimeout := 140 * time.Second
-
-	err := wait.PollImmediate(retryInterval, retryTimeout, func() (bool, error) {
-		pods, err := getPodByPrefix(ctx, k8sClient, nameSpace, deployName)
+	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
+		pods, err := getPodsByPrefix(ctx, k8sClient, nameSpace, deployName)
 		if err != nil {
-			if apierrs.IsInternalError(err) || apierrs.IsTimeout(err) || apierrs.IsServerTimeout(err) ||
-				apierrs.IsTooManyRequests(err) || utilnet.IsProbableEOF(err) || utilnet.IsConnectionReset(err) {
+			if IsRetryableError(err) {
 				return false, nil
 			}
 			return false, fmt.Errorf("unexpected error occurred while getting deployment [%s]", deployName)
@@ -89,16 +88,13 @@ func isDeploymentReady(ctx context.Context, k8sClient *kubernetes.Clientset, nam
 }
 
 func isPVDeleted(ctx context.Context, k8sClient *kubernetes.Clientset, pvName string) (bool, error) {
-	retryInterval := 20 * time.Second
-	retryTimeout := 140 * time.Second
-	err := wait.PollImmediate(retryInterval, retryTimeout, func() (bool, error) {
+	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
 		_, err := getPV(ctx, k8sClient, pvName)
 		if err != nil {
 			if err == ResourceNotFound {
 				return true, nil
 			}
-			if apierrs.IsInternalError(err) || apierrs.IsTimeout(err) || apierrs.IsServerTimeout(err) ||
-				apierrs.IsTooManyRequests(err) || utilnet.IsProbableEOF(err) || utilnet.IsConnectionReset(err) {
+			if IsRetryableError(err) {
 				return false, nil
 			}
 			return false, fmt.Errorf("unexpected error occurred while getting persistentVolume [%s]", pvName)
@@ -112,16 +108,13 @@ func isPVDeleted(ctx context.Context, k8sClient *kubernetes.Clientset, pvName st
 }
 
 func isPVCDeleted(ctx context.Context, k8sClient *kubernetes.Clientset, nameSpace string, pvcName string) (bool, error) {
-	retryInterval := 20 * time.Second
-	retryTimeout := 140 * time.Second
-	err := wait.PollImmediate(retryInterval, retryTimeout, func() (bool, error) {
+	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
 		_, err := getPVC(ctx, k8sClient, pvcName, nameSpace)
 		if err != nil {
 			if err == ResourceNotFound {
 				return true, nil
 			}
-			if apierrs.IsInternalError(err) || apierrs.IsTimeout(err) || apierrs.IsServerTimeout(err) ||
-				apierrs.IsTooManyRequests(err) || utilnet.IsProbableEOF(err) || utilnet.IsConnectionReset(err) {
+			if IsRetryableError(err) {
 				return false, nil
 			}
 			return false, fmt.Errorf("unexpected error occurred while getting persistentVolumeClaim [%s]", pvcName)
@@ -135,16 +128,13 @@ func isPVCDeleted(ctx context.Context, k8sClient *kubernetes.Clientset, nameSpac
 }
 
 func isDeploymentDeleted(ctx context.Context, k8sClient *kubernetes.Clientset, nameSpace string, deployName string) (bool, error) {
-	retryInterval := 20 * time.Second
-	retryTimeout := 140 * time.Second
-	err := wait.PollImmediate(retryInterval, retryTimeout, func() (bool, error) {
+	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
 		_, err := getDeployment(ctx, k8sClient, nameSpace, deployName)
 		if err != nil {
 			if err == ResourceNotFound {
 				return true, nil
 			}
-			if apierrs.IsInternalError(err) || apierrs.IsTimeout(err) || apierrs.IsServerTimeout(err) ||
-				apierrs.IsTooManyRequests(err) || utilnet.IsProbableEOF(err) || utilnet.IsConnectionReset(err) {
+			if IsRetryableError(err) {
 				return false, nil
 			}
 			return false, fmt.Errorf("unexpected error occurred while getting deployment [%s]", deployName)
@@ -158,16 +148,13 @@ func isDeploymentDeleted(ctx context.Context, k8sClient *kubernetes.Clientset, n
 }
 
 func isServiceDeleted(ctx context.Context, k8sClient *kubernetes.Clientset, nameSpace string, serviceName string) (bool, error) {
-	retryInterval := 20 * time.Second
-	retryTimeout := 140 * time.Second
-	err := wait.PollImmediate(retryInterval, retryTimeout, func() (bool, error) {
+	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
 		_, err := getDeployment(ctx, k8sClient, nameSpace, serviceName)
 		if err != nil {
 			if err == ResourceNotFound {
 				return true, nil
 			}
-			if apierrs.IsInternalError(err) || apierrs.IsTimeout(err) || apierrs.IsServerTimeout(err) ||
-				apierrs.IsTooManyRequests(err) || utilnet.IsProbableEOF(err) || utilnet.IsConnectionReset(err) {
+			if IsRetryableError(err) {
 				return false, nil
 			}
 			return false, fmt.Errorf("unexpected error occurred while getting service [%s]", serviceName)
@@ -181,16 +168,13 @@ func isServiceDeleted(ctx context.Context, k8sClient *kubernetes.Clientset, name
 }
 
 func isNameSpaceDeleted(ctx context.Context, k8sClient *kubernetes.Clientset, nameSpace string) (bool, error) {
-	retryInterval := 60 * time.Second
-	retryTimeout := 300 * time.Second
-	err := wait.PollImmediate(retryInterval, retryTimeout, func() (bool, error) {
+	err := wait.PollImmediate(defaultLongRetryInterval, defaultLongRetryTimeout, func() (bool, error) {
 		_, err := k8sClient.CoreV1().Namespaces().Get(ctx, nameSpace, metav1.GetOptions{})
 		if err != nil {
-			if err.(*apierrs.StatusError).ErrStatus.Reason == "NotFound" {
+			if apierrs.IsNotFound(err) {
 				return true, nil
 			}
-			if apierrs.IsInternalError(err) || apierrs.IsTimeout(err) || apierrs.IsServerTimeout(err) ||
-				apierrs.IsTooManyRequests(err) || utilnet.IsProbableEOF(err) || utilnet.IsConnectionReset(err) {
+			if IsRetryableError(err) {
 				return false, nil
 			}
 			return false, fmt.Errorf("unexpected error occurred while getting namespace [%s]", nameSpace)
@@ -204,16 +188,13 @@ func isNameSpaceDeleted(ctx context.Context, k8sClient *kubernetes.Clientset, na
 }
 
 func isStorageClassDeleted(ctx context.Context, k8sClient *kubernetes.Clientset, scName string) (bool, error) {
-	retryInterval := 60 * time.Second
-	retryTimeout := 300 * time.Second
-	err := wait.PollImmediate(retryInterval, retryTimeout, func() (bool, error) {
+	err := wait.PollImmediate(defaultLongRetryInterval, defaultLongRetryTimeout, func() (bool, error) {
 		_, err := k8sClient.StorageV1().StorageClasses().Get(ctx, scName, metav1.GetOptions{})
 		if err != nil {
-			if err.(*apierrs.StatusError).ErrStatus.Reason == "NotFound" {
+			if apierrs.IsNotFound(err) {
 				return true, nil
 			}
-			if apierrs.IsInternalError(err) || apierrs.IsTimeout(err) || apierrs.IsServerTimeout(err) ||
-				apierrs.IsTooManyRequests(err) || utilnet.IsProbableEOF(err) || utilnet.IsConnectionReset(err) {
+			if IsRetryableError(err) {
 				return false, nil
 			}
 			return false, fmt.Errorf("unexpected error occurred while getting storage class [%s]")
@@ -226,13 +207,21 @@ func isStorageClassDeleted(ctx context.Context, k8sClient *kubernetes.Clientset,
 	return true, nil
 }
 
+func IsRetryableError(err error) bool {
+	if apierrs.IsInternalError(err) || apierrs.IsTimeout(err) || apierrs.IsServerTimeout(err) ||
+		apierrs.IsTooManyRequests(err) || utilnet.IsProbableEOF(err) || utilnet.IsConnectionReset(err) {
+		return true
+	}
+	return false
+}
+
 func getStorageClass(ctx context.Context, k8sClient *kubernetes.Clientset, scName string) (*stov1.StorageClass, error) {
 	if scName == "" {
-		return nil, ResourceNameNulll
+		return nil, ResourceNameNull
 	}
 	sc, err := k8sClient.StorageV1().StorageClasses().Get(ctx, scName, metav1.GetOptions{})
 	if err != nil {
-		if err.(*apierrs.StatusError).ErrStatus.Reason == "NotFound" {
+		if apierrs.IsNotFound(err) {
 			return nil, ResourceNotFound
 		}
 		return nil, err
@@ -240,13 +229,13 @@ func getStorageClass(ctx context.Context, k8sClient *kubernetes.Clientset, scNam
 	return sc, nil
 }
 
-func getPodByPrefix(ctx context.Context, k8sClient *kubernetes.Clientset, nameSpace string, podNamePrefix string) ([]*apiv1.Pod, error) {
+func getPodsByPrefix(ctx context.Context, k8sClient *kubernetes.Clientset, nameSpace string, podNamePrefix string) ([]*apiv1.Pod, error) {
 	if podNamePrefix == "" {
-		return nil, ResourceNameNulll
+		return nil, ResourceNameNull
 	}
 	pods, err := k8sClient.CoreV1().Pods(nameSpace).List(ctx, metav1.ListOptions{})
 	if err != nil {
-		if err.(*apierrs.StatusError).ErrStatus.Reason == "NotFound" {
+		if apierrs.IsNotFound(err) {
 			return nil, ResourceNotFound
 		}
 		return nil, err
@@ -262,11 +251,11 @@ func getPodByPrefix(ctx context.Context, k8sClient *kubernetes.Clientset, nameSp
 
 func getPV(ctx context.Context, k8sClient *kubernetes.Clientset, pvName string) (*apiv1.PersistentVolume, error) {
 	if pvName == "" {
-		return nil, ResourceNameNulll
+		return nil, ResourceNameNull
 	}
 	pv, err := k8sClient.CoreV1().PersistentVolumes().Get(ctx, pvName, metav1.GetOptions{})
 	if err != nil {
-		if err.(*apierrs.StatusError).ErrStatus.Reason == "NotFound" {
+		if apierrs.IsNotFound(err) {
 			return nil, ResourceNotFound
 		}
 		return nil, err
@@ -276,11 +265,11 @@ func getPV(ctx context.Context, k8sClient *kubernetes.Clientset, pvName string) 
 
 func getPVC(ctx context.Context, k8sClient *kubernetes.Clientset, nameSpace string, pvcName string) (*apiv1.PersistentVolumeClaim, error) {
 	if pvcName == "" {
-		return nil, ResourceNameNulll
+		return nil, ResourceNameNull
 	}
 	pvc, err := k8sClient.CoreV1().PersistentVolumeClaims(nameSpace).Get(ctx, pvcName, metav1.GetOptions{})
 	if err != nil {
-		if err.(*apierrs.StatusError).ErrStatus.Reason == "NotFound" {
+		if apierrs.IsNotFound(err) {
 			return nil, ResourceNotFound
 		}
 		return nil, err
@@ -290,11 +279,11 @@ func getPVC(ctx context.Context, k8sClient *kubernetes.Clientset, nameSpace stri
 
 func getDeployment(ctx context.Context, k8sClient *kubernetes.Clientset, nameSpace string, deployName string) (*appsv1.Deployment, error) {
 	if deployName == "" {
-		return nil, ResourceNameNulll
+		return nil, ResourceNameNull
 	}
 	deployment, err := k8sClient.AppsV1().Deployments(nameSpace).Get(ctx, deployName, metav1.GetOptions{})
 	if err != nil {
-		if err.(*apierrs.StatusError).ErrStatus.Reason == "NotFound" {
+		if apierrs.IsNotFound(err) {
 			return nil, ResourceNotFound
 		}
 		return nil, err
@@ -304,11 +293,11 @@ func getDeployment(ctx context.Context, k8sClient *kubernetes.Clientset, nameSpa
 
 func getService(ctx context.Context, k8sClient *kubernetes.Clientset, nameSpace string, serviceName string) (*apiv1.Service, error) {
 	if serviceName == "" {
-		return nil, ResourceNameNulll
+		return nil, ResourceNameNull
 	}
 	svc, err := k8sClient.CoreV1().Services(nameSpace).Get(ctx, serviceName, metav1.GetOptions{})
 	if err != nil {
-		if err.(*apierrs.StatusError).ErrStatus.Reason == "NotFound" {
+		if apierrs.IsNotFound(err) {
 			return nil, ResourceNotFound
 		}
 		return nil, err
@@ -316,9 +305,24 @@ func getService(ctx context.Context, k8sClient *kubernetes.Clientset, nameSpace 
 	return svc, nil
 }
 
+func getWorkerNodes(ctx context.Context, k8sClient *kubernetes.Clientset) ([]apiv1.Node, error) {
+	var workerNodes []apiv1.Node
+	nodes, err := k8sClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return workerNodes, fmt.Errorf("error occurred while getting nodes")
+	}
+	for _, node := range nodes.Items {
+		_, ok := node.Labels[ControlPlaneLabel]
+		if !ok {
+			workerNodes = append(workerNodes, node)
+		}
+	}
+	return workerNodes, nil
+}
+
 func createStorageClass(ctx context.Context, k8sClient *kubernetes.Clientset, scName string, reclaimPolicy string, storageProfile string) (*stov1.StorageClass, error) {
 	if scName == "" {
-		return nil, ResourceNameNulll
+		return nil, ResourceNameNull
 	}
 	var PersistentVolumeReclaimPolicy = apiv1.PersistentVolumeReclaimPolicy(reclaimPolicy)
 	sc := &stov1.StorageClass{
@@ -344,7 +348,7 @@ func createStorageClass(ctx context.Context, k8sClient *kubernetes.Clientset, sc
 
 func createNameSpace(ctx context.Context, nsName string, k8sClient *kubernetes.Clientset) (*apiv1.Namespace, error) {
 	if nsName == "" {
-		return nil, ResourceNameNulll
+		return nil, ResourceNameNull
 	}
 	namespace := &apiv1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
@@ -360,7 +364,7 @@ func createNameSpace(ctx context.Context, nsName string, k8sClient *kubernetes.C
 
 func createPV(ctx context.Context, k8sClient *kubernetes.Clientset, persistentVolumeName string, storageClass string, storageProfile string, storageSize string) (*apiv1.PersistentVolume, error) {
 	if persistentVolumeName == "" {
-		return nil, ResourceNameNulll
+		return nil, ResourceNameNull
 	}
 	persistentVolumeFilesystem := apiv1.PersistentVolumeFilesystem
 	pv := &apiv1.PersistentVolume{
@@ -404,7 +408,7 @@ func createPV(ctx context.Context, k8sClient *kubernetes.Clientset, persistentVo
 
 func createPVC(ctx context.Context, k8sClient *kubernetes.Clientset, nameSpace string, pvcName string, storageClass string, storageSize string) (*apiv1.PersistentVolumeClaim, error) {
 	if pvcName == "" {
-		return nil, ResourceNameNulll
+		return nil, ResourceNameNull
 	}
 	if nameSpace == "" {
 		nameSpace = apiv1.NamespaceDefault
@@ -437,7 +441,7 @@ func createPVC(ctx context.Context, k8sClient *kubernetes.Clientset, nameSpace s
 
 func createDeployment(ctx context.Context, k8sClient *kubernetes.Clientset, params *DeployParams, nameSpace string) (*appsv1.Deployment, error) {
 	if params.Name == "" {
-		return nil, ResourceNameNulll
+		return nil, ResourceNameNull
 	}
 	if nameSpace == "" {
 		nameSpace = apiv1.NamespaceDefault
@@ -461,8 +465,10 @@ func createDeployment(ctx context.Context, k8sClient *kubernetes.Clientset, para
 				Spec: apiv1.PodSpec{
 					Containers: []apiv1.Container{
 						{
-							Image: params.containerParams.ContainerImage,
-							Name:  params.containerParams.ContainerName,
+							Image:           params.containerParams.ContainerImage,
+							ImagePullPolicy: apiv1.PullAlways,
+							Name:            params.containerParams.ContainerName,
+							Args:            params.containerParams.Args,
 							Ports: []apiv1.ContainerPort{
 								{
 									ContainerPort: params.containerParams.ContainerPort,
@@ -499,7 +505,7 @@ func createDeployment(ctx context.Context, k8sClient *kubernetes.Clientset, para
 
 func createLoadBalancerService(ctx context.Context, k8sClient *kubernetes.Clientset, nameSpace string, serviceName string, annotations map[string]string, labels map[string]string, servicePort []apiv1.ServicePort) (*apiv1.Service, error) {
 	if serviceName == "" {
-		return nil, ResourceNameNulll
+		return nil, ResourceNameNull
 	}
 	if nameSpace == "" {
 		nameSpace = apiv1.NamespaceDefault
@@ -526,7 +532,7 @@ func createLoadBalancerService(ctx context.Context, k8sClient *kubernetes.Client
 
 func deletePVC(ctx context.Context, k8sClient *kubernetes.Clientset, nameSpace string, pvcName string) error {
 	if pvcName == "" {
-		return ResourceNameNulll
+		return ResourceNameNull
 	}
 	pvc, err := getPVC(ctx, k8sClient, nameSpace, pvcName)
 	if err != nil {
