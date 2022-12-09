@@ -79,6 +79,14 @@ func (tc *TestClient) GetComponentMapInStatus(ctx context.Context, componentName
 	return getComponentMapInStatus(ctx, tc.VcdClient, tc.ClusterId, componentName)
 }
 
+func (tc *TestClient) GetClusterName(ctx context.Context, clusterId string) (string, error) {
+	rde, err := getRdeById(ctx, tc.VcdClient, clusterId)
+	if err != nil {
+		return "", fmt.Errorf("error retrieving cluster name by clusterId [%s]: [%v]", clusterId, err)
+	}
+	return rde.Name, nil
+}
+
 func createKubeClient(kubeConfig string) (kubernetes.Interface, error) {
 	config, err := clientcmd.RESTConfigFromKubeConfig([]byte(kubeConfig))
 	if err != nil {
