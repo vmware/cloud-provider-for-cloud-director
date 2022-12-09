@@ -25,7 +25,22 @@ type VCDAuthParams struct {
 }
 
 type DeployParams struct {
-	//  TODO: To be determined for K8s Deployment Creation
+	Name            string
+	labels          map[string]string
+	volumeParams    VolumeParams
+	containerParams ContainerParams
+}
+type VolumeParams struct {
+	volumeName string
+	pvcRef     string
+	mountPath  string
+}
+
+type ContainerParams struct {
+	ContainerName  string
+	ContainerImage string
+	ContainerPort  int32
+	Args           []string
 }
 
 func NewTestClient(params *VCDAuthParams, clusterId string) (*TestClient, error) {
