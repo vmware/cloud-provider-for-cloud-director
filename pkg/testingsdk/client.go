@@ -49,7 +49,7 @@ func NewTestClient(params *VCDAuthParams, clusterId string) (*TestClient, error)
 		return nil, fmt.Errorf("error occured while generating client using [%s:%s] for cluster [%s]: [%v]", params.Username, params.UserOrg, clusterId, err)
 	}
 
-	kubeConfig, err := getKubeconfigFromRDEId(client, clusterId)
+	kubeConfig, err := getKubeconfigFromRDEId(context.TODO(), client, clusterId)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get kubeconfig from RDE [%s]: [%v]", clusterId, err)
 	}
@@ -70,8 +70,8 @@ func NewTestClient(params *VCDAuthParams, clusterId string) (*TestClient, error)
 	}, nil
 }
 
-func (tc *TestClient) GetVCDResourceSet(componentName string) ([]vcdsdk.VCDResource, error) {
-	vcdResourceSetMap, err := getVcdResourceSetComponentMapFromRDEId(context.TODO(), tc.VcdClient, componentName, tc.ClusterId)
+func (tc *TestClient) GetVCDResourceSet(ctx context.Context, componentName string) ([]vcdsdk.VCDResource, error) {
+	vcdResourceSetMap, err := getVcdResourceSetComponentMapFromRDEId(ctx, tc.VcdClient, componentName, tc.ClusterId)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving vcd resource set array from RDE [%s]: [%v]", tc.ClusterId, err)
 	}
@@ -80,6 +80,6 @@ func (tc *TestClient) GetVCDResourceSet(componentName string) ([]vcdsdk.VCDResou
 
 // Returns status.component as map[string]interface{}, this will help us narrow down to specific fields such as nodepools, vcdresources, etc
 // Components: vcdKe, projector, csi, cpi, capvcd
-func (tc *TestClient) GetComponentMapInStatus(componentName string) (map[string]interface{}, error) {
-	return getComponentMapInStatus(context.TODO(), tc.VcdClient, tc.ClusterId, componentName)
+func (tc *TestClient) GetComponentMapInStatus(ctx context.Context, componentName string) (map[string]interface{}, error) {
+	return getComponentMapInStatus(ctx, tc.VcdClient, tc.ClusterId, componentName)
 }

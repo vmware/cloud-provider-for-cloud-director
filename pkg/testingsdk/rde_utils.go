@@ -42,8 +42,8 @@ func getComponentMapInStatus(ctx context.Context, client *vcdsdk.Client, cluster
 	return componentStatus, nil
 }
 
-func getKubeconfigFromRDEId(client *vcdsdk.Client, clusterId string) (string, error) {
-	capvcdStatusMap, err := getComponentMapInStatus(context.TODO(), client, clusterId, vcdsdk.ComponentCAPVCD)
+func getKubeconfigFromRDEId(ctx context.Context, client *vcdsdk.Client, clusterId string) (string, error) {
+	capvcdStatusMap, err := getComponentMapInStatus(ctx, client, clusterId, vcdsdk.ComponentCAPVCD)
 	if err != nil {
 		return "", fmt.Errorf("error retrieving [%s] field in status field of RDE [%s]: [%v]", vcdsdk.ComponentCAPVCD, clusterId, err)
 	}
