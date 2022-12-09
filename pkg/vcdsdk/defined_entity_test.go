@@ -45,8 +45,13 @@ func TestCRUDOnEventSet(t *testing.T) {
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
 	ctx := context.Background()
 
+	org, err := vcdClient.VCDClient.GetOrgByName(vcdConfig.UserOrg)
+	assert.NoError(t, err, "unable to get org by name for org ", vcdConfig.UserOrg)
+	assert.NotNil(t, org, "org obtained is nil")
+	assert.NotNil(t, org.Org, "org.Org is nil")
+
 	// create a minimal CAPVCD RDE with almost empty spec and status
-	rdeId, err := createCapvcdRDE(ctx, vcdClient, "testCluster")
+	rdeId, err := createCapvcdRDE(ctx, vcdClient, "testCluster", org.Org.ID)
 
 	// Create some mock objects for events in capvcd section
 	rdeManager := RDEManager{
@@ -83,7 +88,7 @@ func TestCRUDOnEventSet(t *testing.T) {
 	assert.NoError(t, err, "failed to add event into the eventset")
 
 	// get the rde and check if the length of errors added is same as expected
-	rde, _, _, err := vcdClient.APIClient.DefinedEntityApi.GetDefinedEntity(ctx, rdeId, "")
+	rde, _, _, err := vcdClient.APIClient.DefinedEntityApi.GetDefinedEntity(ctx, rdeId, org.Org.ID)
 	status, _ := rde.Entity["status"].(map[string]interface{})
 	capvcdComponent, _ := status[CAPVCDComponentRDESectionName].(map[string]interface{})
 	eventSet, _ := capvcdComponent["eventSet"].([]interface{})
@@ -93,14 +98,14 @@ func TestCRUDOnEventSet(t *testing.T) {
 	assert.NoError(t, err, "failed to add event into the eventset")
 
 	// get the rde and check if the length of events is still capped at 3- window size (even though 4 events were added)
-	rde, _, _, err = vcdClient.APIClient.DefinedEntityApi.GetDefinedEntity(ctx, rdeId, "")
+	rde, _, _, err = vcdClient.APIClient.DefinedEntityApi.GetDefinedEntity(ctx, rdeId, org.Org.ID)
 	status, _ = rde.Entity["status"].(map[string]interface{})
 	capvcdComponent, _ = status[CAPVCDComponentRDESectionName].(map[string]interface{})
 	eventSet, _ = capvcdComponent["eventSet"].([]interface{})
 	assert.Equal(t, 3, len(eventSet), "Length of error set must match with rollingWindowSize")
 
 	// delete RDE
-	_, _, err = vcdClient.APIClient.DefinedEntityApi.ResolveDefinedEntity(ctx, rdeId, "")
+	_, _, err = vcdClient.APIClient.DefinedEntityApi.ResolveDefinedEntity(ctx, rdeId, org.Org.ID)
 	_, err = vcdClient.APIClient.DefinedEntityApi.DeleteDefinedEntity(ctx,
 		rdeId, "", nil)
 	assert.NoError(t, err, "failed to delete rdeId")
@@ -116,8 +121,13 @@ func TestCRUDOnErrorSet(t *testing.T) {
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
 	ctx := context.Background()
 
+	org, err := vcdClient.VCDClient.GetOrgByName(vcdConfig.UserOrg)
+	assert.NoError(t, err, "unable to get org by name for org ", vcdConfig.UserOrg)
+	assert.NotNil(t, org, "org obtained is nil")
+	assert.NotNil(t, org.Org, "org.Org is nil")
+
 	// create a minimal CAPVCD RDE with almost empty spec and status
-	rdeId, err := createCapvcdRDE(ctx, vcdClient, "testCluster")
+	rdeId, err := createCapvcdRDE(ctx, vcdClient, "testCluster", org.Org.ID)
 
 	// Create some mock objects for errors in capvcd section
 	rdeManager := RDEManager{
@@ -164,7 +174,7 @@ func TestCRUDOnErrorSet(t *testing.T) {
 	assert.NoError(t, err, "failed to add error into the errorset")
 
 	// get the rde and check if the length of errors added is same as expected
-	rde, _, _, err := vcdClient.APIClient.DefinedEntityApi.GetDefinedEntity(ctx, rdeId, "")
+	rde, _, _, err := vcdClient.APIClient.DefinedEntityApi.GetDefinedEntity(ctx, rdeId, org.Org.ID)
 	status, _ := rde.Entity["status"].(map[string]interface{})
 	capvcdComponent, _ := status[CAPVCDComponentRDESectionName].(map[string]interface{})
 	errorSet, _ := capvcdComponent["errorSet"].([]interface{})
@@ -179,20 +189,20 @@ func TestCRUDOnErrorSet(t *testing.T) {
 	assert.NoError(t, err, "failed to remove error from the errorset")
 
 	// get the rde and check if the length of the errorSet after removing errors is same as expected
-	rde, _, _, err = vcdClient.APIClient.DefinedEntityApi.GetDefinedEntity(ctx, rdeId, "")
+	rde, _, _, err = vcdClient.APIClient.DefinedEntityApi.GetDefinedEntity(ctx, rdeId, org.Org.ID)
 	status, _ = rde.Entity["status"].(map[string]interface{})
 	capvcdComponent, _ = status[CAPVCDComponentRDESectionName].(map[string]interface{})
 	errorSet, _ = capvcdComponent["errorSet"].([]interface{})
 	assert.Equal(t, 0, len(errorSet), "Length of error should be reduced to 0 after removing few errors")
 
 	// delete RDE
-	_, _, err = vcdClient.APIClient.DefinedEntityApi.ResolveDefinedEntity(ctx, rdeId, "")
+	_, _, err = vcdClient.APIClient.DefinedEntityApi.ResolveDefinedEntity(ctx, rdeId, org.Org.ID)
 	_, err = vcdClient.APIClient.DefinedEntityApi.DeleteDefinedEntity(ctx,
 		rdeId, "", nil)
 	assert.NoError(t, err, "failed to delete rdeId")
 }
 
-func createCapvcdRDE(ctx context.Context, vcdClient *Client, clusterName string) (string, error) {
+func createCapvcdRDE(ctx context.Context, vcdClient *Client, clusterName string, orgID string) (string, error) {
 	rde := &swagger.DefinedEntity{
 		EntityType: CAPVCDEntityTypeID,
 		Name:       clusterName,
@@ -204,7 +214,7 @@ func createCapvcdRDE(ctx context.Context, vcdClient *Client, clusterName string)
 		},
 	}
 	rde.Entity = entityMap
-	resp, err := vcdClient.APIClient.DefinedEntityApi.CreateDefinedEntity(ctx, *rde, rde.EntityType, "", nil)
+	resp, err := vcdClient.APIClient.DefinedEntityApi.CreateDefinedEntity(ctx, *rde, rde.EntityType, orgID, nil)
 	if err != nil {
 		return "", fmt.Errorf("error occurred during RDE creation for the cluster [%s]: [%v]", clusterName, err)
 	}
