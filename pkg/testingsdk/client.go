@@ -54,12 +54,7 @@ func NewTestClient(params *VCDAuthParams, clusterId string) (*TestClient, error)
 		return nil, fmt.Errorf("unable to get kubeconfig from RDE [%s]: [%v]", clusterId, err)
 	}
 
-	config, err := clientcmd.RESTConfigFromKubeConfig([]byte(kubeConfig))
-	if err != nil {
-		return nil, fmt.Errorf("unable to create RESTConfig using kubeconfig from RDE [%s]: [%v]", clusterId, err)
-	}
-
-	cs, err := kubernetes.NewForConfig(config)
+	cs, err := createKubeClient(kubeConfig)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create clientset using RESTConfig generated from kubeconfig for cluster [%s]: [%v]", clusterId, err)
 	}
@@ -82,4 +77,12 @@ func (tc *TestClient) GetVCDResourceSet(ctx context.Context, componentName strin
 // Components: vcdKe, projector, csi, cpi, capvcd
 func (tc *TestClient) GetComponentMapInStatus(ctx context.Context, componentName string) (map[string]interface{}, error) {
 	return getComponentMapInStatus(ctx, tc.VcdClient, tc.ClusterId, componentName)
+}
+
+func createKubeClient(kubeConfig string) (kubernetes.Interface, error) {
+	config, err := clientcmd.RESTConfigFromKubeConfig([]byte(kubeConfig))
+	if err != nil {
+		return nil, fmt.Errorf("unable to create RESTConfig using kubeconfig from RDE: [%v]", err)
+	}
+	return kubernetes.NewForConfig(config)
 }
