@@ -71,11 +71,11 @@ func NewTestClient(params *VCDAuthParams, clusterId string) (*TestClient, error)
 }
 
 func (tc *TestClient) GetVCDResourceSet(componentName string) ([]vcdsdk.VCDResource, error) {
-	vcdResourceSetArrMapping, err := getVcdResourceSetComponentMapFromRDEId(context.TODO(), tc.VcdClient, componentName, tc.ClusterId)
+	vcdResourceSetMap, err := getVcdResourceSetComponentMapFromRDEId(context.TODO(), tc.VcdClient, componentName, tc.ClusterId)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving vcd resource set array from RDE [%s]: [%v]", tc.ClusterId, err)
 	}
-	return convertVcdResourceSetMapToVcdResourceArr(vcdResourceSetArrMapping)
+	return convertVcdResourceSetMapToVcdResourceArr(vcdResourceSetMap)
 }
 
 // Returns status.component as map[string]interface{}, this will help us narrow down to specific fields such as nodepools, vcdresources, etc
