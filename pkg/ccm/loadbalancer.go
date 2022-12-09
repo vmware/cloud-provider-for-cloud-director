@@ -483,6 +483,7 @@ func getSSLCertAlias(service *v1.Service) string {
 	return sslCertAlias
 }
 
+// getUserSpecifiedLoadBalancerIP returns the specified load balancer IP
 func getUserSpecifiedLoadBalancerIP(service *v1.Service) string {
 	return service.Spec.LoadBalancerIP
 }
@@ -582,6 +583,8 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 	}
 
 	// fetch the user specified IP address for the load balancer
+	// NOTE: userSpecifiedLBIP cannot be nil as it is a string.
+	// if userSpecifiedLBIP is empty, the empty string is passed down to CreateLoadBalancer() which uses an external IP from IP gateway allocations.
 	userSpecifiedLBIP := getUserSpecifiedLoadBalancerIP(service)
 
 	certAlias := getSSLCertAlias(service)
