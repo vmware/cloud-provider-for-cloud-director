@@ -483,6 +483,11 @@ func getSSLCertAlias(service *v1.Service) string {
 	return sslCertAlias
 }
 
+// getUserSpecifiedLoadBalancerIP returns the specified load balancer IP
+func getUserSpecifiedLoadBalancerIP(service *v1.Service) string {
+	return service.Spec.LoadBalancerIP
+}
+
 func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service,
 	nodeIPs []string) (*v1.LoadBalancerStatus, error) {
 
@@ -577,6 +582,11 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 			service, err)
 	}
 
+	// fetch the user specified IP address for the load balancer
+	// NOTE: userSpecifiedLBIP cannot be nil as it is a string.
+	// if userSpecifiedLBIP is empty, the empty string is passed down to CreateLoadBalancer() which uses an external IP from IP gateway allocations.
+	userSpecifiedLBIP := getUserSpecifiedLoadBalancerIP(service)
+
 	certAlias := getSSLCertAlias(service)
 	if certAlias == "" {
 		certAlias = lb.CertificateAlias
@@ -613,7 +623,7 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 	// Create using VCD API
 	resourcesAllocated := &util.AllocatedResourcesMap{}
 	lbIP, err := gm.CreateLoadBalancer(ctx, virtualServiceNamePrefix, lbPoolNamePrefix, nodeIPs, portDetailsList,
-		lb.OneArm, lb.EnableVirtualServiceSharedIP, portNameToIPMap, "", resourcesAllocated)
+		lb.OneArm, lb.EnableVirtualServiceSharedIP, portNameToIPMap, userSpecifiedLBIP, resourcesAllocated)
 	if rdeErr := lb.addLBResourcesToRDE(ctx, resourcesAllocated, lbIP); rdeErr != nil {
 		return nil, fmt.Errorf("unable to add load balancer pool resources to RDE [%s]: [%v]", lb.clusterID, err)
 	}
