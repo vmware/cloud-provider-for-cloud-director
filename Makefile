@@ -7,7 +7,7 @@ REGISTRY?="harbor-repo.vmware.com/vcloud"
 
 .PHONY: build-within-docker vendor
 
-build-within-docker:
+build-within-docker: vendor
 	mkdir -p /build/cloud-provider-for-cloud-director
 	go build -ldflags "-X github.com/vmware/cloud-provider-for-cloud-director/version.Version=$(version)" -o /build/vcloud/cloud-provider-for-cloud-director cmd/ccm/main.go
 
@@ -33,8 +33,9 @@ vendor:
 	go mod vendor
 
 test:
-	go test -tags testing -v github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdclient -cover -count=1
 	go test -tags testing -v github.com/vmware/cloud-provider-for-cloud-director/pkg/config -cover -count=1
+	go test -tags testing -v github.com/vmware/cloud-provider-for-cloud-director/pkg/cpisdk -cover -count=1
+	go test -tags testing -v github.com/vmware/cloud-provider-for-cloud-director/pkg/util -cover -count=1
 
 integration-test: test
-	go test -tags="testing integration" -v github.com/vmware/cloud-provider-for-cloud-director/vcdclient -cover -count=1
+	go test -tags="testing integration" -v github.com/vmware/cloud-provider-for-cloud-director/vcdsdk -cover -count=1
