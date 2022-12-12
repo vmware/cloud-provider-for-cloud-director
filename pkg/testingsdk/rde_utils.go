@@ -7,12 +7,6 @@ import (
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdsdk"
 )
 
-// Returns status.component as map[string]interface{}, this will help us narrow down to specific fields such as nodepools, vcdresources, etc
-// Components: vcdKe, projector, csi, cpi, capvcd
-func GetComponentMapInStatus(ctx context.Context, client *vcdsdk.Client, clusterId, componentName string) (map[string]interface{}, error) {
-	return getComponentMapInStatus(ctx, client, clusterId, componentName)
-}
-
 func GetVCDResourceSet(ctx context.Context, client *vcdsdk.Client, clusterId, componentName string) ([]vcdsdk.VCDResource, error) {
 	vcdResourceSetMap, err := getVcdResourceSetComponentMapFromRDEId(ctx, client, componentName, clusterId)
 	if err != nil {
@@ -21,7 +15,9 @@ func GetVCDResourceSet(ctx context.Context, client *vcdsdk.Client, clusterId, co
 	return convertVcdResourceSetMapToVcdResourceArr(vcdResourceSetMap)
 }
 
-func getComponentMapInStatus(ctx context.Context, client *vcdsdk.Client, clusterId, componentName string) (map[string]interface{}, error) {
+// Returns status.component as map[string]interface{}, this will help us narrow down to specific fields such as nodepools, vcdresources, etc
+// Components: vcdKe, projector, csi, cpi, capvcd
+func GetComponentMapInStatus(ctx context.Context, client *vcdsdk.Client, clusterId, componentName string) (map[string]interface{}, error) {
 	org, err := client.VCDClient.GetOrgByName(client.ClusterOrgName)
 	if err != nil {
 		return nil, fmt.Errorf("unable to find org [%s] by name: [%v]", client.ClusterOrgName, err)
