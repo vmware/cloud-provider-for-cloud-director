@@ -73,12 +73,6 @@ func (tc *TestClient) GetVCDResourceSet(ctx context.Context, componentName strin
 	return convertVcdResourceSetMapToVcdResourceArr(vcdResourceSetMap)
 }
 
-// Returns status.component as map[string]interface{}, this will help us narrow down to specific fields such as nodepools, vcdresources, etc
-// Components: vcdKe, projector, csi, cpi, capvcd
-func (tc *TestClient) GetComponentMapInStatus(ctx context.Context, componentName string) (map[string]interface{}, error) {
-	return getComponentMapInStatus(ctx, tc.VcdClient, tc.ClusterId, componentName)
-}
-
 func (tc *TestClient) GetClusterName(ctx context.Context, clusterId string) (string, error) {
 	rde, err := getRdeById(ctx, tc.VcdClient, clusterId)
 	if err != nil {

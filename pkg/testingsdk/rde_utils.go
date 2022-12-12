@@ -7,6 +7,12 @@ import (
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdsdk"
 )
 
+// Returns status.component as map[string]interface{}, this will help us narrow down to specific fields such as nodepools, vcdresources, etc
+// Components: vcdKe, projector, csi, cpi, capvcd
+func GetComponentMapInStatus(ctx context.Context, client *vcdsdk.Client, clusterId, componentName string) (map[string]interface{}, error) {
+	return getComponentMapInStatus(ctx, client, clusterId, componentName)
+}
+
 func getComponentMapInStatus(ctx context.Context, client *vcdsdk.Client, clusterId, componentName string) (map[string]interface{}, error) {
 	org, err := client.VCDClient.GetOrgByName(client.ClusterOrgName)
 	if err != nil {
