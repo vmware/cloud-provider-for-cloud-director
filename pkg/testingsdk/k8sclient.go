@@ -20,17 +20,20 @@ import (
 )
 
 var (
-	ResourceExisted          = errors.New("[REX] resource is already existed")
-	ResourceNotFound         = errors.New("[RNF] resource is not found")
-	ResourceNameNull         = errors.New("[RNN] resource name is null")
-	ControlPlaneLabel        = "node-role.kubernetes.io/control-plane"
-	defaultRetryInterval     = 20 * time.Second
-	defaultRetryTimeout      = 160 * time.Second
-	defaultLongRetryInterval = 60 * time.Second
-	defaultLongRetryTimeout  = 300 * time.Second
+	ResourceExisted            = errors.New("[REX] resource is already existed")
+	ResourceNotFound           = errors.New("[RNF] resource is not found")
+	ResourceNameNull           = errors.New("[RNN] resource name is null")
+	ControlPlaneLabel          = "node-role.kubernetes.io/control-plane"
+	defaultRetryInterval       = 10 * time.Second
+	defaultRetryTimeout        = 160 * time.Second
+	defaultLongRetryInterval   = 20 * time.Second
+	defaultLongRetryTimeout    = 300 * time.Second
+	defaultNodeInterval        = 2 * time.Second
+	defaultNodeReadyTimeout    = 20 * time.Minute
+	defaultNodeNotReadyTimeout = 8 * time.Minute
 )
 
-func isPvcReady(ctx context.Context, k8sClient *kubernetes.Clientset, nameSpace string, pvcName string) (bool, error) {
+func isPvcReady(ctx context.Context, k8sClient *kubernetes.Clientset, nameSpace string, pvcName string) error {
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
 		ready := false
 		pvc, err := getPVC(ctx, k8sClient, nameSpace, pvcName)
@@ -52,13 +55,14 @@ func isPvcReady(ctx context.Context, k8sClient *kubernetes.Clientset, nameSpace 
 		}
 		return true, nil
 	})
-	if err != nil {
-		return false, fmt.Errorf("error occurred while checking PVC [%s] status", pvcName)
-	}
-	return true, nil
+	//if err != nil {
+	//	return fmt.Errorf("error occurred while checking PVC [%s] status", pvcName)
+	//}
+	//return nil
+	return err
 }
 
-func isDeploymentReady(ctx context.Context, k8sClient *kubernetes.Clientset, nameSpace string, deployName string) (bool, error) {
+func isDeploymentReady(ctx context.Context, k8sClient *kubernetes.Clientset, nameSpace string, deployName string) error {
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
 		pods, err := getPodsByPrefix(ctx, k8sClient, nameSpace, deployName)
 		if err != nil {
@@ -81,10 +85,28 @@ func isDeploymentReady(ctx context.Context, k8sClient *kubernetes.Clientset, nam
 		}
 		return true, nil
 	})
-	if err != nil {
-		return false, err
-	}
-	return true, nil
+	return err
+}
+
+func isNodePoolsReady(ctx context.Context, k8sClient *kubernetes.Clientset) error {
+	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
+		nodes, err := getWorkerNodes(ctx, k8sClient)
+		if err != nil {
+			return false, nil
+		}
+		for _, node := range nodes {
+			nodeConditions := node.Status.Conditions
+			for _, nodeCondition := range nodeConditions {
+				if nodeCondition.Type == apiv1.NodeReady && nodeCondition.Status != apiv1.ConditionTrue {
+					fmt.Println("not all nodes ready")
+					return false, nil
+				}
+			}
+		}
+		return true, nil
+	})
+	return err
+
 }
 
 func isPVDeleted(ctx context.Context, k8sClient *kubernetes.Clientset, pvName string) (bool, error) {
