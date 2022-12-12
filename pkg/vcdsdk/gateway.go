@@ -538,9 +538,7 @@ func (gatewayManager *GatewayManager) UpdateDNATRule(ctx context.Context, dnatRu
 		return dnatRuleRef, nil
 	}
 	// update DNAT rule
-	if externalIP != "" {
-		dnatRule.ExternalAddresses = externalIP
-	}
+	dnatRule.ExternalAddresses = externalIP
 	dnatRule.InternalAddresses = internalIP
 	dnatRule.DnatExternalPort = fmt.Sprintf("%d", externalPort)
 	resp, err = client.APIClient.EdgeGatewayNatRuleApi.UpdateNatRule(ctx, dnatRule, gatewayManager.GatewayRef.Id, dnatRuleRef.ID, org.Org.ID)
@@ -1900,7 +1898,11 @@ func (gm *GatewayManager) UpdateLoadBalancer(ctx context.Context, lbPoolName str
 		if err != nil {
 			return "", fmt.Errorf("unable to retrieve created dnat rule [%s]: [%v]", dnatRuleName, err)
 		}
-		updatedDnatRule, err := gm.UpdateDNATRule(ctx, dnatRuleName, externalIP, dnatRuleRef.InternalIP, externalPort)
+		dnatExternalIP := externalIP
+		if dnatExternalIP == "" {
+			dnatExternalIP = dnatRuleRef.ExternalIP
+		}
+		updatedDnatRule, err := gm.UpdateDNATRule(ctx, dnatRuleName, dnatExternalIP, dnatRuleRef.InternalIP, externalPort)
 		if err != nil {
 			return "", fmt.Errorf("unable to update DNAT rule [%s]: [%v]", dnatRuleName, err)
 		}

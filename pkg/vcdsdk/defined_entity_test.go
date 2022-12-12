@@ -107,7 +107,7 @@ func TestCRUDOnEventSet(t *testing.T) {
 	// delete RDE
 	_, _, err = vcdClient.APIClient.DefinedEntityApi.ResolveDefinedEntity(ctx, rdeId, org.Org.ID)
 	_, err = vcdClient.APIClient.DefinedEntityApi.DeleteDefinedEntity(ctx,
-		rdeId, "", nil)
+		rdeId, org.Org.ID, nil)
 	assert.NoError(t, err, "failed to delete rdeId")
 }
 
@@ -198,7 +198,7 @@ func TestCRUDOnErrorSet(t *testing.T) {
 	// delete RDE
 	_, _, err = vcdClient.APIClient.DefinedEntityApi.ResolveDefinedEntity(ctx, rdeId, org.Org.ID)
 	_, err = vcdClient.APIClient.DefinedEntityApi.DeleteDefinedEntity(ctx,
-		rdeId, "", nil)
+		rdeId, org.Org.ID, nil)
 	assert.NoError(t, err, "failed to delete rdeId")
 }
 
