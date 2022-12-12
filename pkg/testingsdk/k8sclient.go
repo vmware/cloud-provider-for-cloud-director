@@ -55,10 +55,6 @@ func isPvcReady(ctx context.Context, k8sClient *kubernetes.Clientset, nameSpace 
 		}
 		return true, nil
 	})
-	//if err != nil {
-	//	return fmt.Errorf("error occurred while checking PVC [%s] status", pvcName)
-	//}
-	//return nil
 	return err
 }
 
@@ -86,27 +82,6 @@ func isDeploymentReady(ctx context.Context, k8sClient *kubernetes.Clientset, nam
 		return true, nil
 	})
 	return err
-}
-
-func isNodePoolsReady(ctx context.Context, k8sClient *kubernetes.Clientset) error {
-	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
-		nodes, err := getWorkerNodes(ctx, k8sClient)
-		if err != nil {
-			return false, nil
-		}
-		for _, node := range nodes {
-			nodeConditions := node.Status.Conditions
-			for _, nodeCondition := range nodeConditions {
-				if nodeCondition.Type == apiv1.NodeReady && nodeCondition.Status != apiv1.ConditionTrue {
-					fmt.Println("not all nodes ready")
-					return false, nil
-				}
-			}
-		}
-		return true, nil
-	})
-	return err
-
 }
 
 func isPVDeleted(ctx context.Context, k8sClient *kubernetes.Clientset, pvName string) (bool, error) {
