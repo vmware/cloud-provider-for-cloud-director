@@ -13,6 +13,14 @@ func GetComponentMapInStatus(ctx context.Context, client *vcdsdk.Client, cluster
 	return getComponentMapInStatus(ctx, client, clusterId, componentName)
 }
 
+func GetVCDResourceSet(ctx context.Context, client *vcdsdk.Client, clusterId, componentName string) ([]vcdsdk.VCDResource, error) {
+	vcdResourceSetMap, err := getVcdResourceSetComponentMapFromRDEId(ctx, client, componentName, clusterId)
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving vcd resource set array from RDE [%s]: [%v]", clusterId, err)
+	}
+	return convertVcdResourceSetMapToVcdResourceArr(vcdResourceSetMap)
+}
+
 func getComponentMapInStatus(ctx context.Context, client *vcdsdk.Client, clusterId, componentName string) (map[string]interface{}, error) {
 	org, err := client.VCDClient.GetOrgByName(client.ClusterOrgName)
 	if err != nil {

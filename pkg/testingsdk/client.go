@@ -65,14 +65,6 @@ func NewTestClient(params *VCDAuthParams, clusterId string) (*TestClient, error)
 	}, nil
 }
 
-func (tc *TestClient) GetVCDResourceSet(ctx context.Context, componentName string) ([]vcdsdk.VCDResource, error) {
-	vcdResourceSetMap, err := getVcdResourceSetComponentMapFromRDEId(ctx, tc.VcdClient, componentName, tc.ClusterId)
-	if err != nil {
-		return nil, fmt.Errorf("error retrieving vcd resource set array from RDE [%s]: [%v]", tc.ClusterId, err)
-	}
-	return convertVcdResourceSetMapToVcdResourceArr(vcdResourceSetMap)
-}
-
 func (tc *TestClient) GetClusterName(ctx context.Context, clusterId string) (string, error) {
 	rde, err := getRdeById(ctx, tc.VcdClient, clusterId)
 	if err != nil {
