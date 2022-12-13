@@ -1104,7 +1104,7 @@ func (gatewayManager *GatewayManager) checkIfGatewayIsReady(ctx context.Context)
 }
 
 func (gatewayManager *GatewayManager) UpdateVirtualService(ctx context.Context, virtualServiceName string,
-	externalPort int32, externalIP string, oneArmEnabled bool) (*swaggerClient.EntityReference, error) {
+	virtualServiceIP string, externalPort int32, oneArmEnabled bool) (*swaggerClient.EntityReference, error) {
 	client := gatewayManager.Client
 	vsSummary, err := gatewayManager.GetVirtualService(ctx, virtualServiceName)
 	if err != nil {
@@ -1124,8 +1124,8 @@ func (gatewayManager *GatewayManager) UpdateVirtualService(ctx context.Context, 
 		return nil, fmt.Errorf("obtained nil org when getting org by name [%s]", client.ClusterOrgName)
 	}
 
-	if vsSummary.ServicePorts[0].PortStart == externalPort && vsSummary.VirtualIpAddress == externalIP{
-		klog.Infof("virtual service [%s] is already configured with port [%d] and virtual IP [%s]", virtualServiceName, externalPort, externalIP)
+	if vsSummary.ServicePorts[0].PortStart == externalPort && vsSummary.VirtualIpAddress == virtualServiceIP {
+		klog.Infof("virtual service [%s] is already configured with port [%d] and virtual IP [%s]", virtualServiceName, externalPort, virtualServiceIP)
 		return &swaggerClient.EntityReference{
 			Name: vsSummary.Name,
 			Id:   vsSummary.Id,
@@ -1143,9 +1143,9 @@ func (gatewayManager *GatewayManager) UpdateVirtualService(ctx context.Context, 
 		vs.ServicePorts[0].PortStart = externalPort
 		vs.ServicePorts[0].PortEnd = externalPort
 	}
-	if externalIP != "" && !oneArmEnabled && vs.VirtualIpAddress != externalIP {
+	if virtualServiceIP != "" && !oneArmEnabled && vs.VirtualIpAddress != virtualServiceIP {
 		// update the virtual IP address of the virtual service when one arm is nil
-		vs.VirtualIpAddress = externalIP
+		vs.VirtualIpAddress = virtualServiceIP
 	}
 	resp, err := client.APIClient.EdgeGatewayLoadBalancerVirtualServiceApi.UpdateVirtualService(ctx, vs, vsSummary.Id, org.Org.ID)
 	if resp != nil && resp.StatusCode != http.StatusAccepted {
@@ -1852,7 +1852,7 @@ func (gm *GatewayManager) UpdateLoadBalancer(ctx context.Context, lbPoolName str
 		return "", fmt.Errorf("unable to update load balancer pool [%s]: [%v]", lbPoolName, err)
 	}
 	resourcesAllocated.Insert(VcdResourceLoadBalancerPool, lbPoolRef)
-	vsRef, err := gm.UpdateVirtualService(ctx, virtualServiceName, externalPort, externalIP, oneArm != nil)
+	vsRef, err := gm.UpdateVirtualService(ctx, virtualServiceName, externalIP, externalPort, oneArm != nil)
 	if vsRef != nil {
 		resourcesAllocated.Insert(VcdResourceVirtualService, vsRef)
 	}

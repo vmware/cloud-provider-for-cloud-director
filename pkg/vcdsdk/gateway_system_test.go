@@ -365,14 +365,14 @@ func TestVirtualServiceHttpCRUDE(t *testing.T) {
 	assert.Equal(t, virtualServiceName, vsRef.Name, "Virtual Service name should match")
 
 
-	_, err = gm.UpdateVirtualService(ctx, virtualServiceName, 8080, "", true)
+	_, err = gm.UpdateVirtualService(ctx, virtualServiceName, "", 8080, true)
 	assert.NoError(t, err, "Unable to update external port")
 
 	// repeated update should not fail
-	_, err = gm.UpdateVirtualService(ctx, virtualServiceName, 8080, "", true)
+	_, err = gm.UpdateVirtualService(ctx, virtualServiceName, "",8080, true)
 	assert.NoError(t, err, "Repeated update to external port should not fail")
 
-	_, err = gm.UpdateVirtualService(ctx, virtualServiceName+"-invalid", 8080, "", true)
+	_, err = gm.UpdateVirtualService(ctx, virtualServiceName+"-invalid", "", 8080, true)
 	assert.Error(t, err, "Update virtual service on a non-existent virtual service should fail")
 
 	err = gm.DeleteVirtualService(ctx, virtualServiceName, true)
@@ -462,15 +462,15 @@ func TestVirtualServiceHttpsCRUDE(t *testing.T) {
 	assert.Equal(t, virtualServiceName, vsRef.Name, "Virtual Service name should match")
 
 	// update and delete calls might error out if virtual services are busy. Retry if the error is caused by the busy virtual services
-	_, err = gm.UpdateVirtualService(ctx, virtualServiceName, 8443, "", true)
+	_, err = gm.UpdateVirtualService(ctx, virtualServiceName, "", 8443, true)
 	assert.NoError(t, err, "Unable to update external port")
 
 	// repeated update should not fail
-	_, err = gm.UpdateVirtualService(ctx, virtualServiceName, 8443, "", true)
+	_, err = gm.UpdateVirtualService(ctx, virtualServiceName, "", 8443, true)
 	assert.NoError(t, err, "Repeated update to external port should not fail")
 
 	// update of invalid virtual service
-	_, err = gm.UpdateVirtualService(ctx, virtualServiceName+"-invalid\n", 8443, "", true)
+	_, err = gm.UpdateVirtualService(ctx, virtualServiceName+"-invalid\n", "", 8443, true)
 	assert.Error(t, err, "Update virtual service on a non-existent virtual service should fail")
 
 	err = gm.DeleteVirtualService(ctx, virtualServiceName, true)
