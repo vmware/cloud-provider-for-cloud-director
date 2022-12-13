@@ -9,7 +9,6 @@ import (
 	stov1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
 )
 
 type TestClient struct {
@@ -45,47 +44,6 @@ type ContainerParams struct {
 	ContainerImage string
 	ContainerPort  int32
 	Args           []string
-}
-
-func NewTestClient(params *VCDAuthParams, clusterId string) (*TestClient, error) {
-	client, err := getTestVCDClient(params)
-	if err != nil {
-		return nil, fmt.Errorf("error occured while generating client using [%s:%s] for cluster [%s]: [%v]", params.Username, params.UserOrg, clusterId, err)
-	}
-
-	kubeConfig, err := getKubeconfigFromRDEId(context.TODO(), client, clusterId)
-	if err != nil {
-		return nil, fmt.Errorf("unable to get kubeconfig from RDE [%s]: [%v]", clusterId, err)
-	}
-
-	config, err := clientcmd.RESTConfigFromKubeConfig([]byte(kubeConfig))
-	if err != nil {
-		return nil, fmt.Errorf("unable to create RESTConfig using kubeconfig from RDE [%s]: [%v]", clusterId, err)
-	}
-
-	cs, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		return nil, fmt.Errorf("unable to create clientset using RESTConfig generated from kubeconfig for cluster [%s]: [%v]", clusterId, err)
-	}
-	return &TestClient{
-		VcdClient: client,
-		Cs:        cs,
-		ClusterId: clusterId,
-	}, nil
-}
-
-func (tc *TestClient) GetVCDResourceSet(ctx context.Context, componentName string) ([]vcdsdk.VCDResource, error) {
-	vcdResourceSetMap, err := getVcdResourceSetComponentMapFromRDEId(ctx, tc.VcdClient, componentName, tc.ClusterId)
-	if err != nil {
-		return nil, fmt.Errorf("error retrieving vcd resource set array from RDE [%s]: [%v]", tc.ClusterId, err)
-	}
-	return convertVcdResourceSetMapToVcdResourceArr(vcdResourceSetMap)
-}
-
-// Returns status.component as map[string]interface{}, this will help us narrow down to specific fields such as nodepools, vcdresources, etc
-// Components: vcdKe, projector, csi, cpi, capvcd
-func (tc *TestClient) GetComponentMapInStatus(ctx context.Context, componentName string) (map[string]interface{}, error) {
-	return getComponentMapInStatus(ctx, tc.VcdClient, tc.ClusterId, componentName)
 }
 
 func (tc *TestClient) CreateNameSpace(ctx context.Context, nsName string) (*apiv1.Namespace, error) {
@@ -273,6 +231,7 @@ func (tc *TestClient) IsWorkerNodeReady(ctx context.Context, workerNode *apiv1.N
 	return nil
 }
 
+// IsWorkerNodeNotReady we cannot use negate result from IsWorkerNodeReady() Set different RetryTimeInterval and avoid timeout error
 func (tc *TestClient) IsWorkerNodeNotReady(ctx context.Context, workerNode *apiv1.Node) error {
 	err := wait.PollImmediate(defaultNodeInterval, defaultNodeNotReadyTimeout, func() (bool, error) {
 		nodes, err := tc.GetWorkerNodes(ctx)
