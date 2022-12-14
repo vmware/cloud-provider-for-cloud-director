@@ -210,6 +210,7 @@ func (lb *LBManager) UpdateLoadBalancer(ctx context.Context, clusterName string,
 	// NOTE: userSpecifiedLBIP cannot be nil as it is a string.
 	// if userSpecifiedLBIP is empty, the empty string is passed down to CreateLoadBalancer() which uses an external IP from IP gateway allocations.
 	userSpecifiedLBIP := getUserSpecifiedLoadBalancerIP(service)
+	klog.Infof("UpdateLoadBalancer called with loadBalancerIP [%s] for service [%s]", userSpecifiedLBIP, service.Name)
 
 	for portName, internalPort := range typeToInternalPortMap {
 		lbPoolName := fmt.Sprintf("%s-%s", lbPoolNamePrefix, portName)
@@ -532,6 +533,7 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 	// NOTE: userSpecifiedLBIP cannot be nil as it is a string.
 	// if userSpecifiedLBIP is empty, the empty string is passed down to CreateLoadBalancer() which uses an external IP from IP gateway allocations.
 	userSpecifiedLBIP := getUserSpecifiedLoadBalancerIP(service)
+	klog.Infof("createLoadBalancer called with loadBalancerIP [%s] for service [%s]", userSpecifiedLBIP, service.Name)
 
 	if lbExists {
 		// Update load balancer if there are changes in service properties
@@ -547,6 +549,10 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 				externalPort, lb.OneArm, lb.EnableVirtualServiceSharedIP, protocol, resourcesAllocated)
 			if rdeErr := lb.addLBResourcesToRDE(ctx, resourcesAllocated, vip); rdeErr != nil {
 				return nil, fmt.Errorf("failed to update RDE [%s] with load balancer resources: [%v]", lb.clusterID, err)
+			}
+			if userSpecifiedLBIP != "" && vip != userSpecifiedLBIP {
+				return nil, fmt.Errorf("failed to update loadbalancerIP to [%s] for the service [%s]: expected the load balancer IP to be [%s] but got [%s]",
+					userSpecifiedLBIP, service.Name, userSpecifiedLBIP, vip)
 			}
 
 			vsSummary, getVsErr := gm.GetVirtualService(ctx, virtualServiceName)
@@ -577,6 +583,15 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 			if err != nil {
 				klog.Errorf("there was an error removing CPI error [%s] from RDE [%s], [%v]", cpisdk.UpdateLoadbalancerError, lb.clusterID, err)
 			}
+		}
+		// recreate the load balancer status as the load balancer properties may be updated
+		lbStatus, _, err = lb.getLoadBalancer(ctx, service)
+		if err != nil {
+			addToErrorSetErr := cpiRdeManager.AddToErrorSetWithNameAndId(ctx, cpisdk.GetLoadbalancerError, "", virtualServiceNamePrefix, err.Error())
+			if addToErrorSetErr != nil {
+				klog.Errorf("error adding CPI error [%s] to the RDE [%s], [%v]", cpisdk.GetLoadbalancerError, lb.clusterID, addToErrorSetErr)
+			}
+			return nil, fmt.Errorf("unexpected error while querying for loadbalancer after updating load balancer: [%v]", err)
 		}
 		return lbStatus, nil
 	}
