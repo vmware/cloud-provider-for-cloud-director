@@ -1568,7 +1568,7 @@ func (gm *GatewayManager) CreateLoadBalancer(ctx context.Context, virtualService
 	// 3 variables: enableVirtualServiceSharedIP, oneArm, sharedIP
 	// if enableVirtualServiceSharedIP is true and oneArm is nil, no internal ip is used
 	// if enableVirtualServiceSharedIP is true and oneArm is not nil, an internal ip will be used and shared
-	// if enableVirtualServiceSharedIP is false and oneArm is nil: this is an error case which is handled earlier
+	// if enableVirtualServiceSharedIP is false and oneArm is nil: this is an error case which is handled earlier in ValidateCloudConfig.
 	// if enableVirtualServiceSharedIP is false and oneArm is not nil, a pair of internal IPs will be used and not shared
 	if enableVirtualServiceSharedIP && oneArm == nil { // no internal ip used so no dnat rule needed
 		if sharedVirtualIP != "" { // shared virtual ip is an external ip
@@ -1863,9 +1863,8 @@ func (gm *GatewayManager) UpdateLoadBalancer(ctx context.Context, lbPoolName str
 		}
 		return "", fmt.Errorf("unable to update virtual service [%s] with port [%d]: [%v]", virtualServiceName, externalPort, err)
 	}
-	if enableVirtualServiceSharedIP == false && oneArm == nil {
-		return "", fmt.Errorf("configuration with enableVirtualServiceSharedIP [%v] and oneArm [%v] is not supported", enableVirtualServiceSharedIP, oneArm)
-	}
+	// The condition enableVirtualServiceSharedIP == nil, oneArm == nil is not a valid configuration.
+	// ValidateCloudConfig returns an error if CPI has the above configuration
 	if !(enableVirtualServiceSharedIP && oneArm == nil) { // dnat not used if vsSharedIP is used and oneArm is nil
 		// update app port profile
 		// cases handled here -
