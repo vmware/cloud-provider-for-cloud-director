@@ -206,6 +206,11 @@ func (lb *LBManager) UpdateLoadBalancer(ctx context.Context, clusterName string,
 	rdeManager := vcdsdk.NewRDEManager(lb.vcdClient, lb.clusterID, release.CloudControllerManagerName, release.CpiVersion)
 	cpiRdeManager := cpisdk.NewCPIRDEManager(rdeManager)
 
+	// fetch the user specified IP address for the load balancer
+	// NOTE: userSpecifiedLBIP cannot be nil as it is a string.
+	// if userSpecifiedLBIP is empty, the empty string is passed down to CreateLoadBalancer() which uses an external IP from IP gateway allocations.
+	userSpecifiedLBIP := getUserSpecifiedLoadBalancerIP(service)
+
 	for portName, internalPort := range typeToInternalPortMap {
 		lbPoolName := fmt.Sprintf("%s-%s", lbPoolNamePrefix, portName)
 		virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, portName)
@@ -217,7 +222,7 @@ func (lb *LBManager) UpdateLoadBalancer(ctx context.Context, clusterName string,
 		klog.Infof("Updating pool [%s] with port [%s:%d]", lbPoolName, portName, internalPort)
 		protocol, _ := nameToProtocol[portName]
 		resourcesAllocated := &util.AllocatedResourcesMap{}
-		vip, err := gm.UpdateLoadBalancer(ctx, lbPoolName, virtualServiceName, nodeIps, "", internalPort,
+		vip, err := gm.UpdateLoadBalancer(ctx, lbPoolName, virtualServiceName, nodeIps, userSpecifiedLBIP, internalPort,
 			externalPort, lb.OneArm, lb.EnableVirtualServiceSharedIP, protocol, resourcesAllocated)
 		// TODO: Should we record this error as well?
 		if rdeErr := lb.addLBResourcesToRDE(ctx, resourcesAllocated, vip); rdeErr != nil {
@@ -523,6 +528,11 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 		}
 	}
 
+	// fetch the user specified IP address for the load balancer
+	// NOTE: userSpecifiedLBIP cannot be nil as it is a string.
+	// if userSpecifiedLBIP is empty, the empty string is passed down to CreateLoadBalancer() which uses an external IP from IP gateway allocations.
+	userSpecifiedLBIP := getUserSpecifiedLoadBalancerIP(service)
+
 	if lbExists {
 		// Update load balancer if there are changes in service properties
 		typeToInternalPortMap, typeToExternalPortMap, nameToProtocol := lb.getServicePortMap(service)
@@ -533,7 +543,7 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 			protocol, _ := nameToProtocol[portName]
 			klog.Infof("Updating pool [%s] with port [%s:%d:%d]", lbPoolName, portName, internalPort, externalPort)
 			resourcesAllocated := &util.AllocatedResourcesMap{}
-			vip, err := gm.UpdateLoadBalancer(ctx, lbPoolName, virtualServiceName, nodeIPs, "", internalPort,
+			vip, err := gm.UpdateLoadBalancer(ctx, lbPoolName, virtualServiceName, nodeIPs, userSpecifiedLBIP, internalPort,
 				externalPort, lb.OneArm, lb.EnableVirtualServiceSharedIP, protocol, resourcesAllocated)
 			if rdeErr := lb.addLBResourcesToRDE(ctx, resourcesAllocated, vip); rdeErr != nil {
 				return nil, fmt.Errorf("failed to update RDE [%s] with load balancer resources: [%v]", lb.clusterID, err)
@@ -581,11 +591,6 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 		return nil, fmt.Errorf("unable to get ports from service annotation for [%#v]: [%v]",
 			service, err)
 	}
-
-	// fetch the user specified IP address for the load balancer
-	// NOTE: userSpecifiedLBIP cannot be nil as it is a string.
-	// if userSpecifiedLBIP is empty, the empty string is passed down to CreateLoadBalancer() which uses an external IP from IP gateway allocations.
-	userSpecifiedLBIP := getUserSpecifiedLoadBalancerIP(service)
 
 	certAlias := getSSLCertAlias(service)
 	if certAlias == "" {
