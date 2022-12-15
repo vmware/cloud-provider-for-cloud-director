@@ -54,7 +54,7 @@ func (tc *TestClient) CreateNameSpace(ctx context.Context, nsName string) (*apiv
 	return ns, nil
 }
 
-func (tc *TestClient) CreateStorageClass(ctx context.Context, scName string, reclaimPolicy string, storageProfile string) (*stov1.StorageClass, error) {
+func (tc *TestClient) CreateStorageClass(ctx context.Context, scName string, reclaimPolicy apiv1.PersistentVolumeReclaimPolicy, storageProfile string) (*stov1.StorageClass, error) {
 	sc, err := createStorageClass(ctx, tc.Cs.(*kubernetes.Clientset), scName, reclaimPolicy, storageProfile)
 	if err != nil {
 		return nil, fmt.Errorf("error creating Storage Class [%s] for cluster [%s]: [%v]", scName, tc.ClusterId, err)
@@ -62,8 +62,8 @@ func (tc *TestClient) CreateStorageClass(ctx context.Context, scName string, rec
 	return sc, nil
 }
 
-func (tc *TestClient) CreatePV(ctx context.Context, persistentVolumeName string, storageClass string, storageProfile string, storageSize string) (*apiv1.PersistentVolume, error) {
-	pv, err := createPV(ctx, tc.Cs.(*kubernetes.Clientset), persistentVolumeName, storageClass, storageProfile, storageSize)
+func (tc *TestClient) CreatePV(ctx context.Context, persistentVolumeName string, storageClass string, storageProfile string, storageSize string, reclaimPolicy apiv1.PersistentVolumeReclaimPolicy) (*apiv1.PersistentVolume, error) {
+	pv, err := createPV(ctx, tc.Cs.(*kubernetes.Clientset), persistentVolumeName, storageClass, storageProfile, storageSize, reclaimPolicy)
 	if err != nil {
 		return nil, fmt.Errorf("error creating Persistent Volume [%s] for cluster [%s]: [%v]", persistentVolumeName, tc.ClusterId, err)
 	}

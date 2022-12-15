@@ -317,11 +317,10 @@ func getWorkerNodes(ctx context.Context, k8sClient *kubernetes.Clientset) ([]api
 	return workerNodes, nil
 }
 
-func createStorageClass(ctx context.Context, k8sClient *kubernetes.Clientset, scName string, reclaimPolicy string, storageProfile string) (*stov1.StorageClass, error) {
+func createStorageClass(ctx context.Context, k8sClient *kubernetes.Clientset, scName string, reclaimPolicy apiv1.PersistentVolumeReclaimPolicy, storageProfile string) (*stov1.StorageClass, error) {
 	if scName == "" {
 		return nil, ResourceNameNull
 	}
-	var PersistentVolumeReclaimPolicy = apiv1.PersistentVolumeReclaimPolicy(reclaimPolicy)
 	sc := &stov1.StorageClass{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: scName,
@@ -329,7 +328,7 @@ func createStorageClass(ctx context.Context, k8sClient *kubernetes.Clientset, sc
 				"storageclass.kubernetes.io/is-default-class": "false",
 			},
 		},
-		ReclaimPolicy: &PersistentVolumeReclaimPolicy,
+		ReclaimPolicy: &reclaimPolicy,
 		Provisioner:   "named-disk.csi.cloud-director.vmware.com",
 		Parameters: map[string]string{
 			"storageProfile": storageProfile,
@@ -354,12 +353,12 @@ func createNameSpace(ctx context.Context, nsName string, k8sClient *kubernetes.C
 	}
 	ns, err := k8sClient.CoreV1().Namespaces().Create(ctx, namespace, metav1.CreateOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("error occurred while creating namespace [%s]", nsName)
+		return nil, fmt.Errorf("error occurred while creating namespace [%s]: [%v]", nsName, err)
 	}
 	return ns, nil
 }
 
-func createPV(ctx context.Context, k8sClient *kubernetes.Clientset, persistentVolumeName string, storageClass string, storageProfile string, storageSize string) (*apiv1.PersistentVolume, error) {
+func createPV(ctx context.Context, k8sClient *kubernetes.Clientset, persistentVolumeName string, storageClass string, storageProfile string, storageSize string, reclaimPolicy apiv1.PersistentVolumeReclaimPolicy) (*apiv1.PersistentVolume, error) {
 	if persistentVolumeName == "" {
 		return nil, ResourceNameNull
 	}
@@ -392,10 +391,10 @@ func createPV(ctx context.Context, k8sClient *kubernetes.Clientset, persistentVo
 			Capacity: apiv1.ResourceList{
 				"storage": resource.MustParse(storageSize),
 			},
-			VolumeMode: &persistentVolumeFilesystem,
+			VolumeMode:                    &persistentVolumeFilesystem,
+			PersistentVolumeReclaimPolicy: reclaimPolicy,
 		},
 	}
-	_, err := k8sClient.CoreV1().PersistentVolumes().Create(ctx, pv, metav1.CreateOptions{})
 	newPV, err := k8sClient.CoreV1().PersistentVolumes().Create(ctx, pv, metav1.CreateOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("error occurred while creating persistent volume [%s]: [%v]", persistentVolumeName, err)
@@ -450,41 +449,41 @@ func createDeployment(ctx context.Context, k8sClient *kubernetes.Clientset, para
 		},
 		Spec: appsv1.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: params.labels,
+				MatchLabels: params.Labels,
 			},
 			Strategy: appsv1.DeploymentStrategy{
 				Type: appsv1.RecreateDeploymentStrategyType,
 			},
 			Template: apiv1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: params.labels,
+					Labels: params.Labels,
 				},
 				Spec: apiv1.PodSpec{
 					Containers: []apiv1.Container{
 						{
-							Image:           params.containerParams.ContainerImage,
+							Image:           params.ContainerParams.ContainerImage,
 							ImagePullPolicy: apiv1.PullAlways,
-							Name:            params.containerParams.ContainerName,
-							Args:            params.containerParams.Args,
+							Name:            params.ContainerParams.ContainerName,
+							Args:            params.ContainerParams.Args,
 							Ports: []apiv1.ContainerPort{
 								{
-									ContainerPort: params.containerParams.ContainerPort,
+									ContainerPort: params.ContainerParams.ContainerPort,
 								},
 							},
 							VolumeMounts: []apiv1.VolumeMount{
 								{
-									Name:      params.volumeParams.volumeName,
-									MountPath: params.volumeParams.mountPath,
+									Name:      params.VolumeParams.VolumeName,
+									MountPath: params.VolumeParams.MountPath,
 								},
 							},
 						},
 					},
 					Volumes: []apiv1.Volume{
 						{
-							Name: params.volumeParams.volumeName,
+							Name: params.VolumeParams.VolumeName,
 							VolumeSource: apiv1.VolumeSource{
 								PersistentVolumeClaim: &apiv1.PersistentVolumeClaimVolumeSource{
-									ClaimName: params.volumeParams.pvcRef,
+									ClaimName: params.VolumeParams.PvcRef,
 								},
 							},
 						},
@@ -531,7 +530,7 @@ func deletePVC(ctx context.Context, k8sClient *kubernetes.Clientset, nameSpace s
 	if pvcName == "" {
 		return ResourceNameNull
 	}
-	pvc, err := getPVC(ctx, k8sClient, nameSpace, pvcName)
+	_, err := getPVC(ctx, k8sClient, nameSpace, pvcName)
 	if err != nil {
 		if err == ResourceNotFound {
 			return fmt.Errorf("the persistentVolumeClaim [%s] does not exist", pvcName)
@@ -541,16 +540,6 @@ func deletePVC(ctx context.Context, k8sClient *kubernetes.Clientset, nameSpace s
 	err = k8sClient.CoreV1().PersistentVolumeClaims(nameSpace).Delete(ctx, pvcName, metav1.DeleteOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to delete persistentVolumeClaim [%s]", pvcName)
-	}
-	pv, err := getPV(ctx, k8sClient, pvc.Spec.VolumeName)
-	if pv.Spec.PersistentVolumeReclaimPolicy == apiv1.PersistentVolumeReclaimDelete {
-		pvDeleted, err := isPVDeleted(ctx, k8sClient, pvc.Spec.VolumeName)
-		if err != nil {
-			return fmt.Errorf("error occurred while deleting persistentVolume [%s]: [%v]", pvc.Spec.VolumeName, err)
-		}
-		if !pvDeleted {
-			return fmt.Errorf("persistentVolume [%s] still exists", pvc.Spec.VolumeName)
-		}
 	}
 	pvcDeleted, err := isPVCDeleted(ctx, k8sClient, nameSpace, pvcName)
 	if err != nil {
