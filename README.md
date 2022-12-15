@@ -63,7 +63,7 @@ Any third party ingress such as Contour could be used with the CPI in order to c
 ```
 vcd cse cluster info <kubernetes cluster name>
 ```
-2. Upload a certificate into the Trusted Certificates of the Organization using the VCD UI. Name the certificate with the following format:
+2. Upload a certificate in Certificates Library of the Organization using the VCD UI. Name the certificate with the following format:
 ```
 <cluster ID>-cert
 ```
