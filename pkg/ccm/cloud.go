@@ -167,6 +167,12 @@ func (vcdCP *VCDCloudProvider) ProviderName() string {
 
 // LoadBalancer returns a loadbalancer interface. Also returns true if the interface is supported, false otherwise.
 func (vcdCP *VCDCloudProvider) LoadBalancer() (cloudProvider.LoadBalancer, bool) {
+
+	if vcdCP.lb == nil {
+		// lb will be nil if the organization network is not backed by NSX-T
+		klog.Infof("service controller will be disabled")
+		return nil, false
+	}
 	return vcdCP.lb, true
 }
 
