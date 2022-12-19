@@ -19,13 +19,13 @@ ccm: $(GO_CODE)
 	touch out/$@
 
 prod: ccm
-	sed -e "s/\.__GIT_COMMIT__//g" manifests/cloud-director-ccm.yaml.template > manifests/cloud-director-ccm.yaml
-	sed -e "s/\.__GIT_COMMIT__//g" manifests/cloud-director-ccm-crs.yaml.template > manifests/cloud-director-ccm-crs.yaml
+	sed -e "s/\.__GIT_COMMIT__//g" -e "s/__VERSION__/$(version)/g" manifests/cloud-director-ccm.yaml.template > manifests/cloud-director-ccm.yaml
+	sed -e "s/\.__GIT_COMMIT__//g" -e "s/__VERSION__/$(version)/g" manifests/cloud-director-ccm-crs.yaml.template > manifests/cloud-director-ccm-crs.yaml
 
 dev: ccm
 	docker push $(REGISTRY)/cloud-provider-for-cloud-director:$(version).$(GITCOMMIT)
-	sed -e "s/__GIT_COMMIT__/$(GITCOMMIT)/g" manifests/cloud-director-ccm.yaml.template > manifests/cloud-director-ccm.yaml
-	sed -e "s/__GIT_COMMIT__/$(GITCOMMIT)/g" manifests/cloud-director-ccm-crs.yaml.template > manifests/cloud-director-ccm-crs.yaml
+	sed -e "s/__GIT_COMMIT__/$(GITCOMMIT)/g" -e "s/__VERSION__/$(version)/g" manifests/cloud-director-ccm.yaml.template > manifests/cloud-director-ccm.yaml
+	sed -e "s/__GIT_COMMIT__/$(GITCOMMIT)/g" -e "s/__VERSION__/$(version)/g" manifests/cloud-director-ccm-crs.yaml.template > manifests/cloud-director-ccm-crs.yaml
 
 vendor:
 	go mod edit -go=1.17
