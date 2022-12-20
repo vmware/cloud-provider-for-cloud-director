@@ -5,6 +5,7 @@ The version of the VMware Cloud Director API and Installation that are compatibl
 
 | CPI Version | CSE Version | VMware Cloud Director API | VMware Cloud Director Installation | Notes | Kubernetes Versions | docs |
 | :---------: | :---------: | :-----------------------: | :--------------------------------: | :---: | :------------------ | :--: |
+| 1.2.0 | 4.0.0 | 36.0+ | 10.3.1+ <br/>(10.3.1 needs hot-patch to prevent VCD cell crashes in multi-cell environments) | <ul><li>Support for user specified load balancer IP</li><li>support for https appProtocol</li></ul> |<ul><li>1.22</li><li>1.21</li><li>1.20</li><li>1.19</li></ul>|[CPI 1.3.z docs](https://github.com/vmware/cloud-provider-for-cloud-director/tree/1.3.z)|
 | 1.2.0 | 4.0.0 | 36.0+ | 10.3.1+ <br/>(10.3.1 needs hot-patch to prevent VCD cell crashes in multi-cell environments) | <ul><li>For VCD >= 10.4.0, support for multiple virtual services sharing the same ip (`enableVirtualServiceSharedIP`)</li><li>Added tenant context header to cloud api calls</li><li>Added secret-based way to get cluster-id for CRS</li></ul> |<ul><li>1.22</li><li>1.21</li><li>1.20</li><li>1.19</li></ul>|[CPI 1.2.z docs](https://github.com/vmware/cloud-provider-for-cloud-director/tree/1.2.z)|
 | 1.1.3 | 3.1.x | 36.0+ | 10.3.1+ <br/>(10.3.1 needs hot-patch to prevent VCD cell crashes in multi-cell environments) | <ul><li>Fixed issue where VCD resources were not cleaning up after deleting the load balancer service if the load balancer failed to come up successfully</li></ul> |<ul><li>1.21</li><li>1.20</li><li>1.19</li></ul>| [CPI 1.1.x docs](https://github.com/vmware/cloud-provider-for-cloud-director/tree/1.1.x) |
 | 1.1.2 | 3.1.x | 36.0+ | 10.3.1+ <br/>(10.3.1 needs hot-patch to prevent VCD cell crashes in multi-cell environments) | <ul><li>Fixed issue with clusters created using system administrator credentials where external IP addresses for application Load Balancers are picked from edge gateway of an unintended tenant.</li></ul> |<ul><li>1.21</li><li>1.20</li><li>1.19</li></ul>|[CPI 1.1.x docs](https://github.com/vmware/cloud-provider-for-cloud-director/tree/1.1.x)|
@@ -112,6 +113,13 @@ kubectl set env -n kube-system deployment/vmware-cloud-director-ccm GOVCD_LOG_ON
 ```
 
 **NOTE: Please make sure to collect the logs before and after enabling the wire log. The above commands update the CPI deployment, which creates a new CPI pod. The logs present in the old pod will be lost.**
+
+## Upgrade CPI
+To upgrade CPI from v1.2.0, please execute the following command for each cluster
+```shell
+kubectl patch deployment -n kube-system vmware-cloud-director-ccm -p '{"spec": {"template": {"spec": {"containers": [{"name": "vmware-cloud-director-ccm", "image": "projects.registry.vmware.com/vmware-cloud-director/cloud-provider-for-cloud-director:1.3.0"}]}}}}'
+```
+
 ## Contributing
 Please see [CONTRIBUTING.md](CONTRIBUTING.md) for instructions on how to contribute.
 
