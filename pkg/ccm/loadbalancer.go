@@ -29,6 +29,7 @@ import (
 const (
 	sslPortsAnnotation     = `service.beta.kubernetes.io/vcloud-avi-ssl-ports`
 	sslCertAliasAnnotation = `service.beta.kubernetes.io/vcloud-avi-ssl-cert-alias`
+	skipAviSSLTerminationAnnotation     = `service.beta.kubernetes.io/vcloud-avi-ssl-no-termination`
 	// TODO: Update controlPlaneLabel to use default K8s constants if available
 	controlPlaneLabel = `node-role.kubernetes.io/control-plane`
 )
@@ -501,6 +502,15 @@ func getSSLCertAlias(service *v1.Service) string {
 	return sslCertAlias
 }
 
+func shouldSkipAviSSLTermination(service *v1.Service) bool {
+	shouldSkipAviSSLTerminationStr, ok := service.Annotations[skipAviSSLTerminationAnnotation]
+	if !ok {
+		return false
+	}
+
+	return strings.ToLower(shouldSkipAviSSLTerminationStr) == "true"
+}
+
 // getUserSpecifiedLoadBalancerIP returns the specified load balancer IP
 func getUserSpecifiedLoadBalancerIP(service *v1.Service) string {
 	return service.Spec.LoadBalancerIP
@@ -624,6 +634,12 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 		certAlias = lb.CertificateAlias
 	}
 
+	// allow users to terminate SSL by other means
+	skipAviSSLTermination := shouldSkipAviSSLTermination(service)
+	if skipAviSSLTermination {
+		certAlias = ""
+	}
+
 	// golang doesn't have the set data structure
 	portsMap := make(map[int32]bool)
 	for _, port := range ports {
@@ -636,7 +652,7 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 			InternalPort: port.NodePort,
 			Protocol:     strings.ToUpper(string(port.Protocol)),
 		}
-		if port.AppProtocol != nil && *port.AppProtocol != "" {
+		if port.AppProtocol != nil && *port.AppProtocol != "" && !skipAviSSLTermination {
 			switch strings.ToUpper(*port.AppProtocol) {
 			// allow override in case of known protocols such as HTTP/HTTPS/TCP which are directly supported in Avi
 			case "HTTP", "HTTPS", "TCP":
@@ -644,11 +660,13 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 			}
 		}
 		if _, ok := portsMap[port.Port]; ok {
-			portDetailsList[idx].UseSSL = true
-			if certAlias == "" {
-				return nil, fmt.Errorf("cert alias empty while port [%d] for SSL is specified", port.Port)
+			if !skipAviSSLTermination {
+				portDetailsList[idx].UseSSL = true
+				if certAlias == "" {
+					return nil, fmt.Errorf("cert alias empty while port [%d] for SSL is specified", port.Port)
+				}
+				portDetailsList[idx].CertAlias = certAlias
 			}
-			portDetailsList[idx].CertAlias = certAlias
 		}
 	}
 	klog.Infof("Creating loadbalancer for ports [%#v]\n", portDetailsList)
