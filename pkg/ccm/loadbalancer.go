@@ -636,6 +636,7 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 
 	// allow users to terminate SSL by other means
 	skipAviSSLTermination := shouldSkipAviSSLTermination(service)
+	klog.Infof("Annotation [%s] set to [%v]", skipAviSSLTerminationAnnotation, skipAviSSLTermination)
 	if skipAviSSLTermination {
 		certAlias = ""
 	}
