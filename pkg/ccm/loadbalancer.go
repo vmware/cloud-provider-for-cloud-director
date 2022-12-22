@@ -572,16 +572,11 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 			if rdeErr := lb.addLBResourcesToRDE(ctx, resourcesAllocated, vip); rdeErr != nil {
 				return nil, fmt.Errorf("failed to update RDE [%s] with load balancer resources: [%v]", lb.clusterID, err)
 			}
-			if userSpecifiedLBIP != "" && vip != userSpecifiedLBIP {
-				return nil, fmt.Errorf("failed to update loadbalancerIP to [%s] for the service [%s]: expected the load balancer IP to be [%s] but got [%s]",
-					userSpecifiedLBIP, service.Name, userSpecifiedLBIP, vip)
-			}
 
 			vsSummary, getVsErr := gm.GetVirtualService(ctx, virtualServiceName)
 			if getVsErr != nil {
 				return nil, fmt.Errorf("failed to get virtual service [%s], [%v]", virtualServiceName, getVsErr)
 			}
-
 			if vsSummary == nil {
 				return nil, fmt.Errorf("virtual service [%s] does not exist", virtualServiceName)
 			}
@@ -591,8 +586,13 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 				if addToErrorSetErr != nil {
 					klog.Errorf("error adding CPI error [%s] to RDE: [%s], [%v]", cpisdk.UpdateLoadbalancerError, lb.clusterID, addToErrorSetErr)
 				}
-				return nil, fmt.Errorf("unable to update pool [%s] with port [%s:%d:%d]: [%v]", lbPoolName, portName,
-					internalPort, externalPort, err)
+				return nil, fmt.Errorf("unable to update load balancer [%s] with port [%s:%d:%d] and load balancer IP [%s]: [%v]", lbPoolName, portName,
+					internalPort, externalPort, userSpecifiedLBIP, err)
+			}
+
+			if userSpecifiedLBIP != "" && vip != userSpecifiedLBIP {
+				return nil, fmt.Errorf("failed to update loadbalancerIP to [%s] for the service [%s]: expected the load balancer IP to be [%s] but got [%s]",
+					userSpecifiedLBIP, service.Name, userSpecifiedLBIP, vip)
 			}
 
 			// TODO: This may need to be optimized in the future as we are making len(ports) API calls
