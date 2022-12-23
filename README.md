@@ -97,6 +97,21 @@ loadbalancer:
 
 Note: if `enableVirtualServiceSharedIP`  is set to `true` and `oneArm` is not `nil`, this means that the virtual services will share an internal ip instead of an external ip. DNAT rules are used to map the shared internal ip to an external ip.
 
+### Specify an IP for the application load balancer
+When creating a load balancer type service in Kubernetes, explicitly specify a load balancer IP address by configuring the service as follows. Let us assume the application load balancer need to be created using the IP address `10.10.10.10`.
+
+```
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-service
+spec:
+  type: LoadBalancer
+  loadBalancerIP: 10.10.10.10
+```
+
+An internal IP address, such as 192.168.x.x, can also be used for `loadBalancerIP`.
+
 ## Troubleshooting
 ### Log VCD requests and responses
 
