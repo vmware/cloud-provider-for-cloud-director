@@ -112,6 +112,15 @@ spec:
 
 An internal IP address, such as 192.168.x.x, can also be used for `loadBalancerIP`.
 
+### Disable SSL termination at NSX-T Avi load balancer
+To disable SSL termination at NSX-T Avi load balancer and have ingress control SSL termination, add the following annotation to the ingress load balancer service.
+
+```
+annotations:
+  service.beta.kubernetes.io/vcloud-avi-ssl-no-termination: "true"
+```
+
+
 ## Troubleshooting
 ### Log VCD requests and responses
 
