@@ -1,26 +1,24 @@
 package testingsdk
 
-var exists = struct{}{}
-
-type set struct {
-	m map[string]struct{}
+type Set struct {
+	m map[interface{}]bool
 }
 
-func NewSet() *set {
-	s := &set{}
-	s.m = make(map[string]struct{})
+func NewSet() *Set {
+	s := &Set{}
+	s.m = make(map[interface{}]bool)
 	return s
 }
 
-func (s *set) Add(value string) {
-	s.m[value] = exists
+func (s *Set) Add(value interface{}) {
+	s.m[value] = true
 }
 
-func (s *set) Contains(value string) bool {
+func (s *Set) Contains(value interface{}) bool {
 	_, c := s.m[value]
 	return c
 }
 
-func (s *set) Size() int {
+func (s *Set) Size() int {
 	return len(s.m)
 }
