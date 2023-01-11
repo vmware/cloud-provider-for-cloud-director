@@ -9,6 +9,7 @@ import (
 	stov1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 type TestClient struct {
@@ -44,6 +45,44 @@ type ContainerParams struct {
 	ContainerImage string
 	ContainerPort  int32
 	Args           []string
+}
+
+func NewTestClient(params *VCDAuthParams, clusterId string) (*TestClient, error) {
+	client, err := getTestVCDClient(params)
+	if err != nil {
+		return nil, fmt.Errorf("error occured while generating client using [%s:%s] for cluster [%s]: [%v]", params.Username, params.UserOrg, clusterId, err)
+	}
+
+	kubeConfig, err := GetKubeconfigFromRDEId(context.TODO(), client, clusterId)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get kubeconfig from RDE [%s]: [%v]", clusterId, err)
+	}
+
+	cs, err := createKubeClient(kubeConfig)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create clientset using RESTConfig generated from kubeconfig for cluster [%s]: [%v]", clusterId, err)
+	}
+	return &TestClient{
+		VcdClient: client,
+		Cs:        cs,
+		ClusterId: clusterId,
+	}, nil
+}
+
+func (tc *TestClient) GetClusterName(ctx context.Context, clusterId string) (string, error) {
+	rde, err := getRdeById(ctx, tc.VcdClient, clusterId)
+	if err != nil {
+		return "", fmt.Errorf("unable to get defined entity by clusterId [%s]: [%v]", clusterId, err)
+	}
+	return rde.Name, nil
+}
+
+func createKubeClient(kubeConfig string) (kubernetes.Interface, error) {
+	config, err := clientcmd.RESTConfigFromKubeConfig([]byte(kubeConfig))
+	if err != nil {
+		return nil, fmt.Errorf("unable to create RESTConfig using kubeconfig from RDE: [%v]", err)
+	}
+	return kubernetes.NewForConfig(config)
 }
 
 func (tc *TestClient) CreateNameSpace(ctx context.Context, nsName string) (*apiv1.Namespace, error) {

@@ -29,7 +29,8 @@ type VcdConfig struct {
 	RefreshToken     string `yaml:"refreshToken"`
 	VIPSubnet        string `yaml:"vipSubnet"`
 	CertificateAlias string `yaml:"certificateAlias"`
-	ClusterID        string `yaml:"clusterID"`
+	ClusterID          string `yaml:"clusterID"`
+	FreeLoadBalancerIP string `yaml:"freeLoadBalancerIP"`
 }
 
 type authorizationDetails struct {

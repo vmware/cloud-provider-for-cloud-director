@@ -5,6 +5,7 @@ The version of the VMware Cloud Director API and Installation that are compatibl
 
 | CPI Version | CSE Version | VMware Cloud Director API | VMware Cloud Director Installation | Notes | Kubernetes Versions | docs |
 | :---------: | :---------: | :-----------------------: | :--------------------------------: | :---: | :------------------ | :--: |
+| 1.3.0 | 4.0.0 | 36.0+ | 10.3.1+ <br/>(10.3.1 needs hot-patch to prevent VCD cell crashes in multi-cell environments) | <ul><li>Support for user specified load balancer IP.</li><li>Support for SSL termination at ingress with `appProtocol: https`</li></ul> |<ul><li>1.22</li><li>1.21</li><li>1.20</li></ul>|[CPI 1.3.z docs](https://github.com/vmware/cloud-provider-for-cloud-director/tree/1.3.z)|
 | 1.2.0 | 4.0.0 | 36.0+ | 10.3.1+ <br/>(10.3.1 needs hot-patch to prevent VCD cell crashes in multi-cell environments) | <ul><li>For VCD >= 10.4.0, support for multiple virtual services sharing the same ip (`enableVirtualServiceSharedIP`)</li><li>Added tenant context header to cloud api calls</li><li>Added secret-based way to get cluster-id for CRS</li></ul> |<ul><li>1.22</li><li>1.21</li><li>1.20</li><li>1.19</li></ul>|[CPI 1.2.z docs](https://github.com/vmware/cloud-provider-for-cloud-director/tree/1.2.z)|
 | 1.1.3 | 3.1.x | 36.0+ | 10.3.1+ <br/>(10.3.1 needs hot-patch to prevent VCD cell crashes in multi-cell environments) | <ul><li>Fixed issue where VCD resources were not cleaning up after deleting the load balancer service if the load balancer failed to come up successfully</li></ul> |<ul><li>1.21</li><li>1.20</li><li>1.19</li></ul>| [CPI 1.1.x docs](https://github.com/vmware/cloud-provider-for-cloud-director/tree/1.1.x) |
 | 1.1.2 | 3.1.x | 36.0+ | 10.3.1+ <br/>(10.3.1 needs hot-patch to prevent VCD cell crashes in multi-cell environments) | <ul><li>Fixed issue with clusters created using system administrator credentials where external IP addresses for application Load Balancers are picked from edge gateway of an unintended tenant.</li></ul> |<ul><li>1.21</li><li>1.20</li><li>1.19</li></ul>|[CPI 1.1.x docs](https://github.com/vmware/cloud-provider-for-cloud-director/tree/1.1.x)|
@@ -57,7 +58,7 @@ There is no particular configuration needed in order to use the Node LCM.
 #### Provider Setup
 The LoadBalancers using the CPI of VCD need a preconfigured Avi Controller, NSX-T Cloud and Avi Service Engine Group. This is a provider operation.
 
-The Service Engine Group (SEG) should be created as `Dedicated` and one SEG should be allocated per Edge Gateway in order to ensure that Load Balancers used by Tenants are well-isolated from each other.
+Please follow best practices of configuring NSX ALB with VCD for multi-tenant environment.
 
 The LoadBalancer section of the Edge Gateway for a Tenant should be enabled, and the appropriate Service Engine Group(s) should be configured into the Edge Gateway. This will be used to create Virtual Services when a LoadBalancer request is made from Kubernetes.
 
@@ -68,7 +69,7 @@ A ServiceEngineGroup needs to be added to the gateway of the OVDC within which t
 Any third party ingress such as Contour could be used with the CPI in order to create an L7 ingress and NSX Advanced Load Balancer with Avi will act as the L4 LoadBalancer.
 
 **Note**: In order to create a HTTPS Ingress using the Avi LoadBalancer, a certificate needs to be used. The following steps present an overview **from CPI 1.1.0 onwards**:
-1. As a user with OrgAdmin role, upload a certificate into the Trusted Certificates of the Organization using the VCD UI. Let this certificate be called `my-service-cert`.
+1. As a user with OrgAdmin role, upload a certificate in Certificates Library of the Organization using the VCD UI. Let this certificate be called `my-service-cert`.
 
 2. Add the following annotations to the ingress loadbalancer service. Depending on the installation method used (helm etc), the location of addition of these annotations may be different. The annotation mentions the _comma-separated list of ports_ that need SSL and the (single) certificate to be used for it.
 ```
@@ -96,6 +97,32 @@ loadbalancer:
 
 Note: if `enableVirtualServiceSharedIP`  is set to `true` and `oneArm` is not `nil`, this means that the virtual services will share an internal ip instead of an external ip. DNAT rules are used to map the shared internal ip to an external ip.
 
+### Specify an IP for the application load balancer
+When creating a load balancer type service in Kubernetes, explicitly specify a load balancer IP address by configuring the service as follows. Let us assume the application load balancer need to be created using the IP address `10.10.10.10`.
+
+```
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-service
+spec:
+  type: LoadBalancer
+  loadBalancerIP: 10.10.10.10
+```
+
+An internal IP address, such as 192.168.x.x, can also be used for `loadBalancerIP`.
+
+Note: Updating the user specified load balancer IP is not supported when CPI is configured with `enableVirtualServiceSharedIP: true` and `oneArm: nil`.
+
+### Disable SSL termination at NSX-T Avi load balancer
+To disable SSL termination at NSX-T Avi load balancer and have ingress control SSL termination, add the following annotation to the ingress load balancer service.
+
+```
+annotations:
+  service.beta.kubernetes.io/vcloud-avi-ssl-no-termination: "true"
+```
+
+
 ## Troubleshooting
 ### Log VCD requests and responses
 
@@ -112,6 +139,13 @@ kubectl set env -n kube-system deployment/vmware-cloud-director-ccm GOVCD_LOG_ON
 ```
 
 **NOTE: Please make sure to collect the logs before and after enabling the wire log. The above commands update the CPI deployment, which creates a new CPI pod. The logs present in the old pod will be lost.**
+
+## Upgrade CPI
+To upgrade CPI from v1.2.0, please execute the following command for each cluster
+```shell
+kubectl patch deployment -n kube-system vmware-cloud-director-ccm -p '{"spec": {"template": {"spec": {"containers": [{"name": "vmware-cloud-director-ccm", "image": "projects.registry.vmware.com/vmware-cloud-director/cloud-provider-for-cloud-director:1.3.0"}]}}}}'
+```
+
 ## Contributing
 Please see [CONTRIBUTING.md](CONTRIBUTING.md) for instructions on how to contribute.
 

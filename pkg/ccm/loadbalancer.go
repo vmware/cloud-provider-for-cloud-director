@@ -15,6 +15,8 @@ import (
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/util"
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdsdk"
 	"github.com/vmware/cloud-provider-for-cloud-director/release"
+	"github.com/vmware/go-vcloud-director/v2/govcd"
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -27,6 +29,7 @@ import (
 const (
 	sslPortsAnnotation     = `service.beta.kubernetes.io/vcloud-avi-ssl-ports`
 	sslCertAliasAnnotation = `service.beta.kubernetes.io/vcloud-avi-ssl-cert-alias`
+	skipAviSSLTerminationAnnotation     = `service.beta.kubernetes.io/vcloud-avi-ssl-no-termination`
 	// TODO: Update controlPlaneLabel to use default K8s constants if available
 	controlPlaneLabel = `node-role.kubernetes.io/control-plane`
 )
@@ -206,6 +209,12 @@ func (lb *LBManager) UpdateLoadBalancer(ctx context.Context, clusterName string,
 	rdeManager := vcdsdk.NewRDEManager(lb.vcdClient, lb.clusterID, release.CloudControllerManagerName, release.CpiVersion)
 	cpiRdeManager := cpisdk.NewCPIRDEManager(rdeManager)
 
+	// fetch the user specified IP address for the load balancer
+	// NOTE: userSpecifiedLBIP cannot be nil as it is a string.
+	// if userSpecifiedLBIP is empty, the empty string is passed down to CreateLoadBalancer() which uses an external IP from IP gateway allocations.
+	userSpecifiedLBIP := getUserSpecifiedLoadBalancerIP(service)
+	klog.Infof("UpdateLoadBalancer called with loadBalancerIP [%s] for service [%s]", userSpecifiedLBIP, service.Name)
+
 	for portName, internalPort := range typeToInternalPortMap {
 		lbPoolName := fmt.Sprintf("%s-%s", lbPoolNamePrefix, portName)
 		virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, portName)
@@ -217,7 +226,7 @@ func (lb *LBManager) UpdateLoadBalancer(ctx context.Context, clusterName string,
 		klog.Infof("Updating pool [%s] with port [%s:%d]", lbPoolName, portName, internalPort)
 		protocol, _ := nameToProtocol[portName]
 		resourcesAllocated := &util.AllocatedResourcesMap{}
-		vip, err := gm.UpdateLoadBalancer(ctx, lbPoolName, virtualServiceName, nodeIps, internalPort,
+		vip, err := gm.UpdateLoadBalancer(ctx, lbPoolName, virtualServiceName, nodeIps, userSpecifiedLBIP, internalPort,
 			externalPort, lb.OneArm, lb.EnableVirtualServiceSharedIP, protocol, resourcesAllocated)
 		// TODO: Should we record this error as well?
 		if rdeErr := lb.addLBResourcesToRDE(ctx, resourcesAllocated, vip); rdeErr != nil {
@@ -300,7 +309,7 @@ func (lb *LBManager) getLoadBalancer(ctx context.Context,
 				klog.Errorf("unable to add CPI error [%s] to RDE [%s], [%v]", cpisdk.GetLoadbalancerError, lb.clusterID, addToErrorSetErr)
 			}
 			return nil, nil,
-				fmt.Errorf("unable to get virtual service summary for [%s]: [%v]",
+				fmt.Errorf("unable to get load balancer information for the service [%s]: [%v]",
 					virtualServiceName, err)
 		}
 		removeErr := cpiRdeManager.RDEManager.RemoveErrorByNameOrIdFromErrorSet(ctx, vcdsdk.ComponentCPI, cpisdk.GetLoadbalancerError, "", virtualServiceName)
@@ -351,7 +360,17 @@ func (lb *LBManager) GetLoadBalancer(ctx context.Context, clusterName string,
 
 	for _, ip := range portNameToIPMap {
 		if ip == "" {
-			return nil, false, nil // returning false to retry creation
+			// If we have an empty IP for a specific port, there may be resources allocated in other ports so we will do resource check to return for delete.
+			// As if there is vcd resources, we should return a nil status, but true for lb exists to the controller to pick up for deletion.
+
+			// In the event we do get an actual vcdResourceCheck error, then hasVcdResource (lbExists) may be false. The controller will return and reconcile
+			// as there is an error check first. If there is an error, the controller will return the delete operation immediately and will not continue to indicate lb has been deleted.
+			// Only if there is no error then it will check if hasVcdResource (lbExists), and if it exists, then it will ensure the deletion.
+			hasVcdResources, vcdResourceCheckErr := lb.VerifyVCDResourcesForApplicationLB(ctx, service)
+			if vcdResourceCheckErr != nil {
+				klog.Errorf("error occurred while checking vcd resource for application LB in GetLoadBalancer: [%v]", vcdResourceCheckErr)
+			}
+			return nil, hasVcdResources, vcdResourceCheckErr
 		}
 	}
 	return status, true, nil
@@ -483,6 +502,20 @@ func getSSLCertAlias(service *v1.Service) string {
 	return sslCertAlias
 }
 
+func shouldSkipAviSSLTermination(service *v1.Service) bool {
+	shouldSkipAviSSLTerminationStr, ok := service.Annotations[skipAviSSLTerminationAnnotation]
+	if !ok {
+		return false
+	}
+
+	return strings.ToLower(shouldSkipAviSSLTerminationStr) == "true"
+}
+
+// getUserSpecifiedLoadBalancerIP returns the specified load balancer IP
+func getUserSpecifiedLoadBalancerIP(service *v1.Service) string {
+	return service.Spec.LoadBalancerIP
+}
+
 func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service,
 	nodeIPs []string) (*v1.LoadBalancerStatus, error) {
 
@@ -518,6 +551,12 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 		}
 	}
 
+	// fetch the user specified IP address for the load balancer
+	// NOTE: userSpecifiedLBIP cannot be nil as it is a string.
+	// if userSpecifiedLBIP is empty, the empty string is passed down to CreateLoadBalancer() which uses an external IP from IP gateway allocations.
+	userSpecifiedLBIP := getUserSpecifiedLoadBalancerIP(service)
+	klog.Infof("createLoadBalancer called with loadBalancerIP [%s] for service [%s]", userSpecifiedLBIP, service.Name)
+
 	if lbExists {
 		// Update load balancer if there are changes in service properties
 		typeToInternalPortMap, typeToExternalPortMap, nameToProtocol := lb.getServicePortMap(service)
@@ -528,7 +567,7 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 			protocol, _ := nameToProtocol[portName]
 			klog.Infof("Updating pool [%s] with port [%s:%d:%d]", lbPoolName, portName, internalPort, externalPort)
 			resourcesAllocated := &util.AllocatedResourcesMap{}
-			vip, err := gm.UpdateLoadBalancer(ctx, lbPoolName, virtualServiceName, nodeIPs, internalPort,
+			vip, err := gm.UpdateLoadBalancer(ctx, lbPoolName, virtualServiceName, nodeIPs, userSpecifiedLBIP, internalPort,
 				externalPort, lb.OneArm, lb.EnableVirtualServiceSharedIP, protocol, resourcesAllocated)
 			if rdeErr := lb.addLBResourcesToRDE(ctx, resourcesAllocated, vip); rdeErr != nil {
 				return nil, fmt.Errorf("failed to update RDE [%s] with load balancer resources: [%v]", lb.clusterID, err)
@@ -538,7 +577,6 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 			if getVsErr != nil {
 				return nil, fmt.Errorf("failed to get virtual service [%s], [%v]", virtualServiceName, getVsErr)
 			}
-
 			if vsSummary == nil {
 				return nil, fmt.Errorf("virtual service [%s] does not exist", virtualServiceName)
 			}
@@ -548,8 +586,13 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 				if addToErrorSetErr != nil {
 					klog.Errorf("error adding CPI error [%s] to RDE: [%s], [%v]", cpisdk.UpdateLoadbalancerError, lb.clusterID, addToErrorSetErr)
 				}
-				return nil, fmt.Errorf("unable to update pool [%s] with port [%s:%d:%d]: [%v]", lbPoolName, portName,
-					internalPort, externalPort, err)
+				return nil, fmt.Errorf("unable to update load balancer [%s] with port [%s:%d:%d] and load balancer IP [%s]: [%v]", lbPoolName, portName,
+					internalPort, externalPort, userSpecifiedLBIP, err)
+			}
+
+			if userSpecifiedLBIP != "" && vip != userSpecifiedLBIP {
+				return nil, fmt.Errorf("failed to update loadbalancerIP to [%s] for the service [%s]: expected the load balancer IP to be [%s] but got [%s]",
+					userSpecifiedLBIP, service.Name, userSpecifiedLBIP, vip)
 			}
 
 			// TODO: This may need to be optimized in the future as we are making len(ports) API calls
@@ -562,6 +605,15 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 			if err != nil {
 				klog.Errorf("there was an error removing CPI error [%s] from RDE [%s], [%v]", cpisdk.UpdateLoadbalancerError, lb.clusterID, err)
 			}
+		}
+		// recreate the load balancer status as the load balancer properties may be updated
+		lbStatus, _, err = lb.getLoadBalancer(ctx, service)
+		if err != nil {
+			addToErrorSetErr := cpiRdeManager.AddToErrorSetWithNameAndId(ctx, cpisdk.GetLoadbalancerError, "", virtualServiceNamePrefix, err.Error())
+			if addToErrorSetErr != nil {
+				klog.Errorf("error adding CPI error [%s] to the RDE [%s], [%v]", cpisdk.GetLoadbalancerError, lb.clusterID, addToErrorSetErr)
+			}
+			return nil, fmt.Errorf("unexpected error while querying for loadbalancer after updating load balancer: [%v]", err)
 		}
 		return lbStatus, nil
 	}
@@ -582,6 +634,13 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 		certAlias = lb.CertificateAlias
 	}
 
+	// allow users to terminate SSL by other means
+	skipAviSSLTermination := shouldSkipAviSSLTermination(service)
+	klog.Infof("Annotation [%s] set to [%v]", skipAviSSLTerminationAnnotation, skipAviSSLTermination)
+	if skipAviSSLTermination {
+		certAlias = ""
+	}
+
 	// golang doesn't have the set data structure
 	portsMap := make(map[int32]bool)
 	for _, port := range ports {
@@ -594,7 +653,7 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 			InternalPort: port.NodePort,
 			Protocol:     strings.ToUpper(string(port.Protocol)),
 		}
-		if port.AppProtocol != nil && *port.AppProtocol != "" {
+		if port.AppProtocol != nil && *port.AppProtocol != "" && !skipAviSSLTermination {
 			switch strings.ToUpper(*port.AppProtocol) {
 			// allow override in case of known protocols such as HTTP/HTTPS/TCP which are directly supported in Avi
 			case "HTTP", "HTTPS", "TCP":
@@ -602,18 +661,20 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 			}
 		}
 		if _, ok := portsMap[port.Port]; ok {
-			portDetailsList[idx].UseSSL = true
-			if certAlias == "" {
-				return nil, fmt.Errorf("cert alias empty while port [%d] for SSL is specified", port.Port)
+			if !skipAviSSLTermination {
+				portDetailsList[idx].UseSSL = true
+				if certAlias == "" {
+					return nil, fmt.Errorf("cert alias empty while port [%d] for SSL is specified", port.Port)
+				}
+				portDetailsList[idx].CertAlias = certAlias
 			}
-			portDetailsList[idx].CertAlias = certAlias
 		}
 	}
 	klog.Infof("Creating loadbalancer for ports [%#v]\n", portDetailsList)
 	// Create using VCD API
 	resourcesAllocated := &util.AllocatedResourcesMap{}
 	lbIP, err := gm.CreateLoadBalancer(ctx, virtualServiceNamePrefix, lbPoolNamePrefix, nodeIPs, portDetailsList,
-		lb.OneArm, lb.EnableVirtualServiceSharedIP, portNameToIPMap, "", resourcesAllocated)
+		lb.OneArm, lb.EnableVirtualServiceSharedIP, portNameToIPMap, userSpecifiedLBIP, resourcesAllocated)
 	if rdeErr := lb.addLBResourcesToRDE(ctx, resourcesAllocated, lbIP); rdeErr != nil {
 		return nil, fmt.Errorf("unable to add load balancer pool resources to RDE [%s]: [%v]", lb.clusterID, err)
 	}
@@ -656,4 +717,92 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 			},
 		},
 	}, nil
+}
+
+func (lb *LBManager) VerifyVCDResourcesForApplicationLB(ctx context.Context, service *v1.Service) (bool, error) {
+	virtualServiceNamePrefix := lb.getVirtualServicePrefix(ctx, service)
+	lbPoolNamePrefix := lb.getLBPoolNamePrefix(ctx, service)
+	klog.Infof("Checking VCD Resources with virtual service [%s] and lb pool [%s]", virtualServiceNamePrefix, lbPoolNamePrefix)
+
+	portDetailsList := make([]vcdsdk.PortDetails, len(service.Spec.Ports))
+	for idx, port := range service.Spec.Ports {
+		portDetailsList[idx] = vcdsdk.PortDetails{
+			PortSuffix:   port.Name,
+			ExternalPort: port.Port,
+			InternalPort: port.NodePort,
+			Protocol:     string(port.Protocol),
+		}
+	}
+	return lb.verifyVCDResourcesForApplicationLB(ctx, virtualServiceNamePrefix, lbPoolNamePrefix, portDetailsList, lb.OneArm)
+}
+
+/**
+In GetVirtualService(), we will always expect 1 virtual service back only. This is due to virtual service names
+being unique as there cannot have two of the same virtual service names, and in GetVirtualService() we have a FIQL name==%s filter
+to search for a virtual service of %s name.
+*/
+func (lb *LBManager) verifyVCDResourcesForApplicationLB(ctx context.Context, virtualServiceNamePrefix string,
+	lbPoolNamePrefix string, portDetailsList []vcdsdk.PortDetails, oneArm *vcdsdk.OneArm) (bool, error) {
+
+	gatewayMgr, err := vcdsdk.NewGatewayManager(ctx, lb.vcdClient, lb.ovdcNetworkName, lb.ipamSubnet)
+	if err != nil {
+		return false, fmt.Errorf("error creating new gateway manager [%v]", err)
+	}
+
+	for _, portDetails := range portDetailsList {
+		if portDetails.InternalPort == 0 {
+			klog.Infof("No internal port specified for [%s], hence loadbalancer not created", portDetails.PortSuffix)
+			continue
+		}
+		virtualServiceName := fmt.Sprintf("%s-%s", virtualServiceNamePrefix, portDetails.PortSuffix)
+		lbPoolName := fmt.Sprintf("%s-%s", lbPoolNamePrefix, portDetails.PortSuffix)
+
+		// GetVirtualService() will always look for 1 virtual service named virtualServiceName, as VCD doesn't allow duplicate VS names.
+		// In the event where a virtual service name is not found in GetVirtualService(), it will return nil for both error and vsSummary.
+		vsSummary, err := gatewayMgr.GetVirtualService(ctx, virtualServiceName)
+		if err != nil {
+			return false, fmt.Errorf("error getting virtual service [%s]: [%v] during VCD resources verification", virtualServiceName, err)
+		}
+
+		if vsSummary != nil {
+			klog.Infof("Virtual Service found: [%s]", virtualServiceName)
+			return true, nil
+		}
+
+		// GetLoadBalancerPool() will return nil, error if lbPool is not found.
+		lbPool, err := gatewayMgr.GetLoadBalancerPool(ctx, lbPoolName)
+		if err != nil && err != govcd.ErrorEntityNotFound {
+			return false, fmt.Errorf("error getting loadbalancer pool for [%s]: [%v] during VCD resources verification", lbPoolName, err)
+		}
+		if lbPool != nil {
+			klog.Infof("Load balancer pool found: [%s]", lbPoolName)
+			return true, nil
+		}
+
+		if oneArm != nil {
+			dnatRuleName := vcdsdk.GetDNATRuleName(virtualServiceName)
+			dnatRuleRef, err := gatewayMgr.GetNATRuleRef(ctx, dnatRuleName)
+			if err != nil {
+				return false, fmt.Errorf("error getting dnat rule ref for [%s]: [%v] during VCD resources verification", dnatRuleName, err)
+			}
+			if dnatRuleRef != nil {
+				klog.Infof("DNAT Rule Ref found: [%s]", dnatRuleName)
+				return true, nil
+			}
+			appPortProfileName := vcdsdk.GetAppPortProfileName(dnatRuleName)
+			org, err := lb.vcdClient.VCDClient.GetOrgByName(lb.vcdClient.ClusterOrgName)
+			if err != nil {
+				return false, fmt.Errorf("unable to find org [%s] by name: [%v]", lb.vcdClient.ClusterOrgName, err)
+			}
+			appPortProfile, err := org.GetNsxtAppPortProfileByName(appPortProfileName, types.ApplicationPortProfileScopeTenant)
+			// We are doing a string check here because it returns a formatted error instead of govcd.ErrorEntityNotFound
+			if err != nil && !strings.Contains(err.Error(), "[ENF] entity not found") {
+				return false, fmt.Errorf("unable to get app port profile [%s]: [%v]", appPortProfileName, err)
+			}
+			if appPortProfile != nil {
+				return true, nil
+			}
+		}
+	}
+	return false, nil
 }
