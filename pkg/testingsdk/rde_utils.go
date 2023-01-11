@@ -7,6 +7,8 @@ import (
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdsdk"
 )
 
+// TODO: In the future, we will need to consider how to handle different versions of RDE. Currently these functions are not resilient to RDE version changes.
+
 func GetVCDResourceSet(ctx context.Context, client *vcdsdk.Client, clusterId, componentName string) ([]vcdsdk.VCDResource, error) {
 	vcdResourceSetMap, err := getVcdResourceSetComponentMapFromRDEId(ctx, client, componentName, clusterId)
 	if err != nil {
@@ -18,12 +20,7 @@ func GetVCDResourceSet(ctx context.Context, client *vcdsdk.Client, clusterId, co
 // Returns status.component as map[string]interface{}, this will help us narrow down to specific fields such as nodepools, vcdresources, etc
 // Components: vcdKe, projector, csi, cpi, capvcd
 func GetComponentMapInStatus(ctx context.Context, client *vcdsdk.Client, clusterId, componentName string) (map[string]interface{}, error) {
-	org, err := client.VCDClient.GetOrgByName(client.ClusterOrgName)
-	if err != nil {
-		return nil, fmt.Errorf("unable to find org [%s] by name: [%v]", client.ClusterOrgName, err)
-	}
-
-	rde, _, _, err := client.APIClient.DefinedEntityApi.GetDefinedEntity(ctx, clusterId, org.Org.ID)
+	rde, err := getRdeById(ctx, client, clusterId)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get defined entity [%s]: [%v]", clusterId, err)
 	}
@@ -52,7 +49,7 @@ func GetComponentMapInStatus(ctx context.Context, client *vcdsdk.Client, cluster
 	return componentStatus, nil
 }
 
-func getKubeconfigFromRDEId(ctx context.Context, client *vcdsdk.Client, clusterId string) (string, error) {
+func GetKubeconfigFromRDEId(ctx context.Context, client *vcdsdk.Client, clusterId string) (string, error) {
 	capvcdStatusMap, err := GetComponentMapInStatus(ctx, client, clusterId, vcdsdk.ComponentCAPVCD)
 	if err != nil {
 		return "", fmt.Errorf("error retrieving [%s] field in status field of RDE [%s]: [%v]", vcdsdk.ComponentCAPVCD, clusterId, err)

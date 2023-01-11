@@ -49,7 +49,7 @@ func NewTestClient(params *VCDAuthParams, clusterId string) (*TestClient, error)
 		return nil, fmt.Errorf("error occured while generating client using [%s:%s] for cluster [%s]: [%v]", params.Username, params.UserOrg, clusterId, err)
 	}
 
-	kubeConfig, err := getKubeconfigFromRDEId(context.TODO(), client, clusterId)
+	kubeConfig, err := GetKubeconfigFromRDEId(context.TODO(), client, clusterId)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get kubeconfig from RDE [%s]: [%v]", clusterId, err)
 	}
@@ -68,7 +68,7 @@ func NewTestClient(params *VCDAuthParams, clusterId string) (*TestClient, error)
 func (tc *TestClient) GetClusterName(ctx context.Context, clusterId string) (string, error) {
 	rde, err := getRdeById(ctx, tc.VcdClient, clusterId)
 	if err != nil {
-		return "", fmt.Errorf("error retrieving cluster name by clusterId [%s]: [%v]", clusterId, err)
+		return "", fmt.Errorf("unable to get defined entity by clusterId [%s]: [%v]", clusterId, err)
 	}
 	return rde.Name, nil
 }
