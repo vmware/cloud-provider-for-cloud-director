@@ -15,7 +15,6 @@ import (
 
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog"
-	"strings"
 	"time"
 )
 
@@ -33,7 +32,7 @@ var (
 	defaultNodeNotReadyTimeout = 8 * time.Minute
 )
 
-func isPvcReady(ctx context.Context, k8sClient *kubernetes.Clientset, nameSpace string, pvcName string) error {
+func waitForPvcReady(ctx context.Context, k8sClient *kubernetes.Clientset, nameSpace string, pvcName string) error {
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
 		ready := false
 		pvc, err := getPVC(ctx, k8sClient, nameSpace, pvcName)
@@ -58,19 +57,22 @@ func isPvcReady(ctx context.Context, k8sClient *kubernetes.Clientset, nameSpace 
 	return err
 }
 
-func isDeploymentReady(ctx context.Context, k8sClient *kubernetes.Clientset, nameSpace string, deployName string) error {
+func waitForDeploymentReady(ctx context.Context, k8sClient *kubernetes.Clientset, nameSpace string, deployName string) error {
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
-		pods, err := getPodsByPrefix(ctx, k8sClient, nameSpace, deployName)
+		options := metav1.ListOptions{
+			LabelSelector: fmt.Sprintf("app=%s", deployName),
+		}
+		podList, err := k8sClient.CoreV1().Pods(nameSpace).List(ctx, options)
 		if err != nil {
 			if IsRetryableError(err) {
 				return false, nil
 			}
 			return false, fmt.Errorf("unexpected error occurred while getting deployment [%s]", deployName)
 		}
-		podCount := len(pods)
+		podCount := len(podList.Items)
 
 		ready := 0
-		for _, pod := range pods {
+		for _, pod := range (*podList).Items {
 			if pod.Status.Phase == apiv1.PodRunning {
 				ready++
 			}
@@ -84,7 +86,7 @@ func isDeploymentReady(ctx context.Context, k8sClient *kubernetes.Clientset, nam
 	return err
 }
 
-func isPVDeleted(ctx context.Context, k8sClient *kubernetes.Clientset, pvName string) (bool, error) {
+func waitForPVDeleted(ctx context.Context, k8sClient *kubernetes.Clientset, pvName string) (bool, error) {
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
 		_, err := getPV(ctx, k8sClient, pvName)
 		if err != nil {
@@ -104,7 +106,7 @@ func isPVDeleted(ctx context.Context, k8sClient *kubernetes.Clientset, pvName st
 	return true, nil
 }
 
-func isPVCDeleted(ctx context.Context, k8sClient *kubernetes.Clientset, nameSpace string, pvcName string) (bool, error) {
+func waitForPVCDeleted(ctx context.Context, k8sClient *kubernetes.Clientset, nameSpace string, pvcName string) (bool, error) {
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
 		_, err := getPVC(ctx, k8sClient, pvcName, nameSpace)
 		if err != nil {
@@ -124,7 +126,7 @@ func isPVCDeleted(ctx context.Context, k8sClient *kubernetes.Clientset, nameSpac
 	return true, nil
 }
 
-func isDeploymentDeleted(ctx context.Context, k8sClient *kubernetes.Clientset, nameSpace string, deployName string) (bool, error) {
+func waitForDeploymentDeleted(ctx context.Context, k8sClient *kubernetes.Clientset, nameSpace string, deployName string) (bool, error) {
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
 		_, err := getDeployment(ctx, k8sClient, nameSpace, deployName)
 		if err != nil {
@@ -144,7 +146,7 @@ func isDeploymentDeleted(ctx context.Context, k8sClient *kubernetes.Clientset, n
 	return true, nil
 }
 
-func isServiceDeleted(ctx context.Context, k8sClient *kubernetes.Clientset, nameSpace string, serviceName string) (bool, error) {
+func waitForServiceDeleted(ctx context.Context, k8sClient *kubernetes.Clientset, nameSpace string, serviceName string) (bool, error) {
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
 		_, err := getDeployment(ctx, k8sClient, nameSpace, serviceName)
 		if err != nil {
@@ -164,7 +166,7 @@ func isServiceDeleted(ctx context.Context, k8sClient *kubernetes.Clientset, name
 	return true, nil
 }
 
-func isNameSpaceDeleted(ctx context.Context, k8sClient *kubernetes.Clientset, nameSpace string) (bool, error) {
+func waitForNameSpaceDeleted(ctx context.Context, k8sClient *kubernetes.Clientset, nameSpace string) (bool, error) {
 	err := wait.PollImmediate(defaultLongRetryInterval, defaultLongRetryTimeout, func() (bool, error) {
 		_, err := k8sClient.CoreV1().Namespaces().Get(ctx, nameSpace, metav1.GetOptions{})
 		if err != nil {
@@ -184,7 +186,7 @@ func isNameSpaceDeleted(ctx context.Context, k8sClient *kubernetes.Clientset, na
 	return true, nil
 }
 
-func isStorageClassDeleted(ctx context.Context, k8sClient *kubernetes.Clientset, scName string) (bool, error) {
+func waitForStorageClassDeleted(ctx context.Context, k8sClient *kubernetes.Clientset, scName string) (bool, error) {
 	err := wait.PollImmediate(defaultLongRetryInterval, defaultLongRetryTimeout, func() (bool, error) {
 		_, err := k8sClient.StorageV1().StorageClasses().Get(ctx, scName, metav1.GetOptions{})
 		if err != nil {
@@ -224,26 +226,6 @@ func getStorageClass(ctx context.Context, k8sClient *kubernetes.Clientset, scNam
 		return nil, err
 	}
 	return sc, nil
-}
-
-func getPodsByPrefix(ctx context.Context, k8sClient *kubernetes.Clientset, nameSpace string, podNamePrefix string) ([]*apiv1.Pod, error) {
-	if podNamePrefix == "" {
-		return nil, ResourceNameNull
-	}
-	pods, err := k8sClient.CoreV1().Pods(nameSpace).List(ctx, metav1.ListOptions{})
-	if err != nil {
-		if apierrs.IsNotFound(err) {
-			return nil, ResourceNotFound
-		}
-		return nil, err
-	}
-	podList := []*apiv1.Pod{}
-	for _, pod := range pods.Items {
-		if strings.HasPrefix(pod.Name, podNamePrefix) {
-			podList = append(podList, &pod)
-		}
-	}
-	return podList, nil
 }
 
 func getPV(ctx context.Context, k8sClient *kubernetes.Clientset, pvName string) (*apiv1.PersistentVolume, error) {
@@ -541,7 +523,7 @@ func deletePVC(ctx context.Context, k8sClient *kubernetes.Clientset, nameSpace s
 	if err != nil {
 		return fmt.Errorf("failed to delete persistentVolumeClaim [%s]", pvcName)
 	}
-	pvcDeleted, err := isPVCDeleted(ctx, k8sClient, nameSpace, pvcName)
+	pvcDeleted, err := waitForPVCDeleted(ctx, k8sClient, nameSpace, pvcName)
 	if err != nil {
 		return fmt.Errorf("error occurred while deleting persistentVolumeClaim [%s]: [%v]", pvcName, err)
 	}
@@ -560,7 +542,7 @@ func deletePV(ctx context.Context, k8sClient *kubernetes.Clientset, pvName strin
 	if err != nil {
 		return fmt.Errorf("failed to delete persistentVolume [%s]", pvName)
 	}
-	pvDeleted, err := isPVDeleted(ctx, k8sClient, pvName)
+	pvDeleted, err := waitForPVDeleted(ctx, k8sClient, pvName)
 	if err != nil {
 		return fmt.Errorf("error occurred while deleting persistentVolume [%s]: [%v]", pvName, err)
 	}
@@ -582,7 +564,7 @@ func deleteDeployment(ctx context.Context, k8sClient *kubernetes.Clientset, name
 	if err != nil {
 		return fmt.Errorf("failed to delete deployment [%s]", deploymentName)
 	}
-	deploymentDeleted, err := isDeploymentDeleted(ctx, k8sClient, nameSpace, deploymentName)
+	deploymentDeleted, err := waitForDeploymentDeleted(ctx, k8sClient, nameSpace, deploymentName)
 	if err != nil {
 		return fmt.Errorf("error occurred while deleting deployment [%s]: [%v]", deploymentName, err)
 	}
@@ -597,7 +579,7 @@ func deleteNameSpace(ctx context.Context, k8sClient *kubernetes.Clientset, nameS
 	if err != nil {
 		return fmt.Errorf("failed to delete namespace [%s]", nameSpace)
 	}
-	namespaceDeleted, err := isNameSpaceDeleted(ctx, k8sClient, nameSpace)
+	namespaceDeleted, err := waitForNameSpaceDeleted(ctx, k8sClient, nameSpace)
 	if err != nil {
 		return fmt.Errorf("error occurred while deleting namespace [%s]: [%v]", nameSpace, err)
 	}
@@ -619,7 +601,7 @@ func deleteService(ctx context.Context, k8sClient *kubernetes.Clientset, nameSpa
 	if err != nil {
 		return fmt.Errorf("failed to delete service [%s]", serviceName)
 	}
-	serviceDeleted, err := isServiceDeleted(ctx, k8sClient, nameSpace, serviceName)
+	serviceDeleted, err := waitForServiceDeleted(ctx, k8sClient, nameSpace, serviceName)
 	if err != nil {
 		return fmt.Errorf("error occurred while deleting service [%s]: [%v]", serviceName, err)
 	}
@@ -641,7 +623,7 @@ func deleteStorageClass(ctx context.Context, k8sClient *kubernetes.Clientset, sc
 	if err != nil {
 		return fmt.Errorf("failed to delete service [%s]", scName)
 	}
-	scDeleted, err := isStorageClassDeleted(ctx, k8sClient, scName)
+	scDeleted, err := waitForStorageClassDeleted(ctx, k8sClient, scName)
 	if err != nil {
 		return fmt.Errorf("error occurred while deleting storageClass [%s]: [%v]", scName, err)
 	}

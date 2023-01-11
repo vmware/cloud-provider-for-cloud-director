@@ -99,3 +99,11 @@ func convertVcdResourceSetMapToVcdResourceArr(vcdResourceSetArr interface{}) ([]
 	}
 	return vcdResourceSet, nil
 }
+
+func getClusterNameById(ctx context.Context, client *vcdsdk.Client, clusterId string) (string, error) {
+	rde, err := getRdeById(ctx, client, clusterId)
+	if err != nil {
+		return "", fmt.Errorf("unable to get defined entity by clusterId [%s]: [%v]", clusterId, err)
+	}
+	return rde.Name, nil
+}
