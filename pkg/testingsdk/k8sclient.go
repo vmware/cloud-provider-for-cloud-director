@@ -452,24 +452,8 @@ func createDeployment(ctx context.Context, k8sClient *kubernetes.Clientset, para
 									ContainerPort: params.ContainerParams.ContainerPort,
 								},
 							},
-							//VolumeMounts: []apiv1.VolumeMount{
-							//	{
-							//		Name:      params.VolumeParams.VolumeName,
-							//		MountPath: params.VolumeParams.MountPath,
-							//	},
-							//},
 						},
 					},
-					//Volumes: []apiv1.Volume{
-					//	{
-					//		Name: params.VolumeParams.VolumeName,
-					//		VolumeSource: apiv1.VolumeSource{
-					//			PersistentVolumeClaim: &apiv1.PersistentVolumeClaimVolumeSource{
-					//				ClaimName: params.VolumeParams.PvcRef,
-					//			},
-					//		},
-					//	},
-					//},
 				},
 			},
 		},
