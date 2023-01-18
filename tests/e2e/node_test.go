@@ -61,14 +61,17 @@ var _ = Describe("Node LCM", func() {
 
 	It("should start the worker VM that was powered off in VCD", func() {
 		clusterVApp, err := tc.VcdClient.VDC.GetVAppByName(tc.ClusterName, true)
+		By("ensuring cluster vApp is present")
 		Expect(err).ShouldNot(HaveOccurred())
 		Expect(clusterVApp).NotTo(BeNil())
 		Expect(clusterVApp.VApp).NotTo(BeNil())
 
+		By("finding the worker VM corresponding to our worker node")
 		workerVm, err := vdcManager.FindVMByName(clusterVApp.VApp.Name, workerNode.Name)
 		Expect(err).ShouldNot(HaveOccurred())
 		Expect(workerVm).NotTo(BeNil())
 
+		By("powering off the worker VM")
 		task, err := workerVm.PowerOn()
 		Expect(err).ShouldNot(HaveOccurred())
 		err = task.WaitTaskCompletion()
@@ -81,15 +84,18 @@ var _ = Describe("Node LCM", func() {
 	})
 
 	It("should stop and delete the the worker VM in VCD", func() {
+		By("ensuring cluster vApp is present")
 		clusterVApp, err := tc.VcdClient.VDC.GetVAppByName(tc.ClusterName, true)
 		Expect(err).ShouldNot(HaveOccurred())
 		Expect(clusterVApp).NotTo(BeNil())
 		Expect(clusterVApp.VApp).NotTo(BeNil())
 
+		By("finding the worker VM corresponding to our worker node")
 		workerVm, err := vdcManager.FindVMByName(clusterVApp.VApp.Name, workerNode.Name)
 		Expect(err).ShouldNot(HaveOccurred())
 		Expect(workerVm).NotTo(BeNil())
 
+		By("delete the VM")
 		err = workerVm.Delete()
 		Expect(err).ShouldNot(HaveOccurred())
 	})
