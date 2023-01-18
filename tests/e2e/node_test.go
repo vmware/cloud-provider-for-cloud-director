@@ -18,7 +18,7 @@ var _ = Describe("Node LCM", func() {
 		tc         *testingsdk.TestClient
 	)
 
-	tc, err = utils.NewTestClient(host, org, ovdcName, username, token, clusterId, true)
+	tc, err = utils.NewTestClient(host, org, userOrg, ovdcName, username, token, clusterId, true)
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(tc).NotTo(BeNil())
 	Expect(&tc.Cs).NotTo(BeNil())

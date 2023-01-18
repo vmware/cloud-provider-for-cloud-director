@@ -34,7 +34,7 @@ var _ = Describe("Ensure Loadbalancer", func() {
 		tc          *testingsdk.TestClient
 	)
 
-	tc, err = utils.NewTestClient(host, org, ovdcName, username, token, clusterId, false)
+	tc, err = utils.NewTestClient(host, org, userOrg, ovdcName, username, token, clusterId, false)
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(tc).NotTo(BeNil())
 	Expect(&tc.Cs).NotTo(BeNil())

@@ -11,11 +11,11 @@ import (
 	"strings"
 )
 
-func NewTestClient(host, org, vdcName, username, token, clusterId string, getVdcClient bool) (*testingsdk.TestClient, error) {
+func NewTestClient(host, org, userOrg, vdcName, username, token, clusterId string, getVdcClient bool) (*testingsdk.TestClient, error) {
 	vcdAuthParams := &testingsdk.VCDAuthParams{
 		Host:         host,
 		OrgName:      org,
-		UserOrg:      "system",
+		UserOrg:      userOrg,
 		OvdcName:     vdcName,
 		Username:     username,
 		RefreshToken: token,
