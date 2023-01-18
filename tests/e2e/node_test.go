@@ -8,17 +8,14 @@ import (
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdsdk"
 	"github.com/vmware/cloud-provider-for-cloud-director/tests/e2e/utils"
 	v1 "k8s.io/api/core/v1"
-	clientset "k8s.io/client-go/kubernetes"
 )
 
 // Note: This test requires at least 2 worker nodes as we will be deleting one of them.
 var _ = Describe("Node LCM", func() {
 	var (
-		cs             clientset.Interface
-		err            error
-		workerNode     *v1.Node
-		workerNodeName string
-		tc             *testingsdk.TestClient
+		err        error
+		workerNode *v1.Node
+		tc         *testingsdk.TestClient
 	)
 
 	tc, err = utils.NewTestClient(host, org, ovdcName, username, token, clusterId, true)
@@ -43,7 +40,6 @@ var _ = Describe("Node LCM", func() {
 		workerNode, err = utils.GetWorkerNode(ctx, tc)
 		Expect(err).ShouldNot(HaveOccurred())
 		Expect(workerNode).NotTo(BeNil())
-		workerNodeName = workerNode.Name
 
 		By("verifying that there exists a VM found worker node's name")
 		workerVm, err := vdcManager.FindVMByName(clusterVApp.VApp.Name, workerNode.Name)
@@ -99,10 +95,7 @@ var _ = Describe("Node LCM", func() {
 	})
 
 	It("should no longer contain the worker VM in Kubernetes list of nodes", func() {
-		By("checking if worker node name is not in the list of nodes")
-		Expect(workerNodeName).NotTo(BeEmpty())
-		// By now CPI could have already deleted the worker node, so the workerNode object may be nil. So we should use workerNodeName here to check.
-		err = utils.WaitForWorkerNodeNotFound(cs, workerNodeName)
+		err = utils.WaitForWorkerNodeNotFound(ctx, tc, workerNode)
 		Expect(err).ShouldNot(HaveOccurred())
 	})
 })

@@ -8,7 +8,6 @@ import (
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/kubernetes"
 	"time"
 )
 
@@ -36,9 +35,9 @@ func GetWorkerNode(ctx context.Context, tc *testingsdk.TestClient) (*v1.Node, er
 	return nil, fmt.Errorf("could not find a worker node")
 }
 
-func WaitForWorkerNodeNotFound(cs kubernetes.Interface, workerNodeName string) error {
+func WaitForWorkerNodeNotFound(ctx context.Context, tc *testingsdk.TestClient, workerNode *v1.Node) error {
 	return wait.PollImmediate(defaultNodeInterval, defaultNodeNotFoundTimeout, func() (bool, error) {
-		if _, err := cs.CoreV1().Nodes().Get(context.TODO(), workerNodeName, metav1.GetOptions{}); err != nil {
+		if _, err := tc.Cs.CoreV1().Nodes().Get(ctx, workerNode.Name, metav1.GetOptions{}); err != nil {
 			return apierrs.IsNotFound(err), nil
 		}
 		return false, nil
