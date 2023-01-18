@@ -24,12 +24,12 @@ func GetWorkerNode(ctx context.Context, tc *testingsdk.TestClient) (*v1.Node, er
 	}
 
 	if len(nodes) < 2 {
-		return nil, fmt.Errorf("there is only 1 worker node, we need at least 2")
+		return nil, fmt.Errorf("error: expected 2 or more worker nodes, but found [%d] worker nodes", len(nodes))
 	}
 
 	for _, node := range nodes {
 		nodeLabelMap := node.Labels
-		if _, exists := nodeLabelMap[controlPlaneLabel]; !exists {
+		if _, exists := nodeLabelMap[testingsdk.ControlPlaneLabel]; !exists {
 			return &node, nil
 		}
 	}

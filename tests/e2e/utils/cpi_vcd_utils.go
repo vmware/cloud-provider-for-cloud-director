@@ -11,12 +11,6 @@ import (
 	"strings"
 )
 
-type TestClient struct {
-	VcdClient  *vcdsdk.Client
-	ClusterId  string
-	KubeConfig string
-}
-
 func NewTestClient(host, org, vdcName, username, token, clusterId string, getVdcClient bool) (*testingsdk.TestClient, error) {
 	vcdAuthParams := &testingsdk.VCDAuthParams{
 		Host:         host,

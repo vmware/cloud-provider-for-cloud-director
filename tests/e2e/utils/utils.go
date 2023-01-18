@@ -16,7 +16,6 @@ const (
 	servicePollFrequency = 10 * time.Second
 	serviceTimeout       = 5 * time.Minute
 	clusterUrnPrefix     = "urn:vcloud:entity:vmware:"
-	controlPlaneLabel    = "node-role.kubernetes.io/control-plane"
 
 	containerName  = "test-app"
 	containerImage = "k8s.gcr.io/e2e-test-images/agnhost:2.36"
