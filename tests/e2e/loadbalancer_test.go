@@ -111,7 +111,7 @@ var _ = Describe("Ensure Loadbalancer", func() {
 		Expect(resourcesFound).Should(BeTrue())
 
 		By("checking virtual IP stored in in CPI vcdResourceSet matches the external IP from the load balancer service")
-		externalIpExists, err := utils.IsExternalIpInVCDResourceSet(ctx, tc, externalIp, tc.ClusterId)
+		externalIpExists, err := utils.IsExternalIpInVCDResourceSet(ctx, tc, externalIp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(externalIpExists).To(BeTrue())
 	})
