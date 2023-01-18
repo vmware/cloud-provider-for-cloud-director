@@ -31,13 +31,13 @@ func init() {
 
 var _ = BeforeSuite(func() {
 	// We should validate that all credentials are present for generating a TestClient
-	Expect(host).NotTo(BeZero(), "Please make sure --host is set correctly.")
-	Expect(org).NotTo(BeZero(), "Please make sure --org is set correctly.")
-	Expect(userOrg).NotTo(BeZero(), "Please make sure --userOrg is set correctly.")
-	Expect(ovdcName).NotTo(BeZero(), "Please make sure --ovdcName is set correctly.")
-	Expect(username).NotTo(BeZero(), "Please make sure --username is set correctly.")
-	Expect(token).NotTo(BeZero(), "Please make sure --token is set correctly.")
-	Expect(clusterId).NotTo(BeZero(), "Please make sure --clusterId is set correctly.")
+	Expect(host).NotTo(BeEmpty(), "Please make sure --host is set correctly.")
+	Expect(org).NotTo(BeEmpty(), "Please make sure --org is set correctly.")
+	Expect(userOrg).NotTo(BeEmpty(), "Please make sure --userOrg is set correctly.")
+	Expect(ovdcName).NotTo(BeEmpty(), "Please make sure --ovdcName is set correctly.")
+	Expect(username).NotTo(BeEmpty(), "Please make sure --username is set correctly.")
+	Expect(token).NotTo(BeEmpty(), "Please make sure --token is set correctly.")
+	Expect(clusterId).NotTo(BeEmpty(), "Please make sure --clusterId is set correctly.")
 })
 
 func TestE2e(t *testing.T) {
