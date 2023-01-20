@@ -96,18 +96,24 @@ func HasVCDResourcesForApplicationLB(ctx context.Context, testClient *testingsdk
 	}
 
 	// All are present then this is a valid case
-	if vsFound && lbPoolFound && dnatRuleFound && appPortProfileFound {
+	if vsFound && lbPoolFound {
+		if oneArm != nil {
+			return dnatRuleFound && appPortProfileFound, nil
+		}
 		return true, nil
 	}
 
 	// To handle the case that all resources are deleted, we can if none are found then we can simply return false
-	if !vsFound && !lbPoolFound && !dnatRuleFound && !appPortProfileFound {
+	if !vsFound && !lbPoolFound {
+		if oneArm != nil {
+			return !dnatRuleFound && !appPortProfileFound, nil
+		}
 		return false, nil
 	}
 
 	// If some are present and some are not, then it's considered invalid and there should be an error as this searches for all resources.
-	return false, fmt.Errorf("either one or more resource was present but not all - vs: [%v], lb: [%v], dnat: [%v], appPort: [%v]",
-		vsFound, lbPoolFound, dnatRuleFound, appPortProfileFound)
+	return false, fmt.Errorf("either one or more resource was present but not all - vs: [%v], lb: [%v], dnat: [%v], appPort: [%v], oneArm: [%v]",
+		vsFound, lbPoolFound, dnatRuleFound, appPortProfileFound, oneArm)
 }
 
 func getTrimmedClusterID(clusterId string) string {
