@@ -75,6 +75,11 @@ var _ = Describe("Ensure Loadbalancer", func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(gatewayMgr).NotTo(BeNil())
 
+	// We can store an unused IP that CPI will fetch to use for comparing external IP being used
+	availableIp, err := gatewayMgr.GetUnusedExternalIPAddress(ctx, ipamSubnet)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(availableIp).NotTo(BeEmpty())
+
 	// Case 1. We should be able to create a LB http service on port 80 with no errors
 	It("should create a load balancer service", func() {
 		// Similar to Ingress setup, we will use: name=http, port=80, protocol=tcp, appProtocol=http
@@ -86,11 +91,6 @@ var _ = Describe("Ensure Loadbalancer", func() {
 
 	// Case 2. We should have an external IP and VCD resources after creating a Loadbalancer Service
 	It("should have an external IP and VCD resources", func() {
-		By("getting the next available unused external IP from our edge gateway")
-		availableIp, err := gatewayMgr.GetUnusedExternalIPAddress(ctx, ipamSubnet)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(availableIp).NotTo(BeEmpty())
-
 		By("fetching the external IP from the service")
 		externalIp, err := utils.WaitForExtIP(tc.Cs, ns.Name, testServiceName)
 		Expect(err).NotTo(HaveOccurred())
