@@ -105,8 +105,9 @@ func HasVCDResourcesForApplicationLB(ctx context.Context, testClient *testingsdk
 
 	// To handle the case that all resources are deleted, we can if none are found then we can simply return false
 	if !vsFound && !lbPoolFound {
-		if oneArm != nil {
-			return !dnatRuleFound && !appPortProfileFound, nil
+		if oneArm != nil && !dnatRuleFound && !appPortProfileFound {
+			// We want to return false, if all 4 LB components are not to be found.
+			return false, nil
 		}
 		return false, nil
 	}
