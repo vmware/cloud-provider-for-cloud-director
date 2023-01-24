@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdsdk"
+	"gopkg.in/yaml.v3"
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
 	stov1 "k8s.io/api/storage/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -247,6 +249,68 @@ func (tc *TestClient) GetService(ctx context.Context, nameSpace string, serviceN
 	return svc, nil
 }
 
+func (tc *TestClient) GetConfigMap(namespace, name string) (*apiv1.ConfigMap, error) {
+	return tc.Cs.CoreV1().ConfigMaps(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+}
+
+func (tc *TestClient) GetIpamSubnetFromConfigMap(cm *apiv1.ConfigMap) (string, error) {
+	data := cm.Data
+	ccmYaml, ok := data["vcloud-ccm-config.yaml"]
+	if !ok {
+		return "", fmt.Errorf("no data present")
+	}
+
+	var ccmCfgMap map[string]interface{}
+	err := yaml.Unmarshal([]byte(ccmYaml), &ccmCfgMap)
+	if err != nil {
+		return "", fmt.Errorf("err occurred: [%v]", err)
+	}
+
+	for key, val := range ccmCfgMap {
+		if key == "loadbalancer" {
+			lbDataMap, ok := val.(map[string]interface{})
+			if !ok {
+				return "", fmt.Errorf("unable to convert loadbalancer content to data map")
+			}
+			for k, v := range lbDataMap {
+				if k == "vipSubnet" {
+					return v.(string), nil
+				}
+			}
+		}
+	}
+	return "", fmt.Errorf("unable to find vipSubnet from ConfigMap [%s]", cm.Name)
+}
+
+func (tc *TestClient) GetNetworkNameFromConfigMap(cm *apiv1.ConfigMap) (string, error) {
+	data := cm.Data
+	ccmYaml, ok := data["vcloud-ccm-config.yaml"]
+	if !ok {
+		return "", fmt.Errorf("no data present")
+	}
+
+	var result map[string]interface{}
+	err := yaml.Unmarshal([]byte(ccmYaml), &result)
+	if err != nil {
+		return "", fmt.Errorf("err occurred: [%v]", err)
+	}
+
+	for key, val := range result {
+		if key == "loadbalancer" {
+			lbDataMap, ok := val.(map[string]interface{})
+			if !ok {
+				return "", fmt.Errorf("unable to convert loadbalancer content to data map")
+			}
+			for k, v := range lbDataMap {
+				if k == "network" {
+					return v.(string), nil
+				}
+			}
+		}
+	}
+	return "", nil
+}
+
 func (tc *TestClient) WaitForPvcReady(ctx context.Context, nameSpace string, pvcName string) error {
 	err := waitForPvcReady(ctx, tc.Cs.(*kubernetes.Clientset), nameSpace, pvcName)
 	if err != nil {
@@ -310,4 +374,17 @@ func (tc *TestClient) WaitForWorkerNodeNotReady(ctx context.Context, workerNode 
 		return fmt.Errorf("error querying node [%s] status for cluster [%s(%s)]: [%v]", workerNode.Name, tc.ClusterName, tc.ClusterId, err)
 	}
 	return nil
+}
+
+func (tc *TestClient) WaitForExtIP(namespace string, name string) (string, error) {
+	svc, err := waitForServiceExposure(tc.Cs, namespace, name)
+	if err != nil {
+		return "", err
+	}
+
+	if svc == nil {
+		return "", fmt.Errorf("the service is nil")
+	}
+	// We can safely return below as we handled the len(IngressList) check in waitServiceExposure()
+	return svc.Status.LoadBalancer.Ingress[0].IP, nil
 }

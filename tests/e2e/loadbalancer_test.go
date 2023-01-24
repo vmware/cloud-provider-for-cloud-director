@@ -60,13 +60,13 @@ var _ = Describe("Ensure Loadbalancer", func() {
 	Expect(err).NotTo(HaveOccurred())
 
 	// GetConfigMap to retrieve ipamSubnet, network name for gateway manager in order to check if VCD resources are present
-	ccmConfigMap, err := utils.GetConfigMap(tc.Cs, "kube-system", ccmConfigMapName)
+	ccmConfigMap, err := tc.GetConfigMap("kube-system", ccmConfigMapName)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(ccmConfigMap).NotTo(BeNil())
-	ipamSubnet, err = utils.GetIpamSubnetFromConfigMap(ccmConfigMap)
+	ipamSubnet, err = tc.GetIpamSubnetFromConfigMap(ccmConfigMap)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(ipamSubnet).NotTo(BeEmpty())
-	networkName, err = utils.GetNetworkNameFromConfigMap(ccmConfigMap)
+	networkName, err = tc.GetNetworkNameFromConfigMap(ccmConfigMap)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(networkName).NotTo(BeEmpty())
 
@@ -92,7 +92,7 @@ var _ = Describe("Ensure Loadbalancer", func() {
 	// Case 2. We should have an external IP and VCD resources after creating a Loadbalancer Service
 	It("should have an external IP and VCD resources", func() {
 		By("fetching the external IP from the service")
-		externalIp, err := utils.WaitForExtIP(tc.Cs, ns.Name, testServiceName)
+		externalIp, err := tc.WaitForExtIP(ns.Name, testServiceName)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(externalIp).Should(Equal(availableIp))
 
@@ -119,7 +119,7 @@ var _ = Describe("Ensure Loadbalancer", func() {
 	// Case 3. Check for valid external IP and connectivity for ip:port via HTTP Get Request.
 	It("should have connectivity from external ip", func() {
 		By("fetching the external ip of the service")
-		externalIp, err := utils.WaitForExtIP(tc.Cs, ns.Name, testServiceName)
+		externalIp, err := tc.WaitForExtIP(ns.Name, testServiceName)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(externalIp).NotTo(BeEmpty())
 
