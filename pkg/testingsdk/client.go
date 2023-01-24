@@ -351,6 +351,26 @@ func (tc *TestClient) WaitForWorkerNodeReady(ctx context.Context, workerNode *ap
 	return nil
 }
 
+func (tc *TestClient) WaitForWorkerNodePhaseRunning(ctx context.Context, workerNode *apiv1.Node) error {
+	err := wait.PollImmediate(defaultNodeInterval, defaultNodeReadyTimeout, func() (bool, error) {
+		nodes, err := tc.GetWorkerNodes(ctx)
+		if err != nil {
+			return false, fmt.Errorf("error getting a list of nodes from cluster [%s(%s)]: [%v]", tc.ClusterName, tc.ClusterId, err)
+		}
+
+		for _, node := range nodes {
+			if node.Name == workerNode.Name && node.Status.Phase == apiv1.NodeRunning {
+				return true, nil
+			}
+		}
+		return false, nil
+	})
+	if err != nil {
+		return fmt.Errorf("error querying node [%s] status for cluster [%s(%s)]: [%v]", workerNode.Name, tc.ClusterName, tc.ClusterId, err)
+	}
+	return nil
+}
+
 // WaitForWorkerNodeNotReady we cannot use negate result from WaitForWorkerNodeReady() Set different RetryTimeInterval and avoid timeout error
 func (tc *TestClient) WaitForWorkerNodeNotReady(ctx context.Context, workerNode *apiv1.Node) error {
 	err := wait.PollImmediate(defaultNodeInterval, defaultNodeNotReadyTimeout, func() (bool, error) {
