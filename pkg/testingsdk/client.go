@@ -219,7 +219,7 @@ func (tc *TestClient) GetPV(ctx context.Context, pvName string) (*apiv1.Persiste
 func (tc *TestClient) GetPVC(ctx context.Context, nameSpace string, pvcName string) (*apiv1.PersistentVolumeClaim, error) {
 	pvc, err := getPVC(ctx, tc.Cs.(*kubernetes.Clientset), nameSpace, pvcName)
 	if err != nil {
-		if err != ResourceNotFound {
+		if err == ResourceNotFound {
 			return nil, err
 		}
 		return nil, fmt.Errorf("error getting Persistent Volume Claim [%s] for cluster [%s(%s)]: [%v]", pvcName, tc.ClusterName, tc.ClusterId, err)
@@ -407,4 +407,12 @@ func (tc *TestClient) WaitForExtIP(namespace string, name string) (string, error
 	}
 	// We can safely return below as we handled the len(IngressList) check in waitServiceExposure()
 	return svc.Status.LoadBalancer.Ingress[0].IP, nil
+}
+
+func (tc *TestClient) WaitForPVDeleted(ctx context.Context, pvName string) (bool, error) {
+	pvDeleted, err := waitForPVDeleted(ctx, tc.Cs.(*kubernetes.Clientset), pvName)
+	if err != nil {
+		return pvDeleted, fmt.Errorf("error occurred while waiting for PV deleted for cluster [%s(%s)]: [%v]", tc.ClusterName, tc.ClusterId, err)
+	}
+	return pvDeleted, nil
 }
