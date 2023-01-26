@@ -154,7 +154,7 @@ spec:
         fsGroup: 2000
       containers:
         - name: vmware-cloud-director-ccm
-          image: __REGISTRY__:lzichong-dummy.d1e7a9a
+          image: __REGISTRY__/cpi-crs-airgapped:main-branch
           imagePullPolicy: IfNotPresent
           command:
             - /opt/vcloud/bin/cloud-provider-for-cloud-director
