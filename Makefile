@@ -8,13 +8,13 @@ REGISTRY?="harbor-repo.vmware.com/vcloud"
 .PHONY: build-within-docker vendor
 
 crs-artifacts-prod:
-	sed -e "s/\.__GIT_COMMIT__//g" -e "s/__VERSION__/$(version)/g" artifacts/cloud-director-ccm-crs-airgap.yaml.template > artifacts/cloud-director-ccm-crs-airgap.yaml
+	sed -e "s/\.__GIT_COMMIT__//g" -e "s/__VERSION__/$(version)/g" artifacts/default-cloud-director-ccm-crs-airgap.yaml.template > artifacts/cloud-director-ccm-crs-airgap.yaml.template
 	docker build -f ./artifacts/Dockerfile . -t cpi-crs-airgapped:$(version)
 	docker tag cpi-crs-airgapped:$(version) $(REGISTRY)/cpi-crs-airgapped:$(version)
 	docker push $(REGISTRY)/cpi-crs-airgapped:$(version)
 
 crs-artifacts-dev:
-	sed -e "s/__GIT_COMMIT__/$(GITCOMMIT)/g" -e "s/__VERSION__/$(version)/g" artifacts/cloud-director-ccm-crs-airgap.yaml.template > artifacts/cloud-director-ccm-crs-airgap.yaml
+	sed -e "s/__GIT_COMMIT__/$(GITCOMMIT)/g" -e "s/__VERSION__/$(version)/g" artifacts/default-cloud-director-ccm-crs-airgap.yaml.template > artifacts/cloud-director-ccm-crs-airgap.yaml.template
 	docker build -f ./artifacts/Dockerfile . -t cpi-crs-airgapped:$(GITCOMMIT)
 	docker tag cpi-crs-airgapped:$(GITCOMMIT) $(REGISTRY)/cpi-crs-airgapped:$(GITCOMMIT)
 	docker push $(REGISTRY)/cpi-crs-airgapped:$(GITCOMMIT)
