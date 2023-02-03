@@ -653,6 +653,7 @@ func (vdc *VdcManager) AddNewMultipleVM(vapp *govcd.VApp, vmNamePrefix string, v
 						AdminPasswordEnabled:  &trueVar,
 						AdminPasswordAuto:     &trueVar,
 						ResetPasswordRequired: &falseVar,
+						CustomizationScript: guestCustScript,
 					},
 					NetworkConnectionSection: &types.NetworkConnectionSection{
 						NetworkConnection: []*types.NetworkConnection{
@@ -801,9 +802,9 @@ func (vdc *VdcManager) AddNewTkgVM(vmNamePrefix string, VAppName string, vmNum i
 	// with the datasource file in TKG < 1.6.0, we prefix the file with 98-*, and we specify the datasource
 	// as "VMware". We use guest customization to add this file.
 	guestCustScript := `#!/usr/bin/env bash
-	cat > /etc/cloud/cloud.cfg.d/98-cse-vmware-datasource.cfg <<EOF
-	datasource_list: [ "VMware" ]
-	EOF`
+cat > /etc/cloud/cloud.cfg.d/98-cse-vmware-datasource.cfg <<EOF
+datasource_list: [ "VMware" ]
+EOF`
 
 	err := vdc.AddNewVM(vmNamePrefix, VAppName, vmNum, catalogName, templateName, placementPolicyName,
 		computePolicyName, storageProfileName, guestCustScript, powerOn)
