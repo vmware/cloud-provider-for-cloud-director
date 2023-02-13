@@ -92,7 +92,7 @@ func (cpiRDEManager *CPIRDEManager) updateRDEVirtualIps(ctx context.Context, upd
 		return nil, fmt.Errorf("obtained nil org for name [%s]", client.ClusterOrgName)
 	}
 	// can pass invokeHooks
-	_, httpResponse, err := client.APIClient.DefinedEntityApi.UpdateDefinedEntity(ctx, *defEnt, etag, cpiRDEManager.RDEManager.ClusterID, clusterOrg.Org.ID,nil)
+	_, httpResponse, err := client.APIClient.DefinedEntityApi.UpdateDefinedEntity(ctx, *defEnt, etag, cpiRDEManager.RDEManager.ClusterID, clusterOrg.Org.ID, nil)
 	if err != nil {
 		return httpResponse, fmt.Errorf("error when updating defined entity [%s]: [%v]", cpiRDEManager.RDEManager.ClusterID, err)
 	}
@@ -236,6 +236,10 @@ func convertMapToCPIStatus(cpiStatusMap map[string]interface{}) (*vcdsdk.CPIStat
 	return &cpiStatus, nil
 }
 
+// UpgradeCPISectionInStatus provides a helper function to update the latest CPI status into local entity
+// Provide an automatic conversion of the content in srcCapvcdEntity.entity.status.cpi content to the latest RDE version format (vcdsdk.CPIStatus)
+// Add the placeholder for any special conversion logic inside vcdsdk.CPIStatus (for developers)
+// Convert vcdsdk.CPIStatus to cpiStatusMap as the content in srcCapvcdEntity.entity.status.cpi; return cpiStatusMap
 func UpgradeCPISectionInStatus(statusMap map[string]interface{}) (map[string]interface{}, error) {
 	if statusMap == nil {
 		return nil, fmt.Errorf("invalid value for status: [%v]", statusMap)
@@ -258,6 +262,10 @@ func UpgradeCPISectionInStatus(statusMap map[string]interface{}) (map[string]int
 			return nil, fmt.Errorf("failed to convert CPI status map in RDE to CPI status object: [%v]", err)
 		}
 	}
+	// ******************  placeHolder: add any special conversion logic for CPIStatus  ******************
+	// Say CPI 1.1 has properties {X, Y} and CPI 1.2 introduces new property Z; {X, Y, Z}
+	// CPIStatus should update with {X, Y, Z=default}. Developers should update property Z at this place.
+	//PUT RDE.status.CPI should update with {X, Y, Z=updatedValue}
 	cpiStatus.Name = release.CloudControllerManagerName
 	cpiStatus.Version = release.CpiVersion
 	// CPI section is missing from the RDE status. Create a new CPI status and update the RDE.
@@ -273,6 +281,9 @@ func UpgradeCPISectionInStatus(statusMap map[string]interface{}) (map[string]int
 // section is missing from CAPVCD RDE. This method is intended to be called when CPI is started up.
 // EnsureLoadBalancer function, which is called for every instance of load balancer type service during start up,
 // will take care of lazily updating rest of the information related to CPI.
+// Provide an automatic conversion of the content in srcEntity.entity.status.cpi content to the latest RDE version format (CPIStatus)
+// Add the placeholder for any special conversion logic inside CSIStatus inside UpgradeCPISectionInStatus() (for developers)
+// Call an API call (PUT) to update CAPVCD entity and persist data into VCD
 // For future CPI upgrades, this method may become a factory of converters (ConvertFrom()).
 func (cpiRDEManager *CPIRDEManager) UpgradeCPIStatusOfExistingRDE(ctx context.Context, rdeId string) error {
 	klog.Infof("upgrading CPI section in RDE")
