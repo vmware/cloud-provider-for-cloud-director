@@ -7,10 +7,11 @@ package ccm
 
 import (
 	"fmt"
-	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdsdk"
-	"k8s.io/klog"
 	"sync"
 	"time"
+
+	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdsdk"
+	"k8s.io/klog"
 
 	"github.com/vmware/go-vcloud-director/v2/govcd"
 	v1 "k8s.io/api/core/v1"
@@ -67,11 +68,14 @@ func (vmic *VmInfoCache) vmToVMInfo(vm *govcd.VM, captureTime time.Time) (*VmInf
 	if vm.VM.NetworkConnectionSection != nil {
 		vmAddresses := make([]v1.NodeAddress, 0)
 		for _, netConn := range vm.VM.NetworkConnectionSection.NetworkConnection {
+			if netConn.NetworkConnectionIndex == vm.VM.NetworkConnectionSection.PrimaryNetworkConnectionIndex {
+				v1helper.AddToNodeAddresses(&vmAddresses,
+					v1.NodeAddress{
+						Type:    v1.NodeInternalIP,
+						Address: netConn.IPAddress,
+					})
+			}
 			v1helper.AddToNodeAddresses(&vmAddresses,
-				v1.NodeAddress{
-					Type:    v1.NodeInternalIP,
-					Address: netConn.IPAddress,
-				},
 				v1.NodeAddress{
 					Type:    v1.NodeExternalIP,
 					Address: netConn.IPAddress,
