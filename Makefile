@@ -19,7 +19,7 @@ crs-artifacts-dev:
 	docker tag cpi-crs-airgapped:$(GITCOMMIT) $(REGISTRY)/cpi-crs-airgapped:$(GITCOMMIT)
 	docker push $(REGISTRY)/cpi-crs-airgapped:$(GITCOMMIT)
 
-build-within-docker:
+build-within-docker: vendor
 	mkdir -p /build/cloud-provider-for-cloud-director
 	go build -ldflags "-X github.com/vmware/cloud-provider-for-cloud-director/version.Version=$(version)" -o /build/vcloud/cloud-provider-for-cloud-director cmd/ccm/main.go
 
@@ -37,7 +37,7 @@ dev: ccm dev-manifest crs-artifacts-dev
 
 vendor:
 	go mod edit -go=1.17
-	go mod tidy
+	go mod tidy -compat=1.17
 	go mod vendor
 
 test:
