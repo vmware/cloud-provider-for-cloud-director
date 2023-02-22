@@ -1,0 +1,12 @@
+# NsxTTransportZone
+
+## Properties
+Name | Type | Description | Notes
+------------ | ------------- | ------------- | -------------
+**Id** | **string** | The unique id of the transport zone on the NSX-T manager. | [optional] [default to null]
+**Name** | **string** | Name of Transport Zone in NSX-T Manager. | [optional] [default to null]
+**Type_** | [***NsxTTransportZoneType**](NsxTTransportZoneType.md) | Type of a transport zone. | [optional] [default to null]
+
+[[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
+
+
