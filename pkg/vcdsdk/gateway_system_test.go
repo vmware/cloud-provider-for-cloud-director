@@ -46,7 +46,7 @@ func TestCacheGatewayDetails(t *testing.T) {
 
 	ctx := context.Background()
 
-	gm, err := NewGatewayManager(ctx, vcdClient, vcdConfig.OvdcNetwork, vcdConfig.VIPSubnet)
+	gm, err := NewGatewayManager(ctx, vcdClient, vcdConfig.OvdcNetwork, vcdConfig.VIPSubnet, vcdConfig.TenantVdc)
 	assert.NoError(t, err, "gateway manager should be created without error")
 
 	require.NotNil(t, gm.GatewayRef, "Gateway reference should not be nil")
@@ -54,7 +54,7 @@ func TestCacheGatewayDetails(t *testing.T) {
 	assert.NotEmpty(t, gm.GatewayRef.Id, "Gateway Id should not be empty")
 
 	// Missing network name should be reported
-	gatewayManager, err := NewGatewayManager(ctx, vcdClient, "", vcdConfig.VIPSubnet)
+	gatewayManager, err := NewGatewayManager(ctx, vcdClient, "", vcdConfig.VIPSubnet, vcdConfig.TenantVdc)
 	assert.Error(t, err, "Should get error for unknown network")
 	assert.Nil(t, gatewayManager, "gateway manager should be nil when erroring out")
 
@@ -85,7 +85,7 @@ func TestDNATRuleCRUDE(t *testing.T) {
 
 	ctx := context.Background()
 
-	gm, err := NewGatewayManager(ctx, vcdClient, vcdConfig.OvdcNetwork, vcdConfig.VIPSubnet)
+	gm, err := NewGatewayManager(ctx, vcdClient, vcdConfig.OvdcNetwork, vcdConfig.VIPSubnet, vcdConfig.TenantVdc)
 	assert.NoError(t, err, "gateway manager should be created without error")
 
 	dnatRuleName := fmt.Sprintf("test-dnat-rule-%s", uuid.New().String())
@@ -151,7 +151,7 @@ func TestLBPoolCRUDE(t *testing.T) {
 
 	ctx := context.Background()
 
-	gm, err := NewGatewayManager(ctx, vcdClient, vcdConfig.OvdcNetwork, vcdConfig.VIPSubnet)
+	gm, err := NewGatewayManager(ctx, vcdClient, vcdConfig.OvdcNetwork, vcdConfig.VIPSubnet, vcdConfig.TenantVdc)
 	assert.NoError(t, err, "gateway manager should be created without error")
 
 	lbPoolName := fmt.Sprintf("test-lb-pool-%s", uuid.New().String())
@@ -235,7 +235,7 @@ func TestGetLoadBalancerSEG(t *testing.T) {
 
 	ctx := context.Background()
 
-	gm, err := NewGatewayManager(ctx, vcdClient, vcdConfig.OvdcNetwork, vcdConfig.VIPSubnet)
+	gm, err := NewGatewayManager(ctx, vcdClient, vcdConfig.OvdcNetwork, vcdConfig.VIPSubnet, vcdConfig.TenantVdc)
 	assert.NoError(t, err, "gateway manager should be created without error")
 
 	segRef, err := gm.GetLoadBalancerSEG(ctx)
@@ -272,7 +272,7 @@ func TestGetUnusedGatewayIP(t *testing.T) {
 
 	ctx := context.Background()
 
-	gm, err := NewGatewayManager(ctx, vcdClient, vcdConfig.OvdcNetwork, vcdConfig.VIPSubnet)
+	gm, err := NewGatewayManager(ctx, vcdClient, vcdConfig.OvdcNetwork, vcdConfig.VIPSubnet, vcdConfig.TenantVdc)
 	assert.NoError(t, err, "gateway manager should be created without error")
 
 	validSubnet := vcdConfig.VIPSubnet
@@ -317,7 +317,7 @@ func TestVirtualServiceHttpCRUDE(t *testing.T) {
 
 	ctx := context.Background()
 
-	gm, err := NewGatewayManager(ctx, vcdClient, vcdConfig.OvdcNetwork, vcdConfig.VIPSubnet)
+	gm, err := NewGatewayManager(ctx, vcdClient, vcdConfig.OvdcNetwork, vcdConfig.VIPSubnet, vcdConfig.TenantVdc)
 	assert.NoError(t, err, "gateway manager should be created without error")
 
 	lbPoolName := fmt.Sprintf("test-lb-pool-%s", uuid.New().String())
@@ -364,12 +364,11 @@ func TestVirtualServiceHttpCRUDE(t *testing.T) {
 	require.NotNil(t, vsRef, "VirtualServiceRef should not be nil")
 	assert.Equal(t, virtualServiceName, vsRef.Name, "Virtual Service name should match")
 
-
 	_, err = gm.UpdateVirtualService(ctx, virtualServiceName, "", 8080, true)
 	assert.NoError(t, err, "Unable to update external port")
 
 	// repeated update should not fail
-	_, err = gm.UpdateVirtualService(ctx, virtualServiceName, "",8080, true)
+	_, err = gm.UpdateVirtualService(ctx, virtualServiceName, "", 8080, true)
 	assert.NoError(t, err, "Repeated update to external port should not fail")
 
 	_, err = gm.UpdateVirtualService(ctx, virtualServiceName+"-invalid", "", 8080, true)
@@ -416,7 +415,7 @@ func TestVirtualServiceHttpsCRUDE(t *testing.T) {
 
 	ctx := context.Background()
 
-	gm, err := NewGatewayManager(ctx, vcdClient, vcdConfig.OvdcNetwork, vcdConfig.VIPSubnet)
+	gm, err := NewGatewayManager(ctx, vcdClient, vcdConfig.OvdcNetwork, vcdConfig.VIPSubnet, vcdConfig.TenantVdc)
 	assert.NoError(t, err, "gateway manager should be created without error")
 
 	lbPoolName := fmt.Sprintf("test-lb-pool-%s", uuid.New().String())
@@ -516,7 +515,7 @@ func TestLoadBalancerCRUDE(t *testing.T) {
 
 	ctx := context.Background()
 
-	gm, err := NewGatewayManager(ctx, vcdClient, testConfig.OvdcNetwork, testConfig.VIPSubnet)
+	gm, err := NewGatewayManager(ctx, vcdClient, testConfig.OvdcNetwork, testConfig.VIPSubnet, testConfig.TenantVdc)
 	assert.NoError(t, err, "gateway manager should be created without error")
 
 	virtualServiceNamePrefix := fmt.Sprintf("test-virtual-service-https-%s", uuid.New().String())
@@ -646,7 +645,7 @@ func TestLoadBalancer_ExplicitLBIP_OneArmDisabled_CRUDE(t *testing.T) {
 
 	ctx := context.Background()
 
-	gm, err := NewGatewayManager(ctx, vcdClient, testConfig.OvdcNetwork, testConfig.VIPSubnet)
+	gm, err := NewGatewayManager(ctx, vcdClient, testConfig.OvdcNetwork, testConfig.VIPSubnet, testConfig.TenantVdc)
 	assert.NoError(t, err, "gateway manager should be created without error")
 
 	virtualServiceNamePrefix := fmt.Sprintf("test-virtual-service-https-%s", uuid.New().String())
@@ -783,7 +782,7 @@ func TestLoadBalancer_ExplicitLBIP_OneArmEnabled_CRUDE(t *testing.T) {
 
 	ctx := context.Background()
 
-	gm, err := NewGatewayManager(ctx, vcdClient, testConfig.OvdcNetwork, testConfig.VIPSubnet)
+	gm, err := NewGatewayManager(ctx, vcdClient, testConfig.OvdcNetwork, testConfig.VIPSubnet, testConfig.TenantVdc)
 	assert.NoError(t, err, "gateway manager should be created without error")
 
 	virtualServiceNamePrefix := fmt.Sprintf("test-virtual-service-https-%s", uuid.New().String())
@@ -894,4 +893,3 @@ func TestLoadBalancer_ExplicitLBIP_OneArmEnabled_CRUDE(t *testing.T) {
 
 	return
 }
-
