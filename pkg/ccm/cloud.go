@@ -93,7 +93,7 @@ func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error
 
 	// setup LB only if the gateway is not NSX-T
 	var lb cloudProvider.LoadBalancer = nil
-	gm, err := vcdsdk.NewGatewayManager(context.Background(), vcdClient, cloudConfig.LB.VDCNetwork, cloudConfig.LB.VIPSubnet)
+	gm, err := vcdsdk.NewGatewayManager(context.Background(), vcdClient, cloudConfig.LB.VDCNetwork, cloudConfig.LB.VIPSubnet, cloudConfig.VCD.VDC)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create GatewayManager: [%v]", err)
 	}
@@ -108,7 +108,7 @@ func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error
 				EndIP:   cloudConfig.LB.OneArm.EndIP,
 			}
 		}
-		lb = newLoadBalancer(vcdClient, cloudConfig.LB.CertificateAlias, oneArm, cloudConfig.LB.VDCNetwork,
+		lb = newLoadBalancer(vcdClient, cloudConfig.LB.CertificateAlias, oneArm, cloudConfig.LB.VDCNetwork, cloudConfig.VCD.VDC,
 			cloudConfig.LB.VIPSubnet, cloudConfig.ClusterID, cloudConfig.LB.EnableVirtualServiceSharedIP)
 	}
 

@@ -31,6 +31,7 @@ var _ = Describe("Ensure Loadbalancer", func() {
 		err         error
 		ipamSubnet  string
 		networkName string
+		ovdcName    string
 		tc          *testingsdk.TestClient
 	)
 
@@ -71,7 +72,7 @@ var _ = Describe("Ensure Loadbalancer", func() {
 	Expect(networkName).NotTo(BeEmpty())
 
 	// Gateway Manager is used to validate VCD networking resources
-	gatewayMgr, err := vcdsdk.NewGatewayManager(context.TODO(), tc.VcdClient, networkName, ipamSubnet)
+	gatewayMgr, err := vcdsdk.NewGatewayManager(context.TODO(), tc.VcdClient, networkName, ipamSubnet, ovdcName)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(gatewayMgr).NotTo(BeNil())
 
@@ -211,7 +212,7 @@ var _ = Describe("Ensure load balancer with user specified LB IP", func() {
 	Expect(networkName).NotTo(BeEmpty())
 
 	// Gateway Manager is used to validate VCD networking resources
-	gatewayMgr, err := vcdsdk.NewGatewayManager(context.TODO(), tc.VcdClient, networkName, ipamSubnet)
+	gatewayMgr, err := vcdsdk.NewGatewayManager(context.TODO(), tc.VcdClient, networkName, ipamSubnet, ovdcName)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(gatewayMgr).NotTo(BeNil())
 
@@ -244,7 +245,6 @@ var _ = Describe("Ensure load balancer with user specified LB IP", func() {
 		lbPoolNamePrefix := utils.GetLBPoolNamePrefix(svc, tc.ClusterId)
 		portDetailsList := utils.GetPortDetailsList(svc)
 		Expect(portDetailsList).NotTo(BeNil())
-
 
 		// These will be our defaults, so it's ok to hardcode this. We can also retrieve this from ccm configmap
 		oneArm := &vcdsdk.OneArm{
