@@ -1388,6 +1388,46 @@ func (gatewayManager *GatewayManager) DeleteVirtualService(ctx context.Context, 
 	return nil
 }
 
+// On VCD 10.4.1, a virtual service cannot be updated if it shares an IP with another
+// virtual service. This function updates the virtual service by recreating it.
+func (gatewayManager *GatewayManager) sharedIPUpdateVirtualService(ctx context.Context, virtualServiceName string,
+	virtualServiceIP string, externalPort int32, protocol string) (*swaggerClient.EntityReference, error) {
+	prevVsRef, err := gatewayManager.GetVirtualService(ctx, virtualServiceName)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get vs [%s]: [%v]", virtualServiceName, err)
+	}
+	err = gatewayManager.DeleteVirtualService(ctx, virtualServiceName, false)
+	if err != nil {
+		return nil, fmt.Errorf("unable to delete vs [%s]: [%v]", virtualServiceName, err)
+	}
+
+	segRef, err := gatewayManager.GetLoadBalancerSEG(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get service engine group from edge [%s]: [%v]",
+			gatewayManager.GatewayRef.Name, err)
+	}
+
+	//determine useSSL
+	useSSL := false
+	for _, edgePort := range prevVsRef.ServicePorts {
+		if edgePort.SslEnabled == true {
+			useSSL = true
+		}
+	}
+
+	// An empty certificateAlias is passed because there is not a direct way of getting the certificateAlias
+	// In the CreateVirtualService function, the certificate alias is only used to check if the cert alias is present.
+	// If the virtual service was already created, then we are making the assumption that the cert alias still exists
+	// since there was just a request to update the vs.
+	vsRef, err := gatewayManager.CreateVirtualService(ctx, virtualServiceName, prevVsRef.LoadBalancerPoolRef, segRef,
+		virtualServiceIP, protocol, externalPort, useSSL, "")
+	if err != nil {
+		return nil, fmt.Errorf("unable to create virtual service [%s]: [%v]", virtualServiceName, err)
+	}
+
+	return vsRef, nil
+}
+
 type PortDetails struct {
 	Protocol     string
 	PortSuffix   string
@@ -1852,7 +1892,16 @@ func (gm *GatewayManager) UpdateLoadBalancer(ctx context.Context, lbPoolName str
 		return "", fmt.Errorf("unable to update load balancer pool [%s]: [%v]", lbPoolName, err)
 	}
 	resourcesAllocated.Insert(VcdResourceLoadBalancerPool, lbPoolRef)
-	vsRef, err := gm.UpdateVirtualService(ctx, virtualServiceName, externalIP, externalPort, oneArm != nil)
+
+	// if enableVirtualServiceSharedIP is true, oneArm is nil, and the externalIP is shared
+	// the virtual service's ip cannot be updated. Therefore, we delete the vs and create it again
+	var vsRef *swaggerClient.EntityReference = nil
+	if enableVirtualServiceSharedIP == true && oneArm == nil {
+		klog.Infof("updating shared vs IP by attempting to delete and recreate vs: [%s]", virtualServiceName)
+		vsRef, err = gm.sharedIPUpdateVirtualService(ctx, virtualServiceName, externalIP, externalPort, protocol)
+	} else {
+		vsRef, err = gm.UpdateVirtualService(ctx, virtualServiceName, externalIP, externalPort, oneArm != nil)
+	}
 	if vsRef != nil {
 		resourcesAllocated.Insert(VcdResourceVirtualService, vsRef)
 	}
