@@ -1611,7 +1611,7 @@ func (gm *GatewayManager) CreateLoadBalancer(ctx context.Context, virtualService
 	// if enableVirtualServiceSharedIP is false and oneArm is nil: this is an error case which is handled earlier in ValidateCloudConfig.
 	// if enableVirtualServiceSharedIP is false and oneArm is not nil, a pair of internal IPs will be used and not shared
 	if enableVirtualServiceSharedIP && oneArm == nil { // no internal ip used so no dnat rule needed
-		if sharedVirtualIP != "" { // shared virtual ip is an external ip
+		if sharedVirtualIP != "" && providedIP == "" { // shared virtual ip is an external ip
 			externalIP = sharedVirtualIP
 		}
 	} else if enableVirtualServiceSharedIP && oneArm != nil { // internal ip used, dnat rule is needed
