@@ -1188,6 +1188,7 @@ func (gatewayManager *GatewayManager) CreateVirtualService(ctx context.Context, 
 	lbPoolRef *swaggerClient.EntityReference, segRef *swaggerClient.EntityReference,
 	freeIP string, vsType string, externalPort int32,
 	useSSL bool, certificateAlias string) (*swaggerClient.EntityReference, error) {
+	klog.Infof("test1234: create vs called for vs [%s]", virtualServiceName)
 
 	client := gatewayManager.Client
 	if gatewayManager.GatewayRef == nil {
@@ -1325,7 +1326,7 @@ func (gatewayManager *GatewayManager) CreateVirtualService(ctx context.Context, 
 	}
 
 	klog.Infof("Created virtual service [%v] on gateway [%v]\n", virtualServiceRef, gatewayManager.GatewayRef.Name)
-
+	klog.Infof("test1234: vs [%s] created", virtualServiceName)
 	return virtualServiceRef, nil
 }
 
@@ -1400,6 +1401,7 @@ func (gatewayManager *GatewayManager) sharedIPUpdateVirtualService(ctx context.C
 	if err != nil {
 		return nil, fmt.Errorf("unable to delete vs [%s]: [%v]", virtualServiceName, err)
 	}
+	klog.Infof("test1234: delete vs: [%s]", virtualServiceName)
 
 	segRef, err := gatewayManager.GetLoadBalancerSEG(ctx)
 	if err != nil {
@@ -1422,6 +1424,7 @@ func (gatewayManager *GatewayManager) sharedIPUpdateVirtualService(ctx context.C
 	vsRef, err := gatewayManager.CreateVirtualService(ctx, virtualServiceName, prevVsRef.LoadBalancerPoolRef, segRef,
 		virtualServiceIP, protocol, externalPort, useSSL, "")
 	if err != nil {
+		klog.Infof("test1234: err creating vs [%s] for shared ip update: [%v]", virtualServiceName, err)
 		return nil, fmt.Errorf("unable to create virtual service [%s]: [%v]", virtualServiceName, err)
 	}
 

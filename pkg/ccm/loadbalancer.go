@@ -573,6 +573,7 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 			resourcesAllocated := &util.AllocatedResourcesMap{}
 			vip, err := gm.UpdateLoadBalancer(ctx, lbPoolName, virtualServiceName, nodeIPs, userSpecifiedLBIP, internalPort,
 				externalPort, lb.OneArm, lb.EnableVirtualServiceSharedIP, protocol, resourcesAllocated)
+			klog.Infof("test1234: UpdateLB returned with vip: [%s]", vip)
 			if rdeErr := lb.addLBResourcesToRDE(ctx, resourcesAllocated, vip); rdeErr != nil {
 				klog.Infof("test1234: err adding lb resource to rde: [%v]", err)
 				return nil, fmt.Errorf("failed to update RDE [%s] with load balancer resources: [%v]", lb.clusterID, err)
