@@ -1257,6 +1257,7 @@ func (gatewayManager *GatewayManager) CreateVirtualService(ctx context.Context, 
 		break
 
 	default:
+		klog.Infof("test1234: vs type [%s]", vsType)
 		return nil, fmt.Errorf("unhandled virtual service type [%s]", vsType)
 	}
 
@@ -1421,6 +1422,7 @@ func (gatewayManager *GatewayManager) sharedIPUpdateVirtualService(ctx context.C
 	// In the CreateVirtualService function, the certificate alias is only used to check if the cert alias is present.
 	// If the virtual service was already created, then we are making the assumption that the cert alias still exists
 	// since there was just a request to update the vs.
+	klog.Infof("test1234: vs type before create vs call: [%s]", protocol)
 	vsRef, err := gatewayManager.CreateVirtualService(ctx, virtualServiceName, prevVsRef.LoadBalancerPoolRef, segRef,
 		virtualServiceIP, protocol, externalPort, useSSL, "")
 	if err != nil {
