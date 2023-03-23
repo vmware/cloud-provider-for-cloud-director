@@ -1390,6 +1390,13 @@ func (gatewayManager *GatewayManager) DeleteVirtualService(ctx context.Context, 
 	return nil
 }
 
+var appProfileToVsTypeMap = map[string]string{
+	"HTTP": "HTTP",
+	"HTTPS": "HTTPS",
+	"L4_TLS": "TCP",
+	"L4": "TCP",
+}
+
 // On VCD 10.4.1, a virtual service cannot be updated if it shares an IP with another
 // virtual service. This function updates the virtual service by recreating it.
 func (gatewayManager *GatewayManager) sharedIPUpdateVirtualService(ctx context.Context, virtualServiceName string,
@@ -1422,9 +1429,13 @@ func (gatewayManager *GatewayManager) sharedIPUpdateVirtualService(ctx context.C
 	// In the CreateVirtualService function, the certificate alias is only used to check if the cert alias is present.
 	// If the virtual service was already created, then we are making the assumption that the cert alias still exists
 	// since there was just a request to update the vs.
-	klog.Infof("test1234: vs type before create vs call: [%s]", protocol)
+	vsType, exist := appProfileToVsTypeMap[prevVsRef.ApplicationProfileType]
+	if !exist {
+		return nil, fmt.Errorf("invalid Application Profile Type [%s]", prevVsRef.ApplicationProfileType)
+	}
+	klog.Infof("test1234: vs type before create vs call: [%s]", vsType)
 	vsRef, err := gatewayManager.CreateVirtualService(ctx, virtualServiceName, prevVsRef.LoadBalancerPoolRef, segRef,
-		virtualServiceIP, protocol, externalPort, useSSL, "")
+		virtualServiceIP, vsType, externalPort, useSSL, "")
 	if err != nil {
 		klog.Infof("test1234: err creating vs [%s] for shared ip update: [%v]", virtualServiceName, err)
 		return nil, fmt.Errorf("unable to create virtual service [%s]: [%v]", virtualServiceName, err)
