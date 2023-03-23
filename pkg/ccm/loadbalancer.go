@@ -320,10 +320,9 @@ func (lb *LBManager) getLoadBalancer(ctx context.Context,
 		}
 		portNameToIP[port.Name] = virtualIP
 		if virtualIP != "" {
-			if ingressVirtualIP != "" && ingressVirtualIP != virtualIP {
-				return nil, nil,
-					fmt.Errorf("more than one virtual ip found: [%s] and [%s]", virtualIP, ingressVirtualIP)
-			}
+			// There is no check to ensure there is only one virtual IP
+			// If a load balancer has its lb IP updated, one vs may have a
+			// different IP than the other vs.
 			ingressVirtualIP = virtualIP
 		}
 	}
