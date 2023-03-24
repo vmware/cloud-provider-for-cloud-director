@@ -234,11 +234,11 @@ func (lb *LBManager) UpdateLoadBalancer(ctx context.Context, clusterName string,
 		vip, err := gm.UpdateLoadBalancer(ctx, lbPoolName, virtualServiceName, nodeIps, userSpecifiedLBIP, internalPort,
 			externalPort, lb.OneArm, lb.EnableVirtualServiceSharedIP, protocol, resourcesAllocated, resourcesRemoved)
 		// TODO: Should we record this error as well?
-		if rdeErr := lb.addLBResourcesToRDE(ctx, resourcesAllocated, vip); rdeErr != nil {
-			return fmt.Errorf("failed to add load balancer resources to RDE [%s]: [%v]", lb.clusterID, err)
-		}
 		if rdeErr := lb.removeLBResourcesFromRDE(ctx, resourcesRemoved); rdeErr != nil {
 			return fmt.Errorf("failed to remove load balancer resources from RDE [%s]: [%v]", lb.clusterID, err)
+		}
+		if rdeErr := lb.addLBResourcesToRDE(ctx, resourcesAllocated, vip); rdeErr != nil {
+			return fmt.Errorf("failed to add load balancer resources to RDE [%s]: [%v]", lb.clusterID, err)
 		}
 
 		vsSummary, getVsErr := gm.GetVirtualService(ctx, virtualServiceName)
@@ -577,11 +577,11 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 			resourcesRemoved := &util.AllocatedResourcesMap{}
 			vip, err := gm.UpdateLoadBalancer(ctx, lbPoolName, virtualServiceName, nodeIPs, userSpecifiedLBIP, internalPort,
 				externalPort, lb.OneArm, lb.EnableVirtualServiceSharedIP, protocol, resourcesAllocated, resourcesRemoved)
-			if rdeErr := lb.addLBResourcesToRDE(ctx, resourcesAllocated, vip); rdeErr != nil {
-				return nil, fmt.Errorf("failed to update RDE [%s] with load balancer resources: [%v]", lb.clusterID, err)
-			}
 			if rdeErr := lb.removeLBResourcesFromRDE(ctx, resourcesRemoved); rdeErr != nil {
 				return nil, fmt.Errorf("failed to update RDE [%s] with load balancer resources removed: [%v]", lb.clusterID, err)
+			}
+			if rdeErr := lb.addLBResourcesToRDE(ctx, resourcesAllocated, vip); rdeErr != nil {
+				return nil, fmt.Errorf("failed to update RDE [%s] with load balancer resources: [%v]", lb.clusterID, err)
 			}
 
 			vsSummary, getVsErr := gm.GetVirtualService(ctx, virtualServiceName)
