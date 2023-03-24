@@ -228,11 +228,17 @@ func (lb *LBManager) UpdateLoadBalancer(ctx context.Context, clusterName string,
 		klog.Infof("Updating pool [%s] with port [%s:%d]", lbPoolName, portName, internalPort)
 		protocol, _ := nameToProtocol[portName]
 		resourcesAllocated := &util.AllocatedResourcesMap{}
+		// This resources map will be used to removed virtual services with shared ip's, which are updated
+		// through deleting and recreating the vs
+		resourcesRemoved := &util.AllocatedResourcesMap{}
 		vip, err := gm.UpdateLoadBalancer(ctx, lbPoolName, virtualServiceName, nodeIps, userSpecifiedLBIP, internalPort,
-			externalPort, lb.OneArm, lb.EnableVirtualServiceSharedIP, protocol, resourcesAllocated)
+			externalPort, lb.OneArm, lb.EnableVirtualServiceSharedIP, protocol, resourcesAllocated, resourcesRemoved)
 		// TODO: Should we record this error as well?
 		if rdeErr := lb.addLBResourcesToRDE(ctx, resourcesAllocated, vip); rdeErr != nil {
 			return fmt.Errorf("failed to add load balancer resources to RDE [%s]: [%v]", lb.clusterID, err)
+		}
+		if rdeErr := lb.removeLBResourcesFromRDE(ctx, resourcesRemoved); rdeErr != nil {
+			return fmt.Errorf("failed to remove load balancer resources from RDE [%s]: [%v]", lb.clusterID, err)
 		}
 
 		vsSummary, getVsErr := gm.GetVirtualService(ctx, virtualServiceName)
@@ -570,12 +576,16 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 			protocol, _ := nameToProtocol[portName]
 			klog.Infof("Updating pool [%s] with port [%s:%d:%d]", lbPoolName, portName, internalPort, externalPort)
 			resourcesAllocated := &util.AllocatedResourcesMap{}
+			resourcesRemoved := &util.AllocatedResourcesMap{}
 			vip, err := gm.UpdateLoadBalancer(ctx, lbPoolName, virtualServiceName, nodeIPs, userSpecifiedLBIP, internalPort,
-				externalPort, lb.OneArm, lb.EnableVirtualServiceSharedIP, protocol, resourcesAllocated)
+				externalPort, lb.OneArm, lb.EnableVirtualServiceSharedIP, protocol, resourcesAllocated, resourcesRemoved)
 			klog.Infof("test1234: UpdateLB returned with vip: [%s]", vip)
 			if rdeErr := lb.addLBResourcesToRDE(ctx, resourcesAllocated, vip); rdeErr != nil {
 				klog.Infof("test1234: err adding lb resource to rde: [%v]", err)
 				return nil, fmt.Errorf("failed to update RDE [%s] with load balancer resources: [%v]", lb.clusterID, err)
+			}
+			if rdeErr := lb.removeLBResourcesFromRDE(ctx, resourcesRemoved); rdeErr != nil {
+				return nil, fmt.Errorf("failed to update RDE [%s] with load balancer resources removed: [%v]", lb.clusterID, err)
 			}
 
 			vsSummary, getVsErr := gm.GetVirtualService(ctx, virtualServiceName)

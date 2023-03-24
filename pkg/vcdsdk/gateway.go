@@ -1400,8 +1400,8 @@ var appProfileToVsTypeMap = map[string]string{
 // On VCD 10.4.1, a virtual service cannot be updated if it shares an IP with another
 // virtual service. This function updates the virtual service by recreating it.
 func (gatewayManager *GatewayManager) sharedIPUpdateVirtualService(ctx context.Context, virtualServiceName string,
-	virtualServiceIP string, externalPort int32, protocol string) (*swaggerClient.EntityReference, error) {
-	prevVsRef, err := gatewayManager.GetVirtualService(ctx, virtualServiceName)
+	virtualServiceIP string, externalPort int32, resourcesRemoved *util.AllocatedResourcesMap) (*swaggerClient.EntityReference, error) {
+	prevVsSummary, err := gatewayManager.GetVirtualService(ctx, virtualServiceName)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get vs [%s]: [%v]", virtualServiceName, err)
 	}
@@ -1409,6 +1409,13 @@ func (gatewayManager *GatewayManager) sharedIPUpdateVirtualService(ctx context.C
 	if err != nil {
 		return nil, fmt.Errorf("unable to delete vs [%s]: [%v]", virtualServiceName, err)
 	}
+	prevVsRef := &swaggerClient.EntityReference{
+		Name: prevVsSummary.Name,
+		Id:   prevVsSummary.Id,
+	}
+	resourcesRemoved.Insert(VcdResourceVirtualService, prevVsRef)
+
+
 	klog.Infof("test1234: delete vs: [%s]", virtualServiceName)
 
 	segRef, err := gatewayManager.GetLoadBalancerSEG(ctx)
@@ -1419,7 +1426,7 @@ func (gatewayManager *GatewayManager) sharedIPUpdateVirtualService(ctx context.C
 
 	//determine useSSL
 	useSSL := false
-	for _, edgePort := range prevVsRef.ServicePorts {
+	for _, edgePort := range prevVsSummary.ServicePorts {
 		if edgePort.SslEnabled == true {
 			useSSL = true
 		}
@@ -1429,12 +1436,12 @@ func (gatewayManager *GatewayManager) sharedIPUpdateVirtualService(ctx context.C
 	// In the CreateVirtualService function, the certificate alias is only used to check if the cert alias is present.
 	// If the virtual service was already created, then we are making the assumption that the cert alias still exists
 	// since there was just a request to update the vs.
-	vsType, exist := appProfileToVsTypeMap[prevVsRef.ApplicationProfileType]
+	vsType, exist := appProfileToVsTypeMap[prevVsSummary.ApplicationProfileType]
 	if !exist {
-		return nil, fmt.Errorf("invalid Application Profile Type [%s]", prevVsRef.ApplicationProfileType)
+		return nil, fmt.Errorf("invalid Application Profile Type [%s]", prevVsSummary.ApplicationProfileType)
 	}
 	klog.Infof("test1234: vs type before create vs call: [%s]", vsType)
-	vsRef, err := gatewayManager.CreateVirtualService(ctx, virtualServiceName, prevVsRef.LoadBalancerPoolRef, segRef,
+	vsRef, err := gatewayManager.CreateVirtualService(ctx, virtualServiceName, prevVsSummary.LoadBalancerPoolRef, segRef,
 		virtualServiceIP, vsType, externalPort, useSSL, "")
 	if err != nil {
 		klog.Infof("test1234: err creating vs [%s] for shared ip update: [%v]", virtualServiceName, err)
@@ -1889,7 +1896,7 @@ func (gm *GatewayManager) DeleteLoadBalancer(ctx context.Context, virtualService
 
 func (gm *GatewayManager) UpdateLoadBalancer(ctx context.Context, lbPoolName string, virtualServiceName string,
 	ips []string, externalIP string, internalPort int32, externalPort int32, oneArm *OneArm, enableVirtualServiceSharedIP bool, protocol string,
-	resourcesAllocated *util.AllocatedResourcesMap) (string, error) {
+	resourcesAllocated *util.AllocatedResourcesMap, resourcesRemoved *util.AllocatedResourcesMap) (string, error) {
 
 	if gm == nil {
 		return "", fmt.Errorf("GatewayManager cannot be nil")
@@ -1914,7 +1921,8 @@ func (gm *GatewayManager) UpdateLoadBalancer(ctx context.Context, lbPoolName str
 	var vsRef *swaggerClient.EntityReference = nil
 	if enableVirtualServiceSharedIP == true && oneArm == nil {
 		klog.Infof("updating shared vs IP by attempting to delete and recreate vs: [%s]", virtualServiceName)
-		vsRef, err = gm.sharedIPUpdateVirtualService(ctx, virtualServiceName, externalIP, externalPort, protocol)
+		vsRef, err = gm.sharedIPUpdateVirtualService(ctx, virtualServiceName, externalIP, externalPort,
+			resourcesRemoved)
 	} else {
 		vsRef, err = gm.UpdateVirtualService(ctx, virtualServiceName, externalIP, externalPort, oneArm != nil)
 	}
