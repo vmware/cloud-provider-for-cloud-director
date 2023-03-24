@@ -1399,6 +1399,15 @@ var appProfileToVsTypeMap = map[string]string{
 func (gatewayManager *GatewayManager) sharedIPUpdateVirtualService(ctx context.Context, virtualServiceName string,
 	virtualServiceIP string, externalPort int32, resourcesRemoved *util.AllocatedResourcesMap) (*swaggerClient.EntityReference, error) {
 	prevVsSummary, err := gatewayManager.GetVirtualService(ctx, virtualServiceName)
+
+	if prevVsSummary.ServicePorts[0].PortStart == externalPort && prevVsSummary.VirtualIpAddress == virtualServiceIP {
+		klog.Infof("virtual service [%s] is already configured with port [%d] and virtual IP [%s]", virtualServiceName, externalPort, virtualServiceIP)
+		return &swaggerClient.EntityReference{
+			Name: prevVsSummary.Name,
+			Id:   prevVsSummary.Id,
+		}, nil
+	}
+
 	if err != nil {
 		return nil, fmt.Errorf("unable to get vs [%s]: [%v]", virtualServiceName, err)
 	}
