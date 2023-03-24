@@ -106,7 +106,7 @@ func (lb *LBManager) removeLBResourcesFromRDE(ctx context.Context, resourcesDeal
 				err := rdeManager.RemoveFromVCDResourceSet(ctx, vcdsdk.ComponentCPI, key, value.Name)
 				if err != nil {
 					return fmt.Errorf(
-						"failed to add resource [%s] of type [%s] to VCDResourceSet of RDE [%s]: [%v]",
+						"failed to remove resource [%s] of type [%s] to VCDResourceSet of RDE [%s]: [%v]",
 						value.Name, key, lb.clusterID, err)
 				}
 			}
