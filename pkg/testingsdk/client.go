@@ -10,6 +10,7 @@ import (
 	stov1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -262,6 +263,10 @@ func (tc *TestClient) GetService(ctx context.Context, nameSpace string, serviceN
 
 func (tc *TestClient) GetConfigMap(namespace, name string) (*apiv1.ConfigMap, error) {
 	return tc.Cs.CoreV1().ConfigMaps(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+}
+
+func (tc *TestClient) GetK8sVersion() (*version.Info, error) {
+	return tc.Cs.(*kubernetes.Clientset).Discovery().ServerVersion()
 }
 
 func (tc *TestClient) GetIpamSubnetFromConfigMap(cm *apiv1.ConfigMap) (string, error) {
