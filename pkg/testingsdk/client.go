@@ -194,6 +194,17 @@ func (tc *TestClient) GetWorkerNodes(ctx context.Context) ([]apiv1.Node, error) 
 	return wnPool, nil
 }
 
+func (tc *TestClient) GetNodes(ctx context.Context) ([]apiv1.Node, error) {
+	nPool, err := getNodes(ctx, tc.Cs.(*kubernetes.Clientset))
+	if err != nil {
+		if err == ResourceNotFound {
+			return nil, err
+		}
+		return nil, fmt.Errorf("error getting Node Pool for cluster [%s(%s)]: [%v]", tc.ClusterName, tc.ClusterId, err)
+	}
+	return nPool, nil
+}
+
 func (tc *TestClient) GetStorageClass(ctx context.Context, scName string) (*stov1.StorageClass, error) {
 	sc, err := getStorageClass(ctx, tc.Cs.(*kubernetes.Clientset), scName)
 	if err != nil {
