@@ -1,22 +1,25 @@
 open_source_licenses.txt
 
-Cloud Provider for Cloud Director 1.2 GA
+Kubernetes External Cloud Provider for VMware Cloud Director 1.4.0 GA
 ======================================================================
+The following copyright statements and licenses apply to various open
+source software packages (or portions thereof) that are distributed with
+this VMware Product.
 
-cloud-provider-for-cloud-director version 1.2 includes a number of components with separate 
-copyright notices and license terms.  This product does not necessarily 
-use all the open source components referred to below. Your use of the 
-source code for these components is subject to the terms and conditions 
-of the following licenses.
+The VMware Product may also include other VMware components, which may
+contain additional open source software packages. One or more such
+open_source_licenses.txt files may therefore accompany this VMware
+Product.
 
+The VMware Product that includes this file does not necessarily use all
+the open source software packages referred to below and may also only
+use portions of a given package.
 ==================== TABLE OF CONTENTS ====================
 
 The following is a listing of the open source components detailed in
 this document. This list is provided for your convenience; please read
 further if you wish to review the copyright notice(s) and the full text
 of the license associated with each component.
-
-
 
 SECTION 1: Apache License, V2.0
 
@@ -35,17 +38,16 @@ SECTION 2: BSD-STYLE, MIT-STYLE, OR SIMILAR STYLE LICENSES
 
    >>> golang.org/x/oauth2-v0.0.0-20200107190931-bf48bf16ab8d
    >>> github.com/google/uuid-v1.1.2
+   >>> gopkg.in/yaml.v3-v3.0.0-20210107192922-496545a6307b
    >>> github.com/stretchr/testify-v1.7.0
    >>> github.com/peterhellberg/link-v1.1.0
    >>> github.com/apparentlymart/go-cidr-v1.1.0
    >>> optional -1.0.0
 
-   
 
 APPENDIX. Standard License Files
 
    >>> Apache License, V2.0
-
 
 
 -------------------- SECTION 1: Apache License, V2.0 --------------------
@@ -11034,6 +11036,10 @@ APPENDIX. Standard License Files
        Copyright 2016 Google Inc.
 
 
+   >>> gopkg.in/yaml.v3-v3.0.0-20210107192922-496545a6307b
+
+
+
    >>> github.com/stretchr/testify-v1.7.0
 
        Found in: LICENSE
@@ -11105,18 +11111,19 @@ APPENDIX. Standard License Files
 
    >>> optional -1.0.0
 
+       License- MIT
 
 
 ==================== APPENDIX. Standard License Files ====================
 
 -------------------- SECTION 1: Apache License, V2.0 --------------------
 
-Apache License 
+Apache License
 
-Version 2.0, January 2004 
-http://www.apache.org/licenses/ 
+Version 2.0, January 2004
+http://www.apache.org/licenses/
 
-TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION 
+TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
 
 1. Definitions.
 
@@ -11124,7 +11131,7 @@ TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
 and distribution as defined by Sections 1 through 9 of this document.
 
 "Licensor" shall mean the copyright owner or entity authorized by the
-copyright owner that is granting the License.  
+copyright owner that is granting the License.
 
 "Legal Entity" shall mean the union of the acting entity and all other
 entities that control, are controlled by, or are under common control
@@ -11135,7 +11142,7 @@ of fifty percent (50%) or more of the outstanding shares, or (iii)
 beneficial ownership of such entity.
 
 "You" (or "Your") shall mean an individual or Legal Entity exercising
-permissions granted by this License.  
+permissions granted by this License.
 
 "Source" form shall mean the preferred form for making modifications,
 including but not limited to software source code, documentation source,
@@ -11144,12 +11151,12 @@ and configuration files.
 "Object" form shall mean any form resulting from mechanical transformation
 or translation of a Source form, including but not limited to compiled
 object code, generated documentation, and conversions to other media
-types.  
+types.
 
 "Work" shall mean the work of authorship, whether in Source or
 Object form, made available under the License, as indicated by a copyright
 notice that is included in or attached to the work (an example is provided
-in the Appendix below).  
+in the Appendix below).
 
 "Derivative Works" shall mean any work, whether in Source or Object form,
 that is based on (or derived from) the Work and for which the editorial
@@ -11284,7 +11291,7 @@ hold each Contributor harmless for any liability incurred by, or claims
 asserted against, such Contributor by reason of your accepting any such
 warranty or additional liability.
 
-END OF TERMS AND CONDITIONS 
+END OF TERMS AND CONDITIONS
 
 APPENDIX: How to apply the Apache License to your work.
 
@@ -11369,15 +11376,21 @@ limitations under the License.
 
 
 ======================================================================
+
 To the extent any open source components are licensed under the GPL
 and/or LGPL, or other similar licenses that require the source code
-and/or modifications to source code to be made available, you may obtain
-a copy of the source code corresponding to the binaries for such open source
-components and modifications thereto, if any, (the "Source Files"), by downloading the
-Source Files from VMware's github site for this product, or by sending a request, with your name
-and address to: VMware, Inc., 3401 Hillview Avenue, Palo Alto, CA 94304, United States of America.
-All such requests should clearly specify: OPEN SOURCE FILES REQUEST, Attention General Counsel. VMware shall
-mail a copy of the Source Files to you on a CD or equivalent physical medium. This offer to obtain a copy of the Source
-Files is valid for three years from the date you acquired this software product.
+and/or modifications to source code to be made available (as would be
+noted above), you may obtain a copy of the source code corresponding to
+the binaries for such open source components and modifications thereto,
+if any, (the "Source Files"), by downloading the Source Files from
+VMware's website at http://www.vmware.com/download/open_source.html, or
+by sending a request, with your name and address to: VMware, Inc., 3401
+Hillview Avenue, Palo Alto, CA 94304, United States of America. All such
+requests should clearly specify: OPEN SOURCE FILES REQUEST, Attention
+General Counsel. VMware shall mail a copy of the Source Files to you on
+a CD or equivalent physical medium. This offer to obtain a copy of the
+Source Files is valid for three years from the date you acquired this
+Software product. Alternatively, the Source Files may accompany the
+VMware product.
 
-[CLOUDPROVIDERFORCLOUDDIRECTOR12GAAS100622]
+[CLOUDPROVIDERFORCLOUDDIRECTOR140GAAD032823]
