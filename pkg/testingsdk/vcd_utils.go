@@ -58,6 +58,9 @@ func GetVappTemplates(client *vcdsdk.Client) ([]*types.QueryResultVappTemplateTy
 			return nil, fmt.Errorf("error retreiving vApp templates from catalog %s: [%v]", catalogRecord.Name, err)
 		}
 
+		// It is possible that users have uploaded the same vApp templates to
+		// multiple catalogs, so it is possible that there are duplicate vApp
+		// templates in `allVappTemplates`
 		for _, vappTemplate := range vappTemplates {
 			allVappTemplates = append(allVappTemplates, vappTemplate)
 		}
