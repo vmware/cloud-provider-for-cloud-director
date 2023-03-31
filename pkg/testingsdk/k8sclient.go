@@ -331,6 +331,18 @@ func getWorkerNodes(ctx context.Context, k8sClient *kubernetes.Clientset) ([]api
 	return workerNodes, nil
 }
 
+func getNodes(ctx context.Context, k8sClient *kubernetes.Clientset) ([]apiv1.Node, error) {
+	var allNodes []apiv1.Node
+	nodes, err := k8sClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return allNodes, fmt.Errorf("error occurred while getting nodes")
+	}
+	for _, node := range nodes.Items {
+		allNodes = append(allNodes, node)
+	}
+	return allNodes, nil
+}
+
 func createStorageClass(ctx context.Context, k8sClient *kubernetes.Clientset, scName string, reclaimPolicy apiv1.PersistentVolumeReclaimPolicy, storageProfile string) (*stov1.StorageClass, error) {
 	if scName == "" {
 		return nil, ResourceNameNull
@@ -532,9 +544,9 @@ func createLoadBalancerService(ctx context.Context, k8sClient *kubernetes.Client
 			Labels:      labels,
 		},
 		Spec: apiv1.ServiceSpec{
-			Ports:    servicePort,
-			Selector: labels,
-			Type:     "LoadBalancer",
+			Ports:          servicePort,
+			Selector:       labels,
+			Type:           "LoadBalancer",
 			LoadBalancerIP: loadBalancerIP,
 		},
 	}

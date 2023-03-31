@@ -10,6 +10,7 @@ import (
 	stov1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -194,6 +195,17 @@ func (tc *TestClient) GetWorkerNodes(ctx context.Context) ([]apiv1.Node, error) 
 	return wnPool, nil
 }
 
+func (tc *TestClient) GetNodes(ctx context.Context) ([]apiv1.Node, error) {
+	nPool, err := getNodes(ctx, tc.Cs.(*kubernetes.Clientset))
+	if err != nil {
+		if err == ResourceNotFound {
+			return nil, err
+		}
+		return nil, fmt.Errorf("error getting Node Pool for cluster [%s(%s)]: [%v]", tc.ClusterName, tc.ClusterId, err)
+	}
+	return nPool, nil
+}
+
 func (tc *TestClient) GetStorageClass(ctx context.Context, scName string) (*stov1.StorageClass, error) {
 	sc, err := getStorageClass(ctx, tc.Cs.(*kubernetes.Clientset), scName)
 	if err != nil {
@@ -251,6 +263,10 @@ func (tc *TestClient) GetService(ctx context.Context, nameSpace string, serviceN
 
 func (tc *TestClient) GetConfigMap(namespace, name string) (*apiv1.ConfigMap, error) {
 	return tc.Cs.CoreV1().ConfigMaps(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+}
+
+func (tc *TestClient) GetK8sVersion() (*version.Info, error) {
+	return tc.Cs.(*kubernetes.Clientset).Discovery().ServerVersion()
 }
 
 func (tc *TestClient) GetIpamSubnetFromConfigMap(cm *apiv1.ConfigMap) (string, error) {
