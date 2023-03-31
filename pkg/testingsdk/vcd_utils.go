@@ -45,17 +45,17 @@ func GetVappTemplates(client *vcdsdk.Client) ([]*types.QueryResultVappTemplateTy
 	}
 	catalogRecords, err := clusterOrg.QueryCatalogList()
 	if err != nil {
-		return nil, fmt.Errorf("error retrieving catalog records: [%v]", err)
+		return nil, fmt.Errorf("error retrieving catalog records from org: [%s]: [%v]", clusterOrg.Org.Name, err)
 	}
 	for _, catalogRecord := range catalogRecords {
 		catalog, err := clusterOrg.GetCatalogByName(catalogRecord.Name, true)
 		if err != nil {
-			return nil, fmt.Errorf("error retreiving catalog %s: [%v]", catalogRecord.Name, err)
+			return nil, fmt.Errorf("error retreiving catalog [%s] from org [%s]: [%v]", catalogRecord.Name, clusterOrg.Org.Name, err)
 		}
 
 		vappTemplates, err := catalog.QueryVappTemplateList()
 		if err != nil {
-			return nil, fmt.Errorf("error retreiving vApp templates from catalog %s: [%v]", catalogRecord.Name, err)
+			return nil, fmt.Errorf("error retreiving vApp templates from catalog [%s] from org [%s]: [%v]", catalogRecord.Name, clusterOrg.Org.Name, err)
 		}
 
 		// It is possible that users have uploaded the same vApp templates to
