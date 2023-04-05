@@ -320,7 +320,7 @@ func getWorkerNodes(ctx context.Context, k8sClient *kubernetes.Clientset) ([]api
 	var workerNodes []apiv1.Node
 	nodes, err := k8sClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 	if err != nil {
-		return workerNodes, fmt.Errorf("error occurred while getting nodes")
+		return workerNodes, fmt.Errorf("error occurred while getting nodes: [%v]", err)
 	}
 	for _, node := range nodes.Items {
 		_, ok := node.Labels[ControlPlaneLabel]
@@ -335,7 +335,7 @@ func getNodes(ctx context.Context, k8sClient *kubernetes.Clientset) ([]apiv1.Nod
 	var allNodes []apiv1.Node
 	nodes, err := k8sClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 	if err != nil {
-		return allNodes, fmt.Errorf("error occurred while getting nodes")
+		return allNodes, fmt.Errorf("error occurred while getting nodes: [%v]", err)
 	}
 	for _, node := range nodes.Items {
 		allNodes = append(allNodes, node)
