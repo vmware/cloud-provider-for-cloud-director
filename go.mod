@@ -1,6 +1,6 @@
 module github.com/vmware/cloud-provider-for-cloud-director
 
-go 1.17
+go 1.19
 
 require (
 	github.com/antihax/optional v1.0.0
