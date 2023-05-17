@@ -3,7 +3,7 @@ GITROOT := $(shell git rev-parse --show-toplevel)
 GO_CODE := $(shell ls go.mod go.sum **/*.go)
 version := $(shell cat ${GITROOT}/release/version)
 
-REGISTRY?="harbor-repo.vmware.com/vcloud"
+REGISTRY?="projects-stg.registry.vmware.com/vmware-cloud-director"
 
 .PHONY: build-within-docker vendor
 
