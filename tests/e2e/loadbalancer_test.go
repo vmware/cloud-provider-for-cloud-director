@@ -31,7 +31,6 @@ var _ = Describe("Ensure Loadbalancer", func() {
 		err         error
 		ipamSubnet  string
 		networkName string
-		ovdcName    string
 		tc          *testingsdk.TestClient
 	)
 
@@ -53,12 +52,6 @@ var _ = Describe("Ensure Loadbalancer", func() {
 	}}
 
 	ctx := context.TODO()
-	ns, err = tc.CreateNameSpace(ctx, testBaseName)
-	Expect(err).NotTo(HaveOccurred())
-
-	// We will have a sample deployment so the server will return some sort of data back to us using an official e2e test image
-	_, err = utils.CreateDeployment(ctx, tc, testDeploymentName, ns.Name, labels)
-	Expect(err).NotTo(HaveOccurred())
 
 	// GetConfigMap to retrieve ipamSubnet, network name for gateway manager in order to check if VCD resources are present
 	ccmConfigMap, err := tc.GetConfigMap("kube-system", ccmConfigMapName)
@@ -85,6 +78,12 @@ var _ = Describe("Ensure Loadbalancer", func() {
 	It("should create a load balancer service", func() {
 		// Similar to Ingress setup, we will use: name=http, port=80, protocol=tcp, appProtocol=http
 		By("creating a http load balancer service")
+		ns, err = tc.CreateNameSpace(ctx, testBaseName)
+		Expect(err).NotTo(HaveOccurred())
+
+		// We will have a sample deployment so the server will return some sort of data back to us using an official e2e test image
+		_, err = utils.CreateDeployment(ctx, tc, testDeploymentName, ns.Name, labels)
+		Expect(err).NotTo(HaveOccurred())
 		svc, err = tc.CreateLoadBalancerService(ctx, ns.Name, testServiceName, nil, labels, httpServicePort, "")
 		Expect(err).NotTo(HaveOccurred())
 		Expect(svc).NotTo(BeNil())
@@ -193,12 +192,6 @@ var _ = Describe("Ensure load balancer with user specified LB IP", func() {
 	}}
 
 	ctx := context.TODO()
-	ns, err = tc.CreateNameSpace(ctx, testBaseName)
-	Expect(err).NotTo(HaveOccurred())
-
-	// We will have a sample deployment so the server will return some sort of data back to us using an official e2e test image
-	_, err = utils.CreateDeployment(ctx, tc, testDeploymentName, ns.Name, labels)
-	Expect(err).NotTo(HaveOccurred())
 
 	// GetConfigMap to retrieve ipamSubnet, network name for gateway manager in order to check if VCD resources are present
 	ccmConfigMap, err := tc.GetConfigMap("kube-system", ccmConfigMapName)
@@ -228,6 +221,13 @@ var _ = Describe("Ensure load balancer with user specified LB IP", func() {
 	It("should create a load balancer service", func() {
 		// Similar to Ingress setup, we will use: name=http, port=80, protocol=tcp, appProtocol=http
 		By("creating a http load balancer service")
+		ns, err = tc.CreateNameSpace(ctx, testBaseName)
+		Expect(err).NotTo(HaveOccurred())
+
+		// We will have a sample deployment so the server will return some sort of data back to us using an official e2e test image
+		_, err = utils.CreateDeployment(ctx, tc, testDeploymentName, ns.Name, labels)
+		Expect(err).NotTo(HaveOccurred())
+
 		svc, err = tc.CreateLoadBalancerService(ctx, ns.Name, testServiceName, nil, labels, httpServicePort, explicitIP)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(svc).NotTo(BeNil())

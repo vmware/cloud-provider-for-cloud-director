@@ -3,7 +3,7 @@ GITROOT := $(shell git rev-parse --show-toplevel)
 GO_CODE := $(shell ls go.mod go.sum **/*.go)
 version := $(shell cat ${GITROOT}/release/version)
 
-REGISTRY?="harbor-repo.vmware.com/vcloud"
+REGISTRY?="projects-stg.registry.vmware.com/vmware-cloud-director"
 
 .PHONY: build-within-docker vendor
 
@@ -40,8 +40,8 @@ dev: ccm dev-manifest crs-artifacts-dev
 	docker push $(REGISTRY)/cloud-provider-for-cloud-director:$(version).$(GITCOMMIT)
 
 vendor:
-	go mod edit -go=1.17
-	go mod tidy -compat=1.17
+	go mod edit -go=1.19
+	go mod tidy -compat=1.19
 	go mod vendor
 
 test:
