@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/util"
-	swagger "github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdswaggerclient"
+	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdswaggerclient_36_0"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"path/filepath"
@@ -329,7 +329,7 @@ func TestVirtualServiceHttpCRUDE(t *testing.T) {
 
 	virtualServiceName := fmt.Sprintf("test-virtual-service-%s", uuid.New().String())
 	internalIP := "2.3.4.5"
-	var vsRef *swagger.EntityReference
+	var vsRef *swagger.swagger
 	for i := 0; i < BusyRetries; i++ {
 		vsRef, err = gm.CreateVirtualService(ctx, virtualServiceName, lbPoolRef, segRef,
 			internalIP, "HTTP", 80, false, "")
