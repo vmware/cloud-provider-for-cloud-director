@@ -25,7 +25,7 @@ crs-artifacts-dev:
 
 build-within-docker: vendor
 	mkdir -p /build/cloud-provider-for-cloud-director
-	go build -ldflags "-X github.com/vmware/cloud-provider-for-cloud-director/version.Version=$(version)" -o /build/vcloud/cloud-provider-for-cloud-director cmd/ccm/main.go
+	CGO_ENABLED=0 go build -ldflags "-s -w -X github.com/vmware/cloud-provider-for-cloud-director/version.Version=$(version)" -o /build/vcloud/cloud-provider-for-cloud-director cmd/ccm/main.go
 
 ccm: $(GO_CODE)
 	docker build -f Dockerfile . -t cloud-provider-for-cloud-director:$(version)
