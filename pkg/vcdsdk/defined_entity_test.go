@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdswaggerclient_36_0"
+	swaggerClient "github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdswaggerclient_36_0"
 	"github.com/vmware/go-vcloud-director/v2/govcd"
 	"net/http"
 	"testing"
@@ -202,7 +202,7 @@ func TestCRUDOnErrorSet(t *testing.T) {
 }
 
 func createCapvcdRDE(ctx context.Context, vcdClient *Client, clusterName string, orgID string) (string, error) {
-	rde := &swagger.swagger{
+	rde := &swaggerClient.DefinedEntity{
 		EntityType: CAPVCDEntityTypeID,
 		Name:       clusterName,
 	}

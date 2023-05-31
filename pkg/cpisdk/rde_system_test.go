@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdsdk"
-	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdswaggerclient_36_0"
+	swaggerClient "github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdswaggerclient_36_0"
 	"github.com/vmware/cloud-provider-for-cloud-director/release"
 	"github.com/vmware/go-vcloud-director/v2/govcd"
 	"io/ioutil"
@@ -116,7 +116,7 @@ func TestUpdateRDEUsingEtag(t *testing.T) {
 }
 
 func cleanUpEntitiesWithName(t *testing.T, vcdClient *vcdsdk.Client, entityName string, failMessage string) {
-	nameFilter := &swagger.DefinedEntityApiGetDefinedEntitiesByEntityTypeOpts{
+	nameFilter := &swaggerClient.DefinedEntityApiGetDefinedEntitiesByEntityTypeOpts{
 		Filter: optional.NewString(fmt.Sprintf("name==%s", entityName)),
 	}
 	definedEntities, resp, err := vcdClient.APIClient.DefinedEntityApi.GetDefinedEntitiesByEntityType(context.TODO(),
@@ -334,7 +334,7 @@ func TestAddVIPToVCDResourceSet(t *testing.T) {
 	}
 	for _, tc := range testCaseArr {
 		// create entity
-		entityToBeCreated := swagger.DefinedEntity{
+		entityToBeCreated := swaggerClient.DefinedEntity{
 			Name:       TestEntityName,
 			EntityType: entityTypeID,
 			Entity:     tc.EntityCreated,
