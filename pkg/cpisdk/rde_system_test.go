@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdsdk"
-	swagger "github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdswaggerclient"
+	swaggerClient "github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdswaggerclient_36_0"
 	"github.com/vmware/cloud-provider-for-cloud-director/release"
 	"github.com/vmware/go-vcloud-director/v2/govcd"
 	"io/ioutil"
@@ -41,7 +41,6 @@ func convertToJson(obj interface{}) (string, error) {
 
 	return string(objByteArr), nil
 }
-
 
 func TestUpdateRDEUsingEtag(t *testing.T) {
 	// TODO: This test will currently fail unless the code below is uncommented. Refer to VCDA-3600
@@ -117,21 +116,21 @@ func TestUpdateRDEUsingEtag(t *testing.T) {
 }
 
 func cleanUpEntitiesWithName(t *testing.T, vcdClient *vcdsdk.Client, entityName string, failMessage string) {
-	nameFilter := &swagger.DefinedEntityApiGetDefinedEntitiesByEntityTypeOpts{
+	nameFilter := &swaggerClient.DefinedEntityApiGetDefinedEntitiesByEntityTypeOpts{
 		Filter: optional.NewString(fmt.Sprintf("name==%s", entityName)),
 	}
 	definedEntities, resp, err := vcdClient.APIClient.DefinedEntityApi.GetDefinedEntitiesByEntityType(context.TODO(),
-		vcdsdk.CAPVCDEntityTypeVendor, vcdsdk.CAPVCDEntityTypeNss, CAPVCDEntityTypeVersion, 1, 25, nameFilter)
+		vcdsdk.CAPVCDEntityTypeVendor, vcdsdk.CAPVCDEntityTypeNss, CAPVCDEntityTypeVersion, "", 1, 25, nameFilter)
 	assert.NoError(t, err, "expected no error executing list entities by entity type with name filter", "message", failMessage)
 	assert.NotNil(t, resp, "list entity by entity type response should not be nil", "message", failMessage)
 	assert.Equal(t, http.StatusOK, resp.StatusCode, "invalid response for list entity by entity type", "message", failMessage)
 	for _, e := range definedEntities.Values {
 		// resolve before delete - may fail with resolution errors.
-		entityState, _, _ := vcdClient.APIClient.DefinedEntityApi.ResolveDefinedEntity(context.TODO(), e.Id)
+		entityState, _, _ := vcdClient.APIClient.DefinedEntityApi.ResolveDefinedEntity(context.TODO(), e.Id, "")
 		if entityState.State != "RESOLVED" {
-			fmt.Println("entity resolution failed for RDE ", entityState.Id," with message: ", entityState.Message)
+			fmt.Println("entity resolution failed for RDE ", entityState.Id, " with message: ", entityState.Message)
 		}
-		resp, err := vcdClient.APIClient.DefinedEntityApi.DeleteDefinedEntity(context.TODO(), e.Id, nil)
+		resp, err := vcdClient.APIClient.DefinedEntityApi.DeleteDefinedEntity(context.TODO(), e.Id, "", nil)
 		assert.NoError(t, err, "expected no error cleaning up the defined entity", "message", failMessage)
 		assert.NotNil(t, resp, "did not expect a nil response while cleaning up defined entity by name", "message", failMessage)
 		assert.Equal(t, http.StatusNoContent, resp.StatusCode, "got unexpected response status code",
@@ -335,12 +334,12 @@ func TestAddVIPToVCDResourceSet(t *testing.T) {
 	}
 	for _, tc := range testCaseArr {
 		// create entity
-		entityToBeCreated := swagger.DefinedEntity{
+		entityToBeCreated := swaggerClient.DefinedEntity{
 			Name:       TestEntityName,
 			EntityType: entityTypeID,
 			Entity:     tc.EntityCreated,
 		}
-		resp, err := vcdClient.APIClient.DefinedEntityApi.CreateDefinedEntity(context.TODO(), entityToBeCreated, entityTypeID, nil)
+		resp, err := vcdClient.APIClient.DefinedEntityApi.CreateDefinedEntity(context.TODO(), entityToBeCreated, entityTypeID, "", nil)
 		assert.NoError(t, err, "expected no error creating defined entity", "test", tc.Message)
 		assert.NotNil(t, resp, "did not expect a nil response while creating defined entity", "test", tc.Message)
 		assert.Equal(t, http.StatusAccepted, resp.StatusCode, "status code is not as expected", "test", tc.Message)
@@ -359,7 +358,7 @@ func TestAddVIPToVCDResourceSet(t *testing.T) {
 		assert.NoError(t, err, "expected no error adding VIP to VCD resource set", "test", tc.Message)
 
 		// verify information in the RDE
-		definedEntity, resp, _, err := vcdClient.APIClient.DefinedEntityApi.GetDefinedEntity(context.TODO(), rdeID)
+		definedEntity, resp, _, err := vcdClient.APIClient.DefinedEntityApi.GetDefinedEntity(context.TODO(), rdeID, "")
 		assert.NoError(t, err, "expected no error fetching defined entity after updating RDE with virtual service", "test", tc.Message)
 		assert.NotNil(t, definedEntity, "expected defined entity to be not nil", "test", tc.Message)
 		assert.NotNil(t, resp, "invalid response - got nil response", "test", tc.Message)

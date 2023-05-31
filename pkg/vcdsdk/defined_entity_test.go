@@ -6,12 +6,11 @@ import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	swaggerClient "github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdswaggerclient_36_0"
 	"github.com/vmware/go-vcloud-director/v2/govcd"
 	"net/http"
 	"testing"
 	"time"
-
-	swagger "github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdswaggerclient"
 )
 
 const (
@@ -203,7 +202,7 @@ func TestCRUDOnErrorSet(t *testing.T) {
 }
 
 func createCapvcdRDE(ctx context.Context, vcdClient *Client, clusterName string, orgID string) (string, error) {
-	rde := &swagger.DefinedEntity{
+	rde := &swaggerClient.DefinedEntity{
 		EntityType: CAPVCDEntityTypeID,
 		Name:       clusterName,
 	}
@@ -234,10 +233,10 @@ func createCapvcdRDE(ctx context.Context, vcdClient *Client, clusterName string,
 
 func TestAddToVCDResourceSet(t *testing.T) {
 	type TestCase struct {
-		StatusMap      map[string]interface{}
-		VCDResource    VCDResource
-		ExpectedStatus map[string]interface{}
-		Message        string
+		StatusMap              map[string]interface{}
+		VCDResource            VCDResource
+		ExpectedStatus         map[string]interface{}
+		Message                string
 		ExpectedUpdateRequired bool
 	}
 	testCaseList := []TestCase{
@@ -353,7 +352,7 @@ func TestAddToVCDResourceSet(t *testing.T) {
 					"key1": "value1",
 				},
 			},
-			ExpectedUpdateRequired:  false,
+			ExpectedUpdateRequired: false,
 		},
 		{
 			Message: "recreate CPI status if absent",
