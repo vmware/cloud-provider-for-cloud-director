@@ -42,7 +42,8 @@ func (config *VCDAuthConfig) GetBearerToken() (*govcd.VCDClient, *http.Response,
 	}
 
 	vcdClient := govcd.NewVCDClient(*u, config.Insecure)
-	err = SetClientAPIVersion(vcdClient)
+	// continue using API version 36.0 for GoVCD clients
+	vcdClient.Client.APIVersion = VCloudApiVersion_36_0
 	if err != nil {
 		klog.Errorf("failed to set API version on GoVCD client: [%v]", err)
 		return nil, nil, fmt.Errorf("failed to set API version on the GoVCD client: [%v]", err)
@@ -128,10 +129,8 @@ func (config *VCDAuthConfig) GetPlainClientFromSecrets() (*govcd.VCDClient, erro
 	}
 
 	vcdClient := govcd.NewVCDClient(*u, config.Insecure)
-	if err = SetClientAPIVersion(vcdClient); err != nil {
-		klog.Errorf("failed to set API version on the client: [%v]", err)
-		return nil, fmt.Errorf("failed to set API version on the client: [%v]", err)
-	}
+	// continue using API version 36 for GoVCD clients
+	vcdClient.Client.APIVersion = VCloudApiVersion_36_0
 	klog.Infof("Using VCD XML API version [%s]", vcdClient.Client.APIVersion)
 	if err = vcdClient.Authenticate(config.User, config.Password, config.UserOrg); err != nil {
 		return nil, fmt.Errorf("cannot authenticate with vcd: [%v]", err)

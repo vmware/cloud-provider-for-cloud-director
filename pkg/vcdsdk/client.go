@@ -63,10 +63,8 @@ func (client *Client) RefreshBearerToken() error {
 	klog.Infof("Refreshing vcd client")
 
 	href := fmt.Sprintf("%s/api", client.VCDAuthConfig.Host)
-	err := SetClientAPIVersion(client.VCDClient)
-	if err != nil {
-		return fmt.Errorf("failed to set API version on GoVCD client: [%v]", err)
-	}
+	// continue using API version 36 for GoVCD client
+	client.VCDClient.Client.APIVersion = VCloudApiVersion_36_0
 
 	klog.Infof("Is user sysadmin: [%v]", client.VCDAuthConfig.IsSysAdmin)
 	if client.VCDAuthConfig.RefreshToken != "" {
