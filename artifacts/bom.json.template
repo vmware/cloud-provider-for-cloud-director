@@ -1,6 +1,6 @@
 {
 	"name":"cpi-crs-airgapped",
-	"version":"__VERSION__.__GIT_COMMIT__",
+	"version":"__VERSION__-__GIT_COMMIT__",
 	"components": {
 		"manifests":[
 			{
@@ -12,7 +12,7 @@
 		"dependencies": [
 			{
 				"name":"cloud-provider-for-cloud-director",
-				"version":"__VERSION__.__GIT_COMMIT__",
+				"version":"__VERSION__-__GIT_COMMIT__",
 				"imageRepository":"__REGISTRY__"
 			}
 		]
