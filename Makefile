@@ -19,9 +19,9 @@ crs-artifacts-dev:
 	sed -e "s/__GIT_COMMIT__/$(GITCOMMIT)/g" -e "s/__VERSION__/$(version)/g" artifacts/default-cloud-director-ccm-crs-airgap.yaml.template > artifacts/cloud-director-ccm-crs-airgap.yaml.template
 	sed -e "s/__GIT_COMMIT__/$(GITCOMMIT)/g" -e "s/__VERSION__/$(version)/g" -e "s~__REGISTRY__~$(REGISTRY)~g" artifacts/dependencies.txt.template > artifacts/dependencies.txt
 	sed -e "s/__GIT_COMMIT__/$(GITCOMMIT)/g" -e "s/__VERSION__/$(version)/g" -e "s~__REGISTRY__~$(REGISTRY)~g" artifacts/bom.json.template > artifacts/bom.json
-	docker build -f ./artifacts/Dockerfile . -t cpi-crs-airgapped:$(GITCOMMIT)
-	docker tag cpi-crs-airgapped:$(GITCOMMIT) $(REGISTRY)/cpi-crs-airgapped:$(GITCOMMIT)
-	docker push $(REGISTRY)/cpi-crs-airgapped:$(GITCOMMIT)
+	docker build -f ./artifacts/Dockerfile . -t cpi-crs-airgapped:$(version).$(GITCOMMIT)
+	docker tag cpi-crs-airgapped:$(version).$(GITCOMMIT) $(REGISTRY)/cpi-crs-airgapped:$(version).$(GITCOMMIT)
+	docker push $(REGISTRY)/cpi-crs-airgapped:$(version).$(GITCOMMIT)
 
 build-within-docker: vendor
 	mkdir -p /build/cloud-provider-for-cloud-director
