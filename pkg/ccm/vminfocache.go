@@ -67,11 +67,14 @@ func (vmic *VmInfoCache) vmToVMInfo(vm *govcd.VM, captureTime time.Time) (*VmInf
 	if vm.VM.NetworkConnectionSection != nil {
 		vmAddresses := make([]v1.NodeAddress, 0)
 		for _, netConn := range vm.VM.NetworkConnectionSection.NetworkConnection {
+			if netConn.NetworkConnectionIndex == vm.VM.NetworkConnectionSection.PrimaryNetworkConnectionIndex {
+				v1helper.AddToNodeAddresses(&vmAddresses,
+					v1.NodeAddress{
+						Type:    v1.NodeInternalIP,
+						Address: netConn.IPAddress,
+					})
+			}
 			v1helper.AddToNodeAddresses(&vmAddresses,
-				v1.NodeAddress{
-					Type:    v1.NodeInternalIP,
-					Address: netConn.IPAddress,
-				},
 				v1.NodeAddress{
 					Type:    v1.NodeExternalIP,
 					Address: netConn.IPAddress,
