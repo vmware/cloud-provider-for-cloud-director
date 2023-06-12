@@ -1,0 +1,16 @@
+# EdgeGatewayLoadBalancerConfig
+
+## Properties
+Name | Type | Description | Notes
+------------ | ------------- | ------------- | -------------
+**Enabled** | **bool** | A flag indicating whether Load Balancer Service is enabled or not. | [default to null]
+**ServiceNetworkDefinition** | **string** | The IPv4 network definition in Gateway CIDR format which will be used by Load Balancer service on edge. All the load balancer service engines associated with the Service Engine Group will be attached to this network. The subnet prefix length must be 25. If nothing is set, the default is &lt;code&gt;192.168.255.1/25&lt;/code&gt;. Default cidr can be configured. Once set, this field cannot be updated. The default IPv4 service network will be used if both the serviceNetworkDefinition and ipv6ServiceNetworkDefinition properties are unset. If both are set, it will still be one service network with a dual IPv4 and IPv6 stack.  | [optional] [default to null]
+**Ipv6ServiceNetworkDefinition** | **string** | The IPv6 network definition in Gateway CIDR format which will be used by Load Balancer service on edge. All the load balancer service engines associated with the Service Engine Group will be attached to this network. Once set, this field cannot be updated. The default IPv4 service network will be used if both the serviceNetworkDefinition and ipv6ServiceNetworkDefinition properties are unset. If both are set, it will still be one service network with a dual IPv4 and IPv6 stack.  | [optional] [default to null]
+**LoadBalancerCloudRef** | [***EntityReference**](EntityReference.md) | Reference to the Load Balancer Cloud. This cloud is used by Edge Gateway&#39;s Load Balancer Virtual Services and Pools. | [optional] [default to null]
+**LicenseType** | **string** | The license type of the backing Load Balancer Cloud. &lt;ul&gt; &lt;li&gt;BASIC - Basic edition of the NSX Advanced Load Balancer. &lt;li&gt;ENTERPRISE - Full featured edition of the NSX Advanced Load Balancer. &lt;/ul&gt;  | [optional] [default to null]
+**SupportedFeatureSet** | **string** | The Load Balancer Feature set supported by the Edge Gateway. Allowed values are: &lt;ul&gt; &lt;li&gt;STANDARD - Edge Gateway supports STANDARD set of features for Load Balancing. &lt;li&gt;PREMIUM - Edge Gateway supports both STANDARD and PREMIUM set of features for Load Balancing. All Load Balancer Service Engine Groups assigned to this Edge Gateway must support PREMIUM feature set in order to allow PREMIUM features on this gateway. &lt;/ul&gt; A Service Engine Group with &lt;em&gt;STANDARD&lt;/em&gt; supported feature set can only be assigned to Edge Gateway with &lt;em&gt;STANDARD&lt;/em&gt; supported feature set. A Service Engine Group with &lt;em&gt;PREMIUM&lt;/em&gt; supported feature set can be assigned to Edge Gateway with both &lt;em&gt;STANDARD&lt;/em&gt; and &lt;em&gt;PREMIUM&lt;/em&gt; supported feature sets.  | [optional] [default to null]
+**TransparentModeEnabled** | **bool** | A flag indicating whether or not this Edge Gateway has been configured to support transparent load balancing. | [optional] [default to null]
+
+[[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
+
+
