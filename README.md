@@ -142,10 +142,20 @@ kubectl set env -n kube-system deployment/vmware-cloud-director-ccm GOVCD_LOG_ON
 **NOTE: Please make sure to collect the logs before and after enabling the wire log. The above commands update the CPI deployment, which creates a new CPI pod. The logs present in the old pod will be lost.**
 
 ## Upgrade CPI
-To upgrade CPI from v1.2.0, please execute the following command for each cluster
-```shell
-kubectl patch deployment -n kube-system vmware-cloud-director-ccm -p '{"spec": {"template": {"spec": {"containers": [{"name": "vmware-cloud-director-ccm", "image": "projects.registry.vmware.com/vmware-cloud-director/cloud-provider-for-cloud-director:1.3.0"}]}}}}'
-```
+To upgrade CPI from v1.2.0 and v1.3.0, please do the following. `kubectl patch` will not work to upgrade CPI.
+1. Delete the Kubernetes External Cloud Provider deployment
+2. Apply the manifest at: https://raw.githubusercontent.com/vmware/cloud-provider-for-cloud-director/1.4.0/manifests/cloud-director-ccm.yaml
+
+## Known Issues
+1. IP is not obtained for LoadBalancer Service if Edge Gateway has IP Spaces.
+   * While IP spaces are not supported in CPI 1.4.0, this is an issue because having IP spaces doesn't allow CPI to get a free IP for a LoadBalancer Service.
+   * Workaround: Users can specify an IP to be used in `spec.loadBalancerIP` for the LoadBalancer Service.
+2. LoadBalancer Services with the same name in different namespaces can be bound to the same IP.
+   * This issue is occurring LoadBalancer service names are not unique (e.g., by including the namespace in the name).
+   * Workaround: Users should create a unique name or add the namespace to the LoadBalancer Service name.
+3. Updating service from `LoadBalancer` to `ClusterIP` does not clean up all LoadBalancer service CCM resources.
+   * If a DNAT is used, this may get cleaned up, but the virtual service and pools may still remain.
+   * Workaround: Delete the LoadBalancer service and recreate the service.
 
 ## Contributing
 Please see [CONTRIBUTING.md](CONTRIBUTING.md) for instructions on how to contribute.
