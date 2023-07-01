@@ -148,6 +148,9 @@ func getDecryptedRDE(ctx context.Context, client *vcdsdk.Client, rdeID, clusterN
 }
 
 func getKubeconfigFromCapvcdStatus(capvcdStatusMap map[string]interface{}, clusterId string) (string, error) {
+	if capvcdStatusMap != nil {
+		return "", fmt.Errorf("capvcd status map is nil")
+	}
 	privateStatusIf, ok := capvcdStatusMap["private"]
 	if !ok {
 		return "", fmt.Errorf("private field not found in status->capvcd of RDE [%s]", clusterId)
