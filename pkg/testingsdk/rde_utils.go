@@ -74,11 +74,21 @@ func GetKubeconfigFromRDEId(ctx context.Context, client *vcdsdk.Client, clusterI
 		return "", fmt.Errorf("error occurred while getting cluster RDE [%s]: [%v]", clusterId, err)
 	}
 
-	entityTypeSemver, _ := semver.New(getRDEVersion(clusterRde))
-	entityTypeVersion120, _ := semver.New(CAPVCDEntityTypeVersion120)
+	entityTypeSemver, err := semver.New(getRDEVersion(clusterRde))
+	if err != nil {
+		return "", fmt.Errorf("error creating semver for retrieved RDE version from cluster [%s(%s)]: [%v]", clusterRde.Name, clusterId, err)
+	}
+	entityTypeVersion120, err := semver.New(CAPVCDEntityTypeVersion120)
+	if err != nil {
+		return "", fmt.Errorf("error creating semver from [%s] for comparison with RDE version: [%v]", CAPVCDEntityTypeVersion120, err)
+	}
 
 	// If RDE version of the cluster is >= 1.2.0, the kubeconfig will be stored as a secure field within the RDE's CAPVCD status
 	// else, the kubeconfig can be directly obtained from the RDE
+
+	// VCD/API version checks are not needed here because it is not possible to register RDE 1.2.0 for VCD builds 10.4.1 and below.
+	// So all RDE versions are expected to be 1.1.0 from VCD 10.4.1 and below. It should not be possible to have a RDE 1.2.0 + VCD 10.3.x/10.4.1.
+	// RDE 1.2.0 is only supported for VCD 10.4.2+, as UI will perform the API checks and register the appropriate schema.
 	if entityTypeSemver.GE(*entityTypeVersion120) {
 		kubeConfig, err = getKubeconfigFromDecryptedRDE(ctx, client, clusterId, clusterRde.Name)
 	} else {
