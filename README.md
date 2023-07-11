@@ -143,8 +143,8 @@ kubectl set env -n kube-system deployment/vmware-cloud-director-ccm GOVCD_LOG_ON
 
 ## Upgrade CPI
 To upgrade CPI from v1.2.0 and v1.3.0, please do the following. `kubectl patch` will not work to upgrade CPI.
-1. Delete the Kubernetes External Cloud Provider deployment
-2. Apply the manifest at: https://raw.githubusercontent.com/vmware/cloud-provider-for-cloud-director/1.4.0/manifests/cloud-director-ccm.yaml
+1. Delete the Kubernetes External Cloud Provider deployment using `kubectl delete deployment`
+2. Apply the manifest at: https://raw.githubusercontent.com/vmware/cloud-provider-for-cloud-director/1.4.0/manifests/cloud-director-ccm.yaml using `kubectl apply`
 
 ## Known Issues
 1. IP is not obtained for LoadBalancer Service if Edge Gateway has IP Spaces.
