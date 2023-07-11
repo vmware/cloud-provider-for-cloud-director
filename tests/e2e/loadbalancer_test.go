@@ -84,6 +84,9 @@ var _ = Describe("Ensure Loadbalancer", func() {
 		// We will have a sample deployment so the server will return some sort of data back to us using an official e2e test image
 		_, err = utils.CreateDeployment(ctx, tc, testDeploymentName, ns.Name, labels)
 		Expect(err).NotTo(HaveOccurred())
+		err = tc.WaitForDeploymentReady(ctx, ns.Name, testDeploymentName)
+		Expect(err).NotTo(HaveOccurred())
+
 		svc, err = tc.CreateLoadBalancerService(ctx, ns.Name, testServiceName, nil, labels, httpServicePort, "")
 		Expect(err).NotTo(HaveOccurred())
 		Expect(svc).NotTo(BeNil())
@@ -226,6 +229,8 @@ var _ = Describe("Ensure load balancer with user specified LB IP", func() {
 
 		// We will have a sample deployment so the server will return some sort of data back to us using an official e2e test image
 		_, err = utils.CreateDeployment(ctx, tc, testDeploymentName, ns.Name, labels)
+		Expect(err).NotTo(HaveOccurred())
+		err = tc.WaitForDeploymentReady(ctx, ns.Name, testDeploymentName)
 		Expect(err).NotTo(HaveOccurred())
 
 		svc, err = tc.CreateLoadBalancerService(ctx, ns.Name, testServiceName, nil, labels, httpServicePort, explicitIP)
