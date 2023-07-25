@@ -205,7 +205,8 @@ func getWorkerNodes(ctx context.Context, k8sClient *kubernetes.Clientset) ([]api
 
 func getNodes(ctx context.Context, k8sClient *kubernetes.Clientset) ([]apiv1.Node, error) {
 	var allNodes []apiv1.Node
-	nodes, err := k8sClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+	var timeoutSeconds int64 = 600
+	nodes, err := k8sClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{TimeoutSeconds: &timeoutSeconds})
 	if err != nil {
 		return allNodes, fmt.Errorf("error occurred while getting nodes: [%v]", err)
 	}
