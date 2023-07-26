@@ -9,10 +9,7 @@ import (
 	"bytes"
 	"encoding/xml"
 	"fmt"
-	"github.com/vmware/go-vcloud-director/v2/govcd"
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"io/ioutil"
-	"k8s.io/klog/v2"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -20,6 +17,10 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/vmware/go-vcloud-director/v2/govcd"
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"k8s.io/klog/v2"
 )
 
 const (
@@ -531,7 +532,7 @@ func (vdc *VdcManager) SetVmExtraConfigKeyValue(vm *govcd.VM, key string, value 
 // power on VMs and join the cluster with hardcoded script
 func (vdc *VdcManager) AddNewMultipleVM(vapp *govcd.VApp, vmNamePrefix string, vmNum int,
 	catalogName string, templateName string, placementPolicyName string, computePolicyName string,
-	storageProfileName string, guestCustScript string, acceptAllEulas bool, powerOn bool) (govcd.Task, error) {
+	storageProfileName string, guestCustScript string, acceptAllEulas bool, IPAddressAllocationMode string, powerOn bool) (govcd.Task, error) {
 
 	klog.V(3).Infof("start adding %d VMs\n", vmNum)
 
@@ -654,7 +655,7 @@ func (vdc *VdcManager) AddNewMultipleVM(vapp *govcd.VApp, vmNamePrefix string, v
 						AdminPasswordAuto:     &trueVar,
 						ResetPasswordRequired: &falseVar,
 						ComputerName:          vmName,
-						CustomizationScript: guestCustScript,
+						CustomizationScript:   guestCustScript,
 					},
 					NetworkConnectionSection: &types.NetworkConnectionSection{
 						NetworkConnection: []*types.NetworkConnection{
@@ -662,7 +663,7 @@ func (vdc *VdcManager) AddNewMultipleVM(vapp *govcd.VApp, vmNamePrefix string, v
 								Network:                 vapp.VApp.NetworkConfigSection.NetworkNames()[0],
 								NeedsCustomization:      false,
 								IsConnected:             true,
-								IPAddressAllocationMode: "POOL",
+								IPAddressAllocationMode: IPAddressAllocationMode,
 								NetworkAdapterType:      "VMXNET3",
 							},
 						},
@@ -792,7 +793,7 @@ func (vdc *VdcManager) AddNewMultipleVM(vapp *govcd.VApp, vmNamePrefix string, v
 
 func (vdc *VdcManager) AddNewTkgVM(vmNamePrefix string, VAppName string, vmNum int,
 	catalogName string, templateName string, placementPolicyName string, computePolicyName string,
-	storageProfileName string, powerOn bool) error {
+	storageProfileName string, IPAddressAllocationMode string, powerOn bool) error {
 
 	// In TKG >= 1.6.0, there is a missing file at /etc/cloud/cloud.cfg.d/
 	// that tells cloud-init the datasource. Without this file, a file prefixed with 90-*
@@ -808,7 +809,7 @@ datasource_list: [ "VMware" ]
 EOF`
 
 	err := vdc.AddNewVM(vmNamePrefix, VAppName, vmNum, catalogName, templateName, placementPolicyName,
-		computePolicyName, storageProfileName, guestCustScript, powerOn)
+		computePolicyName, storageProfileName, guestCustScript, IPAddressAllocationMode, powerOn)
 	if err != nil {
 		return fmt.Errorf("error for adding TKG VM to vApp[%s]: [%v]", VAppName, err)
 	}
@@ -817,7 +818,7 @@ EOF`
 
 func (vdc *VdcManager) AddNewVM(vmNamePrefix string, VAppName string, vmNum int,
 	catalogName string, templateName string, placementPolicyName string, computePolicyName string,
-	storageProfileName string, guestCustScript string, powerOn bool) error {
+	storageProfileName string, guestCustScript string, IPAddressAllocationMode string, powerOn bool) error {
 
 	if vdc.Vdc == nil {
 		return fmt.Errorf("no Vdc created with name [%s]", vdc.VdcName)
@@ -866,7 +867,7 @@ func (vdc *VdcManager) AddNewVM(vmNamePrefix string, VAppName string, vmNum int,
 	}
 
 	_, err = vdc.AddNewMultipleVM(vApp, vmNamePrefix, vmNum, catalogName, templateName, placementPolicyName,
-		computePolicyName, storageProfileName, guestCustScript, true, powerOn)
+		computePolicyName, storageProfileName, guestCustScript, true, IPAddressAllocationMode, powerOn)
 	if err != nil {
 		return fmt.Errorf(
 			"unable to issue call to create VMs with prefix [%s] in vApp [%s] with template [%s/%s]: [%v]",

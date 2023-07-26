@@ -1,16 +1,17 @@
 /*
-   Copyright 2021 VMware, Inc.
-   SPDX-License-Identifier: Apache-2.0
+Copyright 2021 VMware, Inc.
+SPDX-License-Identifier: Apache-2.0
 */
 package vcdsdk
 
 import (
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v2"
 )
 
 func TestVApp(t *testing.T) {
@@ -37,7 +38,7 @@ func TestVApp(t *testing.T) {
 	vmNamePrefix := "test-vm"
 	err = vdcManager.AddNewVM(vmNamePrefix, vAppName, 1, "cse",
 		"Ubuntu 20.04 and Kubernetes v1.21.11+vmware.1", "", "4core4gb",
-		"", "", true)
+		"", "", "DHCP", true)
 	assert.NoError(t, err, "should create vm correctly")
 
 	vms, err := vdcManager.FindAllVMsInVapp(vAppName)
@@ -135,7 +136,7 @@ exit 0
 	computePolicyName := "2core2gb"
 
 	_, err = vdcManager.AddNewMultipleVM(vApp, vmNamePrefix, vmNum, catalog,
-		templateName, placementPolicyName, computePolicyName, "*", guestCustScript, true, true)
+		templateName, placementPolicyName, computePolicyName, "*", guestCustScript, true, "POOL", true)
 	require.NoError(t, err, "unable to create [%d] VMs", vmNum)
 
 	_ = vdcManager.WaitForGuestScriptCompletion(vAppName, vmNamePrefix)
@@ -188,7 +189,7 @@ exit 0
 	// TODO: allow these vm params to be user passed through a config
 	err = vdcManager.AddNewVM(vAppName, vmNamePrefix, vmNum, "cse",
 		"ubuntu-16.04_k8-1.21_weave-2.8.1_rev1", "cse----native",
-		"2core2gb", "*", guestCustScript, true)
+		"2core2gb", "*", guestCustScript, "DHCP", true)
 	assert.NoError(t, err, "unable to create [%d] VMs", vmNum)
 
 	vms, err := vdcManager.FindAllVMsInVapp(vAppName)
