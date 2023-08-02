@@ -634,7 +634,7 @@ func (vdc *VdcManager) AddNewMultipleVM(vapp *govcd.VApp, vmNamePrefix string, v
 			vmName = vmNamePrefix + strconv.Itoa(i)
 		}
 
-		passwd, err := password.Generate(15, 10, 10, false, false)
+		passwd, err := password.Generate(15, 5, 3, false, false)
 		if err != nil {
 			return govcd.Task{}, fmt.Errorf("failed to generate a password to create a VM in the VApp [%s]", vapp.VApp.Name)
 		}
