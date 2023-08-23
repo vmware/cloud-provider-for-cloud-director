@@ -226,6 +226,9 @@ github.com/prometheus/common/model
 github.com/prometheus/procfs
 github.com/prometheus/procfs/internal/fs
 github.com/prometheus/procfs/internal/util
+# github.com/sethvargo/go-password v0.2.0
+## explicit; go 1.14
+github.com/sethvargo/go-password/password
 # github.com/spf13/cobra v1.1.3
 ## explicit; go 1.12
 github.com/spf13/cobra
