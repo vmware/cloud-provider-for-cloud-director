@@ -75,12 +75,12 @@ func waitForDeploymentReady(ctx context.Context, k8sClient *kubernetes.Clientset
 			return false, fmt.Errorf("unexpected error occurred while getting deployment [%s]", deployName)
 		}
 		podCount := len(podList.Items)
-		containersCount := 0
+		containerCount := 0
 		podsReady := 0
 		containersReady := 0
 		for _, pod := range (*podList).Items {
 			// Add the total amount of containers per pod
-			containersCount += len(pod.Spec.Containers)
+			containerCount += len(pod.Spec.Containers)
 			if pod.Status.Phase == apiv1.PodRunning {
 				// Ref: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/
 				// Pod running state can mean: at least one container is still running, or is in the process of starting or restarting.
@@ -93,8 +93,8 @@ func waitForDeploymentReady(ctx context.Context, k8sClient *kubernetes.Clientset
 				}
 			}
 		}
-		if podsReady < podCount || containersReady < containersCount {
-			fmt.Printf("running pods: %v < %v; ready containers: %v < %v\n", podsReady, podCount, containersReady, containersCount)
+		if podsReady < podCount || containersReady < containerCount {
+			fmt.Printf("running pods: %v < %v; ready containers: %v < %v\n", podsReady, podCount, containersReady, containerCount)
 			return false, nil
 		}
 		return true, nil
