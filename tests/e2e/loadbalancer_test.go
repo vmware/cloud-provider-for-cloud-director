@@ -11,7 +11,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"net/http"
-	"os"
 )
 
 const (
@@ -21,9 +20,6 @@ const (
 	httpPort           = 80
 
 	ccmConfigMapName = "vcloud-ccm-configmap"
-
-	airgappedImage = "core.harbor.10.89.98.101.nip.io/airgapped/agnhost:2.36"
-	stagingImage   = "projects-stg.registry.vmware.com/vmware-cloud-director/agnhost:2.36"
 )
 
 var testHttpName = "http"
@@ -84,16 +80,10 @@ var _ = Describe("Ensure Loadbalancer", func() {
 		By("creating a http load balancer service")
 		ns, err = tc.CreateNameSpace(ctx, testBaseName)
 		Expect(err).NotTo(HaveOccurred())
-		// AIRGAP environment variable is expected to be set in jenkins or by user via `export AIRGAP="true"`
-		useAirgap := os.Getenv("AIRGAP")
-		if useAirgap != "" {
-			_, err = utils.CreateDeployment(ctx, tc, testDeploymentName, ns.Name, airgappedImage, labels)
-			Expect(err).NotTo(HaveOccurred())
-		} else {
-			_, err = utils.CreateDeployment(ctx, tc, testDeploymentName, ns.Name, stagingImage, labels)
-			Expect(err).NotTo(HaveOccurred())
-		}
+
 		// We will have a sample deployment so the server will return some sort of data back to us using an official e2e test image
+		_, err = utils.CreateDeployment(ctx, tc, testDeploymentName, ns.Name, ContainerImage, labels)
+		Expect(err).NotTo(HaveOccurred())
 		err = tc.WaitForDeploymentReady(ctx, ns.Name, testDeploymentName)
 		Expect(err).NotTo(HaveOccurred())
 
@@ -236,16 +226,10 @@ var _ = Describe("Ensure load balancer with user specified LB IP", func() {
 		By("creating a http load balancer service")
 		ns, err = tc.CreateNameSpace(ctx, testBaseName)
 		Expect(err).NotTo(HaveOccurred())
-		// AIRGAP environment variable is expected to be set in jenkins or by user via `export AIRGAP="true"`
-		useAirgap := os.Getenv("AIRGAP")
-		if useAirgap != "" {
-			_, err = utils.CreateDeployment(ctx, tc, testDeploymentName, ns.Name, airgappedImage, labels)
-			Expect(err).NotTo(HaveOccurred())
-		} else {
-			_, err = utils.CreateDeployment(ctx, tc, testDeploymentName, ns.Name, stagingImage, labels)
-			Expect(err).NotTo(HaveOccurred())
-		}
+
 		// We will have a sample deployment so the server will return some sort of data back to us using an official e2e test image
+		_, err = utils.CreateDeployment(ctx, tc, testDeploymentName, ns.Name, ContainerImage, labels)
+		Expect(err).NotTo(HaveOccurred())
 		err = tc.WaitForDeploymentReady(ctx, ns.Name, testDeploymentName)
 		Expect(err).NotTo(HaveOccurred())
 
