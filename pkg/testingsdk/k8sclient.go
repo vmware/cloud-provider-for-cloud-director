@@ -93,6 +93,13 @@ func waitForDeploymentReady(ctx context.Context, k8sClient *kubernetes.Clientset
 				}
 			}
 		}
+		// It is possible to have a race condition where Pods are not up yet and in testing code it can think that the Deployment is ready
+		// Because there are no Pods up yet, though Deployment has been applied.
+		if podCount == 0 || containerCount == 0 {
+			fmt.Printf("no containers or pods are ready yet")
+			return false, nil
+		}
+
 		if podsReady < podCount || containersReady < containerCount {
 			fmt.Printf("running pods: %v < %v; ready containers: %v < %v\n", podsReady, podCount, containersReady, containerCount)
 			return false, nil
