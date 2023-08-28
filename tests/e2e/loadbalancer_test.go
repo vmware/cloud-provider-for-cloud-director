@@ -40,7 +40,7 @@ var _ = Describe("Ensure Loadbalancer", func() {
 	Expect(&tc.Cs).NotTo(BeNil())
 
 	labels := map[string]string{
-		"app": testServiceName,
+		"app": testDeploymentName,
 	}
 
 	httpServicePort := []v1.ServicePort{{
@@ -82,7 +82,7 @@ var _ = Describe("Ensure Loadbalancer", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		// We will have a sample deployment so the server will return some sort of data back to us using an official e2e test image
-		_, err = utils.CreateDeployment(ctx, tc, testDeploymentName, ns.Name, labels)
+		_, err = utils.CreateDeployment(ctx, tc, testDeploymentName, ns.Name, ContainerImage, labels)
 		Expect(err).NotTo(HaveOccurred())
 		err = tc.WaitForDeploymentReady(ctx, ns.Name, testDeploymentName)
 		Expect(err).NotTo(HaveOccurred())
@@ -183,7 +183,7 @@ var _ = Describe("Ensure load balancer with user specified LB IP", func() {
 	Expect(&tc.Cs).NotTo(BeNil())
 
 	labels := map[string]string{
-		"app": testServiceName,
+		"app": testDeploymentName,
 	}
 
 	httpServicePort := []v1.ServicePort{{
@@ -228,7 +228,7 @@ var _ = Describe("Ensure load balancer with user specified LB IP", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		// We will have a sample deployment so the server will return some sort of data back to us using an official e2e test image
-		_, err = utils.CreateDeployment(ctx, tc, testDeploymentName, ns.Name, labels)
+		_, err = utils.CreateDeployment(ctx, tc, testDeploymentName, ns.Name, ContainerImage, labels)
 		Expect(err).NotTo(HaveOccurred())
 		err = tc.WaitForDeploymentReady(ctx, ns.Name, testDeploymentName)
 		Expect(err).NotTo(HaveOccurred())
