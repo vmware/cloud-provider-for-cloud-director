@@ -16,7 +16,7 @@ require (
 	github.com/vmware/go-vcloud-director/v2 v2.14.0-rc.3
 	golang.org/x/oauth2 v0.4.0
 	gopkg.in/yaml.v2 v2.4.0
-	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
+	gopkg.in/yaml.v3 v3.0.0
 	k8s.io/api v0.22.1
 	k8s.io/apimachinery v0.22.1
 	k8s.io/apiserver v0.22.1
