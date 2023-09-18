@@ -11,11 +11,12 @@ require (
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.19.0
 	github.com/peterhellberg/link v1.1.0
+	github.com/sethvargo/go-password v0.2.0
 	github.com/stretchr/testify v1.7.0
 	github.com/vmware/go-vcloud-director/v2 v2.14.0-rc.3
 	golang.org/x/oauth2 v0.4.0
 	gopkg.in/yaml.v2 v2.4.0
-	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
+	gopkg.in/yaml.v3 v3.0.0
 	k8s.io/api v0.22.1
 	k8s.io/apimachinery v0.22.1
 	k8s.io/apiserver v0.22.1

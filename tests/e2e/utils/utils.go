@@ -10,16 +10,16 @@ import (
 const (
 	clusterUrnPrefix = "urn:vcloud:entity:vmware:"
 
-	containerName  = "test-app"
-	containerImage = "k8s.gcr.io/e2e-test-images/agnhost:2.36"
+	containerName = "test-app"
 )
 
-/**
+/*
+*
 CreateDeployment creates a Deployment object with agnhost image which is a E2E testing image.
 `netexec` is a command used to run HTTP server on agnhost at certain port specified with --http-port flag.
 Reference: https://github.com/kubernetes/kubernetes/issues/90211
 */
-func CreateDeployment(ctx context.Context, tc *testingsdk.TestClient, name, namespace string, labels map[string]string) (*appsv1.Deployment, error) {
+func CreateDeployment(ctx context.Context, tc *testingsdk.TestClient, name, namespace, containerImage string, labels map[string]string) (*appsv1.Deployment, error) {
 	deploymentParams := &testingsdk.DeployParams{
 		Name:   name,
 		Labels: labels,

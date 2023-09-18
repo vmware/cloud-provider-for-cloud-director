@@ -1,8 +1,7 @@
-package e2e
+package kubeconfig_test
 
 import (
 	"flag"
-	"os"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -18,12 +17,7 @@ var (
 	username  string
 	token     string
 
-	ContainerImage string
-)
-
-const (
-	airgappedImage = "core.harbor.10.89.98.101.nip.io/airgapped/agnhost:2.36"
-	stagingImage   = "projects-stg.registry.vmware.com/vmware-cloud-director/agnhost:2.36"
+	kubeconfigExportPath string
 )
 
 func init() {
@@ -35,6 +29,9 @@ func init() {
 	flag.StringVar(&username, "username", "", "Username for login to generate client")
 	flag.StringVar(&token, "token", "", "Refresh token of user to generate client")
 	flag.StringVar(&clusterId, "clusterId", "", "Cluster ID to fetch cluster RDE")
+
+	// Use directory "." as the default directory in case kubeconfigExportPath is forgotten to be passed, otherwise use the passed in path.
+	flag.StringVar(&kubeconfigExportPath, "kubeconfigExportPath", ".", "Absolute path to save/write the retrieved kubeconfig file to")
 }
 
 var _ = BeforeSuite(func() {
@@ -46,17 +43,10 @@ var _ = BeforeSuite(func() {
 	Expect(username).NotTo(BeEmpty(), "Please make sure --username is set correctly.")
 	Expect(token).NotTo(BeEmpty(), "Please make sure --token is set correctly.")
 	Expect(clusterId).NotTo(BeEmpty(), "Please make sure --clusterId is set correctly.")
-
-	// AIRGAP environment variable is expected to be set in jenkins or by user via `export AIRGAP="true"`
-	useAirgap := os.Getenv("AIRGAP")
-	if useAirgap != "" {
-		ContainerImage = airgappedImage
-	} else {
-		ContainerImage = stagingImage
-	}
+	Expect(kubeconfigExportPath).NotTo(BeEmpty(), "Please make sure --kubeconfigExportPath is set for saving the kubeconfig file")
 })
 
-func TestE2e(t *testing.T) {
+func TestKubeconfig(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "E2e Suite")
+	RunSpecs(t, "Kubeconfig Suite")
 }
