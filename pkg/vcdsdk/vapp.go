@@ -313,9 +313,8 @@ func (vdc *VdcManager) FindVMByName(VAppName string, vmName string) (*govcd.VM, 
 		return nil, fmt.Errorf("vmName mandatory for FindVMByName")
 	}
 
-	client := vdc.Client
 	klog.Infof("Trying to find vm [%s] in vApp [%s] by name", vmName, VAppName)
-	vApp, err := client.VDC.GetVAppByName(VAppName, true)
+	vApp, err := vdc.Vdc.GetVAppByName(VAppName, true)
 	if err != nil {
 		return nil, fmt.Errorf("unable to find vApp [%s] by name: [%v]", VAppName, err)
 	}

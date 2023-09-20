@@ -8,9 +8,8 @@ package config
 import (
 	"fmt"
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdsdk"
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 	"io"
-	"io/ioutil"
 	"k8s.io/klog"
 	"os"
 	"strings"
@@ -18,13 +17,14 @@ import (
 
 // VCDConfig :
 type VCDConfig struct {
-	Host    string `yaml:"host"`
-	VDC     string `yaml:"vdc"`
-	Org     string `yaml:"org"`
-	UserOrg string // this defaults to Org or a prefix of User
+	Host                 string `yaml:"host"`
+	VDC                  string `yaml:"vdc,omitempty"`
+	Org                  string `yaml:"org"`
+	UserOrg              string // this defaults to Org or a prefix of User
+	IsZoneEnabledCluster bool   `yaml:"isZoneEnabledCluster"`
 
 	// It is allowed to pass the following variables using the config. However,
-	// that is unsafe security practice. However there can be user scenarios and
+	// that is unsafe security practice. However, there can be user scenarios and
 	// testing scenarios where this is sensible.
 
 	// The User, Secret and RefreshToken are obtained from a secret mounted to /etc/kubernetes/vcloud/basic-auth
@@ -96,14 +96,14 @@ func ParseCloudConfig(configReader io.Reader) (*CloudConfig, error) {
 }
 
 func SetAuthorization(config *CloudConfig) error {
-	refreshToken, err := ioutil.ReadFile("/etc/kubernetes/vcloud/basic-auth/refreshToken")
+	refreshToken, err := os.ReadFile("/etc/kubernetes/vcloud/basic-auth/refreshToken")
 	if err != nil {
 		klog.Infof("Unable to get refresh token: [%v]", err)
 	} else {
 		config.VCD.RefreshToken = strings.TrimSuffix(string(refreshToken), "\n")
 	}
 
-	username, err := ioutil.ReadFile("/etc/kubernetes/vcloud/basic-auth/username")
+	username, err := os.ReadFile("/etc/kubernetes/vcloud/basic-auth/username")
 	if err != nil {
 		klog.Infof("Unable to get username: [%v]", err)
 	} else {
@@ -119,7 +119,7 @@ func SetAuthorization(config *CloudConfig) error {
 		config.VCD.UserOrg = strings.TrimSuffix(config.VCD.Org, "\n")
 	}
 
-	secret, err := ioutil.ReadFile("/etc/kubernetes/vcloud/basic-auth/password")
+	secret, err := os.ReadFile("/etc/kubernetes/vcloud/basic-auth/password")
 	if err != nil {
 		klog.Infof("Unable to get password: [%v]", err)
 	} else {
