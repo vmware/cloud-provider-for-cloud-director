@@ -13,7 +13,7 @@ require (
 	github.com/peterhellberg/link v1.1.0
 	github.com/sethvargo/go-password v0.2.0
 	github.com/stretchr/testify v1.7.0
-	github.com/vmware/go-vcloud-director/v2 v2.14.0-rc.3
+	github.com/vmware/go-vcloud-director/v2 v2.21.0
 	golang.org/x/oauth2 v0.4.0
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.0

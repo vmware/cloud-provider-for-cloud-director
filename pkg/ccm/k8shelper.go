@@ -10,6 +10,8 @@ package ccm
 
 import (
 	"fmt"
+	"k8s.io/client-go/tools/clientcmd"
+	"os"
 
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -33,8 +35,34 @@ func getK8SClient() (*kubernetes.Clientset, error) {
 	return newConfig, nil
 }
 
+func getK8SClientFromKubeConfig(kubeConfigFilePath string) (*kubernetes.Clientset, error) {
+
+	config, err := clientcmd.BuildConfigFromFlags("", kubeConfigFilePath)
+	if err != nil {
+		return nil, fmt.Errorf("unable to build config from KUBECONFIG [%s]: [%v]", kubeConfigFilePath, err)
+	}
+
+	newConfig, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create new config from supplied config: [%v]", err)
+	}
+
+	return newConfig, nil
+}
+
 func init() {
 	var err error
+
+	kubeConfigFilePath := os.Getenv("KUBECONFIG")
+	if kubeConfigFilePath != "" {
+		if kubeClient, err = getK8SClientFromKubeConfig(kubeConfigFilePath); err != nil {
+			panic(fmt.Sprintf("unable to obtain client from supplied KUBECONFIG [%s]: [%v]",
+				kubeConfigFilePath, err))
+		}
+
+		return
+	}
+
 	if kubeClient, err = getK8SClient(); err != nil {
 		panic(fmt.Sprintf("unable to obtain in-cluster client: [%v]", err))
 	}
