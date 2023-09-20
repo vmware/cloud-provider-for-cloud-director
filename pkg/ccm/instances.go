@@ -12,23 +12,22 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/govcd"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
-	cloudProvider "k8s.io/cloud-provider"
+	cloudprovider "k8s.io/cloud-provider"
 	"k8s.io/klog"
 	"runtime/debug"
-	"strings"
 )
 
 type instances struct {
 	vmInfoCache *VmInfoCache
 }
 
-func newInstances(vmInfoCache *VmInfoCache) cloudProvider.Instances {
-	return &instances{vmInfoCache}
+// Instances returns an instances interface. Also returns true if the interface is supported, false otherwise.
+func (vcdCP *VCDCloudProvider) Instances() (cloudprovider.Instances, bool) {
+	return vcdCP.instances, true
 }
 
-func getUUIDFromProviderID(providerID string) string {
-	withoutPrefix := strings.TrimPrefix(providerID, ProviderName+"://")
-	return strings.ToLower(strings.TrimSpace(withoutPrefix))
+func newInstances(vmInfoCache *VmInfoCache) cloudprovider.Instances {
+	return &instances{vmInfoCache}
 }
 
 // NodeAddresses returns the addresses of the specified instance.
@@ -39,7 +38,7 @@ func (i *instances) NodeAddresses(ctx context.Context, nodeName types.NodeName) 
 	vmInfo, err := i.vmInfoCache.GetByName(vmName)
 	if err != nil {
 		if err == govcd.ErrorEntityNotFound {
-			return nil, cloudProvider.InstanceNotFound
+			return nil, cloudprovider.InstanceNotFound
 		}
 
 		return nil, fmt.Errorf("unable to find node addresses for [%s]: [%v]", vmName, err)
@@ -64,7 +63,7 @@ func (i *instances) NodeAddressesByProviderID(ctx context.Context, providerID st
 	vmInfo, err := i.vmInfoCache.GetByUUID(vmUUID)
 	if err != nil {
 		if err == govcd.ErrorEntityNotFound {
-			return nil, cloudProvider.InstanceNotFound
+			return nil, cloudprovider.InstanceNotFound
 		}
 
 		return nil, fmt.Errorf("unable to find node addresses by vm UUID for [%s]: [%v]", vmUUID, err)
@@ -83,7 +82,7 @@ func (i *instances) InstanceID(ctx context.Context, nodeName types.NodeName) (st
 	vmInfo, err := i.vmInfoCache.GetByName(vmName)
 	if err != nil {
 		if err == govcd.ErrorEntityNotFound {
-			return "", cloudProvider.InstanceNotFound
+			return "", cloudprovider.InstanceNotFound
 		}
 
 		return "", fmt.Errorf("unable to find instance ID from vm name [%s]: [%v]", vmName, err)
@@ -100,7 +99,7 @@ func (i *instances) InstanceType(ctx context.Context, nodeName types.NodeName) (
 	vmInfo, err := i.vmInfoCache.GetByName(vmName)
 	if err != nil {
 		if err == govcd.ErrorEntityNotFound {
-			return "", cloudProvider.InstanceNotFound
+			return "", cloudprovider.InstanceNotFound
 		}
 
 		return "", fmt.Errorf("unable to find instance type from vm name [%s]: [%v]", vmName, err)
@@ -117,7 +116,7 @@ func (i *instances) InstanceTypeByProviderID(ctx context.Context, providerID str
 	vmInfo, err := i.vmInfoCache.GetByUUID(vmUUID)
 	if err != nil {
 		if err == govcd.ErrorEntityNotFound {
-			return "", cloudProvider.InstanceNotFound
+			return "", cloudprovider.InstanceNotFound
 		}
 
 		return "", fmt.Errorf("unable to find instance type from vm uuid [%s]: [%v]", vmUUID, err)
@@ -130,7 +129,7 @@ func (i *instances) InstanceTypeByProviderID(ctx context.Context, providerID str
 // expected format for the key is standard ssh-keygen format: <protocol> <blob>
 func (i *instances) AddSSHKeyToAllInstances(ctx context.Context, user string, keyData []byte) error {
 	klog.Infof("vcd.AddSSHKeyToAllInstances() called")
-	return cloudProvider.NotImplemented
+	return cloudprovider.NotImplemented
 }
 
 // CurrentNodeName returns the name of the node we are currently running on
