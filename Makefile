@@ -106,7 +106,7 @@ integration-test: test
 
 .PHONY: build
 build: bin ## Build CSI binary. To be used from within a Dockerfile
-	GOOS=$(OS) GOARCH=$(ARCH) CGO_ENABLED=$(CGO) go build -ldflags "-s -w -X github.com/vmware/cloud-provider-for-cloud-director/version.Version=$(VERSION)" -o bin/cloud-provider-for-cloud-director cmd/ccm/main.go
+	GOOS=$(OS) GOARCH=$(ARCH) CGO_ENABLED=$(CGO) go build -ldflags "-s -w -X github.com/vmware/cloud-provider-for-cloud-director/release.Version=$(VERSION)" -o bin/cloud-provider-for-cloud-director cmd/ccm/main.go
 
 .PHONY: docker-build-cpi
 docker-build-cpi: manifests build
