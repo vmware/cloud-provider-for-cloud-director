@@ -1,13 +1,8 @@
 package release
 
-import (
-	_ "embed"
-)
-
 const (
 	CloudControllerManagerName = "cloud-controller-manager"
 )
 
-//go:embed version
-var CpiVersion string
-
+// Version is to be set in the build process. Empty version will cause a panic.
+var Version = "unset"
