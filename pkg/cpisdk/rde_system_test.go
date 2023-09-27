@@ -64,7 +64,7 @@ func TestUpdateRDEUsingEtag(t *testing.T) {
 
 	ctx := context.Background()
 
-	rm := vcdsdk.NewRDEManager(vcdClient, release.CloudControllerManagerName, release.CpiVersion, cloudConfig.ClusterID)
+	rm := vcdsdk.NewRDEManager(vcdClient, release.CloudControllerManagerName, release.Version, cloudConfig.ClusterID)
 	cpiRdeManager := NewCPIRDEManager(rm)
 	// get rde Vips
 	rdeVips1, etag1, defEnt1, err := cpiRdeManager.GetRDEVirtualIps(ctx)
@@ -162,7 +162,7 @@ func TestAddVIPToVCDResourceSet(t *testing.T) {
 	rdeManager := vcdsdk.RDEManager{
 		Client:                 vcdClient,
 		StatusComponentName:    release.CloudControllerManagerName,
-		StatusComponentVersion: release.CpiVersion,
+		StatusComponentVersion: release.Version,
 		ClusterID:              "", // will be filled up during tests
 	}
 
@@ -207,7 +207,7 @@ func TestAddVIPToVCDResourceSet(t *testing.T) {
 					"key1": "value1",
 					"cpi": map[string]interface{}{
 						"name":    release.CloudControllerManagerName,
-						"version": release.CpiVersion,
+						"version": release.Version,
 						"vcdResourceSet": []vcdsdk.VCDResource{
 							vcdsdk.VCDResource{
 								Type: vcdsdk.VcdResourceVirtualService,
@@ -238,7 +238,7 @@ func TestAddVIPToVCDResourceSet(t *testing.T) {
 					"key1": "value1",
 					"cpi": map[string]interface{}{
 						"name":    release.CloudControllerManagerName,
-						"version": release.CpiVersion,
+						"version": release.Version,
 						"vcdResourceSet": []vcdsdk.VCDResource{
 							vcdsdk.VCDResource{
 								Type: vcdsdk.VcdResourceVirtualService,
@@ -273,7 +273,7 @@ func TestAddVIPToVCDResourceSet(t *testing.T) {
 					"key1": "value1",
 					"cpi": map[string]interface{}{
 						"name":    release.CloudControllerManagerName,
-						"version": release.CpiVersion,
+						"version": release.Version,
 						"vcdResourceSet": []vcdsdk.VCDResource{
 							vcdsdk.VCDResource{
 								Type: vcdsdk.VcdResourceVirtualService,
@@ -311,7 +311,7 @@ func TestAddVIPToVCDResourceSet(t *testing.T) {
 					"key1": "value1",
 					"cpi": map[string]interface{}{
 						"name":    release.CloudControllerManagerName,
-						"version": release.CpiVersion,
+						"version": release.Version,
 						"vcdResourceSet": []vcdsdk.VCDResource{
 							vcdsdk.VCDResource{
 								Type: vcdsdk.VcdResourceVirtualService,

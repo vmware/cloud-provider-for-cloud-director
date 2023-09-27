@@ -267,7 +267,7 @@ func UpgradeCPISectionInStatus(statusMap map[string]interface{}) (map[string]int
 	// CPIStatus should update with {X, Y, Z=default}. Developers should update property Z at this place.
 	//PUT RDE.status.CPI should update with {X, Y, Z=updatedValue}
 	cpiStatus.Name = release.CloudControllerManagerName
-	cpiStatus.Version = release.CpiVersion
+	cpiStatus.Version = release.Version
 	// CPI section is missing from the RDE status. Create a new CPI status and update the RDE.
 	cpiStatusMap, err := convertCPIStatusToMap(*cpiStatus)
 	if err != nil {

@@ -83,7 +83,7 @@ func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error
 		time.Sleep(10 * time.Second)
 	}
 
-	rdeManager := vcdsdk.NewRDEManager(vcdClient, cloudConfig.ClusterID, release.CloudControllerManagerName, release.CpiVersion)
+	rdeManager := vcdsdk.NewRDEManager(vcdClient, cloudConfig.ClusterID, release.CloudControllerManagerName, release.Version)
 	cpiRdeManager := cpisdk.NewCPIRDEManager(rdeManager)
 
 	err = cpiRdeManager.AddToEventSet(context.Background(), cpisdk.ClientAuthenticated, cloudConfig.ClusterID, "successfully authenticated into vcdclient from secrets")
