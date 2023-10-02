@@ -460,7 +460,7 @@ func (lb *LBManager) deleteLoadBalancer(ctx context.Context, service *v1.Service
 
 	err = cpiRdeManager.RDEManager.RemoveErrorByNameOrIdFromErrorSet(ctx, vcdsdk.ComponentCPI, cpisdk.RemoveVIPFromRdeError, lb.clusterID, "")
 	if err != nil {
-		klog.Errorf("error removing CPI error [%s] from RDE: [%v]", cpisdk.RemoveVIPFromRdeError, lb.clusterID, err)
+		klog.Errorf("error removing CPI error [%s] from RDE [%s]: [%v]", cpisdk.RemoveVIPFromRdeError, lb.clusterID, err)
 	}
 
 	err = cpiRdeManager.AddToEventSetWithNameAndId(ctx, cpisdk.DeletedLoadbalancer, "", virtualServiceName, fmt.Sprintf("Successfully deleted loadbalancer associated with [%s], deleted external IP [%s]", lb.clusterID, vip))

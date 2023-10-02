@@ -1,6 +1,6 @@
 /*
-    Copyright 2021 VMware, Inc.
-    SPDX-License-Identifier: Apache-2.0
+   Copyright 2021 VMware, Inc.
+   SPDX-License-Identifier: Apache-2.0
 */
 
 /*
@@ -15,6 +15,15 @@
 
 package swagger
 
+// RDEState represents entity.state
+type RDEState string
+
+const (
+	RDEStatePreCreated      RDEState = "PRE_CREATED"
+	RDEStateResolved        RDEState = "RESOLVED"
+	RDEStateResolutionError RDEState = "RESOLUTION_ERROR"
+)
+
 // Describes what a defined entity should look like.
 type DefinedEntity struct {
 	// The id of the defined entity in URN format.
@@ -28,7 +37,7 @@ type DefinedEntity struct {
 	// A JSON value representation. The JSON will be validated against the schema of the entityType that the entity is an instance of.
 	Entity map[string]interface{} `json:"entity"`
 	// Every entity is created in the \"PRE_CREATED\" state. Once an entity is ready to be validated against its schema, it will transition in another state - RESOLVED, if the entity is valid according to the schema, or RESOLUTION_ERROR otherwise. If an entity in an \"RESOLUTION_ERROR\" state is updated, it will transition to the inital \"PRE_CREATED\" state without performing any validation. If its in the \"RESOLVED\" state, then it will be validated against the entity type schema and throw an exception if its invalid.
-	State string `json:"state,omitempty"`
+	State RDEState `json:"state,omitempty"`
 	// The owner of the defined entity.
 	Owner *EntityReference `json:"owner,omitempty"`
 	// The organization of the defined entity.
