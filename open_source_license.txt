@@ -1,6 +1,6 @@
 open_source_licenses.txt
 
-Kubernetes External Cloud Provider for VMware Cloud Director 1.4.0 GA
+Kubernetes External Cloud Provider for VMware Cloud Director 1.4.1 GA
 ======================================================================
 
 The following copyright statements and licenses apply to various open
@@ -23,6 +23,7 @@ this document. This list is provided for your convenience; please read
 further if you wish to review the copyright notice(s) and the full text
 of the license associated with each component.
 
+
 SECTION 1: Apache License, V2.0
 
    >>> k8s.io/klog-v1.0.0
@@ -34,11 +35,12 @@ SECTION 1: Apache License, V2.0
    >>> k8s.io/apiserver-v0.22.1
    >>> k8s.io/client-go-v0.22.1
    >>> k8s.io/cloud-provider-0.22.1
+   >>> gopkg.in/yaml.v3-v3.0.0
    >>> go-openapi-errors-0.20.2
 
 SECTION 2: BSD-STYLE, MIT-STYLE, OR SIMILAR STYLE LICENSES
 
-   >>> gopkg.in/yaml.v3-v3.0.0-20210107192922-496545a6307b
+   >>> github.com/sethvargo/go-password-v0.2.0
    >>> github.com/stretchr/testify-v1.7.0
    >>> github.com/peterhellberg/link-v1.1.0
    >>> github.com/apparentlymart/go-cidr-v1.1.0
@@ -50,6 +52,7 @@ SECTION 2: BSD-STYLE, MIT-STYLE, OR SIMILAR STYLE LICENSES
 APPENDIX. Standard License Files
 
    >>> Apache License, V2.0
+
 
 -------------------- SECTION 1: Apache License, V2.0 --------------------
 
@@ -201,7 +204,7 @@ APPENDIX. Standard License Files
 
        Copyright 2020 The Kubernetes Authors
 
-       See SECTION 6 in 'LICENSE TEXT REFERENCE TABLE'
+       See SECTION 7 in 'LICENSE TEXT REFERENCE TABLE'
 
        klog_file.go
 
@@ -4353,7 +4356,7 @@ APPENDIX. Standard License Files
 
        Copyright 2017 The Kubernetes Authors
 
-       See SECTION 6 in 'LICENSE TEXT REFERENCE TABLE'
+       See SECTION 7 in 'LICENSE TEXT REFERENCE TABLE'
 
        pkg/admission/plugin/webhook/testing/authentication_info_resolver.go
 
@@ -5109,7 +5112,7 @@ APPENDIX. Standard License Files
 
        Copyright 2016 The Kubernetes Authors
 
-       See SECTION 6 in 'LICENSE TEXT REFERENCE TABLE'
+       See SECTION 7 in 'LICENSE TEXT REFERENCE TABLE'
 
        pkg/authentication/request/x509/verify_options.go
 
@@ -6861,7 +6864,7 @@ APPENDIX. Standard License Files
 
        Copyright 2016 The Kubernetes Authors
 
-       See SECTION 6 in 'LICENSE TEXT REFERENCE TABLE'
+       See SECTION 7 in 'LICENSE TEXT REFERENCE TABLE'
 
        pkg/server/options/tracing.go
 
@@ -7785,7 +7788,7 @@ APPENDIX. Standard License Files
 
        Copyright 2017 The Kubernetes Authors
 
-       See SECTION 6 in 'LICENSE TEXT REFERENCE TABLE'
+       See SECTION 7 in 'LICENSE TEXT REFERENCE TABLE'
 
        pkg/util/webhook/metrics.go
 
@@ -7971,7 +7974,7 @@ APPENDIX. Standard License Files
 
        Copyright 2018 The Kubernetes Authors
 
-       See SECTION 6 in 'LICENSE TEXT REFERENCE TABLE'
+       See SECTION 7 in 'LICENSE TEXT REFERENCE TABLE'
 
        plugin/pkg/authenticator/token/tokentest/tokentest.go
 
@@ -8031,7 +8034,7 @@ APPENDIX. Standard License Files
 
        Copyright 2016 The Kubernetes Authors
 
-       See SECTION 6 in 'LICENSE TEXT REFERENCE TABLE'
+       See SECTION 7 in 'LICENSE TEXT REFERENCE TABLE'
 
        plugin/pkg/authorizer/webhook/metrics.go
 
@@ -8268,7 +8271,7 @@ APPENDIX. Standard License Files
 
        Copyright 2017 The Kubernetes Authors
 
-       See SECTION 6 in 'LICENSE TEXT REFERENCE TABLE'
+       See SECTION 7 in 'LICENSE TEXT REFERENCE TABLE'
 
        examples/in-cluster-client-configuration/main.go
 
@@ -8748,7 +8751,7 @@ APPENDIX. Standard License Files
 
        Copyright 2018 The Kubernetes Authors
 
-       See SECTION 6 in 'LICENSE TEXT REFERENCE TABLE'
+       See SECTION 7 in 'LICENSE TEXT REFERENCE TABLE'
 
        plugin/pkg/client/auth/gcp/gcp.go
 
@@ -10634,6 +10637,143 @@ APPENDIX. Standard License Files
        See SECTION 2 in 'LICENSE TEXT REFERENCE TABLE'
 
 
+   >>> gopkg.in/yaml.v3-v3.0.0
+
+       License : Apache 2.0
+
+       ADDITIONAL LICENSE INFORMATION
+
+       > Apache2.0
+
+       decode.go
+
+       Copyright (c) 2011-2019 Canonical Ltd
+
+       See SECTION 5 in 'LICENSE TEXT REFERENCE TABLE'
+
+       decode_test.go
+
+       Copyright (c) 2011-2019 Canonical Ltd
+
+       See SECTION 5 in 'LICENSE TEXT REFERENCE TABLE'
+
+       encode.go
+
+       Copyright (c) 2011-2019 Canonical Ltd
+
+       See SECTION 5 in 'LICENSE TEXT REFERENCE TABLE'
+
+       encode_test.go
+
+       Copyright (c) 2011-2019 Canonical Ltd
+
+       See SECTION 5 in 'LICENSE TEXT REFERENCE TABLE'
+
+       example_embedded_test.go
+
+       Copyright (c) 2011-2019 Canonical Ltd
+
+       See SECTION 5 in 'LICENSE TEXT REFERENCE TABLE'
+
+       LICENSE
+
+       Copyright (c) 2011-2019 Canonical Ltd
+
+       See SECTION 10 in 'LICENSE TEXT REFERENCE TABLE'
+
+       node_test.go
+
+       Copyright (c) 2011-2019 Canonical Ltd
+
+       See SECTION 5 in 'LICENSE TEXT REFERENCE TABLE'
+
+       NOTICE
+
+       Copyright 2011-2016 Canonical Ltd.
+
+       See SECTION 2 in 'LICENSE TEXT REFERENCE TABLE'
+
+       resolve.go
+
+       Copyright (c) 2011-2019 Canonical Ltd
+
+       See SECTION 5 in 'LICENSE TEXT REFERENCE TABLE'
+
+       sorter.go
+
+       Copyright (c) 2011-2019 Canonical Ltd
+
+       See SECTION 5 in 'LICENSE TEXT REFERENCE TABLE'
+
+       suite_test.go
+
+       Copyright (c) 2011-2019 Canonical Ltd
+
+       See SECTION 5 in 'LICENSE TEXT REFERENCE TABLE'
+
+       yaml.go
+
+       Copyright (c) 2011-2019 Canonical Ltd
+
+       See SECTION 5 in 'LICENSE TEXT REFERENCE TABLE'
+
+       > MIT
+
+       apic.go
+
+       Copyright (c) 2006-2010 Kirill Simonov
+
+       See SECTION 6 in 'LICENSE TEXT REFERENCE TABLE'
+
+       emitterc.go
+
+       Copyright (c) 2006-2010 Kirill Simonov
+
+       See SECTION 8 in 'LICENSE TEXT REFERENCE TABLE'
+
+       LICENSE
+
+       Copyright (c) 2006-2010 Kirill Simonov
+
+       See SECTION 9 in 'LICENSE TEXT REFERENCE TABLE'
+
+       parserc.go
+
+       Copyright (c) 2006-2010 Kirill Simonov
+
+       See SECTION 8 in 'LICENSE TEXT REFERENCE TABLE'
+
+       readerc.go
+
+       Copyright (c) 2006-2010 Kirill Simonov
+
+       See SECTION 6 in 'LICENSE TEXT REFERENCE TABLE'
+
+       scannerc.go
+
+       Copyright (c) 2006-2010 Kirill Simonov
+
+       See SECTION 8 in 'LICENSE TEXT REFERENCE TABLE'
+
+       writerc.go
+
+       Copyright (c) 2006-2010 Kirill Simonov
+
+       See SECTION 6 in 'LICENSE TEXT REFERENCE TABLE'
+
+       yamlh.go
+
+       Copyright (c) 2006-2010 Kirill Simonov
+
+       See SECTION 8 in 'LICENSE TEXT REFERENCE TABLE'
+
+       yamlprivateh.go
+
+       Copyright (c) 2006-2010 Kirill Simonov
+
+       See SECTION 6 in 'LICENSE TEXT REFERENCE TABLE'
+
+
    >>> go-openapi-errors-0.20.2
 
        Found in: errors-0.20.2/middleware_test.go
@@ -10655,7 +10795,7 @@ APPENDIX. Standard License Files
 
 -------------------- SECTION 2: BSD-STYLE, MIT-STYLE, OR SIMILAR STYLE LICENSES --------------------
 
-   >>> gopkg.in/yaml.v3-v3.0.0-20210107192922-496545a6307b
+   >>> github.com/sethvargo/go-password-v0.2.0
 
 
 
@@ -10700,7 +10840,7 @@ APPENDIX. Standard License Files
 
        Copyright (c) 2015-2019 Peter Hellberg (https://c7.se)
 
-       See SECTION 7 in 'LICENSE TEXT REFERENCE TABLE'
+       See SECTION 11 in 'LICENSE TEXT REFERENCE TABLE'
 
 
    >>> github.com/apparentlymart/go-cidr-v1.1.0
@@ -11287,12 +11427,12 @@ APPENDIX. Standard License Files
 
 -------------------- SECTION 1: Apache License, V2.0 --------------------
 
-Apache License 
+Apache License
 
-Version 2.0, January 2004 
-http://www.apache.org/licenses/ 
+Version 2.0, January 2004
+http://www.apache.org/licenses/
 
-TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION 
+TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
 
 1. Definitions.
 
@@ -11300,7 +11440,7 @@ TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
 and distribution as defined by Sections 1 through 9 of this document.
 
 "Licensor" shall mean the copyright owner or entity authorized by the
-copyright owner that is granting the License.  
+copyright owner that is granting the License.
 
 "Legal Entity" shall mean the union of the acting entity and all other
 entities that control, are controlled by, or are under common control
@@ -11311,7 +11451,7 @@ of fifty percent (50%) or more of the outstanding shares, or (iii)
 beneficial ownership of such entity.
 
 "You" (or "Your") shall mean an individual or Legal Entity exercising
-permissions granted by this License.  
+permissions granted by this License.
 
 "Source" form shall mean the preferred form for making modifications,
 including but not limited to software source code, documentation source,
@@ -11320,12 +11460,12 @@ and configuration files.
 "Object" form shall mean any form resulting from mechanical transformation
 or translation of a Source form, including but not limited to compiled
 object code, generated documentation, and conversions to other media
-types.  
+types.
 
 "Work" shall mean the work of authorship, whether in Source or
 Object form, made available under the License, as indicated by a copyright
 notice that is included in or attached to the work (an example is provided
-in the Appendix below).  
+in the Appendix below).
 
 "Derivative Works" shall mean any work, whether in Source or Object form,
 that is based on (or derived from) the Work and for which the editorial
@@ -11460,7 +11600,7 @@ hold each Contributor harmless for any liability incurred by, or claims
 asserted against, such Contributor by reason of your accepting any such
 warranty or additional liability.
 
-END OF TERMS AND CONDITIONS 
+END OF TERMS AND CONDITIONS
 
 APPENDIX: How to apply the Apache License to your work.
 
@@ -11554,6 +11694,24 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * See the License for the specific language governing permissions and
  * limitations under the License.
 -------------------- SECTION 6 --------------------
+// Permission is hereby granted, free of charge, to any person obtaining a copy of
+// this software and associated documentation files (the "Software"), to deal in
+// the Software without restriction, including without limitation the rights to
+// use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+// of the Software, and to permit persons to whom the Software is furnished to do
+// so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+-------------------- SECTION 7 --------------------
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -11565,7 +11723,29 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
--------------------- SECTION 7 --------------------
+-------------------- SECTION 8 --------------------
+// Permission is hereby granted, free of charge, to any person obtaining a copy of
+// this software and associated documentation files (the "Software"), to deal in
+// the Software without restriction, including without limitation the rights to
+// use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+// of the Software, and to permit persons to whom the Software is furnished to do
+// so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+-------------------- SECTION 9 --------------------
+are still covered by their original MIT license, with the additional
+-------------------- SECTION 10 --------------------
+All the remaining project files are covered by the Apache license:
+-------------------- SECTION 11 --------------------
 ## License (MIT)
 
 
@@ -11588,4 +11768,4 @@ Source Files is valid for three years from the date you acquired this
 Software product. Alternatively, the Source Files may accompany the
 VMware product.
 
-[CLOUDPROVIDERFORCLOUDDIRECTOR140GAHM071023]
+[CLOUDPROVIDERFORCLOUDDIRECTOR141GASP092723]
