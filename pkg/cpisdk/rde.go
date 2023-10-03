@@ -416,7 +416,7 @@ func (cpiRDEManager *CPIRDEManager) AddVIPToVCDResourceSet(ctx context.Context, 
 				cpiRDEManager.RDEManager.ClusterID, vcdsdk.ComponentCPI, err)
 		}
 		if !rdeUpdateRequired {
-			klog.V(3).Info("VCD resource set for the RDE [%s(%s)] already has the resource [%v] in the status of the component [%s]",
+			klog.V(3).Infof("VCD resource set for the RDE [%s(%s)] already has the resource [%v] in the status of the component [%s]",
 				rde.Name, rde.Id, vcdResource, vcdsdk.ComponentCPI)
 			return nil
 		}
