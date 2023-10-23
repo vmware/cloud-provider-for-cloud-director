@@ -143,10 +143,14 @@ kubectl set env -n kube-system deployment/vmware-cloud-director-ccm GOVCD_LOG_ON
 **NOTE: Please make sure to collect the logs before and after enabling the wire log. The above commands update the CPI deployment, which creates a new CPI pod. The logs present in the old pod will be lost.**
 
 ## Upgrade CPI
-To upgrade CPI from v1.2.0 and v1.3.0 to v1.4.0, please do the following. `kubectl patch` will not work to upgrade CPI.
+To upgrade CPI from v1.2.0 and v1.3.0 to v1.4.1, please do the following. `kubectl patch` will not work to upgrade CPI.
 1. Delete the Kubernetes External Cloud Provider deployment using `kubectl delete deployment`
-2. Apply the manifest at: https://raw.githubusercontent.com/vmware/cloud-provider-for-cloud-director/1.4.0/manifests/cloud-director-ccm.yaml using `kubectl apply`
+2. Apply the manifest at: https://raw.githubusercontent.com/vmware/cloud-provider-for-cloud-director/1.4.1/manifests/cloud-director-ccm.yaml using `kubectl apply`
 
+To upgrade from CPI v1.4.0 to v1.4.1, please execute the following command for each cluster
+```shell
+kubectl patch deployment -n kube-system vmware-cloud-director-ccm -p '{"spec": {"template": {"spec": {"containers": [{"name": "vmware-cloud-director-ccm", "image": "projects.registry.vmware.com/vmware-cloud-director/cloud-provider-for-cloud-director:1.4.1"}]}}}}'
+```
 ## Known Issues
 1. IP is not obtained for LoadBalancer Service if Edge Gateway has IP Spaces.
    * While IP spaces are not supported in CPI 1.4.0, this is an issue because having IP spaces doesn't allow CPI to get a free IP for a LoadBalancer Service.
