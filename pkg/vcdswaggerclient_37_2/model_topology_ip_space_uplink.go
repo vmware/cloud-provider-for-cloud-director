@@ -13,11 +13,11 @@ package swagger
 // Represents basic information about an IP Space uplink associated with the Provider gateway.
 type TopologyIpSpaceUplink struct {
 	// Reference to the associated IP Space Uplink.
-	IpSpaceUplinkRef *EntityReference `json:"ipSpaceUplinkRef,omitempty"`
+	IpSpaceUplinkRef *EntityReference `json:"ipSpaceUplinkRef"`
 	// Reference to the associated IP Space.
-	IpSpaceRef *EntityReference `json:"ipSpaceRef,omitempty"`
+	IpSpaceRef *EntityReference `json:"ipSpaceRef"`
 	// The type of the IP Space which is referenced by IP Space Uplink. Possible values are PUBLIC, PRIVATE and SHARED_SERVICES.
-	IpSpaceType string `json:"ipSpaceType,omitempty"`
+	IpSpaceType string `json:"ipSpaceType"`
 	// The description of the IP Space Uplink.
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 }

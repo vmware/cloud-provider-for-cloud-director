@@ -18,39 +18,39 @@ package swagger
 // Specifies the statistics for the given IPSec VPN Tunnel.
 type EdgeIpSecVpnTunnelStatistics struct {
 	// Local subnet to which a tunnel belongs.
-	LocalSubnet string `json:"localSubnet,omitempty"`
+	LocalSubnet string `json:"localSubnet"`
 	// Peer subnet to which a tunnel belongs.
-	PeerSubnet string `json:"peerSubnet,omitempty"`
+	PeerSubnet string `json:"peerSubnet"`
 	// Number of packets received.
-	PacketsIn int64 `json:"packetsIn,omitempty"`
+	PacketsIn int64 `json:"packetsIn"`
 	// Number of packets sent.
-	PacketsOut int64 `json:"packetsOut,omitempty"`
+	PacketsOut int64 `json:"packetsOut"`
 	// Number of bytes received.
-	BytesIn int64 `json:"bytesIn,omitempty"`
+	BytesIn int64 `json:"bytesIn"`
 	// Number of bytes sent.
-	BytesOut int64 `json:"bytesOut,omitempty"`
+	BytesOut int64 `json:"bytesOut"`
 	// Number of packets sent with errors.
-	PacketsSentError int64 `json:"packetsSentError,omitempty"`
+	PacketsSentError int64 `json:"packetsSentError"`
 	// Number of packets reveived with errors.
-	PacketsReceivedError int64 `json:"packetsReceivedError,omitempty"`
+	PacketsReceivedError int64 `json:"packetsReceivedError"`
 	// Number of packets dropped while receiving.
-	PacketsInDropped int64 `json:"packetsInDropped,omitempty"`
+	PacketsInDropped int64 `json:"packetsInDropped"`
 	// Number of packets dropped while sending.
-	PacketsOutDropped int64 `json:"packetsOutDropped,omitempty"`
+	PacketsOutDropped int64 `json:"packetsOutDropped"`
 	// Number of encryption errors.
-	EncryptionErrors int64 `json:"encryptionErrors,omitempty"`
+	EncryptionErrors int64 `json:"encryptionErrors"`
 	// Number of decryption errors.
-	DecryptionErrors int64 `json:"decryptionErrors,omitempty"`
+	DecryptionErrors int64 `json:"decryptionErrors"`
 	// Number of errors due to overflow.
-	OverflowErrors int64 `json:"overflowErrors,omitempty"`
+	OverflowErrors int64 `json:"overflowErrors"`
 	// Number of replay errors.
-	ReplayErrors int64 `json:"replayErrors,omitempty"`
+	ReplayErrors int64 `json:"replayErrors"`
 	// Number of integrity check errors.
-	IntegrityErrors int64 `json:"integrityErrors,omitempty"`
+	IntegrityErrors int64 `json:"integrityErrors"`
 	// Number of SA mismatch errors while receiving.
-	SaMismatchInErrors int64 `json:"saMismatchInErrors,omitempty"`
+	SaMismatchInErrors int64 `json:"saMismatchInErrors"`
 	// Number of SA mismatch errors while sending.
-	SaMismatchOutErrors int64 `json:"saMismatchOutErrors,omitempty"`
+	SaMismatchOutErrors int64 `json:"saMismatchOutErrors"`
 	// Number of packets dropped because of no matching policy is available.
-	NoMatchingPolicyErrors int64 `json:"noMatchingPolicyErrors,omitempty"`
+	NoMatchingPolicyErrors int64 `json:"noMatchingPolicyErrors"`
 }

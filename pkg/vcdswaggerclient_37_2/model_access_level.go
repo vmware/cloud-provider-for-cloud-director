@@ -13,8 +13,8 @@ package swagger
 // Definition of AccessLevel. 
 type AccessLevel struct {
 	Name string `json:"name"`
-	Id string `json:"id,omitempty"`
-	Description string `json:"description,omitempty"`
-	BundleKey string `json:"bundleKey,omitempty"`
-	ReadOnly bool `json:"readOnly,omitempty"`
+	Id string `json:"id"`
+	Description string `json:"description"`
+	BundleKey string `json:"bundleKey"`
+	ReadOnly bool `json:"readOnly"`
 }

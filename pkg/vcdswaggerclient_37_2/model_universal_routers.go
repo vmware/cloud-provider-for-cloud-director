@@ -12,5 +12,5 @@ package swagger
 
 // List of Universal Routers 
 type UniversalRouters struct {
-	Values []UniversalRouter `json:"values,omitempty"`
+	Values []UniversalRouter `json:"values"`
 }

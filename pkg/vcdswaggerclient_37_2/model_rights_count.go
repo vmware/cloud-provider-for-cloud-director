@@ -12,6 +12,6 @@ package swagger
 
 // RightsCount - A count of rights in a given category by type 
 type RightsCount struct {
-	View int32 `json:"view,omitempty"`
-	Modify int32 `json:"modify,omitempty"`
+	View int32 `json:"view"`
+	Modify int32 `json:"modify"`
 }

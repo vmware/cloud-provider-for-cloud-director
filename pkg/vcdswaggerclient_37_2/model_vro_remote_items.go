@@ -12,7 +12,7 @@ package swagger
 
 // A list of objects in vRealize orchestrator server 
 type VroRemoteItems struct {
-	RemoteItems []VroRemoteItem `json:"remoteItems,omitempty"`
-	ResultTotal int32           `json:"resultTotal,omitempty"`
-	PageCount int32 `json:"pageCount,omitempty"`
+	RemoteItems []VroRemoteItem `json:"remoteItems"`
+	ResultTotal int32           `json:"resultTotal"`
+	PageCount int32 `json:"pageCount"`
 }

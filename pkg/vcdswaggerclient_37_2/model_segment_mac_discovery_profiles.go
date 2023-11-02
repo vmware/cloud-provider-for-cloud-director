@@ -12,5 +12,5 @@ package swagger
 
 // List of Segment MAC Discovery Profiles. 
 type SegmentMacDiscoveryProfiles struct {
-	Values []SegmentMacDiscoveryProfile `json:"values,omitempty"`
+	Values []SegmentMacDiscoveryProfile `json:"values"`
 }

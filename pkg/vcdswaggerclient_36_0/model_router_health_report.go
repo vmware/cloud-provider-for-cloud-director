@@ -18,11 +18,11 @@ package swagger
 // Health Report of a Router 
 type RouterHealthReport struct {
 	// Status of all the nsx managers spanned by the universal router. 
-	NsxManagersHealth []RouterComponentHealth `json:"nsxManagersHealth,omitempty"`
+	NsxManagersHealth []RouterComponentHealth `json:"nsxManagersHealth"`
 	// Status of all the universal router control VMs within each network provider scope. This also includes status of egress points and routes configured for the universal router. 
-	ControlVmHealth []RouterComponentHealth `json:"controlVmHealth,omitempty"`
+	ControlVmHealth []RouterComponentHealth `json:"controlVmHealth"`
 	// Status of the nsx controller cluster associated with the nsx managers. 
-	ControlPlaneHealth *RouterComponentHealth `json:"controlPlaneHealth,omitempty"`
+	ControlPlaneHealth *RouterComponentHealth `json:"controlPlaneHealth"`
 	// Reachability status for local and remote participating vDC's of referenced vDC group. States whether a vDC is reachable from this local site. 
-	VdcReachabilityStatus []RouterComponentHealth `json:"vdcReachabilityStatus,omitempty"`
+	VdcReachabilityStatus []RouterComponentHealth `json:"vdcReachabilityStatus"`
 }

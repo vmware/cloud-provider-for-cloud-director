@@ -16,5 +16,5 @@
 package swagger
 
 type ExecutionContext struct {
-	Parameters []WsParameter `json:"parameters,omitempty"`
+	Parameters []WsParameter `json:"parameters"`
 }

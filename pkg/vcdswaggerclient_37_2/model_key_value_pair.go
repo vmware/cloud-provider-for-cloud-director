@@ -12,6 +12,6 @@ package swagger
 
 type KeyValuePair struct {
 	InputType string `json:"inputType"`
-	Key string       `json:"key,omitempty"`
-	Value *Parameter `json:"value,omitempty"`
+	Key string       `json:"key"`
+	Value *Parameter `json:"value"`
 }

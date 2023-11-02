@@ -17,5 +17,5 @@ package swagger
 
 type Properties struct {
 	InputType string        `json:"inputType"`
-	Property []KeyValuePair `json:"property,omitempty"`
+	Property []KeyValuePair `json:"property"`
 }

@@ -13,17 +13,17 @@ package swagger
 // Specifies the IP Space Uplink configuration.
 type IpSpaceUplink struct {
 	// Represents current status of the networking object. 
-	Status *NetworkingObjectStatusType `json:"status,omitempty"`
+	Status *NetworkingObjectStatusType `json:"status"`
 	// The ID of the IP Space Uplink in URN format.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// The tenant-visible name of the IP Space Uplink. Name is unique across all IP Space Uplinks associated with a Provider Gateway. 
 	Name string `json:"name"`
 	// The description of the IP Space Uplink.
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// The External Network that is backed by the Provider Gateway this uplink is associated with. An External Network is used to reference the Provider Gateway since the External Network is backed by a Provider Gateway. This property is not updatable. 
 	ExternalNetworkRef *EntityReference `json:"externalNetworkRef"`
 	// The IP Space associated with this uplink. This property is not updatable. 
 	IpSpaceRef *EntityReference `json:"ipSpaceRef"`
 	// The type of the IP Space associated with this uplink. Possible values are: PUBLIC, PRIVATE, SHARED_SERVICES. This property is read-only. 
-	IpSpaceType string `json:"ipSpaceType,omitempty"`
+	IpSpaceType string `json:"ipSpaceType"`
 }

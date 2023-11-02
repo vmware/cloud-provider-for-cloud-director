@@ -13,15 +13,15 @@ package swagger
 // A candidate vDC that can be added to a vDC Group. 
 type NetworkingCandidateVdc struct {
 	// The id of the candidate vDC.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// The name of the candidate vDC.
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 	// The reference to the organization this vDC is in.
-	OrgRef *EntityReference `json:"orgRef,omitempty"`
+	OrgRef *EntityReference `json:"orgRef"`
 	// The site ID that this vDC belongs to.
-	SiteRef *EntityReference `json:"siteRef,omitempty"`
+	SiteRef *EntityReference `json:"siteRef"`
 	// The network provider scope of the vDC.
-	NetworkProviderScope string `json:"networkProviderScope,omitempty"`
+	NetworkProviderScope string `json:"networkProviderScope"`
 	// Represents the fault domain of a given organization vDC. For NSX_V backed organization vDCs, this is the network provider scope. For NSX_T backed organization vDCs, this can vary (for example name of the provider vDC or compute provider scope). 
-	FaultDomainTag string `json:"faultDomainTag,omitempty"`
+	FaultDomainTag string `json:"faultDomainTag"`
 }

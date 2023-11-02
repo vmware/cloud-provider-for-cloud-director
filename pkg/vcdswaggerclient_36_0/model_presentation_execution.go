@@ -20,13 +20,13 @@ import (
 )
 
 type PresentationExecution struct {
-	Description string `json:"description,omitempty"`
-	Id string `json:"id,omitempty"`
-	Name string `json:"name,omitempty"`
-	ObjectId string          `json:"objectId,omitempty"`
-	Parameters []WsParameter `json:"parameters,omitempty"`
-	StartDate time.Time      `json:"startDate,omitempty"`
-	StartedBy string         `json:"startedBy,omitempty"`
-	Steps []StepInfo         `json:"steps,omitempty"`
-	Valid bool               `json:"valid,omitempty"`
+	Description string `json:"description"`
+	Id string `json:"id"`
+	Name string `json:"name"`
+	ObjectId string          `json:"objectId"`
+	Parameters []WsParameter `json:"parameters"`
+	StartDate time.Time      `json:"startDate"`
+	StartedBy string         `json:"startedBy"`
+	Steps []StepInfo         `json:"steps"`
+	Valid bool               `json:"valid"`
 }

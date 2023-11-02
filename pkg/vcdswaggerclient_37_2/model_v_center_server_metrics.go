@@ -13,29 +13,29 @@ package swagger
 // An object representing metrics of a vCenter server. 
 type VCenterServerMetrics struct {
 	// URN of the associated vCenter server.
-	VcId string `json:"vcId,omitempty"`
+	VcId string `json:"vcId"`
 	// The number of clusters in this vCenter server.
-	ClustersCount int32 `json:"clustersCount,omitempty"`
+	ClustersCount int32 `json:"clustersCount"`
 	// The number of VMs in this vCenter server.
-	TotalVmCount int32 `json:"totalVmCount,omitempty"`
+	TotalVmCount int32 `json:"totalVmCount"`
 	// The number of powered-on VMs in this vCenter server.
-	PoweredOnVmCount int32 `json:"poweredOnVmCount,omitempty"`
+	PoweredOnVmCount int32 `json:"poweredOnVmCount"`
 	// The total memory (in MB) in this vCenter server.
-	TotalMemMb int32 `json:"totalMemMb,omitempty"`
+	TotalMemMb int32 `json:"totalMemMb"`
 	// The reserved memory (in MB) in this vCenter server.
-	ReservedMemMb int32 `json:"reservedMemMb,omitempty"`
+	ReservedMemMb int32 `json:"reservedMemMb"`
 	// The demanded memory (in MB) in this vCenter server.
-	DemandedMemMb int32 `json:"demandedMemMb,omitempty"`
+	DemandedMemMb int32 `json:"demandedMemMb"`
 	// The total CPU (in MHz) in this vCenter server.
-	TotalCpuMhz int32 `json:"totalCpuMhz,omitempty"`
+	TotalCpuMhz int32 `json:"totalCpuMhz"`
 	// The reserved CPU (in MHz) in this vCenter server.
-	ReservedCpuMhz int32 `json:"reservedCpuMhz,omitempty"`
+	ReservedCpuMhz int32 `json:"reservedCpuMhz"`
 	// The demanded CPU (in MHz) in this vCenter server.
-	DemandedCpuMhz int32 `json:"demandedCpuMhz,omitempty"`
+	DemandedCpuMhz int32 `json:"demandedCpuMhz"`
 	// The size (in MB) of all datastores in this vCenter server.
-	TotalStorageMb int32 `json:"totalStorageMb,omitempty"`
+	TotalStorageMb int32 `json:"totalStorageMb"`
 	// The size of free storage (in MB) of all datastores in this vCenter server.
-	FreeStorageMb int32 `json:"freeStorageMb,omitempty"`
+	FreeStorageMb int32 `json:"freeStorageMb"`
 	// The size of uncommitted storage (in MB) of all datastores in this vCenter server.
-	UncommittedStorageMb int32 `json:"uncommittedStorageMb,omitempty"`
+	UncommittedStorageMb int32 `json:"uncommittedStorageMb"`
 }

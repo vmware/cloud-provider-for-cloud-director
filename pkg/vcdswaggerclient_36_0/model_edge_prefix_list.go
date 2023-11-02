@@ -18,12 +18,12 @@ package swagger
 // A list of prefixes for routing purposes. Prefix list contains one or more ordered entries which are processed sequentially. 
 type EdgePrefixList struct {
 	// The unique id of this prefix list. On updates, the id is required for the list, while for create a new id will be generated. This id is not a VCD URN. 
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// Name for the prefix list.
 	Name string `json:"name"`
 	// Description for this prefix list.
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// List of network prefixes.
 	Prefixes []EdgePrefixListEntry `json:"prefixes"`
-	Version *ObjectVersion         `json:"version,omitempty"`
+	Version *ObjectVersion         `json:"version"`
 }

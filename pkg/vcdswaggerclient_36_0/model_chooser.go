@@ -17,6 +17,6 @@ package swagger
 
 type Chooser struct {
 	DecoratorType string `json:"decoratorType"`
-	SdkObject *SdkObject `json:"sdkObject,omitempty"`
-	Type_ string         `json:"type,omitempty"`
+	SdkObject *SdkObject `json:"sdkObject"`
+	Type_ string         `json:"type"`
 }

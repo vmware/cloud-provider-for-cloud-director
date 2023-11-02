@@ -12,5 +12,5 @@ package swagger
 
 // The list of supported metrics.  These metrics can be used for building report queries.
 type EdgeLoadBalancerAnalyticMetrics struct {
-	Metrics []EdgeLoadBalancerAnalyticMetric `json:"metrics,omitempty"`
+	Metrics []EdgeLoadBalancerAnalyticMetric `json:"metrics"`
 }

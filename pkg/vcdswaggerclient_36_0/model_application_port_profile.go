@@ -18,22 +18,22 @@ package swagger
 // An Application Port Profile object. The application port profile represents a set of ports and protocols that can be used when defining network service rules. 
 type ApplicationPortProfile struct {
 	// Represents current status of the networking object. 
-	Status *NetworkingObjectStatusType `json:"status,omitempty"`
+	Status *NetworkingObjectStatusType `json:"status"`
 	// The organization that this object belongs to. This property is required during creation and cannot be updated. 
-	OrgRef *EntityReference `json:"orgRef,omitempty"`
+	OrgRef *EntityReference `json:"orgRef"`
 	// The context under which this object is created. The context can the id of the organization vDC, vDC Group, or network provider. This field is required on object creation and is unset on object reads. This same context ID can be used in the context filter field when querying for the list of objects. 
-	ContextEntityId string `json:"contextEntityId,omitempty"`
+	ContextEntityId string `json:"contextEntityId"`
 	// The network provider scope that this object belongs to. This is a read-only property and is determined by the input context entity ID during object creation. 
-	NetworkProviderScope string `json:"networkProviderScope,omitempty"`
+	NetworkProviderScope string `json:"networkProviderScope"`
 	// The id of the Application Port Profile in URN format.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// The name of the Application Port Profile.
-	Name string `json:"name,omitempty"`
-	Description string `json:"description,omitempty"`
+	Name string `json:"name"`
+	Description string `json:"description"`
 	// The scope of the application port profile definition.
-	Scope *ApplicationPortProfileScopeType `json:"scope,omitempty"`
+	Scope *ApplicationPortProfileScopeType `json:"scope"`
 	// A list of protocol and ports supported by this application port profile.
-	ApplicationPorts []ApplicationPortList `json:"applicationPorts,omitempty"`
+	ApplicationPorts []ApplicationPortList `json:"applicationPorts"`
 	// True means that the port profile can be used for NAT configuration.  A port profile can be used for NAT if there is only 1 application port with at most 1 destination port. 
-	UsableForNAT bool `json:"usableForNAT,omitempty"`
+	UsableForNAT bool `json:"usableForNAT"`
 }

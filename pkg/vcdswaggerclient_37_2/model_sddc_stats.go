@@ -13,13 +13,13 @@ package swagger
 // A read-only list of resource allocations for the associated SDDC 
 type SddcStats struct {
 	// Number of VMs within the SDDC.
-	TotalVMs int32 `json:"totalVMs,omitempty"`
+	TotalVMs int32 `json:"totalVMs"`
 	// Number of powered on VMs within the SDDC.
-	PoweredOnVMs int32 `json:"poweredOnVMs,omitempty"`
+	PoweredOnVMs int32 `json:"poweredOnVMs"`
 	// CPUs statistics of the SDDC (values in MHz).
-	Cpu *SddcStat `json:"cpu,omitempty"`
+	Cpu *SddcStat `json:"cpu"`
 	// Memory statistics of the SDDC (values in MB).
-	Memory *SddcStat `json:"memory,omitempty"`
+	Memory *SddcStat `json:"memory"`
 	// Storage statistics of the SDDC (values in MB).
-	Storage *SddcStat `json:"storage,omitempty"`
+	Storage *SddcStat `json:"storage"`
 }

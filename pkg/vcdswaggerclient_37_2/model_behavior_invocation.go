@@ -13,7 +13,7 @@ package swagger
 // An invocation of a Behavior on a Defined Entity instance. Currently the Behavior interfaces are key-value maps specified in the Behavior description. 
 type BehaviorInvocation struct {
 	// The arguments to be passed to the invoked Behavior
-	Arguments interface{} `json:"arguments,omitempty"`
+	Arguments interface{} `json:"arguments"`
 	// Metadata to be passed to the invoked Behavior
-	Metadata interface{} `json:"metadata,omitempty"`
+	Metadata interface{} `json:"metadata"`
 }

@@ -13,7 +13,7 @@ package swagger
 // Represents the global default settings for segment profile templates. The global defaults apply during Org vDC network creation or vApp network deployment if there is no explict override or more specific Org vDC default specified. 
 type SegmentProfileTemplateDefaultDefinition struct {
 	// Reference to the default SegmentProfileTemplate to use when creating Org vDC networks. 
-	VdcNetworkSegmentProfileTemplateRef *EntityReference `json:"vdcNetworkSegmentProfileTemplateRef,omitempty"`
+	VdcNetworkSegmentProfileTemplateRef *EntityReference `json:"vdcNetworkSegmentProfileTemplateRef"`
 	// Reference to the default SegmentProfileTemplate to use when deploying vApp networks. 
-	VappNetworkSegmentProfileTemplateRef *EntityReference `json:"vappNetworkSegmentProfileTemplateRef,omitempty"`
+	VappNetworkSegmentProfileTemplateRef *EntityReference `json:"vappNetworkSegmentProfileTemplateRef"`
 }

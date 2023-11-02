@@ -13,28 +13,28 @@ package swagger
 // A BGP neighbor configuration. 
 type EdgeBgpNeighbor struct {
 	// The unique id of this BGP neighbor. On updates, the id is required for the object, while for create a new id will be generated. This id is not a VCD URN. 
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// The IP address of the BGP neighbor. Both IPv4 and IPv6 formats are supported.
 	NeighborAddress string `json:"neighborAddress"`
 	// The remote AS number of a BGP neighbor in ASPLAIN format.
 	RemoteASNumber string `json:"remoteASNumber"`
 	// Specifies the time interval (in seconds) between keep alive messages sent to peer.
-	KeepAliveTimer int32 `json:"keepAliveTimer,omitempty"`
+	KeepAliveTimer int32 `json:"keepAliveTimer"`
 	// Specifies the time interval (in seconds) before declaring a peer dead.
-	HoldDownTimer int32 `json:"holdDownTimer,omitempty"`
+	HoldDownTimer int32 `json:"holdDownTimer"`
 	// Currently configured graceful restart configuration mode. Default is HELPER_ONLY.
-	GracefulRestartMode *GracefulRestartModeTypes `json:"gracefulRestartMode,omitempty"`
+	GracefulRestartMode *GracefulRestartModeTypes `json:"gracefulRestartMode"`
 	// Specifies the BFD configuration for failure detection. Not specifying a value results in default bahavior. 
-	Bfd *EdgeBgpBfdConfig `json:"bfd,omitempty"`
+	Bfd *EdgeBgpBfdConfig `json:"bfd"`
 	// A flag indicating whether AllowAS-in is enabled or not. This specifies whether BGP neighbors can receive routes with same AS. 
-	AllowASIn bool `json:"allowASIn,omitempty"`
+	AllowASIn bool `json:"allowASIn"`
 	// Password for BGP neighbor authentication. Empty string (\"\") clears existing password. Not specifying a value will be treated as \"no password\". 
-	NeighborPassword string `json:"neighborPassword,omitempty"`
+	NeighborPassword string `json:"neighborPassword"`
 	// Specifies IP address type based filtering in each direction. Setting the value to 'DISABLED' will disable address family based filtering. 
-	IpAddressTypeFiltering string `json:"ipAddressTypeFiltering,omitempty"`
+	IpAddressTypeFiltering string `json:"ipAddressTypeFiltering"`
 	// Specifies route filtering configuration for the BGP neighbor in IN direction. It is the reference to the prefix list, indicating which routes to filter for IN direction. Not specifying a value will be treated as \"no IN route filters\". 
-	InRoutesFilterRef *ExtObjectReference `json:"inRoutesFilterRef,omitempty"`
+	InRoutesFilterRef *ExtObjectReference `json:"inRoutesFilterRef"`
 	// Specifies route filtering configuration for the BGP neighbor in OUT direction. It is the reference to the prefix list, indicating which routes to filter for OUT direction. Not specifying a value will be treated as \"no OUT route filters\". 
-	OutRoutesFilterRef *ExtObjectReference `json:"outRoutesFilterRef,omitempty"`
-	Version *ObjectVersion                 `json:"version,omitempty"`
+	OutRoutesFilterRef *ExtObjectReference `json:"outRoutesFilterRef"`
+	Version *ObjectVersion                 `json:"version"`
 }

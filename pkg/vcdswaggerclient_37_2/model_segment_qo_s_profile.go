@@ -13,21 +13,21 @@ package swagger
 // A QoS Segment Profile.
 type SegmentQoSProfile struct {
 	// The unique id of the segment profile.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// Name of the segment profile. This corresponds to the name used in NSX-T manager's logs or GUI.
-	DisplayName string `json:"displayName,omitempty"`
+	DisplayName string `json:"displayName"`
 	// The description of the segment profile.
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// The NSX-T manager where this segment profile is configured.
-	NsxTManagerRef *EntityReference `json:"nsxTManagerRef,omitempty"`
+	NsxTManagerRef *EntityReference `json:"nsxTManagerRef"`
 	// Class of service groups similar types of traffic in the network and each type of traffic is treated as a class with its own level of service priority. The lower priority traffic is slowed down or in some cases dropped to provide better throughput for higher priority traffic. 
-	ClassOfService int32 `json:"classOfService,omitempty"`
+	ClassOfService int32 `json:"classOfService"`
 	// A Differentiated Services Code Point (DSCP) Configuration for this Segment QoS Profile.
-	DscpConfig *QoSDscpConfig `json:"dscpConfig,omitempty"`
+	DscpConfig *QoSDscpConfig `json:"dscpConfig"`
 	// Egress rate properties in Mb/s.
-	EgressRateLimiter *QoSRateLimiterShaper `json:"egressRateLimiter,omitempty"`
+	EgressRateLimiter *QoSRateLimiterShaper `json:"egressRateLimiter"`
 	// Ingress broadcast rate properties in Mb/s.
-	IngressBroadcastRateLimiter *QoSRateLimiterShaper `json:"ingressBroadcastRateLimiter,omitempty"`
+	IngressBroadcastRateLimiter *QoSRateLimiterShaper `json:"ingressBroadcastRateLimiter"`
 	// Ingress rate properties in Mb/s.
-	IngressRateLimiter *QoSRateLimiterShaper `json:"ingressRateLimiter,omitempty"`
+	IngressRateLimiter *QoSRateLimiterShaper `json:"ingressRateLimiter"`
 }

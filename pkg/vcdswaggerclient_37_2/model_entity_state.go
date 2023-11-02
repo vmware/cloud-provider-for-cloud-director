@@ -13,13 +13,13 @@ package swagger
 // Describes what the current state of the entity is. 
 type EntityState struct {
 	// The id of the defined entity in URN format. 
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// A JSON entity. This entity will be validated against the provided entityType. 
-	Entity map[string]interface{} `json:"entity,omitempty"`
+	Entity map[string]interface{} `json:"entity"`
 	// The current state of the entity 
-	State string `json:"state,omitempty"`
+	State string `json:"state"`
 	// The \"entityState\" field may have the following values: \"RESOLVED\", \"RESOLUTION_ERROR\". It represents the current state of the entity. 
-	EntityState string `json:"entityState,omitempty"`
+	EntityState string `json:"entityState"`
 	// The error message(s), if the entity could not be resolved. 
-	Message string `json:"message,omitempty"`
+	Message string `json:"message"`
 }

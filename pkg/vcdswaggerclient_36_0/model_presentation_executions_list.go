@@ -16,7 +16,7 @@
 package swagger
 
 type PresentationExecutionsList struct {
-	Total int32                   `json:"total,omitempty"`
-	Executions []ExecutionSummary `json:"executions,omitempty"`
-	Start int32                   `json:"start,omitempty"`
+	Total int32                   `json:"total"`
+	Executions []ExecutionSummary `json:"executions"`
+	Start int32                   `json:"start"`
 }

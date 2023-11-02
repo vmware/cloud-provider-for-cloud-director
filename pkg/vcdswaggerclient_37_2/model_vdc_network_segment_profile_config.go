@@ -13,15 +13,15 @@ package swagger
 // Represents segment profiles configured on an NSX-T Org vDC Network. 
 type VdcNetworkSegmentProfileConfig struct {
 	// Reference to the Segment Profile Template that is used when creating/updating this network. This reference will be returned if the original template still exists and all of the segment profiles on the network match exactly with the profiles configured on the template. 
-	SegmentProfileTemplate *VdcNetworkSegmentProfileTemplateReference `json:"segmentProfileTemplate,omitempty"`
+	SegmentProfileTemplate *VdcNetworkSegmentProfileTemplateReference `json:"segmentProfileTemplate"`
 	// The Quality of Service (QoS) profile.
-	QosProfile *ExtObjectReference `json:"qosProfile,omitempty"`
+	QosProfile *ExtObjectReference `json:"qosProfile"`
 	// The MAC Discovery profile. Defines how the segment discovers MAC addresses.
-	MacDiscoveryProfile *ExtObjectReference `json:"macDiscoveryProfile,omitempty"`
+	MacDiscoveryProfile *ExtObjectReference `json:"macDiscoveryProfile"`
 	// The IP Discovery profile. Defines how the segment discovers IP addresses.
-	IpDiscoveryProfile *ExtObjectReference `json:"ipDiscoveryProfile,omitempty"`
+	IpDiscoveryProfile *ExtObjectReference `json:"ipDiscoveryProfile"`
 	// The Segment Security profile. Enables stateless L2 and L3 security on the segment.
-	SegmentSecurityProfile *ExtObjectReference `json:"segmentSecurityProfile,omitempty"`
+	SegmentSecurityProfile *ExtObjectReference `json:"segmentSecurityProfile"`
 	// The Spoof Guard profile.
-	SpoofGuardProfile *ExtObjectReference `json:"spoofGuardProfile,omitempty"`
+	SpoofGuardProfile *ExtObjectReference `json:"spoofGuardProfile"`
 }

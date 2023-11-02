@@ -12,10 +12,10 @@ package swagger
 
 // A location accessible to this session. 
 type AccessibleLocation struct {
-	LocationId string      `json:"locationId,omitempty"`
-	Site *EntityReference  `json:"site,omitempty"`
-	Org *EntityReference   `json:"org,omitempty"`
-	RestApiEndpoint string `json:"restApiEndpoint,omitempty"`
-	UiEndpoint string `json:"uiEndpoint,omitempty"`
-	ApiVersion string `json:"apiVersion,omitempty"`
+	LocationId string      `json:"locationId"`
+	Site *EntityReference  `json:"site"`
+	Org *EntityReference   `json:"org"`
+	RestApiEndpoint string `json:"restApiEndpoint"`
+	UiEndpoint string `json:"uiEndpoint"`
+	ApiVersion string `json:"apiVersion"`
 }

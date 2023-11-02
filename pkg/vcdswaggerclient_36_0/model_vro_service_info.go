@@ -18,16 +18,16 @@ package swagger
 // Response type with meta information about a vRealize Orchestrator Service 
 type VroServiceInfo struct {
 	// This is a read-only field in the client. Values set on this field will be ignored by the server. 
-	Id string `json:"id,omitempty"`
-	Name string `json:"name,omitempty"`
-	Description string `json:"description,omitempty"`
-	VroEndpoint string `json:"vroEndpoint,omitempty"`
-	Username string `json:"username,omitempty"`
+	Id string `json:"id"`
+	Name string `json:"name"`
+	Description string `json:"description"`
+	VroEndpoint string `json:"vroEndpoint"`
+	Username string `json:"username"`
 	// The password is hidden using a Password Mask represented by a series of 6 asterisks (\"******\") in the response. The Password Mask is not an acceptable password during VRO Server registration. During an update, the Password Mask set for the 'password' field is interpreted as no change to the field and is ignored. 
-	Password string `json:"password,omitempty"`
-	Version string `json:"version,omitempty"`
+	Password string `json:"password"`
+	Version string `json:"version"`
 	// SSL Certificate chain for the VRO endpoint (deprecated)
-	TrustAnchor string `json:"trustAnchor,omitempty"`
+	TrustAnchor string `json:"trustAnchor"`
 	// Reference to the associated vCenter server.
-	VcId *EntityReference `json:"vcId,omitempty"`
+	VcId *EntityReference `json:"vcId"`
 }

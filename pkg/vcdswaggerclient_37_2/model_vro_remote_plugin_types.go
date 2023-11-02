@@ -12,6 +12,6 @@ package swagger
 
 // A list of defined types for a particular plugin namespace 
 type VroRemotePluginTypes struct {
-	Types []VroRemotePluginType `json:"types,omitempty"`
-	Namespace string            `json:"namespace,omitempty"`
+	Types []VroRemotePluginType `json:"types"`
+	Namespace string            `json:"namespace"`
 }

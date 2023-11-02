@@ -13,7 +13,7 @@ package swagger
 // Reference for entities which are external to VCD and do not have a VCD URN identifier. 
 type ExtObjectReference struct {
 	// The id of the entity.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// The name of entity.
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 }

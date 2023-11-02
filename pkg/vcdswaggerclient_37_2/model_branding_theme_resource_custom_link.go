@@ -13,7 +13,7 @@ package swagger
 // Custom link content of a branding theme's resource. Can be defined as a link, override (well known links that can be overridden, Default values are About, Help, VMRC), section, separator(section without a name) of the drop down menu. 
 type BrandingThemeResourceCustomLink struct {
 	// Id of the custom link. The Id is provided by the client in the CustomLinks file. 
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// The string used to display in the UI portal this custom link. 
 	Name string `json:"name"`
 	// Type of the custom link. <ul>   <li>     <em>override</em>- Override existing/pre-built custom item  (well known links that can be overridden, Default values are About, Help, VMRC)   </li>   <li>     <em>link</em> - Represent an custom link   </li>   <li>     <em>separator</em> - Used as a visual separator between the links/sections   </li>   <li>     <em>section</em> - Used as a group of links. Use parentId to group children links.   </li> </ul> 
@@ -21,9 +21,9 @@ type BrandingThemeResourceCustomLink struct {
 	// Defines the place where the link should appear in the UI portal. <ul>   <li>     <em>LOGIN</em> - Custom link to be shown on the login screen   </li>   <li>     <em>LOGOUT</em>- Custom link to be shown on the logout screen   </li>   <li>     <em>PORTAL</em>- Custom link to be shown within the UI portal after authorization   </li> </ul> 
 	Scope string `json:"scope"`
 	// The URL to be used in the UI portal to navigate user. To be used when linkType is either <em>OVERRIDE</em> or <em>LINK</em>, otherwise it will be ignored. 
-	Url string `json:"url,omitempty"`
+	Url string `json:"url"`
 	// Used to order the links during display in the UI portal. Links with the same order should be ordered by name 
-	Order float32 `json:"order,omitempty"`
+	Order float32 `json:"order"`
 	// Id of parent Custom link of type GROUP. Custom links that share a parentId will be grouped together. The Id is provided by the client in the CustomLinks file. 
-	ParentId string `json:"parentId,omitempty"`
+	ParentId string `json:"parentId"`
 }

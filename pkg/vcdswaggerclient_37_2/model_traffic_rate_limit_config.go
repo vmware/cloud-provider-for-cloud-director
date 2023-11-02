@@ -13,11 +13,11 @@ package swagger
 // Enables traffic limit for incoming/outgoing broadcast and multicast packets for a Segment Security Profile. Use 0 to disable rate limiting for a specific traffic type. 
 type TrafficRateLimitConfig struct {
 	// Incoming broadcast traffic limit in packets per second.
-	RxBroadcast int32 `json:"rxBroadcast,omitempty"`
+	RxBroadcast int32 `json:"rxBroadcast"`
 	// Incoming multicast traffic limit in packets per second.
-	RxMulticast int32 `json:"rxMulticast,omitempty"`
+	RxMulticast int32 `json:"rxMulticast"`
 	// Outgoing broadcast traffic limit in packets per second.
-	TxBroadcast int32 `json:"txBroadcast,omitempty"`
+	TxBroadcast int32 `json:"txBroadcast"`
 	// Outgoing multicast traffic limit in packets per second.
-	TxMulticast int32 `json:"txMulticast,omitempty"`
+	TxMulticast int32 `json:"txMulticast"`
 }

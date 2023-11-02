@@ -12,27 +12,27 @@ package swagger
 
 // LDAP User Spec object. 
 type User struct {
-	Username string `json:"username,omitempty"`
-	Description string            `json:"description,omitempty"`
-	OrgEntityRef *EntityReference `json:"orgEntityRef,omitempty"`
-	Fullname string               `json:"fullname,omitempty"`
-	Email string `json:"email,omitempty"`
-	PhoneNumber string `json:"phoneNumber,omitempty"`
-	Im string `json:"im,omitempty"`
-	External bool `json:"external,omitempty"`
-	NameInSource string `json:"nameInSource,omitempty"`
+	Username string `json:"username"`
+	Description string            `json:"description"`
+	OrgEntityRef *EntityReference `json:"orgEntityRef"`
+	Fullname string               `json:"fullname"`
+	Email string `json:"email"`
+	PhoneNumber string `json:"phoneNumber"`
+	Im string `json:"im"`
+	External bool `json:"external"`
+	NameInSource string `json:"nameInSource"`
 	// This field is under accelerated deprecation and will be removed next release.
-	SourceEntityRef *EntityReference `json:"sourceEntityRef,omitempty"`
-	Enabled bool                     `json:"enabled,omitempty"`
-	Locked bool `json:"locked,omitempty"`
-	AlertEmailPrefix string `json:"alertEmailPrefix,omitempty"`
-	AlertEmail string                `json:"alertEmail,omitempty"`
-	RoleEntityRef *EntityReference   `json:"roleEntityRef,omitempty"`
-	RoleInherited bool               `json:"roleInherited,omitempty"`
-	DelayAfterPowerOnSeconds int32 `json:"delayAfterPowerOnSeconds,omitempty"`
+	SourceEntityRef *EntityReference `json:"sourceEntityRef"`
+	Enabled bool                     `json:"enabled"`
+	Locked bool `json:"locked"`
+	AlertEmailPrefix string `json:"alertEmailPrefix"`
+	AlertEmail string                `json:"alertEmail"`
+	RoleEntityRef *EntityReference   `json:"roleEntityRef"`
+	RoleInherited bool               `json:"roleInherited"`
+	DelayAfterPowerOnSeconds int32 `json:"delayAfterPowerOnSeconds"`
 	// The stored VM quota for this user. Defaults to 0 which means unlimited. This property is deprecated in 35.0. Use user quotas API.
-	StoredVMQuota int32 `json:"storedVMQuota,omitempty"`
+	StoredVMQuota int32 `json:"storedVMQuota"`
 	// The deployed VM quota for this user. Defaults to 0 which means unlimited. This property is deprecated in 35.0. Use user quotas API.
-	DeployedVMQuota int32 `json:"deployedVMQuota,omitempty"`
-	InSync bool `json:"inSync,omitempty"`
+	DeployedVMQuota int32 `json:"deployedVMQuota"`
+	InSync bool `json:"inSync"`
 }

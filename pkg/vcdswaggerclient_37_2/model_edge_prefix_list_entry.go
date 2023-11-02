@@ -13,11 +13,11 @@ package swagger
 // A network prefix entry used for routing purposes. 
 type EdgePrefixListEntry struct {
 	// The network prefix in CIDR format. If the value is not specified, it will be treated as \"ANY\" which means match all networks. Both IPv4 and IPv6 formats are supported. 
-	Network string `json:"network,omitempty"`
+	Network string `json:"network"`
 	// Action for the prefix list. This specifies whether the packet from specified network is advertised or not for routing purposes. 
-	Action string `json:"action,omitempty"`
+	Action string `json:"action"`
 	// The value which the prefix length must be greater than or equal to. Must be less than or equal to 'lessThanEqualTo'
-	GreaterThanEqualTo int32 `json:"greaterThanEqualTo,omitempty"`
+	GreaterThanEqualTo int32 `json:"greaterThanEqualTo"`
 	// The value which the prefix length must be less than or equal to. Must be greater than or equal to 'greaterThanEqualTo'
-	LessThanEqualTo int32 `json:"lessThanEqualTo,omitempty"`
+	LessThanEqualTo int32 `json:"lessThanEqualTo"`
 }

@@ -13,13 +13,13 @@ package swagger
 // A vDC Network Profile object. 
 type VdcNetworkProfile struct {
 	// The Edge Cluster where the primary appliance for an NSX-V Edge Gateway will be deployed.
-	PrimaryEdgeCluster *EntityReference `json:"primaryEdgeCluster,omitempty"`
+	PrimaryEdgeCluster *EntityReference `json:"primaryEdgeCluster"`
 	// The Edge Cluster where the secondary appliance for an NSX-V Edge Gateway will be deployed if HA is enabled on the Edge.
-	SecondaryEdgeCluster *EntityReference `json:"secondaryEdgeCluster,omitempty"`
+	SecondaryEdgeCluster *EntityReference `json:"secondaryEdgeCluster"`
 	// The Edge Cluster where the DHCP server profile will be stored for NSX-T networks using NETWORK mode DHCP.
-	ServicesEdgeCluster *ServicesEdgeCluster `json:"servicesEdgeCluster,omitempty"`
+	ServicesEdgeCluster *ServicesEdgeCluster `json:"servicesEdgeCluster"`
 	// The Org vDC Network Segment Profile Template that is to be used when any new Org vDC Network is created under this VDC. Setting this will override any global level Org vDC Network Segment Profile Template. This field is only applicable for NSX-T Org vDC's. 
-	VdcNetworkSegmentProfileTemplateRef *EntityReference `json:"vdcNetworkSegmentProfileTemplateRef,omitempty"`
+	VdcNetworkSegmentProfileTemplateRef *EntityReference `json:"vdcNetworkSegmentProfileTemplateRef"`
 	// The vApp Network Segment Profile Template that is to be used when any new vApp Network is created under this VDC. Setting this will override any global level vApp Network Segment Profile Template. This field is only applicable for NSX-T Org vDC's. 
-	VappNetworkSegmentProfileTemplateRef *EntityReference `json:"vappNetworkSegmentProfileTemplateRef,omitempty"`
+	VappNetworkSegmentProfileTemplateRef *EntityReference `json:"vappNetworkSegmentProfileTemplateRef"`
 }

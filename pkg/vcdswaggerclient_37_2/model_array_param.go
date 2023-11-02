@@ -12,5 +12,5 @@ package swagger
 
 type ArrayParam struct {
 	InputType string  `json:"inputType"`
-	Value []Parameter `json:"value,omitempty"`
+	Value []Parameter `json:"value"`
 }

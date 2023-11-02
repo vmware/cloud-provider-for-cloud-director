@@ -17,7 +17,7 @@ package swagger
 
 // Meta information about an inventory item on a vRealize Orchestrator server 
 type VroRemoteInventoryItem struct {
-	Href string              `json:"href,omitempty"`
-	Attributes []WsAttribute `json:"attributes,omitempty"`
-	Relations *Relations     `json:"relations,omitempty"`
+	Href string              `json:"href"`
+	Attributes []WsAttribute `json:"attributes"`
+	Relations *Relations     `json:"relations"`
 }

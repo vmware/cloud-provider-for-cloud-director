@@ -20,18 +20,18 @@ type ExternalService struct {
 	// The name of the external service.
 	Name string `json:"name"`
 	// The unique id of the external service.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// The extension's version. The version should follow semantic versioning rules. The combination of vendor-namespace-version must be unique. 
 	Version string `json:"version"`
 	// The vendor name. The combination of vendor-namespace-version must be unique. 
 	Vendor string `json:"vendor"`
 	// Extension service priority. An integer between 0-100. A value of 50 denotes a neutral priority. 
-	Priority int32 `json:"priority,omitempty"`
+	Priority int32 `json:"priority"`
 	// Whether the extension is enabled or not.
 	Enabled bool `json:"enabled"`
 	// Whether authorization is enabled for the service.
-	AuthorizationEnabled bool `json:"authorizationEnabled,omitempty"`
-	Description string `json:"description,omitempty"`
+	AuthorizationEnabled bool `json:"authorizationEnabled"`
+	Description string `json:"description"`
 	// The map of MQTT topics this extension will communicate through. 
-	MqttTopics map[string]string `json:"mqttTopics,omitempty"`
+	MqttTopics map[string]string `json:"mqttTopics"`
 }

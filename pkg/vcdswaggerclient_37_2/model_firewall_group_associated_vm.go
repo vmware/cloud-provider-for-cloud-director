@@ -13,11 +13,11 @@ package swagger
 // Represents an associated virtual machine. Contains the VM name and parent vApp name.
 type FirewallGroupAssociatedVm struct {
 	// Reference to the vm associated with this firewall group. 
-	VmRef *EntityReference `json:"vmRef,omitempty"`
+	VmRef *EntityReference `json:"vmRef"`
 	// Reference to the vApp of the associated vm. 
-	VappRef *EntityReference `json:"vappRef,omitempty"`
+	VappRef *EntityReference `json:"vappRef"`
 	// Reference to the vDC of the associated vm. 
-	VdcRef *EntityReference `json:"vdcRef,omitempty"`
+	VdcRef *EntityReference `json:"vdcRef"`
 	// Reference to the organization of the associated vm. 
-	OrgRef *EntityReference `json:"orgRef,omitempty"`
+	OrgRef *EntityReference `json:"orgRef"`
 }

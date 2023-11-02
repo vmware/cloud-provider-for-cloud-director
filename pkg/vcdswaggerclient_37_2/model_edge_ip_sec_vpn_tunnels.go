@@ -13,7 +13,7 @@ package swagger
 // List of configured IPSec VPN tunnels. 
 type EdgeIpSecVpnTunnels struct {
 	// Represents current status of the networking object. 
-	Status *NetworkingObjectStatusType `json:"status,omitempty"`
+	Status *NetworkingObjectStatusType `json:"status"`
 	// The list of IPSec VPN tunnels.
-	Values []EdgeIpSecVpnTunnel `json:"values,omitempty"`
+	Values []EdgeIpSecVpnTunnel `json:"values"`
 }

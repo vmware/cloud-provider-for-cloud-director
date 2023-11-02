@@ -16,11 +16,11 @@
 package swagger
 
 type SupportedConstraints struct {
-	Constraint *Constraint                 `json:"constraint,omitempty"`
-	Mandatory *Mandatory                   `json:"mandatory,omitempty"`
-	RestrictDuplicates *RestrictDuplicates `json:"restrictDuplicates,omitempty"`
-	CustomValidator *CustomValidator       `json:"customValidator,omitempty"`
-	NumberRange *NumberRange               `json:"numberRange,omitempty"`
-	Regexp *Regexp                         `json:"regexp,omitempty"`
-	NumberFormat *NumberFormat             `json:"numberFormat,omitempty"`
+	Constraint *Constraint                 `json:"constraint"`
+	Mandatory *Mandatory                   `json:"mandatory"`
+	RestrictDuplicates *RestrictDuplicates `json:"restrictDuplicates"`
+	CustomValidator *CustomValidator       `json:"customValidator"`
+	NumberRange *NumberRange               `json:"numberRange"`
+	Regexp *Regexp                         `json:"regexp"`
+	NumberFormat *NumberFormat             `json:"numberFormat"`
 }

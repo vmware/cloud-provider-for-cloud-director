@@ -12,8 +12,8 @@ package swagger
 
 // Definition of PresentationMessageInfo. 
 type PresentationMessageInfo struct {
-	Code string `json:"code,omitempty"`
-	Details string `json:"details,omitempty"`
-	Severity string `json:"severity,omitempty"`
-	Summary string `json:"summary,omitempty"`
+	Code string `json:"code"`
+	Details string `json:"details"`
+	Severity string `json:"severity"`
+	Summary string `json:"summary"`
 }

@@ -12,6 +12,6 @@ package swagger
 
 // Definition of TestEmailRequest. 
 type TestEmailRequest struct {
-	EmailSettings *EmailSettings `json:"emailSettings,omitempty"`
-	Destination string           `json:"destination,omitempty"`
+	EmailSettings *EmailSettings `json:"emailSettings"`
+	Destination string           `json:"destination"`
 }

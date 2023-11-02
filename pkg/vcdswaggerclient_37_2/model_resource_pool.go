@@ -13,17 +13,17 @@ package swagger
 // A vCenter Resource Pool. 
 type ResourcePool struct {
 	// The vCenter Id of the Resource Pool. It must be in the format (resgroup-#).
-	Moref string `json:"moref,omitempty"`
+	Moref string `json:"moref"`
 	// The managed object reference of the Cluster of this resource pool. It must be in the format (domain-c#). 
-	ClusterMoref string `json:"clusterMoref,omitempty"`
+	ClusterMoref string `json:"clusterMoref"`
 	// The name of the Resource Pool.
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 	// The vCenter the Resource Pool belongs to.
-	VcId string `json:"vcId,omitempty"`
+	VcId string `json:"vcId"`
 	// Used in resource pool tree navigation. Indicates whether the resource pool is eligible or not. 
-	Eligible bool `json:"eligible,omitempty"`
+	Eligible bool `json:"eligible"`
 	// Indicates whether the resource pool's cluster is enabled for vSphere Kubernetes. 
-	KubernetesEnabled bool `json:"kubernetesEnabled,omitempty"`
+	KubernetesEnabled bool `json:"kubernetesEnabled"`
 	// Indicates whether the resource pool's cluster is enabled for vGPU. 
-	VgpuEnabled bool `json:"vgpuEnabled,omitempty"`
+	VgpuEnabled bool `json:"vgpuEnabled"`
 }

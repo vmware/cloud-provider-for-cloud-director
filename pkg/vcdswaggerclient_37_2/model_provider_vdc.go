@@ -13,19 +13,19 @@ package swagger
 // A provider vdc. 
 type ProviderVdc struct {
 	// A unique identifier for the pvdc.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// The name of the pvdc.
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 	// The description of the pvdc.
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// Whether the pvdc is enabled or not.
-	IsEnabled bool `json:"isEnabled,omitempty"`
+	IsEnabled bool `json:"isEnabled"`
 	// The maximum hardware version this pvdc supports.
-	MaxSupportedHwVersion string `json:"maxSupportedHwVersion,omitempty"`
+	MaxSupportedHwVersion string `json:"maxSupportedHwVersion"`
 	// The creation status of the Provider VDC. Possible values are READY, NOT_READY, ERROR, FAILED_CREATION.
-	CreationStatus string `json:"creationStatus,omitempty"`
+	CreationStatus string `json:"creationStatus"`
 	// The NSX-T manager of the pvdc, if any.
-	NsxTManager *EntityReference `json:"nsxTManager,omitempty"`
+	NsxTManager *EntityReference `json:"nsxTManager"`
 	// The vCenter server the pvdc belongs to.
-	VimServer *EntityReference `json:"vimServer,omitempty"`
+	VimServer *EntityReference `json:"vimServer"`
 }

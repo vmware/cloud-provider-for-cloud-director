@@ -18,13 +18,13 @@ package swagger
 // A Virtual Service for an Edge Gateway.
 type EdgeLoadBalancerVirtualServiceSummary struct {
 	// Represents current status of the networking object.
-	Status *NetworkingObjectStatusType `json:"status,omitempty"`
+	Status *NetworkingObjectStatusType `json:"status"`
 	// The identifier of the Virtual Service in URN format
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// The name of the Virtual Service. Name is unique across all Virtual Services for an Edge Gateway.
 	Name string `json:"name"`
 	// The description of the Virtual Service.
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// A flag indicating whether Virtual Service is enabled or not.
 	Enabled bool `json:"enabled"`
 	// The virtual IP Address (VIP) of the Virtual Service. This IP can be an allocated IP to the Gateway from the External Network or it can be an arbitrary internal IP address used for internal load balancing. It it's an internal IP Address, this IP cannot be part of any existing subnet attached to the Edge Gateway or any vDC Group network if the Edge Gateway is scoped accordingly.
@@ -36,15 +36,15 @@ type EdgeLoadBalancerVirtualServiceSummary struct {
 	// The Load Balancer Service Engine Group that is assigned to the Edge Gateway. This Virtual Service will be deployed to this Service Engine Group.
 	ServiceEngineGroupRef *EntityReference `json:"serviceEngineGroupRef"`
 	// The certificate used for SSL termination for the Virtual Service. This is required if the service port type is \"HTTPS\" or \"L4_TLS\".
-	CertificateRef *EntityReference `json:"certificateRef,omitempty"`
+	CertificateRef *EntityReference `json:"certificateRef"`
 	// A list of service ports supported by this Virtual Service.  Multiple service ports are allowed only with additional licensing.
 	ServicePorts []EdgeLoadBalancerServicePort `json:"servicePorts"`
 	// The current health status of the virtual service. Possible values are: <ul> <li> UP - The virtual service is healthy. <li> DOWN - The virtual service is down, inactive, or has failed. <li> DISABLED - The virtual service is disabled. <li> UNAVAILABLE - The virtual service is unavailable. <li> PENDING - The virtual service is being creating or resources are being allocated. <li> UNKNOWN - The virtual service state is unknown. </ul>
-	HealthStatus string `json:"healthStatus,omitempty"`
+	HealthStatus string `json:"healthStatus"`
 	// The localized message on the health of the virtual service.
-	HealthMessage string `json:"healthMessage,omitempty"`
+	HealthMessage string `json:"healthMessage"`
 	// The non-localized detailed message on the health of the virtual service.
-	DetailedHealthMessage string `json:"detailedHealthMessage,omitempty"`
+	DetailedHealthMessage string `json:"detailedHealthMessage"`
 	// The profile type of application that this Virtual Service is configured with. A value of \"-\" represents an unknown type. <ul> <li>HTTP - Virtual Service supports HTTP protocol. <li>HTTPS - Virtual Service supports HTTPS protocol. <li>L4 - Virtual Service supports Layer 4 (Transport) using UDP/TCP protocol. <li>L4_TLS - Virtual Service supports Layer 4 (Transport) using UDP/TCP protocol with TLS. </ul>
-	ApplicationProfileType string `json:"applicationProfileType,omitempty"`
+	ApplicationProfileType string `json:"applicationProfileType"`
 }

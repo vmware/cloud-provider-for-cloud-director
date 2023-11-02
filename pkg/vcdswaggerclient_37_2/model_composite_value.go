@@ -12,6 +12,6 @@ package swagger
 
 type CompositeValue struct {
 	InputType string `json:"inputType"`
-	Id string           `json:"id,omitempty"`
-	Property *Parameter `json:"property,omitempty"`
+	Id string           `json:"id"`
+	Property *Parameter `json:"property"`
 }

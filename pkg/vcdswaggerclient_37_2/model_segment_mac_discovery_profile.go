@@ -13,23 +13,23 @@ package swagger
 // A Mac Discovery Segment Profile.
 type SegmentMacDiscoveryProfile struct {
 	// The unique id of the segment profile.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// Name of the segment profile. This corresponds to the name used in NSX-T manager's logs or GUI.
-	DisplayName string `json:"displayName,omitempty"`
+	DisplayName string `json:"displayName"`
 	// The description of the segment profile.
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// The NSX-T manager where this segment profile is configured.
-	NsxTManagerRef *EntityReference `json:"nsxTManagerRef,omitempty"`
+	NsxTManagerRef *EntityReference `json:"nsxTManagerRef"`
 	// Whether source MAC address change is enabled.
-	IsMacChangeEnabled bool `json:"isMacChangeEnabled,omitempty"`
+	IsMacChangeEnabled bool `json:"isMacChangeEnabled"`
 	// Whether source MAC address learning is enabled.
-	IsMacLearningEnabled bool `json:"isMacLearningEnabled,omitempty"`
+	IsMacLearningEnabled bool `json:"isMacLearningEnabled"`
 	// Aging time in seconds for learned MAC address. Indicates how long learned MAC address remain.
-	MacLearningAgingTime int32 `json:"macLearningAgingTime,omitempty"`
+	MacLearningAgingTime int32 `json:"macLearningAgingTime"`
 	// The maximum number of MAC addresses that can be learned on this port.
-	MacLimit int32 `json:"macLimit,omitempty"`
+	MacLimit int32 `json:"macLimit"`
 	// The policy after MAC Limit is exceeded. It can be either 'ALLOW' or 'DROP'.
-	MacPolicy string `json:"macPolicy,omitempty"`
+	MacPolicy string `json:"macPolicy"`
 	// Whether unknown unicast flooding rule is enabled. This allows flooding for unlearned MAC for ingress traffic.
-	IsUnknownUnicastFloodingEnabled bool `json:"isUnknownUnicastFloodingEnabled,omitempty"`
+	IsUnknownUnicastFloodingEnabled bool `json:"isUnknownUnicastFloodingEnabled"`
 }

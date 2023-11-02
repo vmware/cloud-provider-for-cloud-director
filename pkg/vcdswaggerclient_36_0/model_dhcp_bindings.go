@@ -18,5 +18,5 @@ package swagger
 // List of DHCP Bindings.
 type DhcpBindings struct {
 	// The list of DHCP Bindings.
-	Values []DhcpBinding `json:"values,omitempty"`
+	Values []DhcpBinding `json:"values"`
 }

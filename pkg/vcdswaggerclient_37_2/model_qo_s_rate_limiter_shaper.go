@@ -13,9 +13,9 @@ package swagger
 // A shaper that specifies egress/ingress rate properties in Mb/s for a Segment QoS Profile.
 type QoSRateLimiterShaper struct {
 	// Average bandwidth in Mb/s.
-	AvgBandwidth int32 `json:"avgBandwidth,omitempty"`
+	AvgBandwidth int32 `json:"avgBandwidth"`
 	// Peak bandwidth in Mb/s.
-	PeakBandwidth int32 `json:"peakBandwidth,omitempty"`
+	PeakBandwidth int32 `json:"peakBandwidth"`
 	// Burst size in bytes.
-	BurstSize int32 `json:"burstSize,omitempty"`
+	BurstSize int32 `json:"burstSize"`
 }

@@ -12,5 +12,5 @@ package swagger
 
 // Definition of CustomEntityTypeActions. 
 type CustomEntityTypeActions struct {
-	Actions []CustomEntityTypeAction `json:"actions,omitempty"`
+	Actions []CustomEntityTypeAction `json:"actions"`
 }

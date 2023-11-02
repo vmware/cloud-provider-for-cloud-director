@@ -13,7 +13,7 @@ package swagger
 // Represents a reference to a segment profile template for an NSX-T Org vDC Network. 
 type VdcNetworkSegmentProfileTemplateReference struct {
 	// Reference to the Segment Profile Template that is used when creating/updating this network. This reference will be returned if the original template still exists and all of the segment profiles on the network match exactly with the profiles configured on the template. 
-	TemplateRef *EntityReference `json:"templateRef,omitempty"`
+	TemplateRef *EntityReference `json:"templateRef"`
 	// Where the referenced template is sourced from. <ul> <li>The possible values are GLOBAL, ORG_VDC and NETWORK</li> <li>GLOBAL - The template comes from the global default for the VCD site.</li> <li>ORG_VDC - The template comes from the default for the Org vDC that owns this network.</li> <li>NETWORK - The template was directly specified on the network during creation or update.</li> </ul> 
-	Source string `json:"source,omitempty"`
+	Source string `json:"source"`
 }

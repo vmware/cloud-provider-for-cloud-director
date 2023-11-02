@@ -13,10 +13,10 @@ package swagger
 // Definition of GlobalRole. 
 type GlobalRole struct {
 	Name string `json:"name"`
-	Id string `json:"id,omitempty"`
-	Description string `json:"description,omitempty"`
-	BundleKey string `json:"bundleKey,omitempty"`
-	ReadOnly bool `json:"readOnly,omitempty"`
+	Id string `json:"id"`
+	Description string `json:"description"`
+	BundleKey string `json:"bundleKey"`
+	ReadOnly bool `json:"readOnly"`
 	// Read-only value indicating publishAll state 
-	PublishAll bool `json:"publishAll,omitempty"`
+	PublishAll bool `json:"publishAll"`
 }

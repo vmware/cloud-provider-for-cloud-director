@@ -19,6 +19,6 @@ package swagger
 type ExtensionPoint struct {
 	ExtensionPointId string `json:"extensionPointId"`
 	PluginId string `json:"pluginId"`
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 	Enabled bool `json:"enabled"`
 }

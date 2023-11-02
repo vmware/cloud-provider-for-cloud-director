@@ -12,5 +12,5 @@ package swagger
 
 // Definition of ExecutionContext. 
 type ExecutionContext struct {
-	Parameters []WsParameter `json:"parameters,omitempty"`
+	Parameters []WsParameter `json:"parameters"`
 }

@@ -18,9 +18,9 @@ package swagger
 // List of routes associated with a Universal Router. 
 type UniversalRoutes struct {
 	// The Keep Alive Timer is the frequency (in seconds) at which the Universal Router seeds Keep Alive messages to its egress peers.
-	KeepAliveTimer int32 `json:"keepAliveTimer,omitempty"`
+	KeepAliveTimer int32 `json:"keepAliveTimer"`
 	// The list of Universal Routes.
-	Values []UniversalRoute `json:"values,omitempty"`
+	Values []UniversalRoute `json:"values"`
 	// The list network provider scopes whose route will be unconfigure forcefully. This means that a route that is in state that normally shouldn't be unconfigurable (i.e. NSX or remote vCD site is down) will still be unconfigured. Errors may be ignored. Note that this force option also affects any route update where a network provider's egress point is modified/changed. vCD will first unconfigure any existing egress point before configuring the new egress point. 
-	ProviderScopesToForceUnconfigure []string `json:"providerScopesToForceUnconfigure,omitempty"`
+	ProviderScopesToForceUnconfigure []string `json:"providerScopesToForceUnconfigure"`
 }

@@ -13,7 +13,7 @@ package swagger
 // Interface for a defined entity. The combination of nss+version+vendor should be unique. 
 type DefinedInterface struct {
 	Name string `json:"name"`
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// The interface's version. The version should follow semantic versioning rules. Versions with pre-release extension are not allowed. 
 	Version string `json:"version"`
 	// The vendor name.
@@ -21,5 +21,5 @@ type DefinedInterface struct {
 	// A unique namespace associated with the interface.
 	Nss string `json:"nss"`
 	// True if the entity type cannot be modified.
-	Readonly bool `json:"readonly,omitempty"`
+	Readonly bool `json:"readonly"`
 }

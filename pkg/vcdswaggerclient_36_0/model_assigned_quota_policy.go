@@ -17,5 +17,5 @@ package swagger
 
 type AssignedQuotaPolicy struct {
 	// The quota policy reference assigned. 
-	QuotaPolicyReference *EntityReference `json:"quotaPolicyReference,omitempty"`
+	QuotaPolicyReference *EntityReference `json:"quotaPolicyReference"`
 }

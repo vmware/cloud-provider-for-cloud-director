@@ -12,5 +12,5 @@ package swagger
 
 // List of Segment Spoof Guard Profiles. 
 type SegmentSpoofGuardProfiles struct {
-	Values []SegmentSpoofGuardProfile `json:"values,omitempty"`
+	Values []SegmentSpoofGuardProfile `json:"values"`
 }

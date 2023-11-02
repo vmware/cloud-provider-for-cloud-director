@@ -12,7 +12,7 @@ package swagger
 
 // Type definition for a plugin namespace 
 type VroRemotePluginType struct {
-	Name string `json:"name,omitempty"`
-	Selectable bool `json:"selectable,omitempty"`
-	CanHaveChildren bool `json:"canHaveChildren,omitempty"`
+	Name string `json:"name"`
+	Selectable bool `json:"selectable"`
+	CanHaveChildren bool `json:"canHaveChildren"`
 }

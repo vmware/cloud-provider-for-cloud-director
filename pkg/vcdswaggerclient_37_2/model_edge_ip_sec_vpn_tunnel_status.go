@@ -13,7 +13,7 @@ package swagger
 // This includes the IPSec Tunnel status such as whether the tunnel is up or down and the IKE Session status. 
 type EdgeIpSecVpnTunnelStatus struct {
 	// Gives the overall IPSec VPN Tunnel Status. If IKE is properly set and the tunnel is up, the tunnel status will be UP.
-	TunnelStatus *TunnelStatus `json:"tunnelStatus,omitempty"`
+	TunnelStatus *TunnelStatus `json:"tunnelStatus"`
 	// Status for the actual IKE Session for the given tunnel.
-	IkeStatus *IkeStatus `json:"ikeStatus,omitempty"`
+	IkeStatus *IkeStatus `json:"ikeStatus"`
 }

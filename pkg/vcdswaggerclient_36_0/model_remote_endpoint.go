@@ -18,9 +18,9 @@ package swagger
 // This represents the remote endpoint i.e. the endpoint which the tunnel from the Edge Gateway will connect to. 
 type RemoteEndpoint struct {
 	// This Remote ID is needed to uniquely identify the peer site. If this tunnel is using PSK authentication, the Remote ID is the public IP Address of the remote device terminating the VPN Tunnel. When NAT is configured on the Remote ID, enter the private IP Address of the Remote Site. If the remote ID is not set, VCD will set the remote id to the remote address. If this tunnel is using certificate authentication, enter the distinguished name of the certificate used to secure the remote endpoint (for example, C=US,ST=Massachusetts,O=VMware,OU=VCD,CN=Edge1). The remote id must be provided in this case. 
-	RemoteId string `json:"remoteId,omitempty"`
+	RemoteId string `json:"remoteId"`
 	// IPV4 Address of the remote endpoint on the remote site. This is the Public IPv4 Address of the remote device terminating the VPN connection.
 	RemoteAddress string `json:"remoteAddress"`
 	// List of remote networks. These must be specified in normal Network CIDR format. Specifying no value is interpreted as 0.0.0.0/0
-	RemoteNetworks []string `json:"remoteNetworks,omitempty"`
+	RemoteNetworks []string `json:"remoteNetworks"`
 }

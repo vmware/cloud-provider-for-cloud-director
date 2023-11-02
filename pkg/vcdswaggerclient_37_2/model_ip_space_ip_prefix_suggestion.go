@@ -13,7 +13,7 @@ package swagger
 // An IP Space IP Prefix suggestion.
 type IpSpaceIpPrefixSuggestion struct {
 	// Reference to the IP Space.
-	IpSpaceRef *EntityReference `json:"ipSpaceRef,omitempty"`
+	IpSpaceRef *EntityReference `json:"ipSpaceRef"`
 	// List of unused IP Prefixes grouped by prefix length from the referenced IP Space.
-	UnusedIpPrefixes []IpSpacePrefixLengthSuggestion `json:"unusedIpPrefixes,omitempty"`
+	UnusedIpPrefixes []IpSpacePrefixLengthSuggestion `json:"unusedIpPrefixes"`
 }

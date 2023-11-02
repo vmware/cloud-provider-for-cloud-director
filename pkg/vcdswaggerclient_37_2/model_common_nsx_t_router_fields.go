@@ -13,9 +13,9 @@ package swagger
 // Common fields that all Tier-0 or Tier-1 routers have.
 type CommonNsxTRouterFields struct {
 	// The unique id of the router. Field is sortable.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// The description of the router.
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// Name used in NSX-T's logs or GUI. Field is sortable.
-	DisplayName string `json:"displayName,omitempty"`
+	DisplayName string `json:"displayName"`
 }

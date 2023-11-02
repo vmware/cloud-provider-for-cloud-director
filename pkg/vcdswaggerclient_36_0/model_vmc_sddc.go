@@ -22,9 +22,9 @@ type VmcSddc struct {
 	// The name of the VMC SDDC. This field is read-only.
 	Name string `json:"name"`
 	// The username for the account to use to register Virtual Center, if not using the VMC default.
-	VcUsername string `json:"vcUsername,omitempty"`
+	VcUsername string `json:"vcUsername"`
 	// The password for the account to use to register Virtual Center, if not using the VMC default.
-	VcPassword string `json:"vcPassword,omitempty"`
+	VcPassword string `json:"vcPassword"`
 	// The URN for the proxy configuration to use for connecting to Virtual Center.
-	ProxyConfigUrn string `json:"proxyConfigUrn,omitempty"`
+	ProxyConfigUrn string `json:"proxyConfigUrn"`
 }

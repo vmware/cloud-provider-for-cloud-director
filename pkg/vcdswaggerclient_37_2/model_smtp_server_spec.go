@@ -13,18 +13,18 @@ package swagger
 // Represent the settings of an SMTP Server which the system uses to send email notifications and alerts 
 type SmtpServerSpec struct {
 	// A flag to indicate if the SMTP requires login authentication. If this flag is set to true, caller must provide user name and password 
-	UseAuthentication bool `json:"useAuthentication,omitempty"`
+	UseAuthentication bool `json:"useAuthentication"`
 	// Security mode used to connect to the SMTP server 
-	SecureMode string `json:"secureMode,omitempty"`
-	Url *Url          `json:"url,omitempty"`
+	SecureMode string `json:"secureMode"`
+	Url *Url          `json:"url"`
 	// The custom ssl trust certs if ssl is enabled 
-	SslTrustStore string `json:"sslTrustStore,omitempty"`
+	SslTrustStore string `json:"sslTrustStore"`
 	// Username to login to server 
-	UserName string `json:"userName,omitempty"`
+	UserName string `json:"userName"`
 	// Password to login to the server 
-	Password string `json:"password,omitempty"`
+	Password string `json:"password"`
 	// A human readable description of the entity 
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// A human readable name of the entity
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 }

@@ -17,10 +17,10 @@ package swagger
 
 // Meta information about a workflow on a vRealize Orchestrator server 
 type VroRemoteWorkflowItem struct {
-	Name string `json:"name,omitempty"`
-	Description string `json:"description,omitempty"`
-	CategoryName string `json:"categoryName,omitempty"`
-	CanExecute bool `json:"canExecute,omitempty"`
-	Id string `json:"id,omitempty"`
-	VroServerId string `json:"vroServerId,omitempty"`
+	Name string `json:"name"`
+	Description string `json:"description"`
+	CategoryName string `json:"categoryName"`
+	CanExecute bool `json:"canExecute"`
+	Id string `json:"id"`
+	VroServerId string `json:"vroServerId"`
 }

@@ -17,5 +17,5 @@ package swagger
 
 type DropDown struct {
 	DecoratorType string `json:"decoratorType"`
-	Array *ArrayParam    `json:"array,omitempty"`
+	Array *ArrayParam    `json:"array"`
 }

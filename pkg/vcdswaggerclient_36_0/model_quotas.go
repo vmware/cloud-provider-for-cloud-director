@@ -17,5 +17,5 @@ package swagger
 
 // A list of quota pools. 
 type Quotas struct {
-	QuotaPools []QuotasQuotaPools `json:"quotaPools,omitempty"`
+	QuotaPools []QuotasQuotaPools `json:"quotaPools"`
 }

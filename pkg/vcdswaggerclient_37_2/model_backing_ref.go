@@ -13,7 +13,7 @@ package swagger
 // Backing Id for an entity not owned by VCD. 
 type BackingRef struct {
 	// The id/moref of the backing entity.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// The name of backing entity.
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 }

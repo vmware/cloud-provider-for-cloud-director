@@ -12,5 +12,5 @@ package swagger
 
 type EncryptedString struct {
 	InputType string `json:"inputType"`
-	Value string `json:"value,omitempty"`
+	Value string `json:"value"`
 }

@@ -17,5 +17,5 @@ package swagger
 
 // A map of extension Points and an ordered list of items registered with that extension point
 type ExtensionPointSummary struct {
-	ExtensionPointRegistrations map[string][]ExtensionPoint `json:"extensionPointRegistrations,omitempty"`
+	ExtensionPointRegistrations map[string][]ExtensionPoint `json:"extensionPointRegistrations"`
 }

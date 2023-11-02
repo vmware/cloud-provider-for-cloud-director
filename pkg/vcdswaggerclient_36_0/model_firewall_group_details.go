@@ -18,29 +18,29 @@ package swagger
 // A Firewall Group object. 
 type FirewallGroupDetails struct {
 	// The organization that this firewall group belongs to. This property is read-only and cannot be updated. 
-	OrgRef *EntityReference `json:"orgRef,omitempty"`
+	OrgRef *EntityReference `json:"orgRef"`
 	// The edge gateway that this firewall group is scoped to. This means that this firewall group can be used when configuring firewall rules for the edge gateway. This property is now deprecated. ownerRef should be used instead 
-	EdgeGatewayRef *EntityReference `json:"edgeGatewayRef,omitempty"`
+	EdgeGatewayRef *EntityReference `json:"edgeGatewayRef"`
 	// The vDC Group or Edge Gateway that this firewall group is scoped to. This group can be used for configuring rules for either an Edge Gateway or vDC Group. If an Edge Gateway is specified that belongs to a vDC Group, the the firewall group will be scoped to the vDC Group. 
-	OwnerRef *EntityReference `json:"ownerRef,omitempty"`
+	OwnerRef *EntityReference `json:"ownerRef"`
 	// The network provider scope that this object belongs to. This is a read-only property and is determined by the input context entity ID during object creation. 
-	NetworkProviderScope string `json:"networkProviderScope,omitempty"`
+	NetworkProviderScope string `json:"networkProviderScope"`
 	// Represents current status of the networking object. 
-	Status *NetworkingObjectStatusType `json:"status,omitempty"`
+	Status *NetworkingObjectStatusType `json:"status"`
 	// The id of the firewall group.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// The name of the firewall group.
 	Name string `json:"name"`
 	// The description of the firewall group
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// Defines the type of Firewall Group which determines what can be members of this group such as IP Addresses, Org vDC networks, or VMs based on dynamic criteria. This property is now deprecated and replaced with typeValue. 
-	Type_ *FirewallGroupType `json:"type,omitempty"`
+	Type_ *FirewallGroupType `json:"type"`
 	// Defines the type of Firewall Group which determines what can be members of this group such as IP Addresses, Org vDC networks, or VMs based on dynamic criteria.  Below are valid values. <ul>   <li> <code> IP_SET </code> should be used when using particular IP Addresses of VMs, Networks, etc.   <li> <code> STATIC_MEMBERS </code> should be used when specifying exact members such as a particular Org vDC Network.   <li> <code> VM_CRITERIA </code> should be used when specifying some dynamic criteria that matches a VM member such as VM name or Operating System name.        This type is valid only if the firewall group is scoped to a vDC Group. </ul> The default is IP_SET. 
-	TypeValue string `json:"typeValue,omitempty"`
+	TypeValue string `json:"typeValue"`
 	// IP Addresses included in the group. This is only applicable for IP_SET Firewall Groups. This can support IPv4 and IPv6 addresses in single, range, and CIDR formats. 
-	IpAddresses []string `json:"ipAddresses,omitempty"`
+	IpAddresses []string `json:"ipAddresses"`
 	// The list of static member entities such as Org vDC Networks to be used. This is only applicable for SECURITY_GROUP/STATIC_MEMBERS Firewall Groups. The objects used must be scoped to the particular Edge Gateway / vDC Group specified. 
-	Members []EntityReference `json:"members,omitempty"`
+	Members []EntityReference `json:"members"`
 	// The list of dynamic criteria that determines whether a VM belongs to a firewall group.  A VM needs to meet at least one criteria to belong to the firewall group. In other words, the logical AND is used for rules within a single criteria and the logical OR is used in between each criteria. This is only applicable for VM_CRITERIA Firewall Groups. 
-	VmCriteria []VmCriteria `json:"vmCriteria,omitempty"`
+	VmCriteria []VmCriteria `json:"vmCriteria"`
 }

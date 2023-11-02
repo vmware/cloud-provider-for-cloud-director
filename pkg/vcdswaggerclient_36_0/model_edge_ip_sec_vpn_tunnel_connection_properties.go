@@ -18,11 +18,11 @@ package swagger
 // This specifies the given security profile/connection properties of a given IP Sec VPN Tunnel, such as Dead Probe Interval and IKE settings. If a security type is set to 'CUSTOM', then ike, tunnel, and/or dpd configurations can be specified. Otherwise, those fields are read only and are set to the values based on the specific security type. 
 type EdgeIpSecVpnTunnelConnectionProperties struct {
 	// This is the security type used for the IPSec Tunnel. If nothing is specified, this will be set to 'DEFAULT' in which the default settings in NSX will be used. If 'CUSTOM' is specified, then ike, tunnel, and dpd configurations can be set. 
-	SecurityType string `json:"securityType,omitempty"`
+	SecurityType string `json:"securityType"`
 	// The IKE Configuration to be used for the tunnel. If nothing is explictly set, the system defaults will be used. 
-	IkeConfiguration *IkeConfig `json:"ikeConfiguration,omitempty"`
+	IkeConfiguration *IkeConfig `json:"ikeConfiguration"`
 	// The Tunnel Configuration, which contains parameters such as encryption algorithm to be used. If nothing is explicitly set, the system defaults will be used. 
-	TunnelConfiguration *TunnelConfig `json:"tunnelConfiguration,omitempty"`
+	TunnelConfiguration *TunnelConfig `json:"tunnelConfiguration"`
 	// The Dead Peer Detection configuration. If nothing is explictly set, the system defaults will be used. 
-	DpdConfiguration *DpdConfig `json:"dpdConfiguration,omitempty"`
+	DpdConfiguration *DpdConfig `json:"dpdConfiguration"`
 }

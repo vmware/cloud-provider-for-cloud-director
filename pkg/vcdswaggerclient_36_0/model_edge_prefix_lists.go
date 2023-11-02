@@ -18,5 +18,5 @@ package swagger
 // List of all configured Prefix lists for an edge gateway. 
 type EdgePrefixLists struct {
 	// All Prefix lists.
-	Values []EdgePrefixList `json:"values,omitempty"`
+	Values []EdgePrefixList `json:"values"`
 }

@@ -13,11 +13,11 @@ package swagger
 // A network Object. 
 type Network struct {
 	// The unique ID for the network. This field is read-only.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// The name of the network.
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 	// The description of the network.
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// List of subnets configured for the network.
-	Subnets *Subnets `json:"subnets,omitempty"`
+	Subnets *Subnets `json:"subnets"`
 }

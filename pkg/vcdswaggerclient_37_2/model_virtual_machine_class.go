@@ -13,15 +13,15 @@ package swagger
 // In a Tanzu Kubernetes cluster Virtual Machine Classes reserve a set of resources for the VM including cpu, memory, and storage. 
 type VirtualMachineClass struct {
 	// Name of the Virtual Machine Class. 
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 	// CPU in MHz that a node reserves when this VirtualMachineClass is applied to the node of a Kubernetes cluster. 
-	CpuReservationRequestedMHz int64 `json:"cpuReservationRequestedMHz,omitempty"`
+	CpuReservationRequestedMHz int64 `json:"cpuReservationRequestedMHz"`
 	// Memory in MB that a node reserves when this VirtualMachineClass is applied to the node of a Kubernetes cluster. 
-	MemoryReservationRequestedMB int64 `json:"memoryReservationRequestedMB,omitempty"`
+	MemoryReservationRequestedMB int64 `json:"memoryReservationRequestedMB"`
 	// Number of CPUs that a node gets when this VirtualMachineClass is applied to the node of a Kubernetes cluster. 
-	CpuCount int32 `json:"cpuCount,omitempty"`
+	CpuCount int32 `json:"cpuCount"`
 	// Memory in MB that a node gets when this VirtualMachineClass is applied to the node of a Kubernetes cluster. 
-	MemoryMB int64 `json:"memoryMB,omitempty"`
+	MemoryMB int64 `json:"memoryMB"`
 	// This read-only field conveys whether CPU and memory resources are fully reserved or not when this VirtualMachineClass is applied to the node of the Kubernetes cluster. 
-	IsFullyReserved bool `json:"isFullyReserved,omitempty"`
+	IsFullyReserved bool `json:"isFullyReserved"`
 }

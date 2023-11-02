@@ -13,9 +13,9 @@ package swagger
 // RightsCategoryNode 
 type RightsCategoryNode struct {
 	Name string `json:"name"`
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	BundleKey string `json:"bundleKey"`
-	Parent string            `json:"parent,omitempty"`
-	RightsCount *RightsCount `json:"rightsCount,omitempty"`
-	SubCategories []string   `json:"subCategories,omitempty"`
+	Parent string            `json:"parent"`
+	RightsCount *RightsCount `json:"rightsCount"`
+	SubCategories []string   `json:"subCategories"`
 }

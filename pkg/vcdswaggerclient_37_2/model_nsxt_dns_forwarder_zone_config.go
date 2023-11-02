@@ -13,11 +13,11 @@ package swagger
 // Specifies the list of domains and the DNS servers that handle those domains.
 type NsxtDnsForwarderZoneConfig struct {
 	// The unique id of the DNS forwarder zone. If value is unset, a new zone is created. If value is set, an update is done on the zone. 
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// User friendly name for the zone.
-	DisplayName string `json:"displayName,omitempty"`
+	DisplayName string `json:"displayName"`
 	// List of domain names on which conditional forwarding is based. This field is required if the DNS Zone is being used for a conditional forwarder. This field will also be used for conditional reverse lookup. This field should not be set if the zone is used as default forwarder zone. 
-	DnsDomainNames []string `json:"dnsDomainNames,omitempty"`
+	DnsDomainNames []string `json:"dnsDomainNames"`
 	// DNS servers to which the DNS request needs to be forwarded.
-	UpstreamServers []string `json:"upstreamServers,omitempty"`
+	UpstreamServers []string `json:"upstreamServers"`
 }

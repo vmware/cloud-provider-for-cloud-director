@@ -13,11 +13,11 @@ package swagger
 // An NSX-T's Importable Segment 
 type NsxTImportableSegment struct {
 	// Name of segment.
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 	// The logical switch id for the segment. Corresponds to the unique id property in Nsx-T.
-	SwitchId string `json:"switchId,omitempty"`
+	SwitchId string `json:"switchId"`
 	// True if the importable segment is already imported. The importable segment cannot be imported again.
-	AlreadyImported bool `json:"alreadyImported,omitempty"`
+	AlreadyImported bool `json:"alreadyImported"`
 	// Nsx-T manager id for this segment.
-	NsxTManagerId string `json:"nsxTManagerId,omitempty"`
+	NsxTManagerId string `json:"nsxTManagerId"`
 }

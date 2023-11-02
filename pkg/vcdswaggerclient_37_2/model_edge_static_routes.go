@@ -12,5 +12,5 @@ package swagger
 
 // List of all configured static routes for an edge gateway. 
 type EdgeStaticRoutes struct {
-	Values []EdgeStaticRoute `json:"values,omitempty"`
+	Values []EdgeStaticRoute `json:"values"`
 }

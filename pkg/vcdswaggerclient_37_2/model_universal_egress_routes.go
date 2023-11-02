@@ -13,7 +13,7 @@ package swagger
 // Object consisting of Egress Points and Universal Routes for a Universal Router. 
 type UniversalEgressRoutes struct {
 	// The list of Egress Points for routing configuration. This is read-only.
-	EgressPoints *EgressPoints `json:"egressPoints,omitempty"`
+	EgressPoints *EgressPoints `json:"egressPoints"`
 	// The list of Universal Routes for routing configuration. 
-	UniversalRoutes *UniversalRoutes `json:"universalRoutes,omitempty"`
+	UniversalRoutes *UniversalRoutes `json:"universalRoutes"`
 }

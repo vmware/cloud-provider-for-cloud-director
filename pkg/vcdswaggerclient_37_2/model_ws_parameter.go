@@ -12,11 +12,11 @@ package swagger
 
 // Definition of WsParameter. 
 type WsParameter struct {
-	Description string `json:"description,omitempty"`
-	EncryptValue bool `json:"encryptValue,omitempty"`
-	Name string `json:"name,omitempty"`
-	Scope string `json:"scope,omitempty"`
-	Type_ string `json:"type,omitempty"`
-	Updated bool     `json:"updated,omitempty"`
-	Value *Parameter `json:"value,omitempty"`
+	Description string `json:"description"`
+	EncryptValue bool `json:"encryptValue"`
+	Name string `json:"name"`
+	Scope string `json:"scope"`
+	Type_ string `json:"type"`
+	Updated bool     `json:"updated"`
+	Value *Parameter `json:"value"`
 }

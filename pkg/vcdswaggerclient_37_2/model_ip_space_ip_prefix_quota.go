@@ -15,5 +15,5 @@ type IpSpaceIpPrefixQuota struct {
 	// The prefix length.
 	PrefixLength int32 `json:"prefixLength"`
 	// The quota for prefixes of specified prefix length.
-	Quota int32 `json:"quota,omitempty"`
+	Quota int32 `json:"quota"`
 }

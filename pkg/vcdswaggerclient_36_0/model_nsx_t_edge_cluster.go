@@ -18,15 +18,15 @@ package swagger
 // Information about a configured edge cluster on an NSX-T manager. An Edge cluster is a group of edge transport nodes. 
 type NsxTEdgeCluster struct {
 	// The unique id of the edge cluster on the NSX-T manager.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// Name of edge cluster.
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 	// Description of the edge cluster.
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// Number of edge transport nodes in the edge cluster.
-	NodeCount int32 `json:"nodeCount,omitempty"`
+	NodeCount int32 `json:"nodeCount"`
 	// Type of transport nodes in the edge cluster. All the nodes in the edge cluster are of same type. 
-	NodeType *NsxTEdgeClusterNodeType `json:"nodeType,omitempty"`
+	NodeType *NsxTEdgeClusterNodeType `json:"nodeType"`
 	// Deployment type for transport nodes in the edge cluster. The nodes in the edge cluster may have different deployment types. 
-	DeploymentType *NsxTEdgeClusterDeploymentType `json:"deploymentType,omitempty"`
+	DeploymentType *NsxTEdgeClusterDeploymentType `json:"deploymentType"`
 }

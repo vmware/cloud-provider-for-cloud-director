@@ -13,17 +13,17 @@ package swagger
 // An organization VDC storage policy. 
 type OrgVdcStoragePolicy struct {
 	// Unique VCD Id for the policy.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// Unique name for the policy.
 	Name string `json:"name"`
 	// Enabled state of the policy, defaults to true.
-	IsEnabled bool `json:"isEnabled,omitempty"`
+	IsEnabled bool `json:"isEnabled"`
 	// Storage policy is marked as default, defaults to false.
-	IsDefaultStoragePolicy bool `json:"isDefaultStoragePolicy,omitempty"`
+	IsDefaultStoragePolicy bool `json:"isDefaultStoragePolicy"`
 	// Storage limit for the policy.
-	StorageLimitMb int64 `json:"storageLimitMb,omitempty"`
+	StorageLimitMb int64 `json:"storageLimitMb"`
 	// The Org VDC that this policy belongs to.
-	OrgVdcRef *EntityReference `json:"orgVdcRef,omitempty"`
+	OrgVdcRef *EntityReference `json:"orgVdcRef"`
 	// The parent PVDC storage policy for this Organization VDC storage policy.
-	PvdcStoragePolicyRef *EntityReference `json:"pvdcStoragePolicyRef,omitempty"`
+	PvdcStoragePolicyRef *EntityReference `json:"pvdcStoragePolicyRef"`
 }

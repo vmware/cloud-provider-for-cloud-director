@@ -17,5 +17,5 @@ package swagger
 
 // List of edge clusters configured on an NSX-T manager. 
 type NsxTEdgeClusters struct {
-	Values []NsxTEdgeCluster `json:"values,omitempty"`
+	Values []NsxTEdgeCluster `json:"values"`
 }

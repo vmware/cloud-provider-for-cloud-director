@@ -18,7 +18,7 @@ package swagger
 // Specifies a SSL certificate thumbprint and the algorithm used for calculation. 
 type ThumbprintAndAlgorithm struct {
 	// The SDDC Proxy SSL certificate thumbprint.
-	Thumbprint string `json:"thumbprint,omitempty"`
+	Thumbprint string `json:"thumbprint"`
 	// Algorithm used for the thumbprint calculation.
-	Algorithm string `json:"algorithm,omitempty"`
+	Algorithm string `json:"algorithm"`
 }

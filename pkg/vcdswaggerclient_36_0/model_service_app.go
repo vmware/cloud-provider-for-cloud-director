@@ -22,7 +22,7 @@ import (
 // A VMware service application 
 type ServiceApp struct {
 	// The unique ID for the service application. This field is read-only.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// The name of the service application
 	Name string `json:"name"`
 	// The client ID
@@ -30,13 +30,13 @@ type ServiceApp struct {
 	// The client secret
 	ClientSecret string `json:"clientSecret"`
 	// The external organization id of the service application
-	OrgId string `json:"orgId,omitempty"`
+	OrgId string `json:"orgId"`
 	// The scope of the service application
 	ServiceScope *ServiceAppScope `json:"serviceScope"`
 	// The read-only time-to-live of the access token in seconds.
-	AccessTokenTTL int32 `json:"accessTokenTTL,omitempty"`
+	AccessTokenTTL int32 `json:"accessTokenTTL"`
 	// The read-only expiration date of the access token.
-	AccessTokenExpiration time.Time `json:"accessTokenExpiration,omitempty"`
+	AccessTokenExpiration time.Time `json:"accessTokenExpiration"`
 	// Whether the application is currently enabled.
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled bool `json:"enabled"`
 }

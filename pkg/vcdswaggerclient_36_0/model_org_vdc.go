@@ -18,13 +18,13 @@ package swagger
 // An object representing an Organization Virtual Datacenter in VCD.
 type OrgVdc struct {
 	// A unique identifier for the vdc.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// The name of the vdc.
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 	// The description of the vdc.
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// The allocation type of the vdc, one of:   ALLOCATION_VAPP,   ALLOCATION_POOL,   RESERVATION_POOL,   FLEX 
-	AllocationType string `json:"allocationType,omitempty"`
+	AllocationType string `json:"allocationType"`
 	// The reference to the organization that the VDC belongs to
-	Org *EntityReference `json:"org,omitempty"`
+	Org *EntityReference `json:"org"`
 }

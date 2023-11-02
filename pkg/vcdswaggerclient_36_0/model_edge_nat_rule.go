@@ -18,35 +18,35 @@ package swagger
 // The configuration for a given NAT Rule.
 type EdgeNatRule struct {
 	// The unique id of the NAT Rule. This must be supplied when updating a given NAT Rule. On creation, an unique id is generated for the NAT Rule.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// User friendly name for the NAT Rule. Name must be provided.
 	Name        string `json:"name"`
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// A flag indicating whether the individual nat rule is enabled or not. The default is true.
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled bool `json:"enabled"`
 	// Represents the type of NAT Rule. SNAT translates an internal IP to an external IP and is used for outbound traffic. DNAT translates the external IP to an internal IP and is used for inbound traffic. This property is now deprecated and replaced with type.
-	RuleType *NatRuleType `json:"ruleType,omitempty"`
+	RuleType *NatRuleType `json:"ruleType"`
 	// Represents the type of NAT Rule.  Below are valid values. <ul>   <li> <code> SNAT </code> - This translates an internal IP to an external IP and is used for outbound traffic.   <li> <code> DNAT </code> - This translates the external IP to an internal IP and is used for inbound traffic.   <li> <code> NO_SNAT </code> - No internal IP translation takes place.   <li> <code> NO_DNAT </code> - No external IP translation takes place.   <li> <code> REFLEXIVE </code> - Also known as Stateless NAT. This translates an internal IP to an external IP and vice versa.   The number of internal addresses should be exactly the same as that of external addresses. </ul>
-	Type_ string `json:"type,omitempty"`
+	Type_ string `json:"type"`
 	// Represents the application ports on which the NAT Rule will be applied. An application port profile id in the form of URN format must be provided. If not provided then the port will be considered as \"ANY\". This should not be set for a REFLEXIVE Rule. For a DNAT Rule, the source port on the application port profile represents the port from which the traffic is originating from. For a DNAT rule, the destination port on the application port profile represents the internal port on the workloads where the traffic is terminating. For a SNAT rule, the source port on the application port profile represents the internal port on the workloads where the traffic is originating from. For a SNAT rule, the destination port application port profile represents the port where the traffic is terminating.
-	ApplicationPortProfile *EntityReference `json:"applicationPortProfile,omitempty"`
+	ApplicationPortProfile *EntityReference `json:"applicationPortProfile"`
 	// The external addresses for the NAT Rule. This must be supplied as a single IP or Network CIDR. For a DNAT rule, this is the external facing IP Address for incoming traffic. For an SNAT rule, this is the external facing IP Address for outgoing traffic. These ips are typically allocated/suballocated IP Addresses on the Edge Gateway. For a REFLEXIVE rule, these are the external facing IPs.
 	ExternalAddresses string `json:"externalAddresses"`
 	// The internal addresses for the NAT Rule. This must be supplied as a single IP or Network CIDR. For a DNAT rule, this is the internal IP Address for incoming traffic. For an SNAT rule, this is the internal IP Address for outgoing traffic. For a REFLEXIVE rule, these are the internal IPs. These ips are typically the Private IPs that are allocated to workloads.
 	InternalAddresses string `json:"internalAddresses"`
 	// Port number or port range for incoming network traffic. If Any Traffic is selected for the Service, the default internal port is \"ANY\". Note that this field has been deprecated. Please use dnatExternalPort to set port forwarding for DNAT rules. This typically should not be set for SNAT rules as the rule would not be able to support IP Translation with multiple ports.
-	InternalPort string `json:"internalPort,omitempty"`
+	InternalPort string `json:"internalPort"`
 	// This represents the external port number or port range when doing DNAT port forwarding from external to internal. The default dnatExternalPort is \"ANY\" meaning traffic on any port for the given IPs selected will be translated.
-	DnatExternalPort string `json:"dnatExternalPort,omitempty"`
+	DnatExternalPort string `json:"dnatExternalPort"`
 	// A flag indicating whether logging for the individual nat rule is enabled or not. The default is false.
-	Logging bool `json:"logging,omitempty"`
+	Logging bool `json:"logging"`
 	// A flag indicating whether this NAT rule is managed by the system. This is not user editable
-	SystemRule bool `json:"systemRule,omitempty"`
+	SystemRule bool `json:"systemRule"`
 	// The destination addresses to match in the SNAT Rule. This must be supplied as a single IP or Network CIDR. Providing no value for this field results in match with ANY destination network. These IPs are typically the Private IPs that are allocated to destination workloads.
-	SnatDestinationAddresses string `json:"snatDestinationAddresses,omitempty"`
+	SnatDestinationAddresses string `json:"snatDestinationAddresses"`
 	// Determines how the firewall matches the address during NATing if firewall stage is not skipped.  Below are valid values. <ul>   <li> <code> MATCH_INTERNAL_ADDRESS </code> indicates the firewall will be applied to internal address of a NAT rule. For SNAT, the internal address is        the original source address before NAT is done. For DNAT, the internal address is the translated destination address after NAT is done.        For REFLEXIVE, to egress traffic, the internal address is the original source address before NAT is done; to ingress traffic, the internal address is        the translated destination address after NAT is done.   <li> <code> MATCH_EXTERNAL_ADDRESS </code> indicates the firewall will be applied to external address of a NAT rule. For SNAT, the external address is        the translated source address after NAT is done. For DNAT, the external address is the original destination address before NAT is done.        For REFLEXIVE, to egress traffic, the external address is the translated internal address after NAT is done; to ingress traffic, the external address is        the original destination address before NAT is done.   <li> <code> BYPASS </code> firewall stage will be skipped. </ul> The default is MATCH_INTERNAL_ADDRESS.
-	FirewallMatch string `json:"firewallMatch,omitempty"`
+	FirewallMatch string `json:"firewallMatch"`
 	// If an address has multiple NAT rules, the rule with the highest priority is applied. A lower value means a higher precedence for this rule.
-	Priority int32          `json:"priority,omitempty"`
-	Version  *ObjectVersion `json:"version,omitempty"`
+	Priority int32          `json:"priority"`
+	Version  *ObjectVersion `json:"version"`
 }

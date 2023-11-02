@@ -18,17 +18,17 @@ package swagger
 // Various settings for a storage policy. 
 type StoragePolicySettings struct {
 	// If true, designates that this storage policy can be used with all valid entity types
-	SupportsAllValidEntityTypes bool `json:"supportsAllValidEntityTypes,omitempty"`
+	SupportsAllValidEntityTypes bool `json:"supportsAllValidEntityTypes"`
 	// Maximum IOPS for any disk associated with this storage policy.
-	DiskIopsMax int64 `json:"diskIopsMax,omitempty"`
+	DiskIopsMax int64 `json:"diskIopsMax"`
 	// Maximum IOPS that can be assigned to any disk associated with this storage policy based on the size of the disk (in GB). This is also the default IOPS value used for any disk associated with this policy. If set to zero, Default Disk IOPS is used as the default IOPS to be assigned to any disk associated with this storage policy. 
-	DiskIopsPerGbMax int64 `json:"diskIopsPerGbMax,omitempty"`
+	DiskIopsPerGbMax int64 `json:"diskIopsPerGbMax"`
 	// Default IOPS value to use for any disk associated with the storage policy. This default is only used when Disk IOPS Per GB Max is set to zero. 
-	DiskIopsDefault int64 `json:"diskIopsDefault,omitempty"`
+	DiskIopsDefault int64 `json:"diskIopsDefault"`
 	// The sum of IOPS across all disks associated with this policy will be limited to this value. 
-	StoragePolicyIopsLimit int64 `json:"storagePolicyIopsLimit,omitempty"`
+	StoragePolicyIopsLimit int64 `json:"storagePolicyIopsLimit"`
 	// Whether IOPS limiting is enabled.
-	IsIopsLimitingEnabled bool `json:"isIopsLimitingEnabled,omitempty"`
+	IsIopsLimitingEnabled bool `json:"isIopsLimitingEnabled"`
 	// Whether VCD IOPS placement should be ignored for disks using this policy.
-	IgnoreIopsPlacement bool `json:"ignoreIopsPlacement,omitempty"`
+	IgnoreIopsPlacement bool `json:"ignoreIopsPlacement"`
 }

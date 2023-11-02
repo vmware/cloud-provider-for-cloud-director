@@ -12,5 +12,5 @@ package swagger
 
 // List of Segment IP Discovery Profiles. 
 type SegmentIpDiscoveryProfiles struct {
-	Values []SegmentIpDiscoveryProfile `json:"values,omitempty"`
+	Values []SegmentIpDiscoveryProfile `json:"values"`
 }

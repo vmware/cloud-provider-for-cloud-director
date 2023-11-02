@@ -18,5 +18,5 @@ package swagger
 // List of rules that a VM must all match for the criteria to be true (VM is part of the firewall group).
 type VmCriteria struct {
 	// List of rules that a VM must all match for the criteria to be true (VM is part of the firewall group).
-	Rules []VmCriteriaRule `json:"rules,omitempty"`
+	Rules []VmCriteriaRule `json:"rules"`
 }

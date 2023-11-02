@@ -13,12 +13,12 @@ package swagger
 // Specifies the Edge Gateway BGP configuration.
 type EdgeBgpConfig struct {
 	// A flag indicating whether BGP configuration is enabled or not.
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled bool `json:"enabled"`
 	// A flag indicating whether ECMP is enabled or not.
-	Ecmp bool `json:"ecmp,omitempty"`
+	Ecmp bool `json:"ecmp"`
 	// BGP AS number to advertise to BGP peers. BGP AS number can be specified in either ASPLAIN or ASDOT formats, like ASPLAIN format :- '65546', ASDOT format :- '1.10'. Read only if using a VRF-Lite backed external network. 
-	LocalASNumber string `json:"localASNumber,omitempty"`
+	LocalASNumber string `json:"localASNumber"`
 	// BGP Graceful Restart configuration. Not specifying a value results in default bahavior. Read only if using a VRF-Lite backed external network. 
-	GracefulRestart *EdgeBgpGracefulRestartConfig `json:"gracefulRestart,omitempty"`
+	GracefulRestart *EdgeBgpGracefulRestartConfig `json:"gracefulRestart"`
 	Version *ObjectVersion                        `json:"version"`
 }

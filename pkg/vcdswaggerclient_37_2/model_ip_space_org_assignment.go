@@ -13,15 +13,15 @@ package swagger
 // Object specifying an assignment of an IP Space to an Organization.
 type IpSpaceOrgAssignment struct {
 	// The identifier of the IP Space Org Assignment in URN format.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// Reference to the associated IP Space. This property is not updatable.
 	IpSpaceRef *EntityReference `json:"ipSpaceRef"`
 	// Reference to the associated Organization. This property is not updatable.
 	OrgRef *EntityReference `json:"orgRef"`
 	// The type of the IP Space. Possible values are: <ul> <li> PUBLIC <li> PRIVATE <li> SHARED_SERVICES </ul> 
-	IpSpaceType string `json:"ipSpaceType,omitempty"`
+	IpSpaceType string `json:"ipSpaceType"`
 	// Default IP Space quotas applied to the Organization.
-	DefaultQuotas *IpSpaceIpQuota `json:"defaultQuotas,omitempty"`
+	DefaultQuotas *IpSpaceIpQuota `json:"defaultQuotas"`
 	// Custom IP Space quotas applied to the Organization. A custom quota for floating IPs or IP Prefix overrides the default quotas applied to the associated Organization. Setting the customQuotas property to NULL will result in resetting all the overridden quotas to their respective defaults. Setting the specific overridden quota value within customQuotas will result in resetting the overridden quota value to its default value. A Quota of -1 means there is no cap to the number of IP addresses or IP Prefixes that can be allocated. A Quota of 0 means that the IP addresses or IP Prefixes cannot be allocated. 
-	CustomQuotas *IpSpaceIpQuota `json:"customQuotas,omitempty"`
+	CustomQuotas *IpSpaceIpQuota `json:"customQuotas"`
 }

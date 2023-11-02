@@ -13,11 +13,11 @@ package swagger
 // Represents basic information about an Edge Gateway associated with the Provider gateway.
 type TopologyEdgeGateway struct {
 	// Reference to the Edge Gateway.
-	EdgeGatewayRef *EntityReference `json:"edgeGatewayRef,omitempty"`
+	EdgeGatewayRef *EntityReference `json:"edgeGatewayRef"`
 	// The description of the Edge Gateway.
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// The organization VDC or VDC Group that the referenced edge gateway belongs to.
-	EdgeGatewayOwnerRef *EntityReference `json:"edgeGatewayOwnerRef,omitempty"`
+	EdgeGatewayOwnerRef *EntityReference `json:"edgeGatewayOwnerRef"`
 	// Whether or not the Edge Gateway is physically connected to this Provider Gateway.
-	Connected bool `json:"connected,omitempty"`
+	Connected bool `json:"connected"`
 }

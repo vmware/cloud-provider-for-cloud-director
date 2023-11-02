@@ -12,5 +12,5 @@ package swagger
 
 // List of External Network backings. 
 type ExternalNetworkBackings struct {
-	Values []ExternalNetworkBacking `json:"values,omitempty"`
+	Values []ExternalNetworkBacking `json:"values"`
 }

@@ -12,14 +12,14 @@ package swagger
 
 // A certificate library item.
 type CertificateLibraryItem struct {
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	Alias string `json:"alias"`
 	// PEM encoded private key. Required if providing a certificate chain
-	PrivateKey string `json:"privateKey,omitempty"`
+	PrivateKey string `json:"privateKey"`
 	// passphrase for the private key. Required if the private key is encrypted
-	PrivateKeyPassphrase string `json:"privateKeyPassphrase,omitempty"`
+	PrivateKeyPassphrase string `json:"privateKeyPassphrase"`
 	// PEM encoded certificate. All extraneous whitespace and other information is removed.
 	Certificate string `json:"certificate"`
 	// Description of the certificate library item
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 }

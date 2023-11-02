@@ -18,9 +18,9 @@ package swagger
 // A set of ports and the protocol supported by a application port profile. 
 type ApplicationPortList struct {
 	// The display name.
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 	// The protocol this services applies to.
-	Protocol *ApplicationPortsProtocolType `json:"protocol,omitempty"`
+	Protocol *ApplicationPortsProtocolType `json:"protocol"`
 	// The set of ports on the destination that the profile applies to. Valid values include single ports and a range of ports.
-	DestinationPorts []string `json:"destinationPorts,omitempty"`
+	DestinationPorts []string `json:"destinationPorts"`
 }

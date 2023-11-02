@@ -18,19 +18,19 @@ package swagger
 // Describes a used IP address for a network. 
 type UsedIpAddress struct {
 	// Id of the entity using the IP address, such as a VM.
-	EntityId string `json:"entityId,omitempty"`
+	EntityId string `json:"entityId"`
 	// Name of the entity using the IP address.
-	EntityName string `json:"entityName,omitempty"`
+	EntityName string `json:"entityName"`
 	// Name of the vApp whose VM is using this IP address.
-	VAppName string `json:"vAppName,omitempty"`
+	VAppName string `json:"vAppName"`
 	// The IP address in use.
-	IpAddress string `json:"ipAddress,omitempty"`
+	IpAddress string `json:"ipAddress"`
 	// Whether the entity using this IP address is currently deployed.
-	Deployed bool `json:"deployed,omitempty"`
+	Deployed bool `json:"deployed"`
 	// The possible allocation types for network address like VSM allocated, VM allocated or NAT routed.
-	AllocationType *UsedIpAddressAllocationType `json:"allocationType,omitempty"`
+	AllocationType *UsedIpAddressAllocationType `json:"allocationType"`
 	// The vApp network or Org vDC network to which this entity is connected. 
-	NetworkRef *EntityReference `json:"networkRef,omitempty"`
+	NetworkRef *EntityReference `json:"networkRef"`
 	// The organization that this entity belongs to. 
-	OrgRef *EntityReference `json:"orgRef,omitempty"`
+	OrgRef *EntityReference `json:"orgRef"`
 }

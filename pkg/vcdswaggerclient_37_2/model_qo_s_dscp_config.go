@@ -13,7 +13,7 @@ package swagger
 // A Differentiated Services Code Point (DSCP) Configuration for a Segment QoS Profile.
 type QoSDscpConfig struct {
 	// It specifies DSCP trust mode. Values are below. <ul> <li>TRUSTED - With Trusted mode the inner header DSCP value is applied to the outer IP header for IP/IPv6 traffic. For non IP/IPv6 traffic, the outer IP header takes the default value. <li>UNTRUSTED - Untrusted mode is supported on overlay-based and VLAN-based logical port. </ul> 
-	TrustMode string `json:"trustMode,omitempty"`
+	TrustMode string `json:"trustMode"`
 	// The range of backing VLAN Id's. This information is available
-	Priority int32 `json:"priority,omitempty"`
+	Priority int32 `json:"priority"`
 }

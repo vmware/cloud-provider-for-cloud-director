@@ -13,13 +13,13 @@ package swagger
 // Definition of QuotaPoolDefinition. 
 type QuotaPoolDefinition struct {
 	// The localized name of quota resource type. 
-	QuotaResourceName string `json:"quotaResourceName,omitempty"`
+	QuotaResourceName string `json:"quotaResourceName"`
 	// The quota resource type such as memory, cpu, vm etc. Available resource types: memory, cpu, storage, urn:vcloud:legacy:vm, urn:vcloud:type:vmware.tkgcluster:1.0.0 
 	ResourceType string `json:"resourceType"`
 	// The unit of quota defined for quota resource type. Available quota units for resource types: memory - MB cpu - MHz storage - MB urn:vcloud:legacy:vm - count 
-	QuotaResourceUnit string `json:"quotaResourceUnit,omitempty"`
+	QuotaResourceUnit string `json:"quotaResourceUnit"`
 	// The quota amount for this resource. 
 	Quota int64 `json:"quota"`
 	// The qualifiers for quota resource type, such as vm.guestOs == Windows. This is optional. Qualifiers just helps in narrowing down quota resource based on values of one or more of its properties. If vm is a quota resource, from the above example, only VMs with Windows guest OS will be considered for quota eligibility. If more than one qualifier is provided, system will use AND operator to process them. 
-	Qualifiers []string `json:"qualifiers,omitempty"`
+	Qualifiers []string `json:"qualifiers"`
 }

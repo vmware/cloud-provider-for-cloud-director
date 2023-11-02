@@ -13,8 +13,8 @@ package swagger
 // The SLAAC profile containing the mode, the DNS configuration settings, and whether or not it is enabled. Only NSX-T edge gateways support a SLAAC profile.
 type SlaacProfile struct {
 	// A flag indicating whether or not this profile is enabled.
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled bool `json:"enabled"`
 	// Represents the various modes with which to configure SLAAC with. Supported values are SLAAC and DHCPv6. 
-	Mode string               `json:"mode,omitempty"`
-	DnsConfig *SlaacDnsConfig `json:"dnsConfig,omitempty"`
+	Mode string               `json:"mode"`
+	DnsConfig *SlaacDnsConfig `json:"dnsConfig"`
 }

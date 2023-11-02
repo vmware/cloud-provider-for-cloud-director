@@ -13,16 +13,16 @@ package swagger
 // An Egress Point. 
 type EgressPoint struct {
 	// The unique ID for the Universal Egress Point (read-only).
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// The Org vDC the Universal Egress Point belongs to.
-	VdcRef *EntityReference `json:"vdcRef,omitempty"`
+	VdcRef *EntityReference `json:"vdcRef"`
 	// The Edge Gateway the Egress Point is referring to.
-	GatewayRef *EntityReference `json:"gatewayRef,omitempty"`
+	GatewayRef *EntityReference `json:"gatewayRef"`
 	// Read-only field that specifies the network provider scope of the Universal Egress Point (inherited from the Org vDC).
-	NetworkProviderScope string `json:"networkProviderScope,omitempty"`
+	NetworkProviderScope string `json:"networkProviderScope"`
 	// Specifies whether the egress point is being used for Universal Routing. This is a read-only field.
-	IsUsedForRouting bool `json:"isUsedForRouting,omitempty"`
+	IsUsedForRouting bool `json:"isUsedForRouting"`
 	// The status of the Universal Egress Point.
-	Status *VdcGroupEntityStatus `json:"status,omitempty"`
-	ErrorMessage string          `json:"errorMessage,omitempty"`
+	Status *VdcGroupEntityStatus `json:"status"`
+	ErrorMessage string          `json:"errorMessage"`
 }

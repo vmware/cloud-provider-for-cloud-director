@@ -17,13 +17,13 @@ package swagger
 
 // The descriptor of a Defined Entity Behavior 
 type Behavior struct {
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 	// The Behavior ID is generated and is an output-only property
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// The Behavior invocation reference to be used for polymorphic behavior invocations. It is generated and is an output-only property
-	Ref string `json:"ref,omitempty"`
+	Ref string `json:"ref"`
 	// A description specifying the contract of the Behavior
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// The Behavior execution mechanism. Can be defined both in an Interface and in a Defined Entity Type as an override.
-	Execution map[string]interface{} `json:"execution,omitempty"`
+	Execution map[string]interface{} `json:"execution"`
 }

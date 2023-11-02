@@ -13,7 +13,7 @@ package swagger
 // This represents the endpoint/IP Address on the Edge Gateway where the tunnel needs to be terminated. 
 type LocalEndpoint struct {
 	// The local identifier for the endpoint.
-	LocalId string `json:"localId,omitempty"`
+	LocalId string `json:"localId"`
 	// The IPV4 Address for the endpoint. This has to be a suballocated IP on the Edge Gateway. This is required.
 	LocalAddress string `json:"localAddress"`
 	// List of local networks. These must be specified in normal Network CIDR format. Specifying no value is interpreted as 0.0.0.0/0.

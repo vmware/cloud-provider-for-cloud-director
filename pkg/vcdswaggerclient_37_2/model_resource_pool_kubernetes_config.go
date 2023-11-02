@@ -13,5 +13,5 @@ package swagger
 // Kubernetes configuration for a resource pool backed by kubernetes enabled cluster. 
 type ResourcePoolKubernetesConfig struct {
 	// Endpoint for the kubernetes enabled cluster backed by this Resource Pool. 
-	ControlPlaneEndpoint string `json:"controlPlaneEndpoint,omitempty"`
+	ControlPlaneEndpoint string `json:"controlPlaneEndpoint"`
 }

@@ -14,11 +14,11 @@ package swagger
 type UiPluginMetadata struct {
 	PluginName string `json:"pluginName"`
 	Vendor string `json:"vendor"`
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	Version string `json:"version"`
 	License string `json:"license"`
 	Link string `json:"link"`
-	TenantScoped bool `json:"tenant_scoped,omitempty"`
-	ProviderScoped bool `json:"provider_scoped,omitempty"`
-	Enabled bool `json:"enabled,omitempty"`
+	TenantScoped bool `json:"tenant_scoped"`
+	ProviderScoped bool `json:"provider_scoped"`
+	Enabled bool `json:"enabled"`
 }

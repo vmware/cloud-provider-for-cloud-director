@@ -13,7 +13,7 @@ package swagger
 // An IP Space IP Address suggestion.
 type IpSpaceFloatingIpSuggestion struct {
 	// Reference to the IP Space.
-	IpSpaceRef *EntityReference `json:"ipSpaceRef,omitempty"`
+	IpSpaceRef *EntityReference `json:"ipSpaceRef"`
 	// List of unused IP Addresses or IP Prefixes from the referenced IP Space.
-	UnusedValues []string `json:"unusedValues,omitempty"`
+	UnusedValues []string `json:"unusedValues"`
 }

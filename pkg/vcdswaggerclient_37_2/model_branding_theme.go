@@ -13,23 +13,23 @@ package swagger
 // This object represents all the building blocks for a branding theme, such as coloring schema, images, etc. 
 type BrandingTheme struct {
 	// A unique identifier for the branding theme (read-only).
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// Display name for the Branding Theme 
 	Name string `json:"name"`
 	// Type of the Branding Theme. Supported theme types are: <ul>   <li>     <em>BUILT_IN</em> - Theme pre-bundled with Cloud Director   </li>   <li>     <em>CUSTOM</em> - Custom Branding Theme   </li> </ul> 
-	ThemeType string `json:"themeType,omitempty"`
+	ThemeType string `json:"themeType"`
 	// If true, the branding theme is represented in old format that can not be edited. 
-	IsLegacy bool `json:"isLegacy,omitempty"`
+	IsLegacy bool `json:"isLegacy"`
 	// If true, the branding theme is used by any organization with no explicit theme assignment. 
-	IsDefault bool `json:"isDefault,omitempty"`
+	IsDefault bool `json:"isDefault"`
 	// If true, the branding theme is used for branding customization of the organization. Only one branding theme can be active for organization. 
-	Active bool `json:"active,omitempty"`
+	Active bool `json:"active"`
 	// This indicates whether the theme css is based of the light or dark css base. Missing value indicates the base is unknown. Enum options - CLARITY_LIGHT_THEME, CLARITY_DARK_THEME. 
-	ThemeBase string `json:"themeBase,omitempty"`
+	ThemeBase string `json:"themeBase"`
 	// base64 encoded Logo thumbprint generated from the provided logo resource.
-	LogoThumbprint string `json:"logoThumbprint,omitempty"`
+	LogoThumbprint string `json:"logoThumbprint"`
 	// Version of the theme 
-	Version string `json:"version,omitempty"`
+	Version string `json:"version"`
 	// Subset of the provided custom resource styles.
-	PreviewStyles string `json:"previewStyles,omitempty"`
+	PreviewStyles string `json:"previewStyles"`
 }

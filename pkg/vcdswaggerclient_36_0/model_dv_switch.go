@@ -18,7 +18,7 @@ package swagger
 // Distributed virtual switch. 
 type DvSwitch struct {
 	// Contains the backing id and name of the distributed virtual switch.
-	BackingRef *BackingRef `json:"backingRef,omitempty"`
+	BackingRef *BackingRef `json:"backingRef"`
 	// The entity reference for the vCenter that contains this distributed virtual switch.
-	VirtualCenter *EntityReference `json:"virtualCenter,omitempty"`
+	VirtualCenter *EntityReference `json:"virtualCenter"`
 }

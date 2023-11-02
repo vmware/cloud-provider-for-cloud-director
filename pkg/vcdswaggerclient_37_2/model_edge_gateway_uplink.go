@@ -13,21 +13,21 @@ package swagger
 // The uplink (i.e. external network/provider gateway) that the edge gateway is connected to. This also contains the external network IPs that are allocated to the edge. 
 type EdgeGatewayUplink struct {
 	// The identifier of the external network/provider gateway this edge gateway is connected to.
-	UplinkId string `json:"uplinkId,omitempty"`
+	UplinkId string `json:"uplinkId"`
 	// The name of the external network/provider gateway this edge gateway is connected to.
-	UplinkName string `json:"uplinkName,omitempty"`
+	UplinkName string `json:"uplinkName"`
 	// Set of subnets this edge will have access to. 
-	Subnets *EdgeGatewaySubnets `json:"subnets,omitempty"`
+	Subnets *EdgeGatewaySubnets `json:"subnets"`
 	// Whether or not the gateway is connected to this uplink. This value defaults to true if it is not set. When filtering by this field, if the filter is false, all gateways that have 0 connected uplinks will be returned, while if it is true, all gateways with at least one connected uplink will be returned.
-	Connected bool `json:"connected,omitempty"`
+	Connected bool `json:"connected"`
 	// If set on create or update api calls, the specified number of IP addresses will be additionally allocated for this uplink. IPs will be allocated from multiple subnets if needed.
-	QuickAddAllocatedIpCount int32 `json:"quickAddAllocatedIpCount,omitempty"`
+	QuickAddAllocatedIpCount int32 `json:"quickAddAllocatedIpCount"`
 	// This property can be set to make the provider gateway be exclusively used by this edge gateway. This property is read-only for Provider gateways using IP Space. If the associated provider gateway is using IP Spaces, user can update the provider gateway itself to dedicate it to the Organization. Provider gateways using IP Spaces cannot be dedicated to an Edge Gateway. 
-	Dedicated bool `json:"dedicated,omitempty"`
+	Dedicated bool `json:"dedicated"`
 	// This fields is read-only and is set to true if the provider gateway backing the uplink (external network) is using IP Space; else, false. 
-	UsingIpSpace bool `json:"usingIpSpace,omitempty"`
+	UsingIpSpace bool `json:"usingIpSpace"`
 	// Whether the associated external network is backed by a NSX-T VRF-Lite Tier-0.
-	VrfLiteBacked bool `json:"vrfLiteBacked,omitempty"`
+	VrfLiteBacked bool `json:"vrfLiteBacked"`
 	// Type of backing for the network this interface is connected to. Can be NSXT_TIER0, NSXT_VRF_TIER0 or IMPORTED_T_LOGICAL_SWITCH
-	BackingType string `json:"backingType,omitempty"`
+	BackingType string `json:"backingType"`
 }

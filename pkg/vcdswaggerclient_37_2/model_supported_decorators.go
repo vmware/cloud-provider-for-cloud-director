@@ -12,9 +12,9 @@ package swagger
 
 // Definition of SupportedDecorators. 
 type SupportedDecorators struct {
-	Decorator *Decorator             `json:"decorator,omitempty"`
-	RefreshOnChange *RefreshOnChange `json:"refreshOnChange,omitempty"`
-	MultiLine *MultiLine             `json:"multiLine,omitempty"`
-	Chooser *Chooser                 `json:"chooser,omitempty"`
-	DropDown *DropDown               `json:"dropDown,omitempty"`
+	Decorator *Decorator             `json:"decorator"`
+	RefreshOnChange *RefreshOnChange `json:"refreshOnChange"`
+	MultiLine *MultiLine             `json:"multiLine"`
+	Chooser *Chooser                 `json:"chooser"`
+	DropDown *DropDown               `json:"dropDown"`
 }

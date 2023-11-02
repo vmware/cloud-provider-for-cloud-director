@@ -22,9 +22,9 @@ type IkeConfig struct {
 	// The list of Diffie-Helman groups to be used is PFS is enabled. Default is GROUP14.
 	DhGroups []DhGroupType `json:"dhGroups"`
 	// The list of Digest algorithms for IKE. This is used during IKE negotiation. Default is SHA2_256.
-	DigestAlgorithms []IkeDigestAlgorithmType `json:"digestAlgorithms,omitempty"`
+	DigestAlgorithms []IkeDigestAlgorithmType `json:"digestAlgorithms"`
 	// The list of Encryption algorithms for IKE. This is used during IKE negotiation. Default is AES_128.
 	EncryptionAlgorithms []IkeEncryptionAlgorithmType `json:"encryptionAlgorithms"`
 	// The Security Association life time in seconds. Default is 86400 seconds (1 day).
-	SaLifeTime int32 `json:"saLifeTime,omitempty"`
+	SaLifeTime int32 `json:"saLifeTime"`
 }

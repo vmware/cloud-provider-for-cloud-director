@@ -18,10 +18,10 @@ package swagger
 // A range of DHCP ip addresses and its lease time configuration. 
 type VdcNetworkDhcpPool struct {
 	// Whether the DHCP address pool is currently enabled
-	Enabled bool     `json:"enabled,omitempty"`
-	IpRange *IpRange `json:"ipRange,omitempty"`
+	Enabled bool     `json:"enabled"`
+	IpRange *IpRange `json:"ipRange"`
 	// Max lease time in seconds
-	MaxLeaseTime int32 `json:"maxLeaseTime,omitempty"`
+	MaxLeaseTime int32 `json:"maxLeaseTime"`
 	// Default lease time in seconds
-	DefaultLeaseTime int32 `json:"defaultLeaseTime,omitempty"`
+	DefaultLeaseTime int32 `json:"defaultLeaseTime"`
 }

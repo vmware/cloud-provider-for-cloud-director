@@ -18,29 +18,29 @@ package swagger
 // Specifies the IPSec VPN tunnel configuration.
 type EdgeIpSecVpnTunnel struct {
 	// The unique id of this IPSec VPN tunnel. On updates, the id is required for the tunnel, while for create a new id will be generated. 
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// Name for the tunnel.
 	Name string `json:"name"`
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// Described whether the tunnel is enabled or not. The default is true.
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled bool `json:"enabled"`
 	// The Local Endpoint which corresponds to the Edge Gateway the tunnel is being configured on. Local Endpoint requires an IP. That IP must be suballocated to the edge gateway. 
 	LocalEndpoint *LocalEndpoint `json:"localEndpoint"`
 	// The Remote Endpoints correspoinds to the device on the remote site terminating the VPN tunnel. 
 	RemoteEndpoint *RemoteEndpoint `json:"remoteEndpoint"`
 	// The authentication mode this IPSec tunnel will use to authenticate with the peer endpoint. The default is a pre-shared key (PSK). <ul>   <li>PSK - A known key is shared between each site before the tunnel is established.</li>   <li>CERTIFICATE ? Incoming connections are required to present an identifying digital certificate, which VCD verifies has been signed by a trusted certificate authority.</li> </ul> 
-	AuthenticationMode string `json:"authenticationMode,omitempty"`
+	AuthenticationMode string `json:"authenticationMode"`
 	// This is the Pre-shared key used for authentication.
-	PreSharedKey string `json:"preSharedKey,omitempty"`
+	PreSharedKey string `json:"preSharedKey"`
 	// The server certificate which will be used to secure the tunnel's local endpoint.
-	CertificateRef *EntityReference `json:"certificateRef,omitempty"`
+	CertificateRef *EntityReference `json:"certificateRef"`
 	// The CA authority used to verify the remote endpoint?s certificate.
-	CaCertificateRef *EntityReference `json:"caCertificateRef,omitempty"`
+	CaCertificateRef *EntityReference `json:"caCertificateRef"`
 	// This is the mode used by the local endpoint to establish an IKE Connection with the remote site. The default is INITIATOR.
-	ConnectorInitiationMode *ConnectorInitiationMode `json:"connectorInitiationMode,omitempty"`
+	ConnectorInitiationMode *ConnectorInitiationMode `json:"connectorInitiationMode"`
 	// This is the security type used for the IPSec Tunnel. If nothing is specified, this will be set to 'DEFAULT' in which the default settings in NSX will be used. For custom settings, one should use the connectionProperties endpoint to specify custom settings. The security type will then appropriately reflect itself as 'CUSTOM'. 
-	SecurityType string `json:"securityType,omitempty"`
+	SecurityType string `json:"securityType"`
 	// Whether logging for the tunnel is enabled or not. The default is false.
-	Logging bool           `json:"logging,omitempty"`
-	Version *ObjectVersion `json:"version,omitempty"`
+	Logging bool           `json:"logging"`
+	Version *ObjectVersion `json:"version"`
 }

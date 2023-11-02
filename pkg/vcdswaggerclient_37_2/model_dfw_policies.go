@@ -13,7 +13,7 @@ package swagger
 // Describes DFW security policies configuration. 
 type DfwPolicies struct {
 	// A flag indicating whether DFW configuration is enabled or not.
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled bool `json:"enabled"`
 	// The default DFW security policy for the security domain. 
-	DefaultPolicy *DfwPolicy `json:"defaultPolicy,omitempty"`
+	DefaultPolicy *DfwPolicy `json:"defaultPolicy"`
 }

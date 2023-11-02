@@ -17,14 +17,14 @@ package swagger
 
 // Information about various objects in vRealize Orchestrator server 
 type VroRemoteItem struct {
-	Name string `json:"name,omitempty"`
-	Description string `json:"description,omitempty"`
-	Id string `json:"id,omitempty"`
-	VroServerId string `json:"vroServerId,omitempty"`
-	DunesId string `json:"dunesId,omitempty"`
-	Type_ string `json:"type,omitempty"`
-	Selectable bool `json:"selectable,omitempty"`
-	CanHaveChildren bool `json:"canHaveChildren,omitempty"`
-	Href string `json:"href,omitempty"`
-	Rel string `json:"rel,omitempty"`
+	Name string `json:"name"`
+	Description string `json:"description"`
+	Id string `json:"id"`
+	VroServerId string `json:"vroServerId"`
+	DunesId string `json:"dunesId"`
+	Type_ string `json:"type"`
+	Selectable bool `json:"selectable"`
+	CanHaveChildren bool `json:"canHaveChildren"`
+	Href string `json:"href"`
+	Rel string `json:"rel"`
 }

@@ -13,5 +13,5 @@ package swagger
 // Device information for device authorization requests. 
 type DeviceInfo struct {
 	// User code associated with device authorization requests.
-	UserCode string `json:"userCode,omitempty"`
+	UserCode string `json:"userCode"`
 }

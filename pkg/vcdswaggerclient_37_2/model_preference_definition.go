@@ -13,11 +13,11 @@ package swagger
 // The Preference Definition is immutable. 
 type PreferenceDefinition struct {
 	// UUID for preference definition. This is immutable. 
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// Display name. 
 	Name string `json:"name"`
 	// Description for user preference 
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// unique indetifier for this preference definition. It should be of type <scope>:<name>. e.g vrops:myworkflow. This is immutable. 
 	Classifier string `json:"classifier"`
 	// user preference value data type. This is immutable. 
@@ -25,10 +25,10 @@ type PreferenceDefinition struct {
 	// true if user preference is selected from list of values (dataType should be number or string), false otherwise. This is immutable. 
 	Constrained bool `json:"constrained"`
 	// minimum value for user preference. Only valid if user preference type is number. This is immutable. 
-	MinValue float32 `json:"minValue,omitempty"`
+	MinValue float32 `json:"minValue"`
 	// maximum value for user preference. Only valid if user preference type is number. This is immutable. 
-	MaxValue float32 `json:"maxValue,omitempty"`
+	MaxValue float32 `json:"maxValue"`
 	DefaultValue string `json:"defaultValue"`
 	// array of allowed values to select from when constrained is true.. This is immutable after creation.
-	AllowedValues []string `json:"allowedValues,omitempty"`
+	AllowedValues []string `json:"allowedValues"`
 }

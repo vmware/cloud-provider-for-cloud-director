@@ -13,19 +13,19 @@ package swagger
 // A CrossVdcNetwork object 
 type CrossVdcNetwork struct {
 	// The unique ID for the network. This field is read-only.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// The name of the network.
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 	// The description of the network.
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// List of subnets configured for the network.
-	Subnets *Subnets `json:"subnets,omitempty"`
+	Subnets *Subnets `json:"subnets"`
 	// The vDC group that this network belongs to.
-	VdcGroupRef *EntityReference `json:"vdcGroupRef,omitempty"`
+	VdcGroupRef *EntityReference `json:"vdcGroupRef"`
 	// The router that this network is attached to.
-	RouterRef *EntityReference `json:"routerRef,omitempty"`
+	RouterRef *EntityReference `json:"routerRef"`
 	// The status of the network.
-	Status *VdcGroupEntityStatus `json:"status,omitempty"`
+	Status *VdcGroupEntityStatus `json:"status"`
 	// If the network has an error status, a more detailed error message is set here.
-	ErrorMessage string `json:"errorMessage,omitempty"`
+	ErrorMessage string `json:"errorMessage"`
 }

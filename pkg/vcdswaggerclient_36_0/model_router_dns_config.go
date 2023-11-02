@@ -17,6 +17,6 @@ package swagger
 
 // A RouterDnsConfig object 
 type RouterDnsConfig struct {
-	Enabled bool `json:"enabled,omitempty"`
-	NameServers []string `json:"nameServers,omitempty"`
+	Enabled bool `json:"enabled"`
+	NameServers []string `json:"nameServers"`
 }

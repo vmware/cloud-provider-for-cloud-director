@@ -13,7 +13,7 @@ package swagger
 // The cells in the environment as seen by the cell with the given cellId. Contains two stability scores by which you can sort. The higher the score the more stable the status is.
 type CellTopologyStatus struct {
 	// The more cell peers are recognising this cell as active, clustered and messaging, the higher this score will be.
-	Popularity int32 `json:"popularity,omitempty"`
+	Popularity int32 `json:"popularity"`
 	// The more cell peers this cell recognizes as active, clustered and messaing, the higher this score will be.
-	SelfAssessment int32 `json:"selfAssessment,omitempty"`
+	SelfAssessment int32 `json:"selfAssessment"`
 }

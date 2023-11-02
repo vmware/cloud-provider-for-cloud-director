@@ -13,5 +13,5 @@ package swagger
 // A list of DvpgProperty for all the DVPG's backing a network
 type DvpgProperties struct {
 	// List of DvpgProperty for each DVPG backing this network
-	DvpgProperties []DvpgProperty `json:"dvpgProperties,omitempty"`
+	DvpgProperties []DvpgProperty `json:"dvpgProperties"`
 }

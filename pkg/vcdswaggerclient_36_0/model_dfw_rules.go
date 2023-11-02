@@ -18,5 +18,5 @@ package swagger
 // DFW rules.
 type DfwRules struct {
 	// The ordered list of DFW rules.
-	Values []DfwRule `json:"values,omitempty"`
+	Values []DfwRule `json:"values"`
 }

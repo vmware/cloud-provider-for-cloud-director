@@ -18,7 +18,7 @@ package swagger
 // The DNS settings for this SLAAC profile.
 type SlaacDnsConfig struct {
 	// The list of domain names used as nameservers to configure on virtual machines connected to the gateway this profile is associated with. 
-	DomainNames []string `json:"domainNames,omitempty"`
+	DomainNames []string `json:"domainNames"`
 	// The IP addresses of the DNS servers to be configured on virtual machines connected to the network using this profile. They must be valid IPv6 addresses. 
-	DnsServerIpv6Addresses []string `json:"dnsServerIpv6Addresses,omitempty"`
+	DnsServerIpv6Addresses []string `json:"dnsServerIpv6Addresses"`
 }

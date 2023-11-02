@@ -17,10 +17,10 @@ package swagger
 
 // Defines how a group is imported from LDAP. 
 type LdapGroupAttributesType struct {
-	ObjectClass string `json:"objectClass,omitempty"`
-	ObjectIdentifier string `json:"objectIdentifier,omitempty"`
-	GroupName string `json:"groupName,omitempty"`
-	Membership string `json:"membership,omitempty"`
-	MembershipIdentifier string `json:"membershipIdentifier,omitempty"`
-	BackLinkIdentifier string `json:"backLinkIdentifier,omitempty"`
+	ObjectClass string `json:"objectClass"`
+	ObjectIdentifier string `json:"objectIdentifier"`
+	GroupName string `json:"groupName"`
+	Membership string `json:"membership"`
+	MembershipIdentifier string `json:"membershipIdentifier"`
+	BackLinkIdentifier string `json:"backLinkIdentifier"`
 }

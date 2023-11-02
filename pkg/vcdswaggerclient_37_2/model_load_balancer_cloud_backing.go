@@ -15,7 +15,7 @@ type LoadBalancerCloudBacking struct {
 	// The unique identifier of the Load Balancer Cloud.
 	BackingId string `json:"backingId"`
 	// The type of Load Balancer Cloud.  Valid values are NSXALB_NSXT.
-	BackingType string `json:"backingType,omitempty"`
+	BackingType string `json:"backingType"`
 	// The managing Load Balancer Controller.
 	LoadBalancerControllerRef *EntityReference `json:"loadBalancerControllerRef"`
 }

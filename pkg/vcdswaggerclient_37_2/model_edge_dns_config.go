@@ -13,16 +13,16 @@ package swagger
 // Specifies the DNS forwarder configuration for an edge gateway backed by NSX-T.
 type EdgeDnsConfig struct {
 	// True means that the forwarder is enabled. False means it's disabled.
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled bool `json:"enabled"`
 	// The IP on which the DNS forwarder listens. If the Edge Gateway has a dedicated external network, this can be changed.
-	ListenerIp string `json:"listenerIp,omitempty"`
+	ListenerIp string `json:"listenerIp"`
 	// The default forwarder zone to use if there's no matching domain in the conditional forwarder zone.
-	DefaultForwarderZone *NsxtDnsForwarderZoneConfig `json:"defaultForwarderZone,omitempty"`
+	DefaultForwarderZone *NsxtDnsForwarderZoneConfig `json:"defaultForwarderZone"`
 	// The list of forwarder zones with its matching DNS domains.
-	ConditionalForwarderZones []NsxtDnsForwarderZoneConfig `json:"conditionalForwarderZones,omitempty"`
-	Version *ObjectVersion                                 `json:"version,omitempty"`
+	ConditionalForwarderZones []NsxtDnsForwarderZoneConfig `json:"conditionalForwarderZones"`
+	Version *ObjectVersion                                 `json:"version"`
 	// The external IP address of the SNAT rule. This property only applies if the Edge Gateway is connected to a Provider Gateway using IP Space. If specified, VCD will conveniently manage the SNAT rule with the specified IP address for the DNS forwarder. In NAT routed environments, an SNAT rule is required for the Edge DNS forwarder to send the traffic to an upstream server. In fully routed environments, this is not needed if the listener IP is on an advertised subnet.  If unset, the VCD-managed NAT rules will be removed and users can choose to manually manage the NAT rules. 
-	SnatRuleExternalIpAddress string `json:"snatRuleExternalIpAddress,omitempty"`
+	SnatRuleExternalIpAddress string `json:"snatRuleExternalIpAddress"`
 	// Whether there is an SNAT rule exists for the DNS forwarder or not. In NAT routed environments, an SNAT rule is required for the Edge DNS forwarder to send traffic to an upstream server. In fully routed environments, this is not needed if the listener IP is on an advertised subnet. If the Edge Gateway is connected to a dedicated Provider Gateway and the listener IP has been changed, there will not be an SNAT rule for the DNS forwarder. In all other cases the SNAT rule will exist. 
-	SnatRuleEnabled bool `json:"snatRuleEnabled,omitempty"`
+	SnatRuleEnabled bool `json:"snatRuleEnabled"`
 }

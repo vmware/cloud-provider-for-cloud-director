@@ -12,8 +12,8 @@ package swagger
 
 // A plugin namespaces for whom type information can be retrieved 
 type VroRemotePluginItem struct {
-	Name string `json:"name,omitempty"`
-	TypeHref string `json:"typeHref,omitempty"`
-	Selectable bool `json:"selectable,omitempty"`
-	CanHaveChildren bool `json:"canHaveChildren,omitempty"`
+	Name string `json:"name"`
+	TypeHref string `json:"typeHref"`
+	Selectable bool `json:"selectable"`
+	CanHaveChildren bool `json:"canHaveChildren"`
 }

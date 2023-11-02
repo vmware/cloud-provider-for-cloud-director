@@ -19,5 +19,5 @@ package swagger
 type LdapConnectionTestResult struct {
 	// Flag for whether connection test was successful
 	Successful bool    `json:"successful"`
-	Error_ *ModelError `json:"error,omitempty"`
+	Error_ *ModelError `json:"error"`
 }

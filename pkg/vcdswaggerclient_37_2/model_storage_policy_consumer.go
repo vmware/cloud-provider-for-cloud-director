@@ -13,7 +13,7 @@ package swagger
 // A consumer type for a storage policy. 
 type StoragePolicyConsumer struct {
 	// The entity that consumes the storage policy.
-	EntityRef *EntityReference `json:"entityRef,omitempty"`
+	EntityRef *EntityReference `json:"entityRef"`
 	// Storage consumed by the entity in MB
-	StorageConsumedMb int64 `json:"storageConsumedMb,omitempty"`
+	StorageConsumedMb int64 `json:"storageConsumedMb"`
 }

@@ -13,8 +13,8 @@ package swagger
 // Describes the DHCP Forwarder configuration on an Edge Gateway. 
 type EdgeDhcpForwarder struct {
 	// A flag indicating whether DHCP Forwarder is enabled or not. This should be enabled in order to use the DHCP relay on routed Org vDC networks. 
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled bool `json:"enabled"`
 	// DHCP server IP addresses. Both IPv4 and IPv6 addresses are supported. The DHCP servers can be in any subnet, outside the SDDC, or in the physical network. 
-	DhcpServers []string   `json:"dhcpServers,omitempty"`
-	Version *ObjectVersion `json:"version,omitempty"`
+	DhcpServers []string   `json:"dhcpServers"`
+	Version *ObjectVersion `json:"version"`
 }

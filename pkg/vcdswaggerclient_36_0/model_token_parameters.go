@@ -18,9 +18,9 @@ package swagger
 // Information for the token to be created. Required for API v35.0+ 
 type TokenParameters struct {
 	// Name of the token to create
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 	// The type of token to be created. Valid types are [\"PROXY\", \"EXTENSION\"]
-	Type_ string `json:"type,omitempty"`
+	Type_ string `json:"type"`
 	// The urn id of the extension to get a token for
-	ExtensionId string `json:"extensionId,omitempty"`
+	ExtensionId string `json:"extensionId"`
 }

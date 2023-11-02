@@ -12,5 +12,5 @@ package swagger
 
 type Regexp struct {
 	ConstraintType string `json:"constraintType"`
-	Expression string `json:"expression,omitempty"`
+	Expression string `json:"expression"`
 }

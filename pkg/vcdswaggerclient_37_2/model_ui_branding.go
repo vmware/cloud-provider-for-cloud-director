@@ -14,7 +14,7 @@ package swagger
 type UiBranding struct {
 	PortalName string `json:"portalName"`
 	// A custom color defined by the administrator and used to theme the site. The color should be in rgb hex color format such as \"FFFFFF\" all capitalized. Can be set to an empty string to use the selected theme's default colors. 
-	PortalColor string               `json:"portalColor,omitempty"`
-	SelectedTheme *UiTheme           `json:"selectedTheme,omitempty"`
+	PortalColor string               `json:"portalColor"`
+	SelectedTheme *UiTheme           `json:"selectedTheme"`
 	CustomLinks []UiBrandingMenuItem `json:"customLinks"`
 }

@@ -13,19 +13,19 @@ package swagger
 // Describes a networking context profile. Context profiles are groups of similar type of values where each value specifies some layer 7 App Id, or Domain Name. 
 type NetworkContextProfile struct {
 	// The organization that this object belongs to. This property is required during creation and cannot be updated. 
-	OrgRef *EntityReference `json:"orgRef,omitempty"`
+	OrgRef *EntityReference `json:"orgRef"`
 	// The context under which this object is created. The context can the id of the organization vDC, vDC Group, or network provider. This field is required on object creation and is unset on object reads. This same context ID can be used in the context filter field when querying for the list of objects. 
-	ContextEntityId string `json:"contextEntityId,omitempty"`
+	ContextEntityId string `json:"contextEntityId"`
 	// The network provider scope that this object belongs to. This is a read-only property and is determined by the input context entity ID during object creation. 
-	NetworkProviderScope string `json:"networkProviderScope,omitempty"`
+	NetworkProviderScope string `json:"networkProviderScope"`
 	// The unique id of this network context profile in URN format.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// Name for the network context profile.
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 	// Description for the network context profile.
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// The scope of the network context profile.
-	Scope *NetworkContextProfileScopeType `json:"scope,omitempty"`
+	Scope *NetworkContextProfileScopeType `json:"scope"`
 	// Array of network context profile attributes.
-	Attributes []NetworkContextProfileAttribute `json:"attributes,omitempty"`
+	Attributes []NetworkContextProfileAttribute `json:"attributes"`
 }

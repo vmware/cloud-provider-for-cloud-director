@@ -13,12 +13,12 @@ package swagger
 // An Edge Cluster object. 
 type EdgeCluster struct {
 	// The id of the Edge Cluster in URN format.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// The name of the Edge Cluster. Names for Edge Clusters must be unique across the system.
 	Name string `json:"name"`
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// The Resource Pool in vCenter where the Edge VM will be deployed.
-	ResourcePool *ResourcePool `json:"resourcePool,omitempty"`
+	ResourcePool *ResourcePool `json:"resourcePool"`
 	// Name of the Storage Profile. This will define the set of datastores where the edge vm will be deployed.
 	StorageProfileName string `json:"storageProfileName"`
 }

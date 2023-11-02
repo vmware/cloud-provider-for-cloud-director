@@ -19,17 +19,17 @@ type Config struct {
 	// Name of the configuration property.
 	Name string `json:"name"`
 	// The value of the configuration property.
-	TypedValue *TypedValue `json:"typedValue,omitempty"`
+	TypedValue *TypedValue `json:"typedValue"`
 	// A string describing the configuration property.
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// Default value of the configuration property.
-	DefaultValue interface{} `json:"defaultValue,omitempty"`
+	DefaultValue interface{} `json:"defaultValue"`
 	// Represents if the cell needs to be rebooted for a change to this property to take effect.
-	RestartRequired bool `json:"restartRequired,omitempty"`
+	RestartRequired bool `json:"restartRequired"`
 	// Minimum value for this configuration property.
-	MinValue float64 `json:"minValue,omitempty"`
+	MinValue float64 `json:"minValue"`
 	// Maximum value for this configuration property.
-	MaxValue float64 `json:"maxValue,omitempty"`
+	MaxValue float64 `json:"maxValue"`
 	// Maximum value for this configuration property.
-	Timestamp time.Time `json:"timestamp,omitempty"`
+	Timestamp time.Time `json:"timestamp"`
 }

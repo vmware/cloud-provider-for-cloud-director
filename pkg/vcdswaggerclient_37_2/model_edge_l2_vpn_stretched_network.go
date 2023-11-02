@@ -15,5 +15,5 @@ type EdgeL2VpnStretchedNetwork struct {
 	// The reference to the  Org vDC network entity. 
 	NetworkRef *EntityReference `json:"networkRef"`
 	// The tunnel ID assigned to the network for the L2 VPN Tunnel. For server sessions this is read only. Ranges from (1-4093) 
-	TunnelId int32 `json:"tunnelId,omitempty"`
+	TunnelId int32 `json:"tunnelId"`
 }

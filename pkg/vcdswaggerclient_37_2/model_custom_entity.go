@@ -13,8 +13,8 @@ package swagger
 // Definition of CustomEntity. 
 type CustomEntity struct {
 	// UUID of custom entity 
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	Name string `json:"name"`
 	// This refers to UUID of custom entity type 
-	CustomEntityTypeId string `json:"customEntityTypeId,omitempty"`
+	CustomEntityTypeId string `json:"customEntityTypeId"`
 }

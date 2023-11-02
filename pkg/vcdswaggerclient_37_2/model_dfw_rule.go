@@ -13,37 +13,37 @@ package swagger
 // Describes a DFW rule.
 type DfwRule struct {
 	// The unique id of this firewall rule. If a rule with the ruleId is not already present, a new rule will be created. If it already exists, the rule will be updated. 
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// Name for the rule.
 	Name string `json:"name"`
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// List of source groups for firewall rule. It specifies the sources of network traffic for the firewall rule. Null value or an empty list will be treated as \"ANY\" which means traffic from any source. For Distributed Firewall rules, an entry with an id of urn:vcloud:firewallGroup:internal can be used to specify all internal vDC Group network traffic. 
-	SourceFirewallGroups []EntityReference `json:"sourceFirewallGroups,omitempty"`
+	SourceFirewallGroups []EntityReference `json:"sourceFirewallGroups"`
 	// List of source groups for firewall rule. It specifies the destinations of network traffic for the firewall rule. Null value or an empty list will be treated as \"ANY\" which means traffic to any destination. For Distributed Firewall rules, an entry with an id of urn:vcloud:firewallGroup:internal can be used to specify all internal vDC Group network traffic. 
-	DestinationFirewallGroups []EntityReference `json:"destinationFirewallGroups,omitempty"`
+	DestinationFirewallGroups []EntityReference `json:"destinationFirewallGroups"`
 	// The list of application ports where this firewall rule is applicable. Null value or an empty list will be treated as \"ANY\" which means rule applies to all ports. 
-	ApplicationPortProfiles []EntityReference `json:"applicationPortProfiles,omitempty"`
+	ApplicationPortProfiles []EntityReference `json:"applicationPortProfiles"`
 	// Type of IP packet that should be matched while enforcing the rule. Default value is IPV4_IPV6. 
-	IpProtocol *FirewallRuleIpProtocol `json:"ipProtocol,omitempty"`
+	IpProtocol *FirewallRuleIpProtocol `json:"ipProtocol"`
 	// The action to be applied to all the traffic that meets the firewall rule criteria. It determines if the rule permits or blocks traffic. This property is now deprecated and replaced with actionValue. Property is required if actionValue is not set. 
-	Action *FirewallRuleAction `json:"action,omitempty"`
+	Action *FirewallRuleAction `json:"action"`
 	// The action to be applied to all the traffic that meets the firewall rule criteria. It determines if the rule permits or blocks traffic. Property is required if action is not set. Below are valid values. <ul>   <li> <code> ALLOW </code> permits traffic to go through the firewall.   <li> <code> DROP </code> blocks the traffic at the firewall. No response is sent back to the source.   <li> <code> REJECT </code> blocks the traffic at the firewall. A response is sent back to the source. </ul> 
-	ActionValue string `json:"actionValue,omitempty"`
+	ActionValue string `json:"actionValue"`
 	// Specifies the direction of the network traffic. Default value is IN_OUT. 
-	Direction *FirewallRuleDirection `json:"direction,omitempty"`
+	Direction *FirewallRuleDirection `json:"direction"`
 	// Whether packet logging is enabled for firewall rule.
-	Logging bool `json:"logging,omitempty"`
+	Logging bool `json:"logging"`
 	// The list of layer 7 network context profiles where this firewall rule is applicable. Null value or an empty list will be treated as \"ANY\" which means rule applies to all applications and domains. 
-	NetworkContextProfiles []EntityReference `json:"networkContextProfiles,omitempty"`
+	NetworkContextProfiles []EntityReference `json:"networkContextProfiles"`
 	// Whether the firewall rule is enabled.
-	Enabled bool           `json:"enabled,omitempty"`
-	Version *ObjectVersion `json:"version,omitempty"`
+	Enabled bool           `json:"enabled"`
+	Version *ObjectVersion `json:"version"`
 	// Text for user entered comments on the firewall rule. Length cannot exceed 2048 characters.
-	Comments string `json:"comments,omitempty"`
+	Comments string `json:"comments"`
 	// Used to limit application of this firewall rule to the specified Org VDC or segment backed external network. Only networks connected as service interfaces are usable.
-	AppliedTo *EntityReference `json:"appliedTo,omitempty"`
+	AppliedTo *EntityReference `json:"appliedTo"`
 	// If set to true, the rule gets applied on all the groups that are NOT part of the source groups. If false, the rule applies to the all the groups including the source groups. 
-	SourceGroupsExcluded bool `json:"sourceGroupsExcluded,omitempty"`
+	SourceGroupsExcluded bool `json:"sourceGroupsExcluded"`
 	// If set to true, the rule gets applied on all the groups that are NOT part of the destination groups. If false, the rule applies to the all the groups including the source groups. 
-	DestinationGroupsExcluded bool `json:"destinationGroupsExcluded,omitempty"`
+	DestinationGroupsExcluded bool `json:"destinationGroupsExcluded"`
 }

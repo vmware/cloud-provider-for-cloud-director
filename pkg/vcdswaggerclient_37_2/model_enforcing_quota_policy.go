@@ -12,8 +12,8 @@ package swagger
 
 // Quota policy that enforces this quota.
 type EnforcingQuotaPolicy struct {
-	Name string `json:"name,omitempty"`
-	Id string `json:"id,omitempty"`
+	Name string `json:"name"`
+	Id string `json:"id"`
 	// The entity from which enforcing quota policy is inherited. 
-	InheritedFrom *EntityReference `json:"inheritedFrom,omitempty"`
+	InheritedFrom *EntityReference `json:"inheritedFrom"`
 }

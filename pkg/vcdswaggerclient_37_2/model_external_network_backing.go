@@ -13,17 +13,17 @@ package swagger
 // Information about an external network backing. 
 type ExternalNetworkBacking struct {
 	// Unique identifier for the network backing in NSX/vCenter.
-	BackingId string `json:"backingId,omitempty"`
+	BackingId string `json:"backingId"`
 	// Type of network backing. This is deprecated in favor of string based enums going forward.
-	BackingType *ExternalNetworkBackingType `json:"backingType,omitempty"`
+	BackingType *ExternalNetworkBackingType `json:"backingType"`
 	// Backing type for the network. <ul> <li>PORTGROUP</li> <li>DV_PORTGROUP</li> <li>NSXT_TIER0</li> <li>NSXT_VRF_TIER0</li> <li>IMPORTED_T_LOGICAL_SWITCH</li> <li>UNKNOWN</li> </ul> 
-	BackingTypeValue string `json:"backingTypeValue,omitempty"`
+	BackingTypeValue string `json:"backingTypeValue"`
 	// The Network Provider for the backing, either a vCenter Server or NSX-T Manager.
-	NetworkProvider *EntityReference `json:"networkProvider,omitempty"`
+	NetworkProvider *EntityReference `json:"networkProvider"`
 	// The name of this external network backing, if it exists.
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 	// Whether the network is backed by an NSX-T VLAN segment.
-	IsNsxTVlanSegment bool `json:"isNsxTVlanSegment,omitempty"`
+	IsNsxTVlanSegment bool `json:"isNsxTVlanSegment"`
 	// If this external network is backed by a NSX-T VRF-Lite Tier0, then this field is set to be the parent Tier0 Router.  Otherwise, field is unset.
-	ParentTier0Ref *ExtObjectReference `json:"parentTier0Ref,omitempty"`
+	ParentTier0Ref *ExtObjectReference `json:"parentTier0Ref"`
 }

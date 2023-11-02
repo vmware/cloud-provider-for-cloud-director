@@ -12,7 +12,7 @@ package swagger
 
 type MimeAttachment struct {
 	InputType string `json:"inputType"`
-	Content string `json:"content,omitempty"`
-	Name string `json:"name,omitempty"`
-	MimeType string `json:"mimeType,omitempty"`
+	Content string `json:"content"`
+	Name string `json:"name"`
+	MimeType string `json:"mimeType"`
 }

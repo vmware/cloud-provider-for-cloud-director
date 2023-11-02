@@ -19,5 +19,5 @@ package swagger
 type ModelError struct {
 	MinorErrorCode string `json:"minorErrorCode"`
 	Message        string `json:"message"`
-	StackTrace     string `json:"stackTrace,omitempty"`
+	StackTrace     string `json:"stackTrace"`
 }

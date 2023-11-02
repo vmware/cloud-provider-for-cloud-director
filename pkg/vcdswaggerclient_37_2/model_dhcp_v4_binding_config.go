@@ -13,7 +13,7 @@ package swagger
 // Describes the additional configuration for IPv4 DHCP Binding of an Org vDC Network. 
 type DhcpV4BindingConfig struct {
 	// Gateway IP Address. When not specified, Gateway IP of Org vDC network will be used.
-	GatewayIpAddress string `json:"gatewayIpAddress,omitempty"`
+	GatewayIpAddress string `json:"gatewayIpAddress"`
 	// Hostname to assign to the host.
-	HostName string `json:"hostName,omitempty"`
+	HostName string `json:"hostName"`
 }

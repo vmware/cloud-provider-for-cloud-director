@@ -21,18 +21,18 @@ type Token struct {
 	// Name of the token
 	Name string `json:"name"`
 	// User specific token that can be used to access proxies. Sorting on this field is not supported.
-	Token string `json:"token,omitempty"`
+	Token string `json:"token"`
 	// Time stamp representing when the token will expire (in UTC).
-	ExpirationTimeUtc time.Time `json:"expirationTimeUtc,omitempty"`
+	ExpirationTimeUtc time.Time `json:"expirationTimeUtc"`
 	// Owner of the token. Either a user or an extension
-	Owner *EntityReference `json:"owner,omitempty"`
+	Owner *EntityReference `json:"owner"`
 	// Name of the user that this token is assigned to.
-	Username string `json:"username,omitempty"`
+	Username string `json:"username"`
 	// ID of the user that this token is assigned to. Sorting on this field is not supported.  Can not be updated. 
-	UserId string `json:"userId,omitempty"`
+	UserId string `json:"userId"`
 	// Name of the organization that the assigned user belongs to. Sorting and filtering on this field is not supported.
-	OrgName string       `json:"orgName,omitempty"`
-	Org *EntityReference `json:"org,omitempty"`
+	OrgName string       `json:"orgName"`
+	Org *EntityReference `json:"org"`
 	// Type of the token. Can be of type PROXY or EXTENSION
-	Type_ string `json:"type,omitempty"`
+	Type_ string `json:"type"`
 }

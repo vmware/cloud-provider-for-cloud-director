@@ -17,5 +17,5 @@ type NetworkContextProfileAttribute struct {
 	// Values for attribute.
 	Values []string `json:"values"`
 	// List of sub attributes for an attribute. These are specified with the attributes such as SSL or CIFS, which can have different cipher suites or TLS versions as values. 
-	SubAttributes []NetworkContextProfileSubAttribute `json:"subAttributes,omitempty"`
+	SubAttributes []NetworkContextProfileSubAttribute `json:"subAttributes"`
 }

@@ -13,19 +13,19 @@ package swagger
 // Results of a connection test to a specific endpoint. 
 type ProbeResult struct {
 	// Localized message describing the connection result stating success or an error message with a brief summary.
-	Result string `json:"result,omitempty"`
+	Result string `json:"result"`
 	// The IP address the host was resolved to, if not going through a proxy.
-	ResolvedIp string `json:"resolvedIp,omitempty"`
+	ResolvedIp string `json:"resolvedIp"`
 	// If vCD can establish a connection on the specified port.
-	CanConnect bool `json:"canConnect,omitempty"`
+	CanConnect bool `json:"canConnect"`
 	// If an SSL Handshake succeeded (secure requests only).
-	SslHandshake bool `json:"sslHandshake,omitempty"`
+	SslHandshake bool `json:"sslHandshake"`
 	// A code describing the result of establishing a connection. Will be one of the following: <ul>   <li>     <em>SUCCESS</em>: The connection was successful.   </li>   <li>     <em>ERROR_CANNOT_RESOLVE_IP</em>: The hostname could not be resolved to an IP address.   </li>   <li>     <em>ERROR_CANNOT_CONNECT</em>: Unable to establish connection.   </li> </ul> 
-	ConnectionResult string `json:"connectionResult,omitempty"`
+	ConnectionResult string `json:"connectionResult"`
 	// A code describing the result of the SSL handshake. Will be one of the following: <ul>   <li>     <em>SUCCESS</em>: The SSL handshake was successful.   </li>   <li>     <em>ERROR_SSL_ERROR</em>: Unable to establish SSL connection.   </li>   <li>     <em>ERROR_UNTRUSTED_CERTIFICATE</em>: Certificate not trusted.   </li>   <li>     <em>ERROR_CANNOT_VERIFY_HOSTNAME</em>: Hostname verification failed.   </li>   <li>     <em>null</em>: No SSL handshake was attempted.   </li> </ul> 
-	SslResult string `json:"sslResult,omitempty"`
+	SslResult string `json:"sslResult"`
 	// The SSL certificate chain presented by the server if a secure connection was made.
-	CertificateChain string `json:"certificateChain,omitempty"`
+	CertificateChain string `json:"certificateChain"`
 	// URLs supplied by Certificate Authorities to retrieve signing certificates, when those certificates are not included in the chain. These URLs are the locations for the 'caIssuers' access method in the 'Authority Info Access' extension (as described in <a href=\"https://datatracker.ietf.org/doc/html/rfc5280#section-4.2.2.1\">RFC 5280 Section 4.2.2.1</a>) of the certificates and gives the caller an indication where additional CA certificates may be retrieved from, to complete the chain to the trust anchor. 
-	AdditionalCAIssuers []string `json:"additionalCAIssuers,omitempty"`
+	AdditionalCAIssuers []string `json:"additionalCAIssuers"`
 }

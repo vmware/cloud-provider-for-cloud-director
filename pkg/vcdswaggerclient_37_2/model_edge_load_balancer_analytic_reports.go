@@ -12,5 +12,5 @@ package swagger
 
 // A set of Load Balancer analytic reports.  Each report in the list represents a timeseries of Edge Gateway Load Balancer runtime data. 
 type EdgeLoadBalancerAnalyticReports struct {
-	Values []EdgeLoadBalancerAnalyticReport `json:"values,omitempty"`
+	Values []EdgeLoadBalancerAnalyticReport `json:"values"`
 }

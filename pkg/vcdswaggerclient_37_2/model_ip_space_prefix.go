@@ -13,7 +13,7 @@ package swagger
 // An IP Prefix for an IP Space. Example: An IP Prefix with startingPrefixIpAddress 192.168.0.0 and prefixLength 30 and totalPrefixCount 3 will result in generation of 3 CIDR each with 4 IP addresses as: 192.168.0.0/30, 192.168.0.4/30 and 192.168.0.8/30 IP Prefix Sequences API <em>/ipSpaces/ipPrefixSequences</em> can be used to preview sequences. 
 type IpSpacePrefix struct {
 	// Unique ID of the IP Space Prefix. For new IP Prefix, this is unset. Existing IP Prefix will have an ID which is used for update identification.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// Starting IP address for the IP prefix. Note that if the IP is a host IP and not the network definition IP for the specific prefix length, VCD will automatically modify starting IP to the network definition's IP for the specified host IP. An example is that for prefix length 30, the starting IP of 192.169.0.2 will be automatically modified to 192.169.0.0.  192.169.0.6 will be modified to 192.169.0.4. 192.169.0.0/30 and 192.169.0.4/30 are network definition CIDRs for host IPs 192.169.0.2 and 192.169.0.6, respectively. 
 	StartingPrefixIpAddress string `json:"startingPrefixIpAddress"`
 	// The prefix length.
@@ -21,7 +21,7 @@ type IpSpacePrefix struct {
 	// The number of prefix blocks defined by this IP prefix.
 	TotalPrefixCount int32 `json:"totalPrefixCount"`
 	// The number of allocated IP prefix blocks.
-	AllocatedPrefixCount int32 `json:"allocatedPrefixCount,omitempty"`
+	AllocatedPrefixCount int32 `json:"allocatedPrefixCount"`
 	// Specifies the percentage of allocated IP prefix blocks out of total specified IP prefix blocks.
-	AllocatedPrefixPercentage float32 `json:"allocatedPrefixPercentage,omitempty"`
+	AllocatedPrefixPercentage float32 `json:"allocatedPrefixPercentage"`
 }

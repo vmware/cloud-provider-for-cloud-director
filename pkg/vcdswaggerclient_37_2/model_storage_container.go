@@ -13,27 +13,27 @@ package swagger
 // A Storage Container, which can be a Datastore or a Datastore Cluster. 
 type StorageContainer struct {
 	// Unique VCD Id for the Storage Container.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// Name for the Storage Container.
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 	// Datastore Type of the Storage Container.
-	DatastoreType string `json:"datastoreType,omitempty"`
+	DatastoreType string `json:"datastoreType"`
 	// True if this Storage Container is a Datastore Cluster.
-	IsDatastoreCluster bool `json:"isDatastoreCluster,omitempty"`
+	IsDatastoreCluster bool `json:"isDatastoreCluster"`
 	// True if this Storage Container is enabled. Unset if this storage container is part of a Datastore Cluster
-	IsEnabled bool `json:"isEnabled,omitempty"`
+	IsEnabled bool `json:"isEnabled"`
 	// Deleted state of the Storage Container.
-	IsDeleted bool `json:"isDeleted,omitempty"`
+	IsDeleted bool `json:"isDeleted"`
 	// Unique Id in Virtual Center of the Storage Container.
-	Moref string `json:"moref,omitempty"`
+	Moref string `json:"moref"`
 	// The VC that this Storage Container belongs to.
-	VcRef *EntityReference `json:"vcRef,omitempty"`
+	VcRef *EntityReference `json:"vcRef"`
 	// Total storage in MB for this Storage Container.
-	TotalStorageMb int64 `json:"totalStorageMb,omitempty"`
+	TotalStorageMb int64 `json:"totalStorageMb"`
 	// Total used storage in MB for this Storage Container.
-	UsedStorageMb int64 `json:"usedStorageMb,omitempty"`
+	UsedStorageMb int64 `json:"usedStorageMb"`
 	// Total provisioned storage in MB for this Storage Container.
-	ProvisionedStorageMb int64 `json:"provisionedStorageMb,omitempty"`
+	ProvisionedStorageMb int64 `json:"provisionedStorageMb"`
 	// Total IOPS capacity for this Storage Container.
-	IopsCapacity int64 `json:"iopsCapacity,omitempty"`
+	IopsCapacity int64 `json:"iopsCapacity"`
 }

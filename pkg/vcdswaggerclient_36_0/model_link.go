@@ -16,9 +16,9 @@
 package swagger
 
 type Link struct {
-	Attributes []WsAttribute `json:"attributes,omitempty"`
-	Href string              `json:"href,omitempty"`
-	Rel string `json:"rel,omitempty"`
-	Type_ string `json:"type,omitempty"`
-	Name string `json:"name,omitempty"`
+	Attributes []WsAttribute `json:"attributes"`
+	Href string              `json:"href"`
+	Rel string `json:"rel"`
+	Type_ string `json:"type"`
+	Name string `json:"name"`
 }

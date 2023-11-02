@@ -12,5 +12,5 @@ package swagger
 
 // List of NSX-T Importable Segments 
 type NsxTImportableSegments struct {
-	Values []NsxTImportableSegment `json:"values,omitempty"`
+	Values []NsxTImportableSegment `json:"values"`
 }

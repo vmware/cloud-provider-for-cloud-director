@@ -16,18 +16,18 @@
 package swagger
 
 type ParameterTypes struct {
-	SdkObject *SdkObject             `json:"sdkObject,omitempty"`
-	String_ *StringParam             `json:"string,omitempty"`
-	SecureString *SecureString       `json:"secureString,omitempty"`
-	Number *NumberParam              `json:"number,omitempty"`
-	MimeAttachment *MimeAttachment   `json:"mimeAttachment,omitempty"`
-	Properties *Properties           `json:"properties,omitempty"`
-	Date *DateParam                  `json:"date,omitempty"`
-	Boolean *BooleanParam            `json:"boolean,omitempty"`
-	Composite *CompositeType         `json:"composite,omitempty"`
-	Regex *Regex                     `json:"regex,omitempty"`
-	EncryptedString *EncryptedString `json:"encryptedString,omitempty"`
-	KeyValuePair *KeyValuePair       `json:"keyValuePair,omitempty"`
-	CompositeValue *CompositeValue   `json:"compositeValue,omitempty"`
-	Array *ArrayParam                `json:"array,omitempty"`
+	SdkObject *SdkObject             `json:"sdkObject"`
+	String_ *StringParam             `json:"string"`
+	SecureString *SecureString       `json:"secureString"`
+	Number *NumberParam              `json:"number"`
+	MimeAttachment *MimeAttachment   `json:"mimeAttachment"`
+	Properties *Properties           `json:"properties"`
+	Date *DateParam                  `json:"date"`
+	Boolean *BooleanParam            `json:"boolean"`
+	Composite *CompositeType         `json:"composite"`
+	Regex *Regex                     `json:"regex"`
+	EncryptedString *EncryptedString `json:"encryptedString"`
+	KeyValuePair *KeyValuePair       `json:"keyValuePair"`
+	CompositeValue *CompositeValue   `json:"compositeValue"`
+	Array *ArrayParam                `json:"array"`
 }

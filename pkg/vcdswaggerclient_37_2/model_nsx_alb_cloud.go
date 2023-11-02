@@ -13,13 +13,13 @@ package swagger
 // An NSX-ALB Controller's Cloud. 
 type NsxAlbCloud struct {
 	// The unique id of the cloud.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// Name of the Cloud used in NSX-ALB Controller's logs or GUI.
-	DisplayName string `json:"displayName,omitempty"`
+	DisplayName string `json:"displayName"`
 	// True if the Cloud is already imported. Cloud cannot be imported again.
-	AlreadyImported bool `json:"alreadyImported,omitempty"`
+	AlreadyImported bool `json:"alreadyImported"`
 	// The Network Pool associated with this Cloud. If unset, this Cloud cannot be imported.
-	NetworkPoolRef *EntityReference `json:"networkPoolRef,omitempty"`
+	NetworkPoolRef *EntityReference `json:"networkPoolRef"`
 	// Name of the transport zone in NSX-T associated with the NSX-ALB Cloud. If unset, the tranport zone associated with the Load Balancer Cloud is not found in NSX-T. 
-	TransportZoneName string `json:"transportZoneName,omitempty"`
+	TransportZoneName string `json:"transportZoneName"`
 }

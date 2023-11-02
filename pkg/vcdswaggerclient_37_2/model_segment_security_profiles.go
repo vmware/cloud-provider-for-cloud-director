@@ -12,5 +12,5 @@ package swagger
 
 // List of Segment Security Profiles. 
 type SegmentSecurityProfiles struct {
-	Values []SegmentSecurityProfile `json:"values,omitempty"`
+	Values []SegmentSecurityProfile `json:"values"`
 }

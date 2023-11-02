@@ -13,7 +13,7 @@ package swagger
 // IP Space IP Prefix suggestions grouped by IP Prefix's prefix length.
 type IpSpacePrefixLengthSuggestion struct {
 	// The prefix length.
-	PrefixLength int32 `json:"prefixLength,omitempty"`
+	PrefixLength int32 `json:"prefixLength"`
 	// List of unused IP Prefixes of particular prefix length from the referenced IP Space.
-	UnusedValues []string `json:"unusedValues,omitempty"`
+	UnusedValues []string `json:"unusedValues"`
 }

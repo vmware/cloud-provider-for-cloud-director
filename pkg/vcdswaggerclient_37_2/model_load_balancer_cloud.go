@@ -13,19 +13,19 @@ package swagger
 // A Load Balancer Cloud. 
 type LoadBalancerCloud struct {
 	// Represents current status of the networking object. 
-	Status *NetworkingObjectStatusType `json:"status,omitempty"`
+	Status *NetworkingObjectStatusType `json:"status"`
 	// The identifier of the registered Load Balancer Cloud in URN format
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// The name of the Load Balancer Cloud. 
 	Name string `json:"name"`
 	// Description for the registered Load Balancer Cloud.
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// The backing that uniquely identifies a Load Balancer Cloud configured within a Load Balancer Controller.  At the present, VCD only supports NSX-T Clouds configured within an NSX-ALB Controller deployment. This is not updatable once it's created. 
 	LoadBalancerCloudBacking *LoadBalancerCloudBacking `json:"loadBalancerCloudBacking"`
 	// The Network Pool associated with this Cloud
-	NetworkPoolRef *EntityReference `json:"networkPoolRef,omitempty"`
+	NetworkPoolRef *EntityReference `json:"networkPoolRef"`
 	// The current health status of the Load Balancer Cloud. Possible values are: <ul> <li> UP - The cloud is healthy and ready to enable Load Balancer for an Edge Gateway. <li> DOWN - The cloud is in a failure state. Enabling Load balancer on an Edge Gateway may not be possible. <li> RUNNING - The cloud is currently processing. An example is if it's enabling a Load Balancer for an Edge Gateway. <li> UNAVAILABLE - The cloud is unavailable. <li> UNKNOWN - The cloud state is unknown. </ul> 
-	HealthStatus string `json:"healthStatus,omitempty"`
+	HealthStatus string `json:"healthStatus"`
 	// The non-localized detailed message on the health of the Cloud.
-	DetailedHealthMessage string `json:"detailedHealthMessage,omitempty"`
+	DetailedHealthMessage string `json:"detailedHealthMessage"`
 }

@@ -13,22 +13,22 @@ package swagger
 // A network pool is a group of undifferentiated networks that is available for use within an organization vDC to create certain type of vDC networks such as Organization vDC and Cross vDC networks. 
 type NetworkPool struct {
 	// Represents current status of the networking object. 
-	Status *NetworkingObjectStatusType `json:"status,omitempty"`
+	Status *NetworkingObjectStatusType `json:"status"`
 	// The id of the Network Pool in URN format.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// The name of the Network Pool. Names for Network Pools must be unique across the system.
-	Name string `json:"name,omitempty"`
-	Description string `json:"description,omitempty"`
+	Name string `json:"name"`
+	Description string `json:"description"`
 	// The network pool backing type.
-	PoolType *NetworkPoolBackingType `json:"poolType,omitempty"`
+	PoolType *NetworkPoolBackingType `json:"poolType"`
 	// Whether promiscuous mode is enabled on the network pool. This is only applicable for VLAN network pools.
-	PromiscuousMode bool `json:"promiscuousMode,omitempty"`
+	PromiscuousMode bool `json:"promiscuousMode"`
 	// The number of backings available for use.
-	TotalBackingsCount int32 `json:"totalBackingsCount,omitempty"`
+	TotalBackingsCount int32 `json:"totalBackingsCount"`
 	// The number of network pool backings in use.
-	UsedBackingsCount int32 `json:"usedBackingsCount,omitempty"`
+	UsedBackingsCount int32 `json:"usedBackingsCount"`
 	// The Id of vCenter server or the NSX-T manager that manages backings for this network pool.
-	ManagingOwnerRef *EntityReference `json:"managingOwnerRef,omitempty"`
+	ManagingOwnerRef *EntityReference `json:"managingOwnerRef"`
 	// The network pool backing information.
-	Backing *NetworkPoolBacking `json:"backing,omitempty"`
+	Backing *NetworkPoolBacking `json:"backing"`
 }

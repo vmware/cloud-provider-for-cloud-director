@@ -13,9 +13,9 @@ package swagger
 // A reference to an entity where the next hop of a static route is reachable. In general, the reference should be an org vDC network or segment backed external network, but scope could also reference a <code>SYSTEM_OWNED</code> entity if the next hop is configured outside of VCD. 
 type EdgeStaticRouteNextHopScope struct {
 	// The name of the scoped entity.
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 	// Type of this scoped entity. This can be an network or a system-owned entity if the static route is <code>SYSTEM_OWNED</code>. Supported types are: <ul> <li>NETWORK</li> <li>SYSTEM_OWNED</li> </ul> 
-	ScopeType string `json:"scopeType,omitempty"`
+	ScopeType string `json:"scopeType"`
 	// The id of this scoped entity.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 }

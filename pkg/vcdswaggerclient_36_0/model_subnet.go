@@ -22,17 +22,17 @@ type Subnet struct {
 	// The prefix length of the subnet.
 	PrefixLength int32 `json:"prefixLength"`
 	// The DNS suffix that VMs attached to this network will use.
-	DnsSuffix string `json:"dnsSuffix,omitempty"`
+	DnsSuffix string `json:"dnsSuffix"`
 	// The first DNS server that VMs attached to this network will use.
-	DnsServer1 string `json:"dnsServer1,omitempty"`
+	DnsServer1 string `json:"dnsServer1"`
 	// The second DNS server that VMs attached to this network will use.
-	DnsServer2 string `json:"dnsServer2,omitempty"`
+	DnsServer2 string `json:"dnsServer2"`
 	// Range of IPs within the subnet that can be used in this network. A VM attached to this network is assigned one of these IPs.
-	IpRanges *IpRanges `json:"ipRanges,omitempty"`
+	IpRanges *IpRanges `json:"ipRanges"`
 	// Indicates whether the external network subnet is currently enabled.
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled bool `json:"enabled"`
 	// The number of IP addresses defined by the static IP ranges.
-	TotalIpCount int32 `json:"totalIpCount,omitempty"`
+	TotalIpCount int32 `json:"totalIpCount"`
 	// The number of IP address used from the static IP ranges.
-	UsedIpCount int32 `json:"usedIpCount,omitempty"`
+	UsedIpCount int32 `json:"usedIpCount"`
 }

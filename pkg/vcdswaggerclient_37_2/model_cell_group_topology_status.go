@@ -13,6 +13,6 @@ package swagger
 // The topology from the point of view of each cell. If all CellTopologyStatus-es within each CellGroupTopology are at the maximum value(most stable), the overal status of the group is stable.
 type CellGroupTopologyStatus struct {
 	// An enumeration of the state of the group - OK,DEGRADED
-	Status string               `json:"status,omitempty"`
-	Topology *CellGroupTopology `json:"topology,omitempty"`
+	Status string               `json:"status"`
+	Topology *CellGroupTopology `json:"topology"`
 }

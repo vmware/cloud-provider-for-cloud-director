@@ -18,17 +18,17 @@ package swagger
 // Session 
 type Session struct {
 	// ID of session
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// User of this session
-	User *EntityReference `json:"user,omitempty"`
+	User *EntityReference `json:"user"`
 	// Organization user is logged into for this session
-	Org *EntityReference `json:"org,omitempty"`
+	Org *EntityReference `json:"org"`
 	// The accessible location this session is valid for
-	Location string `json:"location,omitempty"`
+	Location string `json:"location"`
 	// User's roles for this session
-	Roles []string `json:"roles,omitempty"`
+	Roles []string `json:"roles"`
 	// References to user's roles
-	RoleRefs []EntityReference `json:"roleRefs,omitempty"`
+	RoleRefs []EntityReference `json:"roleRefs"`
 	// The session idle timeout in minutes
-	SessionIdleTimeoutMinutes int32 `json:"sessionIdleTimeoutMinutes,omitempty"`
+	SessionIdleTimeoutMinutes int32 `json:"sessionIdleTimeoutMinutes"`
 }

@@ -18,18 +18,18 @@ package swagger
 // An available network connections exposed by the SDDC
 type SddcEndpoint struct {
 	// This is a required property.
-	Name string `json:"name,omitempty"`
-	Id string `json:"id,omitempty"`
+	Name string `json:"name"`
+	Id string `json:"id"`
 	// A network endpoint that the SDDC exposes for communication.Deprecated in Api 35.0.
-	Endpoint string `json:"endpoint,omitempty"`
+	Endpoint string `json:"endpoint"`
 	// An optional identifier to a Proxy that can be used to establish a connection to the endpoint. Deprecated in Api 35.0 and replaced by proxy. 
-	ProxyId string `json:"proxyId,omitempty"`
+	ProxyId string `json:"proxyId"`
 	// The URL target of the SDDC endpoint. This is the URL that the browser tab  will be pointed to when the endpoint is launched via the H5 UI of VCD. This is a required property. 
-	TargetUrl string `json:"targetUrl,omitempty"`
+	TargetUrl string `json:"targetUrl"`
 	// A reference to an optional Proxy that can be used to establish a connection to the endpoint
-	Proxy *EntityReference `json:"proxy,omitempty"`
+	Proxy *EntityReference `json:"proxy"`
 	// The EntityReference of the parent SDDC entity. This is a required property to create the endpoint and once set cannot be edited.
-	Sddc *EntityReference `json:"sddc,omitempty"`
+	Sddc *EntityReference `json:"sddc"`
 	// True if this is the default endpoint for the parent SDDC. An endpoint being the default for the SDDC means that this endpoint's target will be launched when the SDDC tile is clicked in the H5 Tenant UI of VCD. 
-	IsDefault bool `json:"isDefault,omitempty"`
+	IsDefault bool `json:"isDefault"`
 }

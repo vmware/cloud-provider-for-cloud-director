@@ -13,32 +13,32 @@ package swagger
 // An Ip Discovery Segment Profile.
 type SegmentIpDiscoveryProfile struct {
 	// The unique id of the segment profile.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// Name of the segment profile. This corresponds to the name used in NSX-T manager's logs or GUI.
-	DisplayName string `json:"displayName,omitempty"`
+	DisplayName string `json:"displayName"`
 	// The description of the segment profile.
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// The NSX-T manager where this segment profile is configured.
-	NsxTManagerRef *EntityReference `json:"nsxTManagerRef,omitempty"`
+	NsxTManagerRef *EntityReference `json:"nsxTManagerRef"`
 	// Whether ARP snooping is enabled.
-	IsArpSnoopingEnabled bool `json:"isArpSnoopingEnabled,omitempty"`
+	IsArpSnoopingEnabled bool `json:"isArpSnoopingEnabled"`
 	// Indicates the number of arp snooped IP addresses to be remembered per LogicalPort.
-	ArpBindingLimit int32 `json:"arpBindingLimit,omitempty"`
+	ArpBindingLimit int32 `json:"arpBindingLimit"`
 	// Whether DHCP snooping for IPv4 is enabled.
-	IsDhcpSnoopingV4Enabled bool `json:"isDhcpSnoopingV4Enabled,omitempty"`
+	IsDhcpSnoopingV4Enabled bool `json:"isDhcpSnoopingV4Enabled"`
 	// Whether fetching IPv4 address using vm-tools is enabled. This option is only supported on ESX where vm-tools is installed.
-	IsVmToolsV4Enabled bool `json:"isVmToolsV4Enabled,omitempty"`
-	IsDhcpSnoopingV6Enabled bool `json:"isDhcpSnoopingV6Enabled,omitempty"`
+	IsVmToolsV4Enabled bool `json:"isVmToolsV4Enabled"`
+	IsDhcpSnoopingV6Enabled bool `json:"isDhcpSnoopingV6Enabled"`
 	// Whether fetching IPv6 address using vm-tools is enabled. This will learn the IPv6 addresses which are configured on interfaces of a VM with the help of the VMTools software. 
-	IsVmToolsV6Enabled bool `json:"isVmToolsV6Enabled,omitempty"`
+	IsVmToolsV6Enabled bool `json:"isVmToolsV6Enabled"`
 	// Whether ND snooping is enabled.  If true, this method will snoop the NS (Neighbor Solicitation) and NA (Neighbor Advertisement) messages in the ND (Neighbor Discovery Protocol) family of messages which are transmitted by a VM. From the NS messages, we will learn about the source which sent this NS message. From the NA message, we will learn the resolved address in the message which the VM is a recipient of. Addresses snooped by this method are subject to TOFU. 
-	IsNdSnoopingEnabled bool `json:"isNdSnoopingEnabled,omitempty"`
+	IsNdSnoopingEnabled bool `json:"isNdSnoopingEnabled"`
 	// Maximum number of ND (Neighbor Discovery Protocol) snooped IPv6 addresses.
-	NdSnoopingLimit int32 `json:"ndSnoopingLimit,omitempty"`
+	NdSnoopingLimit int32 `json:"ndSnoopingLimit"`
 	// ARP and ND cache timeout (in minutes).
-	ArpNdBindingTimeout int32 `json:"arpNdBindingTimeout,omitempty"`
+	ArpNdBindingTimeout int32 `json:"arpNdBindingTimeout"`
 	// Whether duplicate IP detection is enabled. Duplicate IP detection is used to determine if there is any IP conflict with any other port on the same logical switch. If a conflict is detected, then the IP is marked as a duplicate on the port where the IP was discovered last. 
-	IsDuplicateIpDetectionEnabled bool `json:"isDuplicateIpDetectionEnabled,omitempty"`
+	IsDuplicateIpDetectionEnabled bool `json:"isDuplicateIpDetectionEnabled"`
 	// Whether \"Trust on First Use(TOFU)\" paradigm is enabled.
-	IsTofuEnabled bool `json:"isTofuEnabled,omitempty"`
+	IsTofuEnabled bool `json:"isTofuEnabled"`
 }

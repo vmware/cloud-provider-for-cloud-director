@@ -18,7 +18,7 @@ package swagger
 // This represents the Edge Cluster to be used for network services. This can only be used to represent Edge Clusters managed by NSX-T. 
 type ServicesEdgeCluster struct {
 	// The reference to VCD Edge Cluster, if it exists.
-	EdgeClusterRef *EntityReference `json:"edgeClusterRef,omitempty"`
+	EdgeClusterRef *EntityReference `json:"edgeClusterRef"`
 	// The Id of the Edge Cluster in the NSX-T manager. If the user provides the id of NSX-T edge cluster during update, VCD will automatically create a corresponding VCD Edge cluster object referencing the specified NSX-T edge cluster. For NSX-V Edges, this is set to NULL. 
-	BackingId string `json:"backingId,omitempty"`
+	BackingId string `json:"backingId"`
 }

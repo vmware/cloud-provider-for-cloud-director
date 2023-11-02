@@ -17,12 +17,12 @@ package swagger
 
 type LogicalVmGroup struct {
 	// UUID for LogicalVmGroup. This is immutable. 
-	Id string `json:"id,omitempty"`
-	Description string `json:"description,omitempty"`
+	Id string `json:"id"`
+	Description string `json:"description"`
 	// Display name. 
 	Name string `json:"name"`
 	// List of named vm groups associated with logical vm group. 
-	NamedVmGroupReferences []EntityReference `json:"namedVmGroupReferences,omitempty"`
+	NamedVmGroupReferences []EntityReference `json:"namedVmGroupReferences"`
 	// URN for Provider vDC. 
-	PvdcId string `json:"pvdcId,omitempty"`
+	PvdcId string `json:"pvdcId"`
 }

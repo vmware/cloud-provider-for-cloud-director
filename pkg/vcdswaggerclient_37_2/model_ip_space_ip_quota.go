@@ -13,7 +13,7 @@ package swagger
 // Object specifying IP Space floating IP and IP Prefix quotas applied to an Organization.
 type IpSpaceIpQuota struct {
 	// The quota for floating IPs from the IP Space.
-	FloatingIpQuota int32 `json:"floatingIpQuota,omitempty"`
+	FloatingIpQuota int32 `json:"floatingIpQuota"`
 	// Quotas for IP Prefixes.
-	IpPrefixQuotas []IpSpaceIpPrefixQuota `json:"ipPrefixQuotas,omitempty"`
+	IpPrefixQuotas []IpSpaceIpPrefixQuota `json:"ipPrefixQuotas"`
 }

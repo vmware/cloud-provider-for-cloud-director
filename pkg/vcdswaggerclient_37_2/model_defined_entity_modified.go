@@ -22,21 +22,21 @@ const (
 // Describes what a defined entity should look like.
 type DefinedEntity struct {
 	// The id of the defined entity in URN format.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// The URN ID of the defined entity type that the entity is an instance of. This is a read-only field.
-	EntityType string `json:"entityType,omitempty"`
+	EntityType string `json:"entityType"`
 	// The name of the defined entity.
 	Name string `json:"name"`
 	// An external entity's id that this entity may have a relation to.
-	ExternalId string `json:"externalId,omitempty"`
+	ExternalId string `json:"externalId"`
 	// A JSON value representation. The JSON will be validated against the schema of the entityType that the entity is an instance of.
 	Entity map[string]interface{} `json:"entity"`
 	// Every entity is created in the \"PRE_CREATED\" state. Once an entity is ready to be validated against its schema, it will transition in another state - RESOLVED, if the entity is valid according to the schema, or RESOLUTION_ERROR otherwise. If an entity in an \"RESOLUTION_ERROR\" state is updated, it will transition to the initial \"PRE_CREATED\" state without performing any validation. If its in the \"RESOLVED\" state, then it will be validated against the entity type schema and throw an exception if its invalid.
-	State RDEState `json:"state,omitempty"`
+	State RDEState `json:"state"`
 	// The \"entityState\" field may have the following values: \"PRE_CREATED\", \"RESOLVED\", \"RESOLUTION_ERROR\", \"IN_DELETION\". Every entity is created in the \"PRE_CREATED\" state. Once an entity is ready to be validated against its schema, it will transition in another state - \"RESOLVED\", if the entity is valid according to the schema, or \"RESOLUTION_ERROR\" otherwise. If an entity in an \"RESOLUTION_ERROR\" state is updated, it will transition to the initial \"PRE_CREATED\" state without performing any validation. If its in the \"RESOLVED\" state, then it will be validated against the entity type schema and throw an exception if its invalid. Once an entity is ready to be deleted, if any external resources need to be cleaned up, the entity deletion process can be set up into multiple stages. The entity will transition into state IN_DELETION when the finalization process starts and will be permanently deleted once it completes successfully. If the finalization is not successful, the entity will once it completes successfully. If the finalization is not successful, the entity will remain in IN_DELETION state.
-	EntityState string `json:"entityState,omitempty"`
+	EntityState string `json:"entityState"`
 	// The owner of the defined entity.
-	Owner *EntityReference `json:"owner,omitempty"`
+	Owner *EntityReference `json:"owner"`
 	// The organization of the defined entity.
-	Org *EntityReference `json:"org,omitempty"`
+	Org *EntityReference `json:"org"`
 }

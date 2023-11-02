@@ -17,14 +17,14 @@ type Connection struct {
 	// The port to use when connecting.
 	Port int32 `json:"port"`
 	// If the connection should use https.
-	Secure bool `json:"secure,omitempty"`
+	Secure bool `json:"secure"`
 	// Maximum time (in seconds) any step in the test should wait for a response.
-	Timeout int32 `json:"timeout,omitempty"`
+	Timeout int32 `json:"timeout"`
 	// Endpoint/Hostname verification algorithm to be used during SSL/TLS/DTLS handshake. Their values are as follows: <ul>   <li>     <em>HTTPS</em>: use https hostname verification algorithm as described in     <a href=\"https://datatracker.ietf.org/doc/html/rfc2818\">RFC 2818</a>   </li>   <li>     <em>LDAPS</em>: use ldaps hostname verification algorithm as described in     <a href=\"https://datatracker.ietf.org/doc/html/rfc2830\">RFC 2830</a>   </li> </ul> When this field is not set, the default value <em>null</em> indicates no hostname verification will be performed. 
-	HostnameVerificationAlgorithm string `json:"hostnameVerificationAlgorithm,omitempty"`
+	HostnameVerificationAlgorithm string `json:"hostnameVerificationAlgorithm"`
 	// A list of URLs being authorized by the user to retrieve additional CA certificates from,  if necessary, to complete the certificate chain to its trust anchor. <p> Upon retrieving the certificate chain presented during the handshake, if signing CA certificates were not included, but a location is specified for the 'caIssuers' access method of the 'Authority Info Access' extension (as described in <a href=\"https://datatracker.ietf.org/doc/html/rfc5280#section-4.2.2.1\">RFC 5280 Section 4.2.2.1</a>) of those certificates and that location is one of these supplied URLs, then additional certificates will be retrieved from those URLs in accordance with the protocol laid out in the RFC. <p> Any failure to retrieve this certificate will NOT fail the test connection request, nor will the error associated with this failure be returned. <p> In the unlikely event that the CA Issuers URL specifies `https` instead of `http`, the original certificate, that included that URL, will be temporarily used to trust the server during ssl handshake 
-	AdditionalCAIssuers []string     `json:"additionalCAIssuers,omitempty"`
-	ProxyConnection *ProxyConnection `json:"proxyConnection,omitempty"`
+	AdditionalCAIssuers []string     `json:"additionalCAIssuers"`
+	ProxyConnection *ProxyConnection `json:"proxyConnection"`
 	// The URN of a ProxyConfiguration to use for the test. Only one of proxyConnection or preConfiguredProxy can be specified. If neither is specified then no proxy is used to test the connection. 
-	PreConfiguredProxy string `json:"preConfiguredProxy,omitempty"`
+	PreConfiguredProxy string `json:"preConfiguredProxy"`
 }

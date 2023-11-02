@@ -18,5 +18,5 @@ package swagger
 // An origin for which CORS is allowed. 
 type AllowedOrigin struct {
 	// The origin that will be allowed.
-	Origin string `json:"origin,omitempty"`
+	Origin string `json:"origin"`
 }

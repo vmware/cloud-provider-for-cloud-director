@@ -20,16 +20,16 @@ import (
 )
 
 type WsWorkflowExecution struct {
-	BusinessState string `json:"businessState,omitempty"`
-	ContentException string `json:"contentException,omitempty"`
-	CurrentItemDisplayName string `json:"currentItemDisplayName,omitempty"`
-	EndDate time.Time `json:"endDate,omitempty"`
-	Id string                      `json:"id,omitempty"`
-	InputParameters []WsParameter  `json:"inputParameters,omitempty"`
-	Name string                    `json:"name,omitempty"`
-	OutputParameters []WsParameter `json:"outputParameters,omitempty"`
-	Relations *Relations           `json:"relations,omitempty"`
-	StartDate time.Time            `json:"startDate,omitempty"`
-	StartedBy string               `json:"startedBy,omitempty"`
-	State *ExecutionState          `json:"state,omitempty"`
+	BusinessState string `json:"businessState"`
+	ContentException string `json:"contentException"`
+	CurrentItemDisplayName string `json:"currentItemDisplayName"`
+	EndDate time.Time `json:"endDate"`
+	Id string                      `json:"id"`
+	InputParameters []WsParameter  `json:"inputParameters"`
+	Name string                    `json:"name"`
+	OutputParameters []WsParameter `json:"outputParameters"`
+	Relations *Relations           `json:"relations"`
+	StartDate time.Time            `json:"startDate"`
+	StartedBy string               `json:"startedBy"`
+	State *ExecutionState          `json:"state"`
 }

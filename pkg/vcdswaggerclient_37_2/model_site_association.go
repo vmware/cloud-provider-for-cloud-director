@@ -13,17 +13,17 @@ package swagger
 // An associated site. 
 type SiteAssociation struct {
 	// A unique identifier for the associated site.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// Name of the associated site.
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 	// The API version of the associated site.
-	MaxSupportedApiVersion string `json:"maxSupportedApiVersion,omitempty"`
+	MaxSupportedApiVersion string `json:"maxSupportedApiVersion"`
 	// URL for the REST endpoint of the associated site.
-	RestApiEndpoint string `json:"restApiEndpoint,omitempty"`
+	RestApiEndpoint string `json:"restApiEndpoint"`
 	// URL of a webpage for the UI of the associated site.
-	BaseUiEndpoint string `json:"baseUiEndpoint,omitempty"`
+	BaseUiEndpoint string `json:"baseUiEndpoint"`
 	// The status of the associated site. Possible statuses include symmetric, asymmetric, or error.
-	Status string `json:"status,omitempty"`
+	Status string `json:"status"`
 	// PEM-encoded public key for the associated site.
-	PublicKey string `json:"publicKey,omitempty"`
+	PublicKey string `json:"publicKey"`
 }

@@ -12,5 +12,5 @@ package swagger
 
 // List of Segment QoS Profiles. 
 type SegmentQoSProfiles struct {
-	Values []SegmentQoSProfile `json:"values,omitempty"`
+	Values []SegmentQoSProfile `json:"values"`
 }

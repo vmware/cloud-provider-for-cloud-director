@@ -13,7 +13,7 @@ package swagger
 // An object specifying the IP prefix sequences that can be generated from an IP Prefix.
 type IpPrefixSequenceList struct {
 	// Ordered list of IP prefix sequences which can be generated. Number of sequences will be limited to the first 10 sequences if specified prefixCount is greater than 10. 
-	Sequences []string `json:"sequences,omitempty"`
+	Sequences []string `json:"sequences"`
 	// Last sequence which can be generated based on input values for IP Prefix.
-	LastSequence string `json:"lastSequence,omitempty"`
+	LastSequence string `json:"lastSequence"`
 }

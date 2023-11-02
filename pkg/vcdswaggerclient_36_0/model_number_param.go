@@ -17,5 +17,5 @@ package swagger
 
 type NumberParam struct {
 	InputType string `json:"inputType"`
-	Value float32 `json:"value,omitempty"`
+	Value float32 `json:"value"`
 }

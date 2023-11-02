@@ -12,7 +12,7 @@ package swagger
 
 // SSL certificate in PEM format. 
 type TrustedCertificate struct {
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// Name, case insensitive
 	Alias string `json:"alias"`
 	// PEM encoded certificate. All extraneous whitespace and other information is removed.

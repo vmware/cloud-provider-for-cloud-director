@@ -18,9 +18,9 @@ package swagger
 // Describes an IP address currently be used by the edge gateway. The IP belongs to the IPs allocated to the edge.
 type GatewayUsedIpAddress struct {
 	// The external network that this IP Address belongs to.
-	NetworkRef *EntityReference `json:"networkRef,omitempty"`
+	NetworkRef *EntityReference `json:"networkRef"`
 	// The IP address in used.
-	IpAddress string `json:"ipAddress,omitempty"`
+	IpAddress string `json:"ipAddress"`
 	// The catagory that an IP can be used for.
-	Category *GatewayUsedIpAddressCategory `json:"category,omitempty"`
+	Category *GatewayUsedIpAddressCategory `json:"category"`
 }

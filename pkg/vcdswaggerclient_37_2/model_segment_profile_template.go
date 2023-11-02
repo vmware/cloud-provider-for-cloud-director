@@ -17,23 +17,23 @@ import (
 // Represents a collection of segment profiles to be applied during NSX-T network creation. The specified segment profiles exist on the source NSX-T manager and will be synced to other NSX-T managers known to Cloud Director. 
 type SegmentProfileTemplate struct {
 	// The URN of the Segment Profile Template Object.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// The name of the Segment Profile Template.
 	Name string `json:"name"`
 	// The description of the Segment Profile Template.
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// The NSX-T manager providing the source segment profiles.
 	SourceNsxTManagerRef *EntityReference `json:"sourceNsxTManagerRef"`
 	// The Quality of Service (QoS) profile.
-	QosProfile *ExtObjectReference `json:"qosProfile,omitempty"`
+	QosProfile *ExtObjectReference `json:"qosProfile"`
 	// The MAC Discovery profile. Defines how the segment discovers MAC addresses.
-	MacDiscoveryProfile *ExtObjectReference `json:"macDiscoveryProfile,omitempty"`
+	MacDiscoveryProfile *ExtObjectReference `json:"macDiscoveryProfile"`
 	// The IP Discovery profile. Defines how the segment discovers IP addresses.
-	IpDiscoveryProfile *ExtObjectReference `json:"ipDiscoveryProfile,omitempty"`
+	IpDiscoveryProfile *ExtObjectReference `json:"ipDiscoveryProfile"`
 	// The Segment Security profile. Enables stateless L2 and L3 security on the segment.
-	SegmentSecurityProfile *ExtObjectReference `json:"segmentSecurityProfile,omitempty"`
+	SegmentSecurityProfile *ExtObjectReference `json:"segmentSecurityProfile"`
 	// The Spoof Guard profile.
-	SpoofGuardProfile *ExtObjectReference `json:"spoofGuardProfile,omitempty"`
+	SpoofGuardProfile *ExtObjectReference `json:"spoofGuardProfile"`
 	// The last time the segment profile template was modified.
-	LastModified time.Time `json:"lastModified,omitempty"`
+	LastModified time.Time `json:"lastModified"`
 }

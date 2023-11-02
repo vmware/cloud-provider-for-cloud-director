@@ -13,7 +13,7 @@ package swagger
 // Represents the Rate Limiting Configuration for a given Edge Gateway.
 type EdgeQoSConfig struct {
 	// The Gateway QoS profile for ingress traffic. Ingress QoS profile contains configuration of rate limiting properties which can be applied in ingress direction at Edge Gateway. 
-	IngressProfile *ExtObjectReference `json:"ingressProfile,omitempty"`
+	IngressProfile *ExtObjectReference `json:"ingressProfile"`
 	// The Gateway QoS profile for egress traffic. Egress QoS profile contains configuration of rate limiting properties which can be applied in egress direction at Edge Gateway. 
-	EgressProfile *ExtObjectReference `json:"egressProfile,omitempty"`
+	EgressProfile *ExtObjectReference `json:"egressProfile"`
 }

@@ -13,12 +13,12 @@ package swagger
 // A Route for a Universal Router. 
 type UniversalRoute struct {
 	// For a given route, routing by default will go through the default egress point. Every valid/configured route will have a default egress point.
-	DefaultEgress *EgressPointReference `json:"defaultEgress,omitempty"`
+	DefaultEgress *EgressPointReference `json:"defaultEgress"`
 	// A standby egress point can be configured for failover of routes in case there is an issue routign to the default egress point.
-	StandbyEgress *EgressPointReference `json:"standbyEgress,omitempty"`
+	StandbyEgress *EgressPointReference `json:"standbyEgress"`
 	// The network provider scope for the given route. There can only be one route per fault domain for a Universal Route.
 	NetworkProviderScope string `json:"networkProviderScope"`
 	// The status of the route (whether it's realized, failed, etc.).
-	Status *UniversalRoutingStatus `json:"status,omitempty"`
-	ErrorMessage string            `json:"errorMessage,omitempty"`
+	Status *UniversalRoutingStatus `json:"status"`
+	ErrorMessage string            `json:"errorMessage"`
 }

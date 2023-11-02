@@ -13,7 +13,7 @@ package swagger
 // An object specifying IP Ranges for an IP Space along with quota information.
 type IpSpaceRanges struct {
 	// List of IP Ranges.
-	IpRanges []IpSpaceRange `json:"ipRanges,omitempty"`
+	IpRanges []IpSpaceRange `json:"ipRanges"`
 	// This specifies the default number of IPs from the specified ranges which can be consumed by each organization using this IP Space. This is typically set for IP Spaces with type PUBLIC or SHARED_SERVICES. A Quota of -1 means there is no cap to the number of IP addresses that can be allocated. A Quota of 0 means that the IP addresses cannot be allocated. If not specified, all PUBLIC or SHARED_SERVICES IP Spaces have a default quota of 1 for Floating IP addresses and all PRIVATE IP Spaces have a default quota of -1 for Floating IP addresses. 
-	DefaultFloatingIpQuota int32 `json:"defaultFloatingIpQuota,omitempty"`
+	DefaultFloatingIpQuota int32 `json:"defaultFloatingIpQuota"`
 }

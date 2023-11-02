@@ -13,44 +13,44 @@ package swagger
 // An object representing a vCenter server. 
 type VCenterServer struct {
 	// URN of the associated vCenter server.
-	VcId string `json:"vcId,omitempty"`
+	VcId string `json:"vcId"`
 	// The name of the vCenter server.
 	Name string `json:"name"`
 	// Optional description.
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// User name to connect to the server.
 	Username string `json:"username"`
 	// Cleartext password to connect to the server.
-	Password string `json:"password,omitempty"`
+	Password string `json:"password"`
 	// URL of the server.
 	Url string `json:"url"`
 	// True if the vCenter server is enabled for use with vCloud Director.
-	IsEnabled bool `json:"isEnabled,omitempty"`
+	IsEnabled bool `json:"isEnabled"`
 	// The URL of vCenter web client server.
-	VsphereWebClientServerUrl string `json:"vsphereWebClientServerUrl,omitempty"`
+	VsphereWebClientServerUrl string `json:"vsphereWebClientServerUrl"`
 	// When present, indicates that a proxy exists within vCloud Director that proxies this vCenter server for access by authorized end-users. Setting this field to true when registering a vCenter server will result in a proxy being created for the vCenter server, and another for the corresponding SSO endpoint (if different from the vCenter server's endpoint). This field is immutable after the vCenter Server is registered, and will be updated by the system when/if the proxy is removed.
-	HasProxy bool `json:"hasProxy,omitempty"`
+	HasProxy bool `json:"hasProxy"`
 	// vCenter root folder in which the vCloud Director system folder will be created. This parameter only takes the folder name and not directory structure.
-	RootFolder string `json:"rootFolder,omitempty"`
+	RootFolder string `json:"rootFolder"`
 	// Network in Vcenter to be used as 'NONE' network by vCD.
-	VcNoneNetwork string `json:"vcNoneNetwork,omitempty"`
+	VcNoneNetwork string `json:"vcNoneNetwork"`
 	// Public label of this vCenter server visible to all tenants.
-	TenantVisibleName string `json:"tenantVisibleName,omitempty"`
+	TenantVisibleName string `json:"tenantVisibleName"`
 	// True if the vCenter server is connected.
-	IsConnected bool `json:"isConnected,omitempty"`
+	IsConnected bool `json:"isConnected"`
 	// The vcenter mode. One of <ul> <li>NONE - undetermined</li> <li>IAAS - provider scoped</li> <li>SDDC - tenant scoped</li> <li>MIXED</li> </ul> IAAS indicates this vCenter server is scoped to the provider. SDDC indicates that this vCenter server is scoped to tenants, while MIXED indicates mixed mode, where both uses are allowed in this vCenter server.
-	Mode string `json:"mode,omitempty"`
+	Mode string `json:"mode"`
 	// The vcenter listener state. One of <ul> <li>INITIAL</li> <li>INVALID_SETTINGS</li> <li>UNSUPPORTED</li> <li>DISCONNECTED</li> <li>CONNECTING</li> <li>CONNECTED_SYNCING</li> <li>CONNECTED</li> <li>STOP_REQ</li> <li>STOP_AND_PURGE_REQ</li> <li>STOP_ACK</li> </ul>
-	ListenerState string `json:"listenerState,omitempty"`
+	ListenerState string `json:"listenerState"`
 	// The overall health status of clusters in this vCenter server. One of <ul> <li>GRAY</li> <li>RED</li> <li>YELLOW</li> <li>GREEN</li> </ul>
-	ClusterHealthStatus string `json:"clusterHealthStatus,omitempty"`
+	ClusterHealthStatus string `json:"clusterHealthStatus"`
 	// The version of the VIM server.
-	VcVersion string `json:"vcVersion,omitempty"`
+	VcVersion string `json:"vcVersion"`
 	// The build number of the VIM server.
-	BuildNumber string `json:"buildNumber,omitempty"`
+	BuildNumber string `json:"buildNumber"`
 	// The instance UUID property of the vCenter server.
-	Uuid string `json:"uuid,omitempty"`
+	Uuid string `json:"uuid"`
 	// the NSX-V attached to this Virtual Center server, when present.
-	NsxVManager *NsxVManager     `json:"nsxVManager,omitempty"`
-	ProxyConfigurationUrn string `json:"proxyConfigurationUrn,omitempty"`
+	NsxVManager *NsxVManager     `json:"nsxVManager"`
+	ProxyConfigurationUrn string `json:"proxyConfigurationUrn"`
 }

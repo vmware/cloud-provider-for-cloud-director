@@ -13,11 +13,11 @@ package swagger
 // Describes the scope and relationship that this firewall group has with other VCD entities.
 type FirewallGroupScope struct {
 	// The organization that this firewall group belongs to. This property is read-only and cannot be updated. 
-	OrgRef *EntityReference `json:"orgRef,omitempty"`
+	OrgRef *EntityReference `json:"orgRef"`
 	// The edge gateway that this firewall group is scoped to. This means that this firewall group can be used when configuring firewall rules for the edge gateway. This property is now deprecated. ownerRef should be used instead 
-	EdgeGatewayRef *EntityReference `json:"edgeGatewayRef,omitempty"`
+	EdgeGatewayRef *EntityReference `json:"edgeGatewayRef"`
 	// The vDC Group or Edge Gateway that this firewall group is scoped to. This group can be used for configuring rules for either an Edge Gateway or vDC Group. If an Edge Gateway is specified that belongs to a vDC Group, the the firewall group will be scoped to the vDC Group. 
-	OwnerRef *EntityReference `json:"ownerRef,omitempty"`
+	OwnerRef *EntityReference `json:"ownerRef"`
 	// The network provider scope that this object belongs to. This is a read-only property and is determined by the input context entity ID during object creation. 
-	NetworkProviderScope string `json:"networkProviderScope,omitempty"`
+	NetworkProviderScope string `json:"networkProviderScope"`
 }

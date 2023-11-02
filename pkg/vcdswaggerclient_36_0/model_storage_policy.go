@@ -18,7 +18,7 @@ package swagger
 // A Provider Storage Policy. 
 type StoragePolicy struct {
 	// Unique VCD Id for the Storage Policy.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// Name for the Storage Policy.
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 }

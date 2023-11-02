@@ -13,13 +13,13 @@ package swagger
 // Multi VC VM object. 
 type MultiVcVm struct {
 	// Unique id for the Multi VC VM.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// ID of the vCenter that this Multi VC VM is in.
-	VcId string `json:"vcId,omitempty"`
+	VcId string `json:"vcId"`
 	// Name of the Multi VC VM.
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 	// Moref of the Multi VC VM in vCenter.
-	Moref string `json:"moref,omitempty"`
+	Moref string `json:"moref"`
 	// Reference of the VM that this Multi VC VM was registered from.
-	PrimaryVmRef *EntityReference `json:"primaryVmRef,omitempty"`
+	PrimaryVmRef *EntityReference `json:"primaryVmRef"`
 }

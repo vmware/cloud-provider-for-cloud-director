@@ -22,15 +22,15 @@ import (
 // A vCloud Director cell. 
 type Cell struct {
 	// The unique id of the cell.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// The build date for the version of the product installed on this cell.
-	ProductBuildDate time.Time `json:"productBuildDate,omitempty"`
+	ProductBuildDate time.Time `json:"productBuildDate"`
 	// Cell active state.
-	IsActive bool `json:"isActive,omitempty"`
+	IsActive bool `json:"isActive"`
 	// The name of the cell.
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 	// The primary ip address of the cell.
-	PrimaryIP string `json:"primaryIP,omitempty"`
+	PrimaryIP string `json:"primaryIP"`
 	// The product version of the cell.
-	ProductVersion string `json:"productVersion,omitempty"`
+	ProductVersion string `json:"productVersion"`
 }

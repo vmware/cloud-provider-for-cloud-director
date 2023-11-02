@@ -13,25 +13,25 @@ package swagger
 // An assignment of a Load Balancer Service Engine Group to an Edge Gateway
 type LoadBalancerServiceEngineGroupAssignment struct {
 	// The identifier of the Load Balancer Service Engine Groups in URN format.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// The maximum number of virtual services the Edge Gateway is allowed to use. This is required if the Load Balancer Service Engine Group has reservation type 'SHARED'. This must be unset if the Load Balancer Service Engine Group has reservation type 'DEDICATED'. 
-	MaxVirtualServices int32 `json:"maxVirtualServices,omitempty"`
+	MaxVirtualServices int32 `json:"maxVirtualServices"`
 	// The number of guaranteed virtual services available to the Edge Gateway. This is required if the Load Balancer Service Engine Group has reservation type 'SHARED'. This must be unset if the Load Balancer Service Engine Group has reservation type 'DEDICATED'. 
-	MinVirtualServices int32 `json:"minVirtualServices,omitempty"`
+	MinVirtualServices int32 `json:"minVirtualServices"`
 	// The current number of deployed virutal services. 
-	NumDeployedVirtualServices int32 `json:"numDeployedVirtualServices,omitempty"`
+	NumDeployedVirtualServices int32 `json:"numDeployedVirtualServices"`
 	// The associated Load Balancer Service Engine Group.
 	ServiceEngineGroupRef *EntityReference `json:"serviceEngineGroupRef"`
 	// The associated Edge Gateway.
 	GatewayRef *EntityReference `json:"gatewayRef"`
 	// The owner of the associated Edge Gateway. This can be a vDC or vDC Group.
-	GatewayOwnerRef *EntityReference `json:"gatewayOwnerRef,omitempty"`
+	GatewayOwnerRef *EntityReference `json:"gatewayOwnerRef"`
 	// The organization of the associated Edge Gateway.
-	GatewayOrgRef *EntityReference `json:"gatewayOrgRef,omitempty"`
+	GatewayOrgRef *EntityReference `json:"gatewayOrgRef"`
 	// The feature set supported by the Load Balancer Service Engine Group.
-	ServiceEngineGroupSupportedFeatureSet string `json:"serviceEngineGroupSupportedFeatureSet,omitempty"`
+	ServiceEngineGroupSupportedFeatureSet string `json:"serviceEngineGroupSupportedFeatureSet"`
 	// The feature set supported by the Edge Gateway Load Balancer. This will be NULL if Load Balancer is not active on the associated Edge Gateway. 
-	GatewaySupportedFeatureSet string `json:"gatewaySupportedFeatureSet,omitempty"`
+	GatewaySupportedFeatureSet string `json:"gatewaySupportedFeatureSet"`
 	// The service engine group's High Availability Mode. <ul> <li>ELASTIC_N_PLUS_M_BUFFER - Service Engines will scale out to N active nodes with M nodes as buffer. <li>ELASTIC_ACTIVE_ACTIVE - Active-Active with scale out. <li>LEGACY_ACTIVE_STANDBY - Traditional single Active-Standby configuration </ul> 
-	ServiceEngineGroupHaMode string `json:"serviceEngineGroupHaMode,omitempty"`
+	ServiceEngineGroupHaMode string `json:"serviceEngineGroupHaMode"`
 }

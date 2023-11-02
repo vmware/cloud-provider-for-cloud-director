@@ -17,21 +17,21 @@ import (
 // An IP Space IP Allocation object.
 type IpSpaceIpAllocation struct {
 	// The identifier of the IP Space IP allocation in URN format.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// The type of the IP allocation. Possible values are: <ul> <li> FLOATING_IP - For allocation of floating IP addresses from defined IP Space ranges. <li> IP_PREFIX - For allocation of IP prefix sequences from defined IP Space prefixes. </ul> 
-	Type_ string `json:"type,omitempty"`
+	Type_ string `json:"type"`
 	// An individual IP Address or an IP Prefix which is allocated.
-	Value string `json:"value,omitempty"`
+	Value string `json:"value"`
 	// Date when the IP address or IP prefix is allocated. This property is read-only.
-	AllocationDate time.Time `json:"allocationDate,omitempty"`
+	AllocationDate time.Time `json:"allocationDate"`
 	// Reference to the organization where the IP is allocated.
-	OrgRef *EntityReference `json:"orgRef,omitempty"`
+	OrgRef *EntityReference `json:"orgRef"`
 	// Specifies current usage state of an allocated IP. Possible values are: <ul> <li> UNUSED - the allocated IP is current not being used in the system. <li> USED - the allocated IP is currently in use in the system. An allocated IP address or IP Prefix is considered used if it is being used in network services such as NAT rule or in Org VDC network definition. <li> USED_MANUAL - the allocated IP is marked for manual usage. Allocation description can be referenced to get information about the manual usage. </ul> 
-	UsageState string `json:"usageState,omitempty"`
+	UsageState string `json:"usageState"`
 	// Description about usage of an IP if the usageState is USED_MANUAL.
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// Reference to the entity using the IP, such as an Edge Gateway Reference if the Floating IP is used for NAT or Org VDC network reference if IP Prefix is used for network definition. This property is read-only. 
-	UsedByRef *EntityReference `json:"usedByRef,omitempty"`
+	UsedByRef *EntityReference `json:"usedByRef"`
 	// The list of service categories where the IP address is being used. Typically this can be one of: SNAT, DNAT, LOAD_BALANCER, IPSEC_VPN, SSL_VPN or L2_VPN. This property is read-only. 
-	UsageCategories []string `json:"usageCategories,omitempty"`
+	UsageCategories []string `json:"usageCategories"`
 }

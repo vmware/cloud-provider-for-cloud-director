@@ -16,7 +16,7 @@
 package swagger
 
 type Relations struct {
-	Total int32 `json:"total,omitempty"`
-	Link []Link `json:"link,omitempty"`
-	Start int32 `json:"start,omitempty"`
+	Total int32 `json:"total"`
+	Link []Link `json:"link"`
+	Start int32 `json:"start"`
 }

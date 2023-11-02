@@ -40,8 +40,8 @@ var (
 
 // BasicAuth provides basic http authentication to a request passed via context using ContextBasicAuth
 type BasicAuth struct {
-	UserName string `json:"userName,omitempty"`
-	Password string `json:"password,omitempty"`
+	UserName string `json:"userName"`
+	Password string `json:"password"`
 }
 
 // APIKey provides API key based authentication to a request passed via context using ContextAPIKey
@@ -51,11 +51,11 @@ type APIKey struct {
 }
 
 type Configuration struct {
-	BasePath      string            `json:"basePath,omitempty"`
-	Host          string            `json:"host,omitempty"`
-	Scheme        string            `json:"scheme,omitempty"`
-	DefaultHeader map[string]string `json:"defaultHeader,omitempty"`
-	UserAgent     string            `json:"userAgent,omitempty"`
+	BasePath      string            `json:"basePath"`
+	Host          string            `json:"host"`
+	Scheme        string            `json:"scheme"`
+	DefaultHeader map[string]string `json:"defaultHeader"`
+	UserAgent     string            `json:"userAgent"`
 	HTTPClient    *http.Client
 }
 

@@ -12,5 +12,5 @@ package swagger
 
 // List of Gateway QoS Profiles. 
 type GatewayQoSProfiles struct {
-	Values []GatewayQoSProfile `json:"values,omitempty"`
+	Values []GatewayQoSProfile `json:"values"`
 }

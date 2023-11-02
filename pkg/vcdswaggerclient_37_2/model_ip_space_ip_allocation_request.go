@@ -15,9 +15,9 @@ type IpSpaceIpAllocationRequest struct {
 	// The type of the IP allocation requested. Possible values are: <ul> <li> FLOATING_IP - For allocation of floating IP addresses from defined IP Space ranges. <li> IP_PREFIX - For allocation of IP prefix sequences from defined IP Space prefixes. </ul> 
 	Type_ string `json:"type"`
 	// The number of IP addresses or IP Prefix blocks to allocate. Specifying quantity will allocate the given number of any free IP addresses or IP Prefixes within the IP Space. To use a specific IP address or IP Prefix, please use the value field to request a specific value. 
-	Quantity int32 `json:"quantity,omitempty"`
+	Quantity int32 `json:"quantity"`
 	// The prefix length of an IP Prefix to allocate. This is required if type is <em>IP_PREFIX</em>. This field is only required if the request is for a specific quantity of IP Prefixes and not needed if request value is specified. 
-	PrefixLength int32 `json:"prefixLength,omitempty"`
+	PrefixLength int32 `json:"prefixLength"`
 	// The specific IP address or IP Prefix to allocate. If an IP address or IP Prefix is specified, the quantity value should not be set. 
-	Value string `json:"value,omitempty"`
+	Value string `json:"value"`
 }

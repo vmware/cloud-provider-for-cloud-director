@@ -13,9 +13,9 @@ package swagger
 // Describes current graceful restart configuration mode and timer for BGP configuration on an edge gateway. 
 type EdgeBgpGracefulRestartConfig struct {
 	// Currently configured graceful restart mode. Default is HELPER_ONLY.
-	Mode *GracefulRestartModeTypes `json:"mode,omitempty"`
+	Mode *GracefulRestartModeTypes `json:"mode"`
 	// Maximum time taken (in seconds) for a BGP session to be established after a restart. If the session is not re-established within this timer, the receiving speaker will delete all the stale routes from that peer. 
-	RestartTimer int32 `json:"restartTimer,omitempty"`
+	RestartTimer int32 `json:"restartTimer"`
 	// Maximum time (in seconds) before stale routes are removed when BGP restarts.
-	StaleRouteTimer int32 `json:"staleRouteTimer,omitempty"`
+	StaleRouteTimer int32 `json:"staleRouteTimer"`
 }

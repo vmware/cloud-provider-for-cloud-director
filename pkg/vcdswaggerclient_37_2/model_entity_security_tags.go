@@ -13,5 +13,5 @@ package swagger
 // List of a tags assigned to a specific entity 
 type EntitySecurityTags struct {
 	// The list of tags. The value is case-agnostic and will be converted to lower-case.
-	Tags []string `json:"tags,omitempty"`
+	Tags []string `json:"tags"`
 }

@@ -18,13 +18,13 @@ package swagger
 // A set of properties which can be managed on a DVPG 
 type DvpgProperty struct {
 	// The VC Moref of the DVPG
-	DvpgMoref string `json:"dvpgMoref,omitempty"`
+	DvpgMoref string `json:"dvpgMoref"`
 	// VLAN Id for the DVPG
-	VlanId int32 `json:"vlanId,omitempty"`
+	VlanId int32 `json:"vlanId"`
 	// Whether promiscuous mode is currently enabled
-	PromiscuousMode bool `json:"promiscuousMode,omitempty"`
+	PromiscuousMode bool `json:"promiscuousMode"`
 	// Whether forged transmit is currently enabled
-	ForgedTransmit bool `json:"forgedTransmit,omitempty"`
+	ForgedTransmit bool `json:"forgedTransmit"`
 	// The DVSwitch that this DVPG was created on
-	DvSwitch *DvSwitch `json:"dvSwitch,omitempty"`
+	DvSwitch *DvSwitch `json:"dvSwitch"`
 }

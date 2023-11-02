@@ -18,9 +18,9 @@ package swagger
 // An NSX-ALB Cloud's Service Engine Group 
 type NsxAlbServiceEngineGroup struct {
 	// The unique id of the service engine group.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// Name of the service engine group used in NSX-ALB Controller's logs or GUI.
-	DisplayName string `json:"displayName,omitempty"`
+	DisplayName string `json:"displayName"`
 	// The service engine group's High Availability Mode. ELASTIC_N_PLUS_M_BUFFER - Service Engines will scale out to N active nodes with M nodes as buffer. ELASTIC_ACTIVE_ACTIVE - Active-Active with scale out. LEGACY_ACTIVE_STANDBY - Traditional single Active-Standby configuration 
-	HaMode string `json:"haMode,omitempty"`
+	HaMode string `json:"haMode"`
 }

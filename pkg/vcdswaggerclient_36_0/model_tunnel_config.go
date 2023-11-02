@@ -18,15 +18,15 @@ package swagger
 // This configuration captures phase two negotiation parameters and tunnel properties. 
 type TunnelConfig struct {
 	// If true, perfect forward secrecy is enabled. The default value is true.
-	PerfectForwardSecrecyEnabled bool `json:"perfectForwardSecrecyEnabled,omitempty"`
+	PerfectForwardSecrecyEnabled bool `json:"perfectForwardSecrecyEnabled"`
 	// Policy for handling degragmentation bit. The default is COPY.
-	DfPolicy *DfPolicyType `json:"dfPolicy,omitempty"`
+	DfPolicy *DfPolicyType `json:"dfPolicy"`
 	// The list of Diffie-Helman groups to be used is PFS is enabled. Default is GROUP14.
 	DhGroups []DhGroupType `json:"dhGroups"`
 	// The list of Digest algorithms to be used for message digest. The default digest algorithm is implictly covered by default encrpyption algorithm AES_GCM_128. 
-	DigestAlgorithms []TunnelDigestAlgorithmType `json:"digestAlgorithms,omitempty"`
+	DigestAlgorithms []TunnelDigestAlgorithmType `json:"digestAlgorithms"`
 	// The list of Encryption algorithms to use in IPSec tunnel establishment. Default is AES_GCM_128. NO_ENCRYPTION_AUTH_AES_GMAC_* enables authentication on input data without encryption. If one of these options is used, digest algorithm should be empty. 
 	EncryptionAlgorithms []TunnelEncryptionAlgorithmType `json:"encryptionAlgorithms"`
 	// The Security Association life time in seconds. Default is 3600 seconds.
-	SaLifeTime int32 `json:"saLifeTime,omitempty"`
+	SaLifeTime int32 `json:"saLifeTime"`
 }

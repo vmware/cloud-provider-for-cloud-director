@@ -18,27 +18,27 @@ package swagger
 // Describes what a defined entity type should look like. 
 type DefinedEntityType struct {
 	// The id of the defined entity type in URN format. 
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// The name of the defined entity type. 
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 	// Description of the defined entity type. 
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// A unique namespace specific string. The combination of nss and version must be unique. 
-	Nss string `json:"nss,omitempty"`
+	Nss string `json:"nss"`
 	// The version of the defined entity type. The combination of nss and version must be unique. The version string must follow semantic versioning rules. 
-	Version string `json:"version,omitempty"`
+	Version string `json:"version"`
 	// To be used when creating a new version of a defined entity type. Specifies the version of the type that will be the template for the authorization configuration of a the new version. The Type ACLs and the access requirements of the Type Behaviors of the new version will be copied from those of the inherited version. If the value of this property is '0', then the new type version will not inherit another version and will have the default authorization settings, just like the first version of a new type. 
-	InheritedVersion string `json:"inheritedVersion,omitempty"`
+	InheritedVersion string `json:"inheritedVersion"`
 	// An external entity's id that this definition may apply to. 
-	ExternalId string `json:"externalId,omitempty"`
+	ExternalId string `json:"externalId"`
 	// The JSON-Schema valid definition of the defined entity type. If no JSON Schema version is specified, version 4 will be assumed. 
-	Schema map[string]interface{} `json:"schema,omitempty"`
+	Schema map[string]interface{} `json:"schema"`
 	// The vendor name. 
-	Vendor string `json:"vendor,omitempty"`
+	Vendor string `json:"vendor"`
 	// List of interface ids that this defined entity type is referenced by. 
-	Interfaces []string `json:"interfaces,omitempty"`
+	Interfaces []string `json:"interfaces"`
 	// A mapping defining which behaviors should be invoked upon specific lifecycle events, like PostCreate, PostUpdate, PreDelete. For example: \"hooks\": { \"PostCreate\": \"urn:vcloud:behavior-interface:postCreateHook:vendorA:containerCluster:1.0.0\" } 
-	Hooks map[string]interface{} `json:"hooks,omitempty"`
+	Hooks map[string]interface{} `json:"hooks"`
 	// True if the entity type cannot be modified.
-	Readonly bool `json:"readonly,omitempty"`
+	Readonly bool `json:"readonly"`
 }

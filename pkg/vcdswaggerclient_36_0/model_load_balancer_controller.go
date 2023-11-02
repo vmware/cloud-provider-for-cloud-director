@@ -18,11 +18,11 @@ package swagger
 // A Load Balancer Controller. 
 type LoadBalancerController struct {
 	// The id of the Load Balancer Controller in URN format.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// The name of the Load Balancer Controller. Names for Load Balancer Controllers must be unique across the system.
 	Name string `json:"name"`
 	// Description for the registered Load Balancer Controller.
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// The URL of the Load Balancer Controller. URLs for Load Balancer Controllers must be unique across the system.
 	Url string `json:"url"`
 	// Username to connect to the Load Balancer Controller.
@@ -30,7 +30,7 @@ type LoadBalancerController struct {
 	// Cleartext password to connect to the Load Balancer Controller.
 	Password string `json:"password"`
 	// The license type of the Load Balancer Controller. <ul> <li>BASIC - Basic edition of the NSX Advanced Load Balancer. <li>ENTERPRISE - Full featured edition of the NSX Advanced Load Balancer. </ul> 
-	LicenseType string `json:"licenseType,omitempty"`
+	LicenseType string `json:"licenseType"`
 	// The version of the load balancer controller.
-	Version string `json:"version,omitempty"`
+	Version string `json:"version"`
 }

@@ -13,9 +13,9 @@ package swagger
 // A collection of measurements for the SDDC resource 
 type SddcStat struct {
 	// Total resource allocation.
-	NumTotal int64 `json:"numTotal,omitempty"`
+	NumTotal int64 `json:"numTotal"`
 	// Used resource allocation.
-	NumUsed int64 `json:"numUsed,omitempty"`
+	NumUsed int64 `json:"numUsed"`
 	// Reserved resource allocation.
-	NumReserved int64 `json:"numReserved,omitempty"`
+	NumReserved int64 `json:"numReserved"`
 }

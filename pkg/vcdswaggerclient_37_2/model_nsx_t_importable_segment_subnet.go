@@ -13,7 +13,7 @@ package swagger
 // An NSX-T's Importable Segment Subnet 
 type NsxTImportableSegmentSubnet struct {
 	// Ip address for subnet.
-	IpAddress string `json:"ipAddress,omitempty"`
+	IpAddress string `json:"ipAddress"`
 	// Prefix length for the subnet.
-	PrefixLength int32 `json:"prefixLength,omitempty"`
+	PrefixLength int32 `json:"prefixLength"`
 }

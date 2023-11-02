@@ -13,17 +13,17 @@ package swagger
 // Definition of CustomEntityType. 
 type CustomEntityType struct {
 	// UUID for custom entity type. This is immutable. 
-	Id string `json:"id,omitempty"`
-	VroId string `json:"vroId,omitempty"`
+	Id string `json:"id"`
+	VroId string `json:"vroId"`
 	// This refers to VRO's dynamic type. 
-	VroDynamicType string `json:"vroDynamicType,omitempty"`
+	VroDynamicType string `json:"vroDynamicType"`
 	// Display name. 
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 	// This refers to a unique namespace specific string. 
-	Nss string `json:"nss,omitempty"`
-	Description string `json:"description,omitempty"`
-	TenantScoped bool `json:"tenantScoped,omitempty"`
-	ProviderScoped bool `json:"providerScoped,omitempty"`
+	Nss string `json:"nss"`
+	Description string `json:"description"`
+	TenantScoped bool `json:"tenantScoped"`
+	ProviderScoped bool `json:"providerScoped"`
 	// Read-only value indicating publishAll state 
-	PublishAll bool `json:"publishAll,omitempty"`
+	PublishAll bool `json:"publishAll"`
 }

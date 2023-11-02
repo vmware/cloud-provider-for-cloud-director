@@ -18,24 +18,24 @@ package swagger
 // Describes the DHCP Binding configuration of an Org vDC Network. 
 type DhcpBinding struct {
 	// The unique id of the DHCP binding.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// Display name for the DHCP binding.
 	Name string `json:"name"`
 	// Description for the DHCP binding.
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// MAC address of the host.
 	MacAddress string `json:"macAddress"`
 	// IP Address assigned to host. This address must belong to the subnet of Org vDC network. For IPv4, this is required. For IPv6, when not specified, no ip address will be assigned to client host. 
-	IpAddress string `json:"ipAddress,omitempty"`
+	IpAddress string `json:"ipAddress"`
 	// The amount of time in seconds of how long a DHCP IP will be leased out for. The minimum is 60s while the maximum is 4,294,967,295s, which is roughly 49,710 days. Default is 24 hours. 
-	LeaseTime int64 `json:"leaseTime,omitempty"`
+	LeaseTime int64 `json:"leaseTime"`
 	// DNS nameservers to be set to client host.
-	DnsServers []string `json:"dnsServers,omitempty"`
+	DnsServers []string `json:"dnsServers"`
 	// The type of DHCP binding. <ul>   <li>IPV4 - an IPv4 DHCP binding.   <li>IPV6 - an IPv6 DHCP binding. </ul> 
-	BindingType string `json:"bindingType,omitempty"`
+	BindingType string `json:"bindingType"`
 	// Additional configuration for IPv4 DHCP binding. This is ignored for IPV6 binding. 
-	DhcpV4BindingConfig *DhcpV4BindingConfig `json:"dhcpV4BindingConfig,omitempty"`
+	DhcpV4BindingConfig *DhcpV4BindingConfig `json:"dhcpV4BindingConfig"`
 	// Additional configuration for IPv6 DHCP binding. This is ignored for IPV4 binding. 
-	DhcpV6BindingConfig *DhcpV6BindingConfig `json:"dhcpV6BindingConfig,omitempty"`
-	Version *ObjectVersion                   `json:"version,omitempty"`
+	DhcpV6BindingConfig *DhcpV6BindingConfig `json:"dhcpV6BindingConfig"`
+	Version *ObjectVersion                   `json:"version"`
 }

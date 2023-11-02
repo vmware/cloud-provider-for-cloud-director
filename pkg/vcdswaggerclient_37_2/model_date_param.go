@@ -16,5 +16,5 @@ import (
 
 type DateParam struct {
 	InputType string `json:"inputType"`
-	Value time.Time `json:"value,omitempty"`
+	Value time.Time `json:"value"`
 }

@@ -18,17 +18,17 @@ package swagger
 // A Provider VDC storage policy. 
 type PvdcStoragePolicy struct {
 	// Unique VCD Id for the policy.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// Unique name for the policy.
 	Name string `json:"name"`
 	// Unique Id in Virtual Center of the policy.
 	StoragePolicyMoref string `json:"storagePolicyMoref"`
 	// Enabled state of the policy, defaults to true.
-	IsEnabled bool `json:"isEnabled,omitempty"`
+	IsEnabled bool `json:"isEnabled"`
 	// The PVDC that this policy belongs to.
-	ProviderVdcRef *EntityReference `json:"providerVdcRef,omitempty"`
+	ProviderVdcRef *EntityReference `json:"providerVdcRef"`
 	// The VC that this policy belongs to.
-	VcRef *EntityReference `json:"vcRef,omitempty"`
+	VcRef *EntityReference `json:"vcRef"`
 	// Total capacity in MB for this storage policy
-	TotalCapacityMb int64 `json:"totalCapacityMb,omitempty"`
+	TotalCapacityMb int64 `json:"totalCapacityMb"`
 }

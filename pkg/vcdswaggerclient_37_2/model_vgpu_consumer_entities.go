@@ -15,17 +15,17 @@ type VgpuConsumerEntity interface{}
 // A list of VgpuConsumerEntity objects.
 type VgpuConsumerEntities struct {
 	// How many results there are in total (i.e., considering all pages).
-	ResultTotal int32 `json:"resultTotal,omitempty"`
+	ResultTotal int32 `json:"resultTotal"`
 	// How many pages there are in total.
-	PageCount int32 `json:"pageCount,omitempty"`
+	PageCount int32 `json:"pageCount"`
 	// The page that was fetched, 1-indexed.
-	Page int32 `json:"page,omitempty"`
+	Page int32 `json:"page"`
 	// Result count for page that was fetched.
-	PageSize int32 `json:"pageSize,omitempty"`
+	PageSize int32 `json:"pageSize"`
 	// Association info for each result.
-	Associations []Association `json:"associations,omitempty"`
+	Associations []Association `json:"associations"`
 	// Total number of vGPUs consumed across all the pages for the applied filters.
-	TotalConsumptionCount int32 `json:"totalConsumptionCount,omitempty"`
+	TotalConsumptionCount int32 `json:"totalConsumptionCount"`
 	// The current page of VgpuConsumerEntity objects.
-	Values []VgpuConsumerEntity `json:"values,omitempty"`
+	Values []VgpuConsumerEntity `json:"values"`
 }

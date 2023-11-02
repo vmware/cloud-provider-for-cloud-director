@@ -19,11 +19,11 @@ type TransferSession struct {
 	// URN for transfer session. This is immutable. 
 	Id string `json:"id"`
 	// URN of the user that owns this transfer session. 
-	User string `json:"user,omitempty"`
+	User string `json:"user"`
 	// URN of the organization this transfer session belongs to. 
-	Org string `json:"org,omitempty"`
+	Org string `json:"org"`
 	// The ISO-8601 timestamp of creation time of the transfer session. 
-	CreationTime time.Time `json:"creationTime,omitempty"`
+	CreationTime time.Time `json:"creationTime"`
 	// The ISO-8601 timestamp when this transfer session was last updated. 
-	LastUpdatedTime time.Time `json:"lastUpdatedTime,omitempty"`
+	LastUpdatedTime time.Time `json:"lastUpdatedTime"`
 }

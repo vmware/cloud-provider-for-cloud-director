@@ -17,9 +17,9 @@ type ProxyConnection struct {
 	// The port to use when connecting to the proxy.
 	ProxyPort int32 `json:"proxyPort"`
 	// Username to authenticate to the proxy.
-	ProxyUsername string `json:"proxyUsername,omitempty"`
+	ProxyUsername string `json:"proxyUsername"`
 	// Password to authenticate to the proxy.
-	ProxyPassword string `json:"proxyPassword,omitempty"`
+	ProxyPassword string `json:"proxyPassword"`
 	// If the connection to the proxy should use https.
-	ProxySecure bool `json:"proxySecure,omitempty"`
+	ProxySecure bool `json:"proxySecure"`
 }

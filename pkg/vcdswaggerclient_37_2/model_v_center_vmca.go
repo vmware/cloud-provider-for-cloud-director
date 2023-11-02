@@ -13,5 +13,5 @@ package swagger
 // An object representing a vCenter server. 
 type VCenterVmca struct {
 	// vSphere VMCA certificate in PEM format.
-	Vmca string `json:"vmca,omitempty"`
+	Vmca string `json:"vmca"`
 }

@@ -13,7 +13,7 @@ package swagger
 // A data point in the metric timeseries. 
 type EdgeLoadBalancerMetricData struct {
 	// Sampled data time.
-	Timestamp string `json:"timestamp,omitempty"`
+	Timestamp string `json:"timestamp"`
 	// Data value for the sampled time.  ISO 8601 format (i.e. 2020-07-24T00:00:00).
-	Value string `json:"value,omitempty"`
+	Value string `json:"value"`
 }

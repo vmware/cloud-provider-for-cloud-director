@@ -18,7 +18,7 @@ package swagger
 // List of configured L2 VPN tunnels. 
 type EdgeL2VpnTunnels struct {
 	// Represents current status of the networking object. 
-	Status *NetworkingObjectStatusType `json:"status,omitempty"`
+	Status *NetworkingObjectStatusType `json:"status"`
 	// The list of L2 VPN tunnels.
-	Values []EdgeL2VpnTunnel `json:"values,omitempty"`
+	Values []EdgeL2VpnTunnel `json:"values"`
 }

@@ -13,12 +13,12 @@ package swagger
 // Right 
 type Right struct {
 	Name string `json:"name"`
-	Id string `json:"id,omitempty"`
-	Description string `json:"description,omitempty"`
-	BundleKey string `json:"bundleKey,omitempty"`
-	Category string `json:"category,omitempty"`
-	ServiceNamespace string `json:"serviceNamespace,omitempty"`
-	RightType string `json:"rightType,omitempty"`
+	Id string `json:"id"`
+	Description string `json:"description"`
+	BundleKey string `json:"bundleKey"`
+	Category string `json:"category"`
+	ServiceNamespace string `json:"serviceNamespace"`
+	RightType string `json:"rightType"`
 	// The set of implied rights.
-	ImpliedRights []EntityReference `json:"impliedRights,omitempty"`
+	ImpliedRights []EntityReference `json:"impliedRights"`
 }

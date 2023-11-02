@@ -18,15 +18,15 @@ package swagger
 // A feature flag. 
 type FeatureFlag struct {
 	// The id of the feature flag in URN format.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// The unique name of the flag.
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 	// In what context this flag should be use. <ul>   <li> <code> PROD </code> Indicates that this feature is production ready.   <li> <code> ALPHA </code> Indicates that this feature is considered to be an alpha feature and may change in future releases. </ul> 
-	Usage string `json:"usage,omitempty"`
+	Usage string `json:"usage"`
 	// True if the feature is toggled on.
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled bool `json:"enabled"`
 	// Localized readable name of this feature.
-	DisplayName string `json:"displayName,omitempty"`
+	DisplayName string `json:"displayName"`
 	// Localized readable description of this feature.
-	DisplayDescription string `json:"displayDescription,omitempty"`
+	DisplayDescription string `json:"displayDescription"`
 }

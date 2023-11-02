@@ -18,15 +18,15 @@ package swagger
 // Results of a connection test to a specific endpoint. 
 type ProbeResult struct {
 	// Localized message describing the connection result stating success or an error message with a brief summary.
-	Result string `json:"result,omitempty"`
+	Result string `json:"result"`
 	// The IP address the host was resolved to.
-	ResolvedIp string `json:"resolvedIp,omitempty"`
+	ResolvedIp string `json:"resolvedIp"`
 	// If vCD can establish a connection on the specified port.
-	CanConnect bool `json:"canConnect,omitempty"`
+	CanConnect bool `json:"canConnect"`
 	// If an SSL Handshake succeeded (secure requests only).
-	SslHandshake bool `json:"sslHandshake,omitempty"`
+	SslHandshake bool `json:"sslHandshake"`
 	// The SSL certificate chain presented by the server if a secure connection was made.
-	CertificateChain string `json:"certificateChain,omitempty"`
+	CertificateChain string `json:"certificateChain"`
 	// URLs supplied by Certificate Authorities to retrieve signing certificates, when those certificates are not included in the chain. These URLs are the locations for the 'caIssuers' access method in the 'Authority Info Access' extension (as described in <a href=\"https://datatracker.ietf.org/doc/html/rfc5280#section-4.2.2.1\">RFC 5280 Section 4.2.2.1</a>) of the certificates and gives the caller an indication where additional CA certificates may be retrieved from, to complete the chain to the trust anchor. 
-	AdditionalCAIssuers []string `json:"additionalCAIssuers,omitempty"`
+	AdditionalCAIssuers []string `json:"additionalCAIssuers"`
 }

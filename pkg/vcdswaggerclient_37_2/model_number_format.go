@@ -12,5 +12,5 @@ package swagger
 
 type NumberFormat struct {
 	ConstraintType string `json:"constraintType"`
-	Value string `json:"value,omitempty"`
+	Value string `json:"value"`
 }

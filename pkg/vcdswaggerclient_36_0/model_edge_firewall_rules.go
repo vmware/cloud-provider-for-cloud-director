@@ -18,11 +18,11 @@ package swagger
 // Firewall rules for an edge gateway. This contains an ordered list of system, user defined and default firewall rules. All the rules are returned in the order of type and precedence. 
 type EdgeFirewallRules struct {
 	// Represents current status of the networking object. 
-	Status *NetworkingObjectStatusType `json:"status,omitempty"`
+	Status *NetworkingObjectStatusType `json:"status"`
 	// The ordered list of system defined edge firewall rules. System rules are applied before user defined rules in the order in which they are returned. 
-	SystemRules []EdgeFirewallRule `json:"systemRules,omitempty"`
+	SystemRules []EdgeFirewallRule `json:"systemRules"`
 	// The ordered list of user defined edge firewall rules. Users are allowed to add/modify/delete rules only to this list. 
-	UserDefinedRules []EdgeFirewallRule `json:"userDefinedRules,omitempty"`
+	UserDefinedRules []EdgeFirewallRule `json:"userDefinedRules"`
 	// The ordered list of default edge firewall rules. Default rules are applied after the user defined rules in the order in which they are returned. 
-	DefaultRules []EdgeFirewallRule `json:"defaultRules,omitempty"`
+	DefaultRules []EdgeFirewallRule `json:"defaultRules"`
 }

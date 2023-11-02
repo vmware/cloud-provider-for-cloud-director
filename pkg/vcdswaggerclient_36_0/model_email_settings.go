@@ -18,16 +18,16 @@ package swagger
 // Email related settings for a system 
 type EmailSettings struct {
 	// Flag indicating if the smtp server settings are system default (true) or a particular organization (false) 
-	DefaultSmtpServer bool `json:"defaultSmtpServer,omitempty"`
+	DefaultSmtpServer bool `json:"defaultSmtpServer"`
 	// Flag indicating if the email settings are system default (true) or for a particular organization (false) 
-	DefaultOrgEmail bool       `json:"defaultOrgEmail,omitempty"`
-	SmtpServer *SmtpServerSpec `json:"smtpServer,omitempty"`
+	DefaultOrgEmail bool       `json:"defaultOrgEmail"`
+	SmtpServer *SmtpServerSpec `json:"smtpServer"`
 	// Sender email address in an email notification or alert 
-	SenderEmailAddress string `json:"senderEmailAddress,omitempty"`
+	SenderEmailAddress string `json:"senderEmailAddress"`
 	// The prefix used in the email subject line for all email notifications and alerts from the system 
-	DefaultEmailSubjectPrefix string `json:"defaultEmailSubjectPrefix,omitempty"`
+	DefaultEmailSubjectPrefix string `json:"defaultEmailSubjectPrefix"`
 	// A flag to indicate the choice between sending alert emails to all system administrators in the system and designated list of email recipients 
-	AlertEmailToAllAdmins bool `json:"alertEmailToAllAdmins,omitempty"`
+	AlertEmailToAllAdmins bool `json:"alertEmailToAllAdmins"`
 	// A comma separated email addresses to send all alert messages to 
-	AlertEmailTo string `json:"alertEmailTo,omitempty"`
+	AlertEmailTo string `json:"alertEmailTo"`
 }

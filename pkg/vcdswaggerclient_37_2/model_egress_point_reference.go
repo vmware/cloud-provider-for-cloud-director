@@ -13,9 +13,9 @@ package swagger
 // An EgressPoint reference object for use in universal routing. 
 type EgressPointReference struct {
 	// The id of the Universal Egress Point reference.
-	EgressPointId string `json:"egressPointId,omitempty"`
+	EgressPointId string `json:"egressPointId"`
 	// The Org vDC of the Universal Egress Point reference.
-	VdcRef *EntityReference `json:"vdcRef,omitempty"`
+	VdcRef *EntityReference `json:"vdcRef"`
 	// The Edge Gateway of the Universal Egress Point reference.
-	GatewayRef *EntityReference `json:"gatewayRef,omitempty"`
+	GatewayRef *EntityReference `json:"gatewayRef"`
 }

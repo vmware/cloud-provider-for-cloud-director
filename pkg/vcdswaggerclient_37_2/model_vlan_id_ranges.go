@@ -12,5 +12,5 @@ package swagger
 
 // List of IpRange 
 type VlanIdRanges struct {
-	Values []VlanIdRange `json:"values,omitempty"`
+	Values []VlanIdRange `json:"values"`
 }

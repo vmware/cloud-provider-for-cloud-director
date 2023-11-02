@@ -13,12 +13,12 @@ package swagger
 // Describes a DFW security policy.
 type DfwPolicy struct {
 	// The unique id of this security policy. On updates, the id is required for the policy, while for create a new id will be generated. This id is not a VCD URN. 
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// Name for the security policy.
 	Name string `json:"name"`
 	// Description for the security policy.
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// Whether this security policy is enabled.
-	Enabled bool           `json:"enabled,omitempty"`
-	Version *ObjectVersion `json:"version,omitempty"`
+	Enabled bool           `json:"enabled"`
+	Version *ObjectVersion `json:"version"`
 }

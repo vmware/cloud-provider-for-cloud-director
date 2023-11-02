@@ -13,7 +13,7 @@ package swagger
 // Utilization summary for an IP space.
 type IpSpaceUtilizationSummary struct {
 	// Utilization summary for floating IPs within the IP space.
-	FloatingIPs *IpSpaceIpUtilizationCounts `json:"floatingIPs,omitempty"`
+	FloatingIPs *IpSpaceIpUtilizationCounts `json:"floatingIPs"`
 	// Utilization summary for IP prefixes within the IP space.
-	IpPrefixes *IpSpaceIpPrefixUtilizationCounts `json:"ipPrefixes,omitempty"`
+	IpPrefixes *IpSpaceIpPrefixUtilizationCounts `json:"ipPrefixes"`
 }

@@ -18,6 +18,6 @@ package swagger
 // A supported metrics.
 type EdgeLoadBalancerAnalyticMetric struct {
 	// The metric key to be used in report queries.
-	Key string `json:"key,omitempty"`
-	Description string `json:"description,omitempty"`
+	Key string `json:"key"`
+	Description string `json:"description"`
 }

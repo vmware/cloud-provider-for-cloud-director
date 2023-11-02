@@ -17,6 +17,6 @@ package swagger
 
 // Provides LDAP connection and settings test results 
 type LdapTestResult struct {
-	ConnectionTest *LdapConnectionTestResult `json:"connectionTest,omitempty"`
-	SettingsTest []LdapSettingsTestResult    `json:"settingsTest,omitempty"`
+	ConnectionTest *LdapConnectionTestResult `json:"connectionTest"`
+	SettingsTest []LdapSettingsTestResult    `json:"settingsTest"`
 }

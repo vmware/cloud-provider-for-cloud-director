@@ -13,7 +13,7 @@ package swagger
 // 
 type BrandingThemeAssignment struct {
 	// A unique identifier for the branding theme.
-	BrandingThemeId string `json:"brandingThemeId,omitempty"`
+	BrandingThemeId string `json:"brandingThemeId"`
 	// Organization reference.
-	OrganizationReference *EntityReference `json:"organizationReference,omitempty"`
+	OrganizationReference *EntityReference `json:"organizationReference"`
 }

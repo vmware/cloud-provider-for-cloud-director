@@ -13,9 +13,9 @@ package swagger
 // Utilization summary grouped by IP Prefix's prefix length.
 type IpSpacePrefixLengthUtilization struct {
 	// The prefix length.
-	PrefixLength int32 `json:"prefixLength,omitempty"`
+	PrefixLength int32 `json:"prefixLength"`
 	// Total number of IP Prefixes. If user does not own this IP Space, this is the quota that the user's organization is granted. A \"-1\" value means that the user's organization has no cap on the quota. 
-	TotalCount int32 `json:"totalCount,omitempty"`
+	TotalCount int32 `json:"totalCount"`
 	// The number of allocated IP prefixes.
-	AllocatedCount int32 `json:"allocatedCount,omitempty"`
+	AllocatedCount int32 `json:"allocatedCount"`
 }

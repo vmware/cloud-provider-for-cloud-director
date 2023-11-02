@@ -12,8 +12,8 @@ package swagger
 
 type SdkObject struct {
 	InputType string `json:"inputType"`
-	Type_ string `json:"type,omitempty"`
-	Href string `json:"href,omitempty"`
-	Id string `json:"id,omitempty"`
-	DisplayValue string `json:"displayValue,omitempty"`
+	Type_ string `json:"type"`
+	Href string `json:"href"`
+	Id string `json:"id"`
+	DisplayValue string `json:"displayValue"`
 }

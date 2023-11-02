@@ -17,5 +17,5 @@ package swagger
 
 // List of NSX-ALB Cloud's Service Engine Groups 
 type NsxAlbServiceEngineGroups struct {
-	Values []NsxAlbServiceEngineGroup `json:"values,omitempty"`
+	Values []NsxAlbServiceEngineGroup `json:"values"`
 }

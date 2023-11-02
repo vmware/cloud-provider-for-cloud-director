@@ -18,13 +18,13 @@ package swagger
 // An entity that has a tag. 
 type SecurityTaggedEntity struct {
 	// The unique identifier of the entity in URN format. 
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// The name of the entity.
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 	// The parent of the entity such as vApp if the entity is a VM. If not applicable, field is not set.
-	ParentRef *EntityReference `json:"parentRef,omitempty"`
+	ParentRef *EntityReference `json:"parentRef"`
 	// The owner of the specified entity such as vDC or vDC Group. If not applicable, field is not set.
-	OwnerRef *EntityReference `json:"ownerRef,omitempty"`
+	OwnerRef *EntityReference `json:"ownerRef"`
 	// The type of entity. Currently only \"vm\" is supported.
-	EntityType string `json:"entityType,omitempty"`
+	EntityType string `json:"entityType"`
 }

@@ -13,5 +13,5 @@ package swagger
 // Defines the global settings for all vDC Groups in the system. These can be changed by the provider only. 
 type VdcGroupSettings struct {
 	// <ul> Defines the fault domain tag that will be shown for participating/candidate Organization vDCs during creation or update of a vDC Group whose networkProviderType is NSX_T. The options a provider can choose from are COMPUTE_PROVIDER_SCOPE and NETWORK_PROVIDER_SCOPE. This should be selected based on the provider's compute or networking infrastructure. The default value is COMPUTE_PROVIDER_SCOPE.  <li> NETWORK_PROVIDER_SCOPE: This represents the tenant-facing name of the backing network provider for the organization vDC (NSX-V/NSX-T manager). This should be used when the fault domains in the provider infrastructure are separated by network provider. </li> <li> COMPUTE_PROVIDER_SCOPE: This represents the tenant-facing name of the backing compute provider for the organization vDC (Provider VDC). This should be used when the fault domains in the provider infrastructure are separated by compute provider. </li> </ul> 
-	NsxTVdcGroupFaultDomainTagType string `json:"nsxTVdcGroupFaultDomainTagType,omitempty"`
+	NsxTVdcGroupFaultDomainTagType string `json:"nsxTVdcGroupFaultDomainTagType"`
 }

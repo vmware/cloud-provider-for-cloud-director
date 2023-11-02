@@ -17,14 +17,14 @@ package swagger
 
 // Defines how LDAP attributes are used when importing a user. 
 type LdapUserAttributesType struct {
-	ObjectClass string `json:"objectClass,omitempty"`
-	ObjectIdentifier string `json:"objectIdentifier,omitempty"`
-	UserName string `json:"userName,omitempty"`
-	Email string `json:"email,omitempty"`
-	FullName string `json:"fullName,omitempty"`
-	GivenName string `json:"givenName,omitempty"`
-	Surname string `json:"surname,omitempty"`
-	Telephone string `json:"telephone,omitempty"`
-	GroupMembershipIdentifier string `json:"groupMembershipIdentifier,omitempty"`
-	GroupBackLinkIdentifier string `json:"groupBackLinkIdentifier,omitempty"`
+	ObjectClass string `json:"objectClass"`
+	ObjectIdentifier string `json:"objectIdentifier"`
+	UserName string `json:"userName"`
+	Email string `json:"email"`
+	FullName string `json:"fullName"`
+	GivenName string `json:"givenName"`
+	Surname string `json:"surname"`
+	Telephone string `json:"telephone"`
+	GroupMembershipIdentifier string `json:"groupMembershipIdentifier"`
+	GroupBackLinkIdentifier string `json:"groupBackLinkIdentifier"`
 }

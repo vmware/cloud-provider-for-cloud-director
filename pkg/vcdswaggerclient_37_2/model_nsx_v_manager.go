@@ -15,9 +15,9 @@ type NsxVManager struct {
 	// User name to connect to the NSX-V server.
 	Username string `json:"username"`
 	// Cleartext password to connect to the NSX-V server.
-	Password string `json:"password,omitempty"`
+	Password string `json:"password"`
 	// URL of the server.
 	Url string `json:"url"`
 	// Version of the NSX-V Manager
-	SoftwareVersion string `json:"softwareVersion,omitempty"`
+	SoftwareVersion string `json:"softwareVersion"`
 }

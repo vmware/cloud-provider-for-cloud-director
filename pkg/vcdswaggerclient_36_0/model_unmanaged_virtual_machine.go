@@ -18,19 +18,19 @@ package swagger
 // An unmanaged Virtual Machine is a Virtual Machine that is not managed by Cloud Director but is present in vCenter. 
 type UnmanagedVirtualMachine struct {
 	// The name of the virtual machine.
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 	// The total memory (in MB) of the virtual machine.
-	Memory int64 `json:"memory,omitempty"`
+	Memory int64 `json:"memory"`
 	// The total number of CPUs of the virtual machine.
-	CpuCount int32 `json:"cpuCount,omitempty"`
+	CpuCount int32 `json:"cpuCount"`
 	// The total storage (in KB) of the virtual machine.
-	Storage int64 `json:"storage,omitempty"`
+	Storage int64 `json:"storage"`
 	// The absolute path of the virtual machine in the vCenter's datastore.
-	Path string `json:"path,omitempty"`
+	Path string `json:"path"`
 	// The virtual hardware version of the virtual machine.
-	VirtualHardwareVersion int32 `json:"virtualHardwareVersion,omitempty"`
+	VirtualHardwareVersion int32 `json:"virtualHardwareVersion"`
 	// The following strings are valid states of the virtual machine. <ul> <li>INVALID</li> <li>OFF</li> <li>ON</li> <li>SUSPENDED</li> <li>UNKNOWN</li> <li>STUCK</li> </ul>
-	State string `json:"state,omitempty"`
+	State string `json:"state"`
 	// The vSphere Managed Object Reference.
-	MoRef string `json:"moRef,omitempty"`
+	MoRef string `json:"moRef"`
 }

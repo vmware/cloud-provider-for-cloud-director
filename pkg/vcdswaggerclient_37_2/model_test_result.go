@@ -12,6 +12,6 @@ package swagger
 
 // Results of a connection test. 
 type TestResult struct {
-	TargetProbe *ProbeResult `json:"targetProbe,omitempty"`
-	ProxyProbe *ProbeResult  `json:"proxyProbe,omitempty"`
+	TargetProbe *ProbeResult `json:"targetProbe"`
+	ProxyProbe *ProbeResult  `json:"proxyProbe"`
 }

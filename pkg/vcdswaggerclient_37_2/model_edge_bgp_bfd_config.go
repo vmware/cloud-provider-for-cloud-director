@@ -13,9 +13,9 @@ package swagger
 // Describes BFD configuration for failure detection. 
 type EdgeBgpBfdConfig struct {
 	// A flag indicating whether BFD configuration is enabled or not.
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled bool `json:"enabled"`
 	// Specifies the time interval (in milliseconds) between heartbeat packets.
-	BfdInterval int32 `json:"bfdInterval,omitempty"`
+	BfdInterval int32 `json:"bfdInterval"`
 	// Number of times heartbeat packet is missed before BFD declares that the neighbor is down.
-	DeclareDeadMultiple int32 `json:"declareDeadMultiple,omitempty"`
+	DeclareDeadMultiple int32 `json:"declareDeadMultiple"`
 }

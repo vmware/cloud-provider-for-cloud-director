@@ -13,7 +13,7 @@ package swagger
 // The status for the IPSec VPN IKE Session/Tunnel. The values are UP, DOWN, and NEGOTIATING. A fail reason is also provided if the Service Status is down. 
 type IkeStatus struct {
 	// The overall IKE Session service status.
-	IkeServiceStatus *IkeServiceStatus `json:"ikeServiceStatus,omitempty"`
+	IkeServiceStatus *IkeServiceStatus `json:"ikeServiceStatus"`
 	// The reason for the IKE Session establishment failure. This will only be set if the status is DOWN.
-	FailReason string `json:"failReason,omitempty"`
+	FailReason string `json:"failReason"`
 }

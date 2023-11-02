@@ -13,5 +13,5 @@ package swagger
 // List of all configured BGP neighbors for an edge gateway. 
 type EdgeBgpNeighbors struct {
 	// All BGP neighbors for an edge gateway.
-	Values []EdgeBgpNeighbor `json:"values,omitempty"`
+	Values []EdgeBgpNeighbor `json:"values"`
 }

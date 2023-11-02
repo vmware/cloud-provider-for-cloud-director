@@ -17,17 +17,17 @@ import (
 // A message specified by a system administrator org administrator. It is to be displayed to users to alert them to general conditions that may affect them. 
 type Advisory struct {
 	// A unique identifier for the advisory (read-only).
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// The id reference to the target entity this advisory is for.
-	TargetId string `json:"targetId,omitempty"`
+	TargetId string `json:"targetId"`
 	// A localized message for this advisory.
-	Message string `json:"message,omitempty"`
+	Message string `json:"message"`
 	// Priority for an advisory that indicates the level of urgency. These priorities are listed in ascending sort order. <ul>   <li>     <em>MANDATORY</em>: A mandatory message which is always displayed;     these advisories cannot be snoozed or dismissed (see documentation     on displayStart and displayEnd)   </li>   <li>     <em>CRITICAL</em>: A high priority, potentially actionable message which can be     snoozed or dismissed   </li>   <li>     <em>IMPORTANT</em>: A potentially actionable message which can be snoozed or dismissed   </li>   <li>     <em>NOTICE</em>: An informational message which can be dismissed (but not snoozed)   </li> </ul> 
-	Priority string `json:"priority,omitempty"`
+	Priority string `json:"priority"`
 	// The ISO-8601 timestamp from which this advisory is applicable. Defaults to the server's current time if unspecified. If permissible, users may update this value to a time in the future to snooze this advisory. 
-	DisplayStart time.Time `json:"displayStart,omitempty"`
+	DisplayStart time.Time `json:"displayStart"`
 	// The ISO-8601 timestamp representing when this advisory is no longer applicable. If permissible, users may update this value to a time in the past to dismiss this advisory. The displayEnd timestamp must be >= displayStart. 
-	DisplayEnd time.Time `json:"displayEnd,omitempty"`
+	DisplayEnd time.Time `json:"displayEnd"`
 	// Represents where the advisory is being generated from. This is a read-only field. Can be of type USER or INTERNAL. 
-	Source string `json:"source,omitempty"`
+	Source string `json:"source"`
 }

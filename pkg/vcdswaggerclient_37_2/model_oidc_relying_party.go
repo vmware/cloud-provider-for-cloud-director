@@ -13,15 +13,15 @@ package swagger
 // Information about a OIDC relying party. 
 type OidcRelyingParty struct {
 	// A unique identifier for the relying party.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// System generated client id of the relying party as per RFC-7591 Section 3.2.1. 
-	ClientId string `json:"clientId,omitempty"`
+	ClientId string `json:"clientId"`
 	// Human readable name of the relying party. 
 	ClientName string `json:"clientName"`
 	// Server generated client secret string. Must be unique for all relying parties. This field is hidden and is only returned in plaintext on a POST (during registration). 
-	ClientSecret string `json:"clientSecret,omitempty"`
+	ClientSecret string `json:"clientSecret"`
 	// Supported redirect URIs for this relying party. 
 	RedirectUris []string `json:"redirectUris"`
 	// Not configurable by the client. A fixed list of the following six scope values: <ul>   <li> openid - as required per <a href=\"https://openid.net/specs/openid-connect-core-1_0.html#AuthRequest\">the OpenID Connect Core spec</a>   <li> profile - as described in <a href=\"https://openid.net/specs/openid-connect-core-1_0.html#ScopeClaims\">the OpenID Connect Core spec</a>   <li> email - as described in <a href=\"https://openid.net/specs/openid-connect-core-1_0.html#ScopeClaims\">the OpenID Connect Core spec</a>   <li> phone - as described in <a href=\"https://openid.net/specs/openid-connect-core-1_0.html#ScopeClaims\">the OpenID Connect Core spec</a>   <li> groups - grants access to the groups claims.   <li> vcd_idp - grants access to the roles, org_id, org_display_name, and org_name claims. </ul> 
-	Scope []string `json:"scope,omitempty"`
+	Scope []string `json:"scope"`
 }

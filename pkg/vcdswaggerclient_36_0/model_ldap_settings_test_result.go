@@ -18,11 +18,11 @@ package swagger
 // Provides test attribute, result, and success boolean 
 type LdapSettingsTestResult struct {
 	// LDAP attribute being tested
-	Attribute string `json:"attribute,omitempty"`
+	Attribute string `json:"attribute"`
 	// Value of LDAP user attribute being tested
-	AttributeValue string `json:"attributeValue,omitempty"`
+	AttributeValue string `json:"attributeValue"`
 	// Result of LADP user attribute being tested (what LDAP server returned)
-	Result string `json:"result,omitempty"`
+	Result string `json:"result"`
 	// Flag to indicate if the attribute is successful or not
 	Successful bool `json:"successful"`
 }

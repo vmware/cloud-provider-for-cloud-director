@@ -20,5 +20,5 @@ type Config struct {
 	// Name of the configuration property.
 	Name string `json:"name"`
 	// The value of the configuration property (at present all configuration values are treated as the \"string\" type).
-	TypedValue *TypedValue `json:"typedValue,omitempty"`
+	TypedValue *TypedValue `json:"typedValue"`
 }

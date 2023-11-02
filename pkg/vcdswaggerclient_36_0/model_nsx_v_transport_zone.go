@@ -18,9 +18,9 @@ package swagger
 // Information about a configured transport zone on an NSX-V manager. NSX uses transport zones to provide connectivity between hypervisors. 
 type NsxVTransportZone struct {
 	// The unique id of the transport zone on the NSX manager.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// Name of Transport Zone in NSX Manager.
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 	// Type of a transport zone.
-	Type_ *NsxVTransportZoneType `json:"type,omitempty"`
+	Type_ *NsxVTransportZoneType `json:"type"`
 }

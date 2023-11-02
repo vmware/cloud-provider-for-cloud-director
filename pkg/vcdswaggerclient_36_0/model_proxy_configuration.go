@@ -18,16 +18,16 @@ package swagger
 // A Proxy Configuration. This configuration object declares a backend proxy that sits between vCD and the vSphere/NSX/ESX estate. 
 type ProxyConfiguration struct {
 	Name string `json:"name"`
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// Optional description.
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	AuthType string `json:"authType"`
 	// username to connect to the proxy server.
-	Username string `json:"username,omitempty"`
+	Username string `json:"username"`
 	// password to connect to the proxy server, when auth type is Basic.
 	Password string `json:"password"`
 	// authentication token to connect to the proxy server, when auth type is Bearer.
-	Token string `json:"token,omitempty"`
+	Token string `json:"token"`
 	// hostname of the proxy server.
 	Host string `json:"host"`
 	// port of the proxy server.

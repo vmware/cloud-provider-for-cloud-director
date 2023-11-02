@@ -18,14 +18,14 @@ package swagger
 // A list of Storage Profiles 
 type StorageProfiles struct {
 	// How many results there are in total (i.e., considering all pages).
-	ResultTotal int32 `json:"resultTotal,omitempty"`
+	ResultTotal int32 `json:"resultTotal"`
 	// How many pages there are in total.
-	PageCount int32 `json:"pageCount,omitempty"`
+	PageCount int32 `json:"pageCount"`
 	// The page that was fetched, 1-indexed.
-	Page int32 `json:"page,omitempty"`
+	Page int32 `json:"page"`
 	// Result count for page that was fetched.
-	PageSize int32 `json:"pageSize,omitempty"`
+	PageSize int32 `json:"pageSize"`
 	// Association info for each result.
-	Associations []Association `json:"associations,omitempty"`
-	Values []StorageProfile    `json:"values,omitempty"`
+	Associations []Association `json:"associations"`
+	Values []StorageProfile    `json:"values"`
 }

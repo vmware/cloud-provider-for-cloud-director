@@ -14,8 +14,8 @@ package swagger
 type BrandingUploadSpec struct {
 	FileName string `json:"fileName"`
 	Size int64 `json:"size"`
-	Checksum string `json:"checksum,omitempty"`
-	ChecksumAlgo string `json:"checksumAlgo,omitempty"`
+	Checksum string `json:"checksum"`
+	ChecksumAlgo string `json:"checksumAlgo"`
 	// organization icon file name
 	FavIcon string `json:"favIcon"`
 	// organization logo file name
@@ -27,7 +27,7 @@ type BrandingUploadSpec struct {
 	// organization name
 	PortalName string `json:"portalName"`
 	// localizations file name
-	Localizations string `json:"localizations,omitempty"`
+	Localizations string `json:"localizations"`
 	// custom links file name
-	CustomLinks string `json:"customLinks,omitempty"`
+	CustomLinks string `json:"customLinks"`
 }

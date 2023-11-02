@@ -13,17 +13,17 @@ package swagger
 // A Gateway QoS Profile Object.
 type GatewayQoSProfile struct {
 	// The unique id of the gateway QoS profile.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// Name of the gateway QoS profile. This corresponds to the name used in NSX-T manager's logs or GUI.
-	DisplayName string `json:"displayName,omitempty"`
+	DisplayName string `json:"displayName"`
 	// The description of the gateway QoS profile.
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// Committed bandwidth in both directions specificd in Mb/s. Bandwidth is limited to line rate when the value configured is greater than line rate.
-	CommittedBandwidth int32 `json:"committedBandwidth,omitempty"`
+	CommittedBandwidth int32 `json:"committedBandwidth"`
 	// Burst size in bytes.
-	BurstSize int32 `json:"burstSize,omitempty"`
+	BurstSize int32 `json:"burstSize"`
 	// Action on traffic exceeding bandwidth.
-	ExcessAction string `json:"excessAction,omitempty"`
+	ExcessAction string `json:"excessAction"`
 	// The NSX-T manager where this gateway QoS profile is configured.
-	NsxTManagerRef *EntityReference `json:"nsxTManagerRef,omitempty"`
+	NsxTManagerRef *EntityReference `json:"nsxTManagerRef"`
 }

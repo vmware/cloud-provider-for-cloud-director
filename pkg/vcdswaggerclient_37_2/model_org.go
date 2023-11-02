@@ -13,27 +13,27 @@ package swagger
 // An Organization. 
 type Org struct {
 	// A unique identifier for the organization.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// Name of the organization.
 	Name string `json:"name"`
 	// Full display name of the organization.
 	DisplayName string `json:"displayName"`
 	// Description of the organization.
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// Whether the organization is enabled or not.
-	IsEnabled bool `json:"isEnabled,omitempty"`
+	IsEnabled bool `json:"isEnabled"`
 	// The number of VDCs in the org.
-	OrgVdcCount int32 `json:"orgVdcCount,omitempty"`
+	OrgVdcCount int32 `json:"orgVdcCount"`
 	// The number of catalogs in the org.
-	CatalogCount int32 `json:"catalogCount,omitempty"`
+	CatalogCount int32 `json:"catalogCount"`
 	// The number of vApps in the org.
-	VappCount int32 `json:"vappCount,omitempty"`
+	VappCount int32 `json:"vappCount"`
 	// The number of running VMs in the org.
-	RunningVMCount int32 `json:"runningVMCount,omitempty"`
+	RunningVMCount int32 `json:"runningVMCount"`
 	// The number of users in the org.
-	UserCount int32 `json:"userCount,omitempty"`
+	UserCount int32 `json:"userCount"`
 	// The number of disks in the org.
-	DiskCount int32 `json:"diskCount,omitempty"`
+	DiskCount int32 `json:"diskCount"`
 	// Whether the organization can publish catalogs externally.
-	CanPublish bool `json:"canPublish,omitempty"`
+	CanPublish bool `json:"canPublish"`
 }

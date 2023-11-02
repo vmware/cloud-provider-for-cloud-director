@@ -18,13 +18,13 @@ package swagger
 // Describes the backing information for a network pool. A network pool is backed by vSphere network resources such as VLAN Ids, portgroups, Transport Zones, etc. 
 type NetworkPoolBacking struct {
 	// The range of backing VLAN Id's. This information is available only for VLAN backed network pools. 
-	VlanIdRanges *VlanIdRanges `json:"vlanIdRanges,omitempty"`
+	VlanIdRanges *VlanIdRanges `json:"vlanIdRanges"`
 	// The information about virtual distributed switches. This information is available only for VLAN, VXLAN and Universal VXLAN backed network pools. 
-	VdsRefs []BackingRef `json:"vdsRefs,omitempty"`
+	VdsRefs []BackingRef `json:"vdsRefs"`
 	// All the vSphere port groups that will be used by this network pool. This information is available only for Portgroup backed network pools. 
-	PortGroupRefs []BackingRef `json:"portGroupRefs,omitempty"`
+	PortGroupRefs []BackingRef `json:"portGroupRefs"`
 	// The Id of the backing transport zone in NSX. 
-	TransportZoneRef *BackingRef `json:"transportZoneRef,omitempty"`
+	TransportZoneRef *BackingRef `json:"transportZoneRef"`
 	// The Id of vCenter server or the NSX-T manager that owns this backing entity.
-	ProviderRef *EntityReference `json:"providerRef,omitempty"`
+	ProviderRef *EntityReference `json:"providerRef"`
 }

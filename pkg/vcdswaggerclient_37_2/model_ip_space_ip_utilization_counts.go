@@ -13,15 +13,15 @@ package swagger
 // Utilization counts for collection of IP addresses or IP Prefixes. This gives usage summary for the collection of IP addresses such as number of total available, allocated and used. 
 type IpSpaceIpUtilizationCounts struct {
 	// The number of IP addresses or IP Prefixes defined by the IP Space. If user does not own this IP Space, this is the quota that the user's organization is granted. A \"-1\" value means that the user's organization has no cap on the quota; for this case, allocatedPercentage is unset. 
-	TotalCount string `json:"totalCount,omitempty"`
+	TotalCount string `json:"totalCount"`
 	// The number of allocated IP addresses or IP Prefixes.
-	AllocatedCount string `json:"allocatedCount,omitempty"`
+	AllocatedCount string `json:"allocatedCount"`
 	// The number of used IP addresses or IP Prefixes. An allocated IP address or IP Prefix is considered used if it is being used in network services such as NAT rule or in Org VDC network definition. 
-	UsedCount string `json:"usedCount,omitempty"`
+	UsedCount string `json:"usedCount"`
 	// The number of unused IP addresses or IP Prefixes. An IP address or an IP Prefix is considered unused if it is allocated but not being used by any network service or any Org vDC network definition. 
-	UnusedCount string `json:"unusedCount,omitempty"`
+	UnusedCount string `json:"unusedCount"`
 	// Specifies the percentage of allocated IP addresses or IP Prefixes out of all defined IP addresses or IP Prefixes.
-	AllocatedPercentage float32 `json:"allocatedPercentage,omitempty"`
+	AllocatedPercentage float32 `json:"allocatedPercentage"`
 	// Specifies the percentage of used IP addresses or IP Prefixes out of total allocated IP addresses or IP Prefixes.
-	UsedPercentage float32 `json:"usedPercentage,omitempty"`
+	UsedPercentage float32 `json:"usedPercentage"`
 }

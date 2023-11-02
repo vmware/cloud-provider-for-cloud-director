@@ -12,6 +12,6 @@ package swagger
 
 // A UniversalRouterDhcpConfig object. 
 type UniversalRouterDhcpConfig struct {
-	Enabled bool                        `json:"enabled,omitempty"`
-	Servers []UniversalRouterDhcpServer `json:"servers,omitempty"`
+	Enabled bool                        `json:"enabled"`
+	Servers []UniversalRouterDhcpServer `json:"servers"`
 }

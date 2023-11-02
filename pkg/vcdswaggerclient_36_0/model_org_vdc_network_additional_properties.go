@@ -18,7 +18,7 @@ package swagger
 // Addition information about an Org VDC Network 
 type OrgVdcNetworkAdditionalProperties struct {
 	// Overlay Id of the virtual wire backing this network.
-	OverlayId int32 `json:"overlayId,omitempty"`
+	OverlayId int32 `json:"overlayId"`
 	// Whether or not this network is eligible as an uplink to a vApp network
-	VAppUplinkEligible bool `json:"vAppUplinkEligible,omitempty"`
+	VAppUplinkEligible bool `json:"vAppUplinkEligible"`
 }

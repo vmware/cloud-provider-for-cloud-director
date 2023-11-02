@@ -17,6 +17,6 @@ package swagger
 
 type SecureString struct {
 	InputType string `json:"inputType"`
-	Value string `json:"value,omitempty"`
-	IsPlainText bool `json:"isPlainText,omitempty"`
+	Value string `json:"value"`
+	IsPlainText bool `json:"isPlainText"`
 }

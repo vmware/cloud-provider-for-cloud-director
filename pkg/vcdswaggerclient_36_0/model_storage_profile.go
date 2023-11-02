@@ -18,7 +18,7 @@ package swagger
 // A Storage Profile. 
 type StorageProfile struct {
 	// The Moref of the Storage Profile.
-	Moref string `json:"moref,omitempty"`
+	Moref string `json:"moref"`
 	// The name of the Storage Profile.
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 }

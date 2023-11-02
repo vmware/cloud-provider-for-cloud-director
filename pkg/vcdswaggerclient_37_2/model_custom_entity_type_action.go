@@ -17,5 +17,5 @@ type CustomEntityTypeAction struct {
 	// UUID of workflow. 
 	WorkflowId string `json:"workflowId"`
 	// Name of input parameter of given workflow to which this custom entity type should be mapped. 
-	WorkflowInputParameter string `json:"workflowInputParameter,omitempty"`
+	WorkflowInputParameter string `json:"workflowInputParameter"`
 }

@@ -13,11 +13,11 @@ package swagger
 // Fields that are common to all the Segment Profiles.
 type CommonSegmentProfileFields struct {
 	// The unique id of the segment profile.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// Name of the segment profile. This corresponds to the name used in NSX-T manager's logs or GUI.
-	DisplayName string `json:"displayName,omitempty"`
+	DisplayName string `json:"displayName"`
 	// The description of the segment profile.
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// The NSX-T manager where this segment profile is configured.
-	NsxTManagerRef *EntityReference `json:"nsxTManagerRef,omitempty"`
+	NsxTManagerRef *EntityReference `json:"nsxTManagerRef"`
 }

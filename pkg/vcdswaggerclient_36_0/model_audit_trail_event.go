@@ -21,18 +21,18 @@ import (
 
 // AuditTrailEvent 
 type AuditTrailEvent struct {
-	EventId string `json:"eventId,omitempty"`
-	Description string            `json:"description,omitempty"`
-	OperatingOrg *EntityReference `json:"operatingOrg,omitempty"`
-	User *EntityReference         `json:"user,omitempty"`
-	EventEntity *EntityReference  `json:"eventEntity,omitempty"`
-	TaskId string                 `json:"taskId,omitempty"`
-	TaskCellId string `json:"taskCellId,omitempty"`
-	CellId string `json:"cellId,omitempty"`
-	EventType string `json:"eventType,omitempty"`
-	ServiceNamespace string `json:"serviceNamespace,omitempty"`
-	EventStatus string `json:"eventStatus,omitempty"`
-	Timestamp time.Time `json:"timestamp,omitempty"`
-	External bool `json:"external,omitempty"`
-	AdditionalProperties *interface{} `json:"additionalProperties,omitempty"`
+	EventId string `json:"eventId"`
+	Description string            `json:"description"`
+	OperatingOrg *EntityReference `json:"operatingOrg"`
+	User *EntityReference         `json:"user"`
+	EventEntity *EntityReference  `json:"eventEntity"`
+	TaskId string                 `json:"taskId"`
+	TaskCellId string `json:"taskCellId"`
+	CellId string `json:"cellId"`
+	EventType string `json:"eventType"`
+	ServiceNamespace string `json:"serviceNamespace"`
+	EventStatus string `json:"eventStatus"`
+	Timestamp time.Time `json:"timestamp"`
+	External bool `json:"external"`
+	AdditionalProperties *interface{} `json:"additionalProperties"`
 }

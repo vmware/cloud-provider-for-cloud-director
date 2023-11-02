@@ -13,7 +13,7 @@ package swagger
 // Describes the additional configuration for IPv6 DHCP Binding of an Org vDC Network. 
 type DhcpV6BindingConfig struct {
 	// IP addresses of SNTP servers.
-	SntpServers []string `json:"sntpServers,omitempty"`
+	SntpServers []string `json:"sntpServers"`
 	// Domain names to be assigned to client host.
-	DomainNames []string `json:"domainNames,omitempty"`
+	DomainNames []string `json:"domainNames"`
 }

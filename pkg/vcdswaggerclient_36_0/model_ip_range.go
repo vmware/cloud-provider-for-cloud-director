@@ -18,7 +18,7 @@ package swagger
 // An IpRange
 type IpRange struct {
 	// Starting IP address in the range.
-	StartAddress string `json:"startAddress,omitempty"`
+	StartAddress string `json:"startAddress"`
 	// Ending IP address in the range.
-	EndAddress string `json:"endAddress,omitempty"`
+	EndAddress string `json:"endAddress"`
 }

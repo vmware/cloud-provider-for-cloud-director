@@ -18,7 +18,7 @@ package swagger
 // List of subnets that will be advertised so that the Edge Gateway can route out to the connected external network. 
 type RouteAdvertisement struct {
 	// True means that the subnets will be advertised. The default is true.
-	Enable bool `json:"enable,omitempty"`
+	Enable bool `json:"enable"`
 	// List of subnets that will be advertised so that the Edge Gateway can route out to the connected external network. Each value is in CIDR format. Note that the CIDR value will automatically be converted to its network definition based on the prefix length. 
-	Subnets []string `json:"subnets,omitempty"`
+	Subnets []string `json:"subnets"`
 }

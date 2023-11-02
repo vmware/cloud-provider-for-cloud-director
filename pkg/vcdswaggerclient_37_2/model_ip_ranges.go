@@ -12,5 +12,5 @@ package swagger
 
 // List of IpRange 
 type IpRanges struct {
-	Values []IpRange `json:"values,omitempty"`
+	Values []IpRange `json:"values"`
 }

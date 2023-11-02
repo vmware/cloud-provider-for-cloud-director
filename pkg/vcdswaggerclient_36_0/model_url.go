@@ -16,7 +16,7 @@
 package swagger
 
 type Url struct {
-	Host string `json:"host,omitempty"`
-	Port int32 `json:"port,omitempty"`
-	Ssl bool `json:"ssl,omitempty"`
+	Host string `json:"host"`
+	Port int32 `json:"port"`
+	Ssl bool `json:"ssl"`
 }

@@ -16,7 +16,7 @@
 package swagger
 
 type WsAttribute struct {
-	DisplayValue string `json:"displayValue,omitempty"`
-	Name string `json:"name,omitempty"`
-	Value string `json:"value,omitempty"`
+	DisplayValue string `json:"displayValue"`
+	Name string `json:"name"`
+	Value string `json:"value"`
 }

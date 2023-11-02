@@ -13,31 +13,31 @@ package swagger
 // A Segment Security Profile.
 type SegmentSecurityProfile struct {
 	// The unique id of the segment profile.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// Name of the segment profile. This corresponds to the name used in NSX-T manager's logs or GUI.
-	DisplayName string `json:"displayName,omitempty"`
+	DisplayName string `json:"displayName"`
 	// The description of the segment profile.
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// The NSX-T manager where this segment profile is configured.
-	NsxTManagerRef *EntityReference `json:"nsxTManagerRef,omitempty"`
+	NsxTManagerRef *EntityReference `json:"nsxTManagerRef"`
 	// Whether BPDU filter is enabled.
-	IsBpduFilterEnabled bool `json:"isBpduFilterEnabled,omitempty"`
+	IsBpduFilterEnabled bool `json:"isBpduFilterEnabled"`
 	// Pre-defined list of allowed MAC addresses to be excluded from BPDU filtering.
-	BpduFilterAllowList []string `json:"bpduFilterAllowList,omitempty"`
+	BpduFilterAllowList []string `json:"bpduFilterAllowList"`
 	// Whether DHCP Client block IPv4 is enabled. This filters DHCP Client IPv4 traffic.
-	IsDhcpClientBlockV4Enabled bool `json:"isDhcpClientBlockV4Enabled,omitempty"`
+	IsDhcpClientBlockV4Enabled bool `json:"isDhcpClientBlockV4Enabled"`
 	// Whether DHCP Client block IPv6 is enabled. This filters DHCP Client IPv6 traffic.
-	IsDhcpClientBlockV6Enabled bool `json:"isDhcpClientBlockV6Enabled,omitempty"`
+	IsDhcpClientBlockV6Enabled bool `json:"isDhcpClientBlockV6Enabled"`
 	// Whether DHCP Server block IPv4 is enabled. This filters DHCP Server IPv4 traffic.
-	IsDhcpServerBlockV4Enabled bool `json:"isDhcpServerBlockV4Enabled,omitempty"`
+	IsDhcpServerBlockV4Enabled bool `json:"isDhcpServerBlockV4Enabled"`
 	// Whether DHCP Server block IPv6 is enabled. This filters DHCP Server IPv6 traffic.
-	IsDhcpServerBlockV6Enabled bool `json:"isDhcpServerBlockV6Enabled,omitempty"`
+	IsDhcpServerBlockV6Enabled bool `json:"isDhcpServerBlockV6Enabled"`
 	// Whether non IP traffic block is enabled. If true, it blocks all traffic except IP/(G)ARP/BPDU.
-	IsNonIpTrafficBlockEnabled bool `json:"isNonIpTrafficBlockEnabled,omitempty"`
+	IsNonIpTrafficBlockEnabled bool `json:"isNonIpTrafficBlockEnabled"`
 	// Whether Router Advertisement Guard is enabled. This filters DHCP Server IPv6 traffic.
-	IsRaGuardEnabled bool `json:"isRaGuardEnabled,omitempty"`
+	IsRaGuardEnabled bool `json:"isRaGuardEnabled"`
 	// Whether Rate Limiting is enabled.
-	IsRateLimitingEnabled bool `json:"isRateLimitingEnabled,omitempty"`
+	IsRateLimitingEnabled bool `json:"isRateLimitingEnabled"`
 	// Allows configuration of rate limits for broadcast and multicast traffic.
-	RateLimits *TrafficRateLimitConfig `json:"rateLimits,omitempty"`
+	RateLimits *TrafficRateLimitConfig `json:"rateLimits"`
 }

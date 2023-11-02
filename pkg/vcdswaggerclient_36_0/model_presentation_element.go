@@ -17,9 +17,9 @@ package swagger
 
 type PresentationElement struct {
 	ElementType string `json:"elementType"`
-	Description string `json:"description,omitempty"`
-	DisplayName string `json:"displayName,omitempty"`
-	Hidden bool `json:"hidden,omitempty"`
-	Id string                          `json:"id,omitempty"`
-	Messages []PresentationMessageInfo `json:"messages,omitempty"`
+	Description string `json:"description"`
+	DisplayName string `json:"displayName"`
+	Hidden bool `json:"hidden"`
+	Id string                          `json:"id"`
+	Messages []PresentationMessageInfo `json:"messages"`
 }

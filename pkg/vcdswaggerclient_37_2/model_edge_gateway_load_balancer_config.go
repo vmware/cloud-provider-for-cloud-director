@@ -15,15 +15,15 @@ type EdgeGatewayLoadBalancerConfig struct {
 	// A flag indicating whether Load Balancer Service is enabled or not.
 	Enabled bool `json:"enabled"`
 	// The IPv4 network definition in Gateway CIDR format which will be used by Load Balancer service on edge. All the load balancer service engines associated with the Service Engine Group will be attached to this network. The subnet prefix length must be 25. If nothing is set, the default is <code>192.168.255.1/25</code>. Default cidr can be configured. Once set, this field cannot be updated. The default IPv4 service network will be used if both the serviceNetworkDefinition and ipv6ServiceNetworkDefinition properties are unset. If both are set, it will still be one service network with a dual IPv4 and IPv6 stack. 
-	ServiceNetworkDefinition string `json:"serviceNetworkDefinition,omitempty"`
+	ServiceNetworkDefinition string `json:"serviceNetworkDefinition"`
 	// The IPv6 network definition in Gateway CIDR format which will be used by Load Balancer service on edge. All the load balancer service engines associated with the Service Engine Group will be attached to this network. Once set, this field cannot be updated. The default IPv4 service network will be used if both the serviceNetworkDefinition and ipv6ServiceNetworkDefinition properties are unset. If both are set, it will still be one service network with a dual IPv4 and IPv6 stack. 
-	Ipv6ServiceNetworkDefinition string `json:"ipv6ServiceNetworkDefinition,omitempty"`
+	Ipv6ServiceNetworkDefinition string `json:"ipv6ServiceNetworkDefinition"`
 	// Reference to the Load Balancer Cloud. This cloud is used by Edge Gateway's Load Balancer Virtual Services and Pools.
-	LoadBalancerCloudRef *EntityReference `json:"loadBalancerCloudRef,omitempty"`
+	LoadBalancerCloudRef *EntityReference `json:"loadBalancerCloudRef"`
 	// The license type of the backing Load Balancer Cloud. <ul> <li>BASIC - Basic edition of the NSX Advanced Load Balancer. <li>ENTERPRISE - Full featured edition of the NSX Advanced Load Balancer. </ul> 
-	LicenseType string `json:"licenseType,omitempty"`
+	LicenseType string `json:"licenseType"`
 	// The Load Balancer Feature set supported by the Edge Gateway. Allowed values are: <ul> <li>STANDARD - Edge Gateway supports STANDARD set of features for Load Balancing. <li>PREMIUM - Edge Gateway supports both STANDARD and PREMIUM set of features for Load Balancing. All Load Balancer Service Engine Groups assigned to this Edge Gateway must support PREMIUM feature set in order to allow PREMIUM features on this gateway. </ul> A Service Engine Group with <em>STANDARD</em> supported feature set can only be assigned to Edge Gateway with <em>STANDARD</em> supported feature set. A Service Engine Group with <em>PREMIUM</em> supported feature set can be assigned to Edge Gateway with both <em>STANDARD</em> and <em>PREMIUM</em> supported feature sets. 
-	SupportedFeatureSet string `json:"supportedFeatureSet,omitempty"`
+	SupportedFeatureSet string `json:"supportedFeatureSet"`
 	// A flag indicating whether or not this Edge Gateway has been configured to support transparent load balancing.
-	TransparentModeEnabled bool `json:"transparentModeEnabled,omitempty"`
+	TransparentModeEnabled bool `json:"transparentModeEnabled"`
 }

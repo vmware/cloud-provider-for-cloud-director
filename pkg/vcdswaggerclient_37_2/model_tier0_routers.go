@@ -12,5 +12,5 @@ package swagger
 
 // List of NSX-T's Tier-0 routers. 
 type Tier0Routers struct {
-	Values []Tier0Router `json:"values,omitempty"`
+	Values []Tier0Router `json:"values"`
 }

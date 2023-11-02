@@ -12,7 +12,7 @@ package swagger
 
 // An ordered list of menu items which can be customized and used in the application. Can be defined as a link, override (well known links that can be overridden, Default values are About, Help, VMRC), section, separator(section without a name) of the drop down menu. 
 type UiBrandingMenuItem struct {
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 	MenuItemType string `json:"menuItemType"`
-	Url string `json:"url,omitempty"`
+	Url string `json:"url"`
 }

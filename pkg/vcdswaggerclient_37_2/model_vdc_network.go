@@ -13,59 +13,59 @@ package swagger
 // An organization vDC network. 
 type VdcNetwork struct {
 	// The unique ID for the network. This field is read-only.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// The name of the network.
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 	// The description of the network.
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// List of subnets configured for the network.
-	Subnets *Subnets `json:"subnets,omitempty"`
+	Subnets *Subnets `json:"subnets"`
 	// The NSX id of the backing network.
-	BackingNetworkId string `json:"backingNetworkId,omitempty"`
+	BackingNetworkId string `json:"backingNetworkId"`
 	// The object type of the backing network.
-	BackingNetworkType *BackingNetworkType `json:"backingNetworkType,omitempty"`
+	BackingNetworkType *BackingNetworkType `json:"backingNetworkType"`
 	// The parent network if the network is a direct network, otherwise it will be null.
-	ParentNetworkId *EntityReference `json:"parentNetworkId,omitempty"`
+	ParentNetworkId *EntityReference `json:"parentNetworkId"`
 	// The type of network. Changing the network type allows converting between an isolated and routed network. Note that the \"connection\" field must also be set if converting from isolated to routed network. 
-	NetworkType *VdcNetworkFenceType `json:"networkType,omitempty"`
+	NetworkType *VdcNetworkFenceType `json:"networkType"`
 	// The organization vDC the network belongs to. This should be unset if the network is owned by a vDC Group. For API version 35.0 and above, this field will be treated as read only. Please use ownerRef for new network creation. 
-	OrgVdc *EntityReference `json:"orgVdc,omitempty"`
+	OrgVdc *EntityReference `json:"orgVdc"`
 	// The org vDC or vDC Group that this network belongs to. If the ownerRef is set to a vDC Group, this network will be available across all the vDCs in the vDC Group. If the vDC Group is backed by a NSX-V network provider, the org vDC network is automatically connected to the distributed router associated with the vDC Group and the \"connection\" field does not need to be set. For API version 35.0 and above, this field should be set for network creation. 
-	OwnerRef *EntityReference `json:"ownerRef,omitempty"`
+	OwnerRef *EntityReference `json:"ownerRef"`
 	// For an Org vDC network, whether the vDC is backed by NSX-T.
-	OrgVdcIsNsxTBacked bool `json:"orgVdcIsNsxTBacked,omitempty"`
+	OrgVdcIsNsxTBacked bool `json:"orgVdcIsNsxTBacked"`
 	// The organization to which the network belongs.
-	OrgRef *EntityReference `json:"orgRef,omitempty"`
+	OrgRef *EntityReference `json:"orgRef"`
 	// The edge gateway that the network is attached to. 
-	Connection *RouterConnection `json:"connection,omitempty"`
+	Connection *RouterConnection `json:"connection"`
 	// Deprecated unused field, this property will be removed in future release. 
-	IsDefaultNetwork bool `json:"isDefaultNetwork,omitempty"`
+	IsDefaultNetwork bool `json:"isDefaultNetwork"`
 	// Whether this network is shared with other organization vDCs.
-	Shared bool `json:"shared,omitempty"`
+	Shared bool `json:"shared"`
 	// Whether or not this network will support two subnets
-	EnableDualSubnetNetwork bool `json:"enableDualSubnetNetwork,omitempty"`
+	EnableDualSubnetNetwork bool `json:"enableDualSubnetNetwork"`
 	// Description of the network's status. 
-	Status *OrgVdcNetworkStatus `json:"status,omitempty"`
+	Status *OrgVdcNetworkStatus `json:"status"`
 	// Brief failure message if the last configuration task failed. Deprecated in Api 33.0, this property will be removed in next release. 
-	LastTaskFailureMessage string `json:"lastTaskFailureMessage,omitempty"`
+	LastTaskFailureMessage string `json:"lastTaskFailureMessage"`
 	// Whether guest VLAN tagging is allowed.
-	GuestVlanTaggingAllowed bool `json:"guestVlanTaggingAllowed,omitempty"`
+	GuestVlanTaggingAllowed bool `json:"guestVlanTaggingAllowed"`
 	// Whether network resources such as IP/MAC Addresses are to be retained.
-	RetainNicResources bool `json:"retainNicResources,omitempty"`
+	RetainNicResources bool `json:"retainNicResources"`
 	// The id of the cross vdc network if this is a stretched network, otherwise it will be null.
-	CrossVdcNetworkId string `json:"crossVdcNetworkId,omitempty"`
+	CrossVdcNetworkId string `json:"crossVdcNetworkId"`
 	// The id of the org from which this network can be managed if this is a stretched network, otherwise it will be null.
-	CrossVdcNetworkLocationId string `json:"crossVdcNetworkLocationId,omitempty"`
+	CrossVdcNetworkLocationId string `json:"crossVdcNetworkLocationId"`
 	// Overlay connectivity ID for this Network. This field is used on creation during POST only and will not be displayed on an object returned through GET or PUT. 
-	OverlayId int32 `json:"overlayId,omitempty"`
+	OverlayId int32 `json:"overlayId"`
 	// The number of IP addresses defined by the static ip pools. If the network contains any IpV6 subnets, the total ip count will be null.
-	TotalIpCount int32 `json:"totalIpCount,omitempty"`
+	TotalIpCount int32 `json:"totalIpCount"`
 	// The number of IP address used from the static ip pools.
-	UsedIpCount int32 `json:"usedIpCount,omitempty"`
+	UsedIpCount int32 `json:"usedIpCount"`
 	// Whether this network is advertised so that it can be routed out to the external networks. This applies only to routed network backed by NSX-T. Value will be unset or set to false if route advertisement is not applicable. 
-	RouteAdvertised bool `json:"routeAdvertised,omitempty"`
+	RouteAdvertised bool `json:"routeAdvertised"`
 	// The list of firewall groups of type SECURITY_GROUP/STATIC_MEMBERS that are assigned to the Org vDC Network. These groups can then be used in firewall rules to protect the Org vDC Network and allow/deny traffic. 
-	SecurityGroups []EntityReference `json:"securityGroups,omitempty"`
+	SecurityGroups []EntityReference `json:"securityGroups"`
 	// Reference to the Segment Profile Template that is to be used when creating/updating this network. Setting this will override any Org vDC Network Segment Profile Template defined at global level or an Org vDC level. This field is only relevant during network create/update operation and will not be returned on GETs. For specific profile types where there are no corresponding profiles defined in the template, VCD will use the default NSX-T profile. This field is only applicable for NSX-T Org vDC Networks. 
-	SegmentProfileTemplateRef *EntityReference `json:"segmentProfileTemplateRef,omitempty"`
+	SegmentProfileTemplateRef *EntityReference `json:"segmentProfileTemplateRef"`
 }

@@ -13,27 +13,27 @@ package swagger
 // A Load Balancer Service Engine Group. 
 type LoadBalancerServiceEngineGroup struct {
 	// Represents current status of the networking object. 
-	Status *NetworkingObjectStatusType `json:"status,omitempty"`
+	Status *NetworkingObjectStatusType `json:"status"`
 	// The identifier of the Load Balancer Service Engine Groups in URN format
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// The name of the Load Balancer Service Engine Group. 
 	Name string `json:"name"`
 	// Description of the Load Balancer Service Engine Group.
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// The backing that uniquely identifies a Load Balancer Service Engine Group configured within a Load Balancer Cloud. 
 	ServiceEngineGroupBacking *LoadBalancerServiceEngineGroupBacking `json:"serviceEngineGroupBacking"`
 	// The service engine group's High Availability Mode. <ul> <li>ELASTIC_N_PLUS_M_BUFFER - Service Engines will scale out to N active nodes with M nodes as buffer. <li>ELASTIC_ACTIVE_ACTIVE - Active-Active with scale out. <li>LEGACY_ACTIVE_STANDBY - Traditional single Active-Standby configuration </ul> 
-	HaMode string `json:"haMode,omitempty"`
+	HaMode string `json:"haMode"`
 	// The reservation model for virutal services on the Load Balancer Service Engine Group. <ul> <li>DEDICATED - Dedicated to a single Edge Gateway and can only be assigned to a single Edge Gateway. <li>SHARED - Shared between multiple Edge Gateways. Can be assigned to multiple Edge Gateways. </ul> 
-	ReservationType string `json:"reservationType,omitempty"`
+	ReservationType string `json:"reservationType"`
 	// The maximum number of virtual services supported on the Load Balancer Service Engine Group. 
-	MaxVirtualServices int32 `json:"maxVirtualServices,omitempty"`
+	MaxVirtualServices int32 `json:"maxVirtualServices"`
 	// The number of virtual services currently deployed on the Load Balancer Service Engine Group. 
-	NumDeployedVirtualServices int32 `json:"numDeployedVirtualServices,omitempty"`
+	NumDeployedVirtualServices int32 `json:"numDeployedVirtualServices"`
 	// The number of virtual services already reserved on the Load Balancer Service Engine Group. This value is the sum of the guaranteed virtual services given to Edge Gateways assigned to the Load Balancer Service Engine Group. 
-	ReservedVirtualServices int32 `json:"reservedVirtualServices,omitempty"`
+	ReservedVirtualServices int32 `json:"reservedVirtualServices"`
 	// Indicates whether the maximum number of virtual services supported on the Load Balancer Service Engine Group has been surpassed by the current number of reserved virtual services. 
-	OverAllocated bool `json:"overAllocated,omitempty"`
+	OverAllocated bool `json:"overAllocated"`
 	// The feature set supported by the Load Balancer Service Engine Group. Allowed values are: <ul> <li>STANDARD - Service Engine Group supports STANDARD set of features for Load Balancing. <li>PREMIUM - Service Engine Group supports both STANDARD and PREMIUM set of features for Load Balancing. </ul> A Service Engine Group with <em>STANDARD</em> supported feature set can only be assigned to Edge Gateway with <em>STANDARD</em> supported feature set. A Service Engine Group with <em>PREMIUM</em> supported feature set can be assigned to Edge Gateway with both <em>STANDARD</em> and <em>PREMIUM</em> supported feature sets. 
-	SupportedFeatureSet string `json:"supportedFeatureSet,omitempty"`
+	SupportedFeatureSet string `json:"supportedFeatureSet"`
 }

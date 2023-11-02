@@ -12,6 +12,6 @@ package swagger
 
 // Entity reference used to describe VCD entities 
 type EntityReference struct {
-	Name string `json:"name,omitempty"`
-	Id string `json:"id,omitempty"`
+	Name string `json:"name"`
+	Id string `json:"id"`
 }

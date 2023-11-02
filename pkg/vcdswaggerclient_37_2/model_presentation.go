@@ -12,11 +12,11 @@ package swagger
 
 // Definition of Presentation. 
 type Presentation struct {
-	Description string `json:"description,omitempty"`
-	Id string `json:"id,omitempty"`
-	VroId string                   `json:"vroId,omitempty"`
-	InputParameters []WsParameter  `json:"inputParameters,omitempty"`
-	Name string                    `json:"name,omitempty"`
-	OutputParameters []WsParameter `json:"outputParameters,omitempty"`
-	Steps []StepInfo               `json:"steps,omitempty"`
+	Description string `json:"description"`
+	Id string `json:"id"`
+	VroId string                   `json:"vroId"`
+	InputParameters []WsParameter  `json:"inputParameters"`
+	Name string                    `json:"name"`
+	OutputParameters []WsParameter `json:"outputParameters"`
+	Steps []StepInfo               `json:"steps"`
 }

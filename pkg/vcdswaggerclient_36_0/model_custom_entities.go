@@ -16,5 +16,5 @@
 package swagger
 
 type CustomEntities struct {
-	Entities []CustomEntity `json:"entities,omitempty"`
+	Entities []CustomEntity `json:"entities"`
 }

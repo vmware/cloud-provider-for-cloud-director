@@ -13,9 +13,9 @@ package swagger
 // A list of quota pools. 
 type QuotasQuotaPools struct {
 	// The quota policy that enforced this quota. 
-	EnforcingQuotaPolicy *EnforcingQuotaPolicy `json:"enforcingQuotaPolicy,omitempty"`
+	EnforcingQuotaPolicy *EnforcingQuotaPolicy `json:"enforcingQuotaPolicy"`
 	// The quota pool definition used for the consumed quota resource. 
-	QuotaPoolDefinition *QuotaPoolDefinition `json:"quotaPoolDefinition,omitempty"`
+	QuotaPoolDefinition *QuotaPoolDefinition `json:"quotaPoolDefinition"`
 	// The quota amount consumed for this resource. This field is conditional and for group quotas it is not returned. 
-	QuotaConsumed int64 `json:"quotaConsumed,omitempty"`
+	QuotaConsumed int64 `json:"quotaConsumed"`
 }

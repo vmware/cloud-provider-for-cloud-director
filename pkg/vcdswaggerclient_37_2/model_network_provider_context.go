@@ -13,9 +13,9 @@ package swagger
 // Describes the network provider context of the network object.
 type NetworkProviderContext struct {
 	// The organization that this object belongs to. This property is required during creation and cannot be updated. 
-	OrgRef *EntityReference `json:"orgRef,omitempty"`
+	OrgRef *EntityReference `json:"orgRef"`
 	// The context under which this object is created. The context can the id of the organization vDC, vDC Group, or network provider. This field is required on object creation and is unset on object reads. This same context ID can be used in the context filter field when querying for the list of objects. 
-	ContextEntityId string `json:"contextEntityId,omitempty"`
+	ContextEntityId string `json:"contextEntityId"`
 	// The network provider scope that this object belongs to. This is a read-only property and is determined by the input context entity ID during object creation. 
-	NetworkProviderScope string `json:"networkProviderScope,omitempty"`
+	NetworkProviderScope string `json:"networkProviderScope"`
 }

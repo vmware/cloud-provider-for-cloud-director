@@ -17,11 +17,11 @@ package swagger
 
 // A UniversalRouter object 
 type UniversalRouter struct {
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	Name string `json:"name"`
-	Description string           `json:"description,omitempty"`
+	Description string           `json:"description"`
 	VdcGroupRef *EntityReference `json:"vdcGroupRef"`
-	LocalEgress bool             `json:"localEgress,omitempty"`
-	Status *VdcGroupEntityStatus `json:"status,omitempty"`
-	ErrorMessage string          `json:"errorMessage,omitempty"`
+	LocalEgress bool             `json:"localEgress"`
+	Status *VdcGroupEntityStatus `json:"status"`
+	ErrorMessage string          `json:"errorMessage"`
 }

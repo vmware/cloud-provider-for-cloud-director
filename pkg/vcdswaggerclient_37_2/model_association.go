@@ -13,7 +13,7 @@ package swagger
 // Site association information for an entity 
 type Association struct {
 	// ID of the entity.
-	EntityId string `json:"entityId,omitempty"`
+	EntityId string `json:"entityId"`
 	// ID of the association.
-	AssociationId string `json:"associationId,omitempty"`
+	AssociationId string `json:"associationId"`
 }

@@ -17,5 +17,5 @@ package swagger
 
 // List of transport zones configured on an NSX-V manager. 
 type NsxVTransportZones struct {
-	Values []NsxVTransportZone `json:"values,omitempty"`
+	Values []NsxVTransportZone `json:"values"`
 }

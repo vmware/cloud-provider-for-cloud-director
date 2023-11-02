@@ -13,5 +13,5 @@ package swagger
 // A supported entity type for a storage policy. 
 type StoragePolicySupportedEntityType struct {
 	// The name of the supported entity type. Can be either a static VCD type or a defined entity type. 
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 }

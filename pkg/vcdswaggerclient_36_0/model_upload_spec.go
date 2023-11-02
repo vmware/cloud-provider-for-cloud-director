@@ -19,6 +19,6 @@ package swagger
 type UploadSpec struct {
 	FileName string `json:"fileName"`
 	Size int64 `json:"size"`
-	Checksum string `json:"checksum,omitempty"`
-	ChecksumAlgo string `json:"checksumAlgo,omitempty"`
+	Checksum string `json:"checksum"`
+	ChecksumAlgo string `json:"checksumAlgo"`
 }

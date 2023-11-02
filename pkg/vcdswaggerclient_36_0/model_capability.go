@@ -18,13 +18,13 @@ package swagger
 // Describes a capability of an entity. 
 type Capability struct {
 	// The name of the capability.
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 	// Description of the capability as it relates to the entity.
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// The value of the capability.
-	Value *interface{} `json:"value,omitempty"`
+	Value *interface{} `json:"value"`
 	// The type of the value.
-	Type_ *CapabilityValueType `json:"type,omitempty"`
+	Type_ *CapabilityValueType `json:"type"`
 	// The category of the capabilities listed.
-	Category *CapabilityCategory `json:"category,omitempty"`
+	Category *CapabilityCategory `json:"category"`
 }

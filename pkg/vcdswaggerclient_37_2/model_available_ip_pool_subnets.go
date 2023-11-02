@@ -12,5 +12,5 @@ package swagger
 
 // List of available IP addresses. 
 type AvailableIpPoolSubnets struct {
-	Values []AvailableIpPoolSubnet `json:"values,omitempty"`
+	Values []AvailableIpPoolSubnet `json:"values"`
 }

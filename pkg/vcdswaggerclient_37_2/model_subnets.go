@@ -12,5 +12,5 @@ package swagger
 
 // List of Subnets of a network 
 type Subnets struct {
-	Values []Subnet `json:"values,omitempty"`
+	Values []Subnet `json:"values"`
 }

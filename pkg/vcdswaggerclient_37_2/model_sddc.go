@@ -13,19 +13,19 @@ package swagger
 // Software-defined data center 
 type Sddc struct {
 	Name string `json:"name"`
-	Id string `json:"id,omitempty"`
-	Description string `json:"description,omitempty"`
-	Enabled bool `json:"enabled,omitempty"`
+	Id string `json:"id"`
+	Description string `json:"description"`
+	Enabled bool `json:"enabled"`
 	// URN of the associated vCenter. This is not editable once the SDDC has been created.
 	VcId string `json:"vcId"`
 	// Version of the associated vCenter. This is not editable.
-	Version string `json:"version,omitempty"`
+	Version string `json:"version"`
 	// Overall status of the associated vCenter. This is not editable.
-	OverallStatus *OverallStatus `json:"overallStatus,omitempty"`
+	OverallStatus *OverallStatus `json:"overallStatus"`
 	// Associated read-only statistics.
-	Stats *SddcStats `json:"stats,omitempty"`
+	Stats *SddcStats `json:"stats"`
 	// Default proxy for the SDDC. This field is read-only. To set a new default, edit the proxy you wish to make the new default by modifying its defaultProxy flag. Deprecated in Api 34.0. 
-	DefaultProxy *SddcProxy `json:"defaultProxy,omitempty"`
+	DefaultProxy *SddcProxy `json:"defaultProxy"`
 	// Default endpoint for the SDDC. There is an endpoint available for an SDDC even if there are no proxies configured for the SDDC. This indicates that an endpoint is available that doesn't require proxying, either because it is publicly accessible or because it assumes an established VPM connection. The field is read-only. 
-	DefaultEndpoint *SddcEndpoint `json:"defaultEndpoint,omitempty"`
+	DefaultEndpoint *SddcEndpoint `json:"defaultEndpoint"`
 }

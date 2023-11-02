@@ -18,7 +18,7 @@ package swagger
 // This includes the L2 VPN tunnel status such as whether the tunnel is up or down and the IKE Session status. 
 type EdgeL2VpnTunnelStatus struct {
 	// Gives the overall L2 VPN Runtime Status (one of either UP or DOWN). <ul>   <li>UP - Indicating that the tunnel connection has been successfully established.</li>   <li>DOWN - Indicating that the tunnel connection has not yet been successfully established.</li> </ul> 
-	RuntimeStatus string `json:"runtimeStatus,omitempty"`
+	RuntimeStatus string `json:"runtimeStatus"`
 	// The error message which led to this tunnel's failure (if applicable).
-	FailureReason string `json:"failureReason,omitempty"`
+	FailureReason string `json:"failureReason"`
 }

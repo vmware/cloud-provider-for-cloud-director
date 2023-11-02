@@ -17,10 +17,10 @@ package swagger
 
 // Metadata entry
 type MetadataEntry struct {
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// Persistent entries can be copied over on some entity operation, for example: | Creating a copy of an Org VDC | Capturing a vApp to a template | Instantiating a catalog item as a VM 
-	Persistent bool `json:"persistent,omitempty"`
+	Persistent bool `json:"persistent"`
 	// The kind of level of access organizations of the entry's domain have 
-	ReadOnly bool      `json:"readOnly,omitempty"`
+	ReadOnly bool      `json:"readOnly"`
 	KeyValue *KeyValue `json:"keyValue"`
 }

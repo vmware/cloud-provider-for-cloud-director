@@ -13,31 +13,31 @@ package swagger
 // A vDC Group holds a list of vDCs that can have a network be stretched across the vDCs. 
 type VdcGroup struct {
 	// The unique ID for the vDC Group (read-only).
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// The organization that this group belongs to.
 	OrgId string `json:"orgId"`
 	// The name of this group. The name must be unique.
 	Name string `json:"name"`
 	// The description of this group.
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// Determines whether local egress is enabled for a universal router belonging to a universal vDC group. This value is used on create if universalNetworkingEnabled is set to true. This cannot be updated. This value is always false for local vDC groups. 
-	LocalEgress bool `json:"localEgress,omitempty"`
+	LocalEgress bool `json:"localEgress"`
 	// The list of organization vDCs that are participating in this group.
 	ParticipatingOrgVdcs []ParticipatingVdcReference `json:"participatingOrgVdcs"`
 	// True means that a vDC group router has been created. If set to true for vdc group creation, a universal router will also be created.
-	UniversalNetworkingEnabled bool `json:"universalNetworkingEnabled,omitempty"`
+	UniversalNetworkingEnabled bool `json:"universalNetworkingEnabled"`
 	// The network provider's universal id that is backing the universal network pool. This field is read-only and is derived from the list of participating vDCs if a universal vDC group is created. For universal vDC groups, each participating vDC should have a universal network pool that is backed by this same id. 
-	NetworkPoolUniversalId string `json:"networkPoolUniversalId,omitempty"`
+	NetworkPoolUniversalId string `json:"networkPoolUniversalId"`
 	// ID of network pool to use if creating a local vDC group router. Must be set if creating a local group. Ignored if creating a universal group. 
-	NetworkPoolId string `json:"networkPoolId,omitempty"`
+	NetworkPoolId string `json:"networkPoolId"`
 	// The status that the group can be in.
-	Status *VdcGroupEntityStatus `json:"status,omitempty"`
+	Status *VdcGroupEntityStatus `json:"status"`
 	// Defines the group as LOCAL or UNIVERSAL. This cannot be changed. Local vDC Groups can have networks stretched across multiple vDCs in a single Cloud Director instance. Local vDC Groups share the same broadcast domain/transport zone and network provider scope. Universal vDC groups can have networks stretched across multiple vDCs in a single or multiple Cloud Director instance(s). Universal vDC groups are backed by a broadcast domain/transport zone that strectches across a single or multiple Cloud Director instance(s). Local vDC groups are supported for both NSX-V and NSX-T Network Provider Types. Universal vDC Groups are supported for only NSX_V Network Provider Type. 
-	Type_ string `json:"type,omitempty"`
+	Type_ string `json:"type"`
 	// The values currently supported are NSX_V and NSX_T. Defines the networking provider backing the vDC Group. This is used on create. If not specified, NSX_V value will be used. NSX_V is used for existing vDC Groups and vDC Groups where Cross-VC NSX is used for the underlying technology. NSX_T is used when the networking provider type for the Organization vDCs in the group is NSX-T. NSX_T only supports groups of type LOCAL (single site). 
-	NetworkProviderType string `json:"networkProviderType,omitempty"`
+	NetworkProviderType string `json:"networkProviderType"`
 	// Whether Distributed Firewall is enabled for this vDC Group. Only applicable for NSX_T vDC Groups.
-	DfwEnabled bool `json:"dfwEnabled,omitempty"`
+	DfwEnabled bool `json:"dfwEnabled"`
 	// If the group has an error status, a more detailed error message is set here.
-	ErrorMessage string `json:"errorMessage,omitempty"`
+	ErrorMessage string `json:"errorMessage"`
 }

@@ -13,7 +13,7 @@ package swagger
 // Standard portgroup. 
 type PortGroup struct {
 	// Contains the backing id and name of the standard portgroup.
-	BackingRef *BackingRef `json:"backingRef,omitempty"`
+	BackingRef *BackingRef `json:"backingRef"`
 	// The entity reference for the vCenter that contains this portgroup.
-	VirtualCenter *EntityReference `json:"virtualCenter,omitempty"`
+	VirtualCenter *EntityReference `json:"virtualCenter"`
 }

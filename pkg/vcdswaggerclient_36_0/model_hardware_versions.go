@@ -17,6 +17,6 @@ package swagger
 
 // Set of supported ESXi virtual hardware versions.
 type HardwareVersions struct {
-	Versions []string                            `json:"versions,omitempty"`
-	SupportedVersions []SupportedHardwareVersion `json:"supportedVersions,omitempty"`
+	Versions []string                            `json:"versions"`
+	SupportedVersions []SupportedHardwareVersion `json:"supportedVersions"`
 }

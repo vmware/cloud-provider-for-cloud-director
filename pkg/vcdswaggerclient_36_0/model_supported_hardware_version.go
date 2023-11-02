@@ -18,7 +18,7 @@ package swagger
 // supported ESXi virtual hardware version.
 type SupportedHardwareVersion struct {
 	// indicates whether this virtual hardware version is the default in vCenter.
-	IsDefault bool `json:"isDefault,omitempty"`
+	IsDefault bool `json:"isDefault"`
 	// The name of the virtual hardware version.
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 }

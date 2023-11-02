@@ -13,19 +13,19 @@ package swagger
 // A Virtual Service for an Edge Gateway.
 type EdgeLoadBalancerVirtualServiceSummary struct {
 	// Represents current status of the networking object. 
-	Status *NetworkingObjectStatusType `json:"status,omitempty"`
+	Status *NetworkingObjectStatusType `json:"status"`
 	// The identifier of the Virtual Service in URN format
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// The name of the Virtual Service. Name is unique across all Virtual Services for an Edge Gateway.
 	Name string `json:"name"`
 	// The description of the Virtual Service.
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// A flag indicating whether Virtual Service is enabled or not.
 	Enabled bool `json:"enabled"`
 	// The IPv4 virtual IP Address (VIP) of the Virtual Service if required. This IP can be an allocated IP to the Gateway from the External Network or it can be an internal IP address used for internal load balancing. 
-	VirtualIpAddress string `json:"virtualIpAddress,omitempty"`
+	VirtualIpAddress string `json:"virtualIpAddress"`
 	// The IPv6 virtual IP Address (VIP) of the Virtual Service if required. This IP can be an allocated IP to the Gateway from the External Network or it can be an internal IP address used for internal load balancing. 
-	Ipv6VirtualIpAddress string `json:"ipv6VirtualIpAddress,omitempty"`
+	Ipv6VirtualIpAddress string `json:"ipv6VirtualIpAddress"`
 	// The Load Balancer Pool associated with this Virtual Service.
 	LoadBalancerPoolRef *EntityReference `json:"loadBalancerPoolRef"`
 	// The Edge Gateway associated with this Virtual Service.
@@ -33,17 +33,17 @@ type EdgeLoadBalancerVirtualServiceSummary struct {
 	// The Load Balancer Service Engine Group that is assigned to the Edge Gateway. This Virtual Service will be deployed to this Service Engine Group. 
 	ServiceEngineGroupRef *EntityReference `json:"serviceEngineGroupRef"`
 	// The certificate used for SSL termination for the Virtual Service. This is required if the service port type is \"HTTPS\" or \"L4_TLS\".
-	CertificateRef *EntityReference `json:"certificateRef,omitempty"`
+	CertificateRef *EntityReference `json:"certificateRef"`
 	// A list of service ports supported by this Virtual Service.  Multiple L4 service ports may require an Edge Gateway Load Balancer with PREMIUM feature set. 
 	ServicePorts []EdgeLoadBalancerServicePort `json:"servicePorts"`
 	// The current health status of the virtual service. Possible values are: <ul> <li> UP - The virtual service is healthy. <li> DOWN - The virtual service is down, inactive, or has failed. <li> DISABLED - The virtual service is disabled. <li> UNAVAILABLE - The virtual service is unavailable. <li> PENDING - The virtual service is being creating or resources are being allocated. <li> UNKNOWN - The virtual service state is unknown. </ul> 
-	HealthStatus string `json:"healthStatus,omitempty"`
+	HealthStatus string `json:"healthStatus"`
 	// The localized message on the health of the virtual service.
-	HealthMessage string `json:"healthMessage,omitempty"`
+	HealthMessage string `json:"healthMessage"`
 	// The non-localized detailed message on the health of the virtual service.
-	DetailedHealthMessage string `json:"detailedHealthMessage,omitempty"`
+	DetailedHealthMessage string `json:"detailedHealthMessage"`
 	// A flag indicating whether or not Preserve Client IP is enabled for this virtual service. In order to enable Preserve Client IP on the virtual service, Transparent Mode must be enabled on the Edge Gateway. 
-	TransparentModeEnabled bool `json:"transparentModeEnabled,omitempty"`
+	TransparentModeEnabled bool `json:"transparentModeEnabled"`
 	// The profile type of application that this Virtual Service is configured with. A value of \"-\" represents an unknown type. <ul> <li>HTTP - Virtual Service supports HTTP protocol. <li>HTTPS - Virtual Service supports HTTPS protocol. <li>L4 - Virtual Service supports Layer 4 (Transport) using UDP/TCP protocol. <li>L4_TLS - Virtual Service supports Layer 4 (Transport) using UDP/TCP protocol with TLS. </ul> 
-	ApplicationProfileType string `json:"applicationProfileType,omitempty"`
+	ApplicationProfileType string `json:"applicationProfileType"`
 }

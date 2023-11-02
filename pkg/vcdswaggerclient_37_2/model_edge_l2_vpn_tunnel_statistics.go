@@ -13,25 +13,25 @@ package swagger
 // Specifies the statistics for the given L2 VPN Tunnel.
 type EdgeL2VpnTunnelStatistics struct {
 	// Broadcast, Unknown unicast, and Multicast (BUM) bytes in.
-	BumBytesIn int64 `json:"bumBytesIn,omitempty"`
+	BumBytesIn int64 `json:"bumBytesIn"`
 	// Broadcast, Unknown unicast, and Multicast (BUM) bytes out.
-	BumBytesOut int64 `json:"bumBytesOut,omitempty"`
+	BumBytesOut int64 `json:"bumBytesOut"`
 	// Broadcast, Unknown unicast, and Multicast (BUM) packets in.
-	BumPacketsIn int64 `json:"bumPacketsIn,omitempty"`
+	BumPacketsIn int64 `json:"bumPacketsIn"`
 	// Broadcast, Unknown unicast, and Multicast (BUM) packets out.
-	BumPacketsOut int64 `json:"bumPacketsOut,omitempty"`
+	BumPacketsOut int64 `json:"bumPacketsOut"`
 	// Total number of incoming bytes.
-	BytesIn int64 `json:"bytesIn,omitempty"`
+	BytesIn int64 `json:"bytesIn"`
 	// Total number of outgoing bytes.
-	BytesOut int64 `json:"bytesOut,omitempty"`
+	BytesOut int64 `json:"bytesOut"`
 	// Total number of incoming packets.
-	PacketsIn int64 `json:"packetsIn,omitempty"`
+	PacketsIn int64 `json:"packetsIn"`
 	// Total number of outgoing packets.
-	PacketsOut int64 `json:"packetsOut,omitempty"`
+	PacketsOut int64 `json:"packetsOut"`
 	// Total number of incoming packets dropped.
-	PacketsReceiveError int64 `json:"packetsReceiveError,omitempty"`
+	PacketsReceiveError int64 `json:"packetsReceiveError"`
 	// Total number of packets dropped while sending for any reason.
-	PacketsSentError int64 `json:"packetsSentError,omitempty"`
+	PacketsSentError int64 `json:"packetsSentError"`
 	// Policy path referencing the segment on which stats are gathered.
-	SegmentPath string `json:"segmentPath,omitempty"`
+	SegmentPath string `json:"segmentPath"`
 }

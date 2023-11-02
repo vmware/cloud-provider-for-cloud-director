@@ -18,23 +18,23 @@ package swagger
 // An external network. 
 type ExternalNetwork struct {
 	// Represents current status of the networking object. 
-	Status *NetworkingObjectStatusType `json:"status,omitempty"`
+	Status *NetworkingObjectStatusType `json:"status"`
 	// The unique ID for the network. This field is read-only.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// The name of the network.
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 	// The description of the network.
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// List of subnets configured for the network.
-	Subnets *Subnets `json:"subnets,omitempty"`
+	Subnets *Subnets `json:"subnets"`
 	// Backings for this external network. Describes if this external network is backed by port groups, vCenter standard switch or an NSX-T Tier-0 router. 
-	NetworkBackings *ExternalNetworkBackings `json:"networkBackings,omitempty"`
+	NetworkBackings *ExternalNetworkBackings `json:"networkBackings"`
 	// The number of IP addresses defined by the static ip pools. If the network contains any IpV6 subnets, the total ip count will be null.
-	TotalIpCount int32 `json:"totalIpCount,omitempty"`
+	TotalIpCount int32 `json:"totalIpCount"`
 	// The number of IP address used from the static ip pools.
-	UsedIpCount int32 `json:"usedIpCount,omitempty"`
+	UsedIpCount int32 `json:"usedIpCount"`
 	// The Organization that this external network is dedicated to. This is null if this is not a dedicated external network.
-	DedicatedOrg *EntityReference `json:"dedicatedOrg,omitempty"`
+	DedicatedOrg *EntityReference `json:"dedicatedOrg"`
 	// The Edge Gateway that this external network is dedicated to. This is null if this is not a dedicated external network.
-	DedicatedEdgeGateway *EntityReference `json:"dedicatedEdgeGateway,omitempty"`
+	DedicatedEdgeGateway *EntityReference `json:"dedicatedEdgeGateway"`
 }

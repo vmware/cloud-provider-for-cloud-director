@@ -13,11 +13,11 @@ package swagger
 // Distributed portgroup. 
 type DistributedPortGroup struct {
 	// Contains the backing id and name of the distributed portgroup.
-	BackingRef *BackingRef `json:"backingRef,omitempty"`
+	BackingRef *BackingRef `json:"backingRef"`
 	// The entity reference for the vCenter that contains this distributed portgroup.
-	VirtualCenter *EntityReference `json:"virtualCenter,omitempty"`
+	VirtualCenter *EntityReference `json:"virtualCenter"`
 	// The VLAN associated with this distributed portgroup. This can be a single number or a numerical range(1-10).
-	Vlan string `json:"vlan,omitempty"`
+	Vlan string `json:"vlan"`
 	// The distributed virtual switch on which this distributed virtual portgroup was created.
-	DvSwitch *DvSwitch `json:"dvSwitch,omitempty"`
+	DvSwitch *DvSwitch `json:"dvSwitch"`
 }

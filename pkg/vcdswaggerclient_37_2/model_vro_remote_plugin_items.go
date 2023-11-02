@@ -12,5 +12,5 @@ package swagger
 
 // List of plugin namespaces 
 type VroRemotePluginItems struct {
-	Items []VroRemotePluginItem `json:"items,omitempty"`
+	Items []VroRemotePluginItem `json:"items"`
 }

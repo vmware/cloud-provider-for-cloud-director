@@ -18,7 +18,7 @@ package swagger
 // An object representing VLAN Id range. 
 type VlanIdRange struct {
 	// Starting VLAN Id in the range.
-	StartId int32 `json:"startId,omitempty"`
+	StartId int32 `json:"startId"`
 	// Ending VLAN Id in the range.
-	EndId int32 `json:"endId,omitempty"`
+	EndId int32 `json:"endId"`
 }

@@ -13,13 +13,13 @@ package swagger
 // An NSX-T's Tier-0 router. 
 type Tier0Router struct {
 	// The unique id of the router. Field is sortable.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// The description of the router.
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// Name used in NSX-T's logs or GUI. Field is sortable.
-	DisplayName string `json:"displayName,omitempty"`
+	DisplayName string `json:"displayName"`
 	// Id of parent Tier0 if this Tier0 Router is a VRF-Lite Tier0.
-	ParentTier0Id string `json:"parentTier0Id,omitempty"`
+	ParentTier0Id string `json:"parentTier0Id"`
 	// True if the router is already imported. The router cannot be imported again.
-	AlreadyImported bool `json:"alreadyImported,omitempty"`
+	AlreadyImported bool `json:"alreadyImported"`
 }

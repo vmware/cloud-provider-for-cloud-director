@@ -13,13 +13,13 @@ package swagger
 // Group Spec object. 
 type UserGroup struct {
 	Name string `json:"name"`
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	Description string            `json:"description"`
 	OrgEntityRef *EntityReference `json:"orgEntityRef"`
 	// This field is under accelerated deprecation and will be removed next release.
-	SourceEntityRef *EntityReference `json:"sourceEntityRef,omitempty"`
+	SourceEntityRef *EntityReference `json:"sourceEntityRef"`
 	RoleEntityRef *EntityReference   `json:"roleEntityRef"`
-	NameInSource string              `json:"nameInSource,omitempty"`
+	NameInSource string              `json:"nameInSource"`
 	// The provider type of the group. Valid values are: <ul>     <li> LDAP     <li> SAML     <li> OAUTH </ul> 
 	ProviderType string `json:"providerType"`
 }

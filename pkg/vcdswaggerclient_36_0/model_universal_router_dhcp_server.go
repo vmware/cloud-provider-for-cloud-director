@@ -17,6 +17,6 @@ package swagger
 
 // List of Dhcp servers for universal router. Either egressRef or serverAddress is required to identify Dhcp server. 
 type UniversalRouterDhcpServer struct {
-	EgressRef *EntityReference `json:"egressRef,omitempty"`
-	ServerAddress string       `json:"serverAddress,omitempty"`
+	EgressRef *EntityReference `json:"egressRef"`
+	ServerAddress string       `json:"serverAddress"`
 }

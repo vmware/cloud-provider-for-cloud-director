@@ -18,7 +18,7 @@ package swagger
 // A definition of an access control configuration of a Behavior. 
 type BehaviorAccess struct {
 	// The ID of the Behavior. It can be both a behavior-interface or an overriden behavior-type ID.
-	BehaviorId string `json:"behaviorId,omitempty"`
+	BehaviorId string `json:"behaviorId"`
 	// The ID of an AccessLevel.
-	AccessLevelId string `json:"accessLevelId,omitempty"`
+	AccessLevelId string `json:"accessLevelId"`
 }

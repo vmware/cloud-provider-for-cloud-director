@@ -18,5 +18,5 @@ package swagger
 // Represents status of a networking entity. 
 type NetworkingObjectStatus struct {
 	// Represents current status of the networking object. 
-	Status *NetworkingObjectStatusType `json:"status,omitempty"`
+	Status *NetworkingObjectStatusType `json:"status"`
 }

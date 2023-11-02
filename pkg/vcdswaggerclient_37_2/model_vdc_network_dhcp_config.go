@@ -13,15 +13,15 @@ package swagger
 // Configuration for the DHCP service that runs for the network. In order to use DHCPv6 in NSX-T, the network must be configured in EDGE mode, the network must be attached to a router, and the router must have a SLAAC profile configured with DHCPv6 mode. 
 type VdcNetworkDhcpConfig struct {
 	// Whether the DHCP service is currently enabled on network.
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled bool `json:"enabled"`
 	// The amount of time in seconds of how long a DHCP IP will be leased out for. The minimum is 60s while the maximum is 4,294,967,295s, which is roughly 49,710 days. 
-	LeaseTime int64 `json:"leaseTime,omitempty"`
+	LeaseTime int64 `json:"leaseTime"`
 	// Range of DHCP IP addresses. These should not be set for RELAY mode.
-	DhcpPools []VdcNetworkDhcpPool `json:"dhcpPools,omitempty"`
+	DhcpPools []VdcNetworkDhcpPool `json:"dhcpPools"`
 	// This value describes how the DHCP service is configured for this network. Once a DHCP service has been created, the mode attribute cannot be changed. The mode field will default to 'EDGE' if it is not provided. This field only applies to networks backed by an NSX-T network provider. <ul> <li>The supported values are EDGE ,NETWORK and RELAY.</li> <li>If EDGE is specified, the DHCP service of the edge is used to obtain DHCP IPs.</li> <li>If NETWORK is specified, a DHCP server is created for use by this network.</li> <li>If RELAY is specified, all the DHCP client requests will be relayed to Gateway DHCP Forwarder service.     This mode is only supported for Routed Org vDC Networks.</li> </ul> In order to use DHCP for IPV6, NETWORK mode must be used. Routed networks which are using NETWORK DHCP services can be disconnected from the edge gateway and still retain their DHCP configuration, however DHCP configuration will be removed during connection change for networks using EDGE or RELAY DHCP mode. 
-	Mode string `json:"mode,omitempty"`
+	Mode string `json:"mode"`
 	// The IP address of the DHCP service. This is required upon create if using NETWORK mode. This field only applies to networks backed by an NSX-T network provider. 
-	IpAddress string `json:"ipAddress,omitempty"`
+	IpAddress string `json:"ipAddress"`
 	// The DNS server IPs to be assigned by this DHCP service. The IP type must match the IP type of the subnet on which the DHCP config is being created. 
-	DnsServers []string `json:"dnsServers,omitempty"`
+	DnsServers []string `json:"dnsServers"`
 }

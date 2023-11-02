@@ -16,10 +16,10 @@
 package swagger
 
 type ExecutionSummary struct {
-	Id string `json:"id,omitempty"`
-	Name string `json:"name,omitempty"`
-	StartDate string `json:"startDate,omitempty"`
-	EndDate string `json:"endDate,omitempty"`
-	StartedBy string      `json:"startedBy,omitempty"`
-	State *ExecutionState `json:"state,omitempty"`
+	Id string `json:"id"`
+	Name string `json:"name"`
+	StartDate string `json:"startDate"`
+	EndDate string `json:"endDate"`
+	StartedBy string      `json:"startedBy"`
+	State *ExecutionState `json:"state"`
 }

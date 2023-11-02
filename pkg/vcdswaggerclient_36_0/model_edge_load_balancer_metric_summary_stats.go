@@ -18,17 +18,17 @@ package swagger
 // A statistical summary of the data in the report. 
 type EdgeLoadBalancerMetricSummaryStats struct {
 	// Mean value of sample.
-	Mean float32 `json:"mean,omitempty"`
+	Mean float32 `json:"mean"`
 	// Min value of sample.
-	Min float32 `json:"min,omitempty"`
+	Min float32 `json:"min"`
 	// Max value of sample.
-	Max float32 `json:"max,omitempty"`
+	Max float32 `json:"max"`
 	// Sample trend.
-	Trend float32 `json:"trend,omitempty"`
+	Trend float32 `json:"trend"`
 	// Sample size.
-	SampleSize float32 `json:"sampleSize,omitempty"`
+	SampleSize float32 `json:"sampleSize"`
 	// Start time of data series.  ISO 8601 format (i.e. 2020-07-24T00:00:00).
-	StartTime string `json:"startTime,omitempty"`
+	StartTime string `json:"startTime"`
 	// End time of data series.  ISO 8601 format (i.e. 2020-07-24T00:00:00).
-	EndTime string `json:"endTime,omitempty"`
+	EndTime string `json:"endTime"`
 }

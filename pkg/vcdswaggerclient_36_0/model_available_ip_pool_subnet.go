@@ -18,13 +18,13 @@ package swagger
 // Describes an available IP address. 
 type AvailableIpPoolSubnet struct {
 	// The gateway for the subnet on which IPs are available.
-	Gateway string `json:"gateway,omitempty"`
+	Gateway string `json:"gateway"`
 	// The netmask prefix length of the subnet.
-	PrefixLength int32 `json:"prefixLength,omitempty"`
+	PrefixLength int32 `json:"prefixLength"`
 	// Indicates whether the network subnet is currently enabled.
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled bool `json:"enabled"`
 	// Range of IPs which are available for use.
-	IpRanges *IpRanges `json:"ipRanges,omitempty"`
+	IpRanges *IpRanges `json:"ipRanges"`
 	// The total number of available IP addresses.
-	TotalIpCount int32 `json:"totalIpCount,omitempty"`
+	TotalIpCount int32 `json:"totalIpCount"`
 }

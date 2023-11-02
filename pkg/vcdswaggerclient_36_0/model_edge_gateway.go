@@ -18,31 +18,31 @@ package swagger
 // An edge gateway object
 type EdgeGateway struct {
 	// Represents current status of the networking object.
-	Status *NetworkingObjectStatusType `json:"status,omitempty"`
+	Status *NetworkingObjectStatusType `json:"status"`
 	// The unique identifier of the edge gateway.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// The name of the edge gateway.
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 	// The description of the edge gateway(optional).
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// The uplink connections for the edge gateway.
-	EdgeGatewayUplinks []EdgeGatewayUplink `json:"edgeGatewayUplinks,omitempty"`
+	EdgeGatewayUplinks []EdgeGatewayUplink `json:"edgeGatewayUplinks"`
 	// A flag indicating whether distributed routing is enabled or not. The default is false.
-	DistributedRoutingEnabled bool `json:"distributedRoutingEnabled,omitempty"`
+	DistributedRoutingEnabled bool `json:"distributedRoutingEnabled"`
 	// The number of Org vDC networks connected to the gateway.
-	OrgVdcNetworkCount int32 `json:"orgVdcNetworkCount,omitempty"`
+	OrgVdcNetworkCount int32 `json:"orgVdcNetworkCount"`
 	// The backing details of the edge gateway; only required if importing an NSX-T router.
-	GatewayBacking *EdgeGatewayBacking `json:"gatewayBacking,omitempty"`
+	GatewayBacking *EdgeGatewayBacking `json:"gatewayBacking"`
 	// The organization vDC which the gateway belongs to. Property is deprecated. Please use ownerRef.
-	OrgVdc *EntityReference `json:"orgVdc,omitempty"`
+	OrgVdc *EntityReference `json:"orgVdc"`
 	// The organization vDC or vDC Group that this edge gateway belongs to. If the ownerRef is set to a vDC Group, this gateway will be available across all the participating Organization vDCs in the vDC Group.
-	OwnerRef *EntityReference `json:"ownerRef,omitempty"`
+	OwnerRef *EntityReference `json:"ownerRef"`
 	// The organization to which the gateway belongs.
-	OrgRef *EntityReference `json:"orgRef,omitempty"`
+	OrgRef *EntityReference `json:"orgRef"`
 	// The network definition in CDIR form that DNS and DHCP service on an NSX-T edge will run on. The subnet prefix length must be 27. This property applies to creating or importing an NSX-T Edge. This is not supported for VMC. If nothing is set, the default is 192.168.255.225/27.  The DHCP listener IP network is on 192.168.255.225/30. The DNS listener IP network is on 192.168.255.228/32.  This field cannot be updated.
-	ServiceNetworkDefinition string `json:"serviceNetworkDefinition,omitempty"`
+	ServiceNetworkDefinition string `json:"serviceNetworkDefinition"`
 	// The uplink network is the network that is used to connect the distributed router to the gateway. This is in CIDR form. This is not set if distributed routing is disabled. This field cannot be updated. This applies to NSX-V edges only.
-	DistributedRouterUplinkNetworkDefinition string `json:"distributedRouterUplinkNetworkDefinition,omitempty"`
+	DistributedRouterUplinkNetworkDefinition string `json:"distributedRouterUplinkNetworkDefinition"`
 	// Edge Cluster Configuration for the Edge Gateway. Can be specified if a gateway needs to be placed on a specific set of Edge Clusters. For NSX-T Edges, user should specify the ID of the NSX-T edge cluster as the value of primaryEdgeCluster's backingId. The gateway defaults to the Edge Cluster of the connected External Network's backing Tier-0 router, if nothing is specified. The value of secondaryEdgeCluster will be set to NULL for NSX-T edge gateways. For NSX-V Edges, this is read-only and the legacy API must be used for edge specific placement.
-	EdgeClusterConfig *GatewayEdgeClusterConfig `json:"edgeClusterConfig,omitempty"`
+	EdgeClusterConfig *GatewayEdgeClusterConfig `json:"edgeClusterConfig"`
 }

@@ -13,15 +13,15 @@ package swagger
 // An IP Range for an IP Space.
 type IpSpaceRange struct {
 	// Unique ID of the IP Space Range. For new IP Range, this is unset. Existing IP Range will have an ID which is used for update identification.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// Starting IP address in the range.
 	StartIpAddress string `json:"startIpAddress"`
 	// End IP address in the range.
 	EndIpAddress string `json:"endIpAddress"`
 	// The number of IP addresses defined by the IP range.
-	TotalIpCount string `json:"totalIpCount,omitempty"`
+	TotalIpCount string `json:"totalIpCount"`
 	// The number of allocated IP addresses.
-	AllocatedIpCount string `json:"allocatedIpCount,omitempty"`
+	AllocatedIpCount string `json:"allocatedIpCount"`
 	// Specifies the percentage of allocated IP addresses out of total specified IP addresses.
-	AllocatedIpPercentage float32 `json:"allocatedIpPercentage,omitempty"`
+	AllocatedIpPercentage float32 `json:"allocatedIpPercentage"`
 }

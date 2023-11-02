@@ -13,18 +13,18 @@ package swagger
 // An account to be used for non-interactive VMware Cloud Director access. 
 type ServiceAccount struct {
 	// ID of this service account. Sorting on this field is not supported.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// Name of the service account.
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 	// Unique identifier string to identify the client software being registered.
-	SoftwareId string `json:"softwareId,omitempty"`
+	SoftwareId string `json:"softwareId"`
 	// Version identifier string for the client software identified by software_id.
-	SoftwareVersion string `json:"softwareVersion,omitempty"`
+	SoftwareVersion string `json:"softwareVersion"`
 	// Entity reference of the Role assigned to this service account.
-	Role *EntityReference `json:"role,omitempty"`
+	Role *EntityReference `json:"role"`
 	// URL of a web page providing information about the client.
-	Uri string           `json:"uri,omitempty"`
-	Org *EntityReference `json:"org,omitempty"`
+	Uri string           `json:"uri"`
+	Org *EntityReference `json:"org"`
 	// The status of the refresh token for this service account. CREATED: The client exists with no refresh token and no user codes REQUESTED: The client exists with no refresh token and has user codes GRANTED: The client exists with no refresh token and has a single user code marked as granted ACTIVE: The client exists with refresh token 
-	Status string `json:"status,omitempty"`
+	Status string `json:"status"`
 }

@@ -12,9 +12,9 @@ package swagger
 
 // Definition of SupportedPresentationElements. 
 type SupportedPresentationElements struct {
-	PresentationElement *PresentationElement `json:"presentationElement,omitempty"`
-	StepInfo *StepInfo                       `json:"stepInfo,omitempty"`
-	Group *Group                             `json:"group,omitempty"`
-	Field *Field                             `json:"field,omitempty"`
-	PrimaryField *PrimaryField               `json:"primaryField,omitempty"`
+	PresentationElement *PresentationElement `json:"presentationElement"`
+	StepInfo *StepInfo                       `json:"stepInfo"`
+	Group *Group                             `json:"group"`
+	Field *Field                             `json:"field"`
+	PrimaryField *PrimaryField               `json:"primaryField"`
 }

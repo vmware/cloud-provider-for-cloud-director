@@ -18,14 +18,14 @@ package swagger
 // A Load Balancer Analytic Report. It represents a timeseries of Edge Gateway Load Balancer runtime data. 
 type EdgeLoadBalancerAnalyticReport struct {
 	// The gateway URN identier.
-	GatewayId string `json:"gatewayId,omitempty"`
+	GatewayId string `json:"gatewayId"`
 	// The virtual service or pool URN identifier.
-	ComponentId string `json:"componentId,omitempty"`
+	ComponentId string `json:"componentId"`
 	// The metric for this specific report.  Supported metrics can be determined by using the supported metrics API.
-	Metric string `json:"metric,omitempty"`
+	Metric string `json:"metric"`
 	// The units for this specific report.  Units may be one of the following <ul> <li>PER_SECOND <li>METRIC_COUNT <li>BITS_PER_SECOND <li>BYTES_PER_SECOND <li>MILLISECONDS <li>PERCENT </ul> Units are derived from the reported metric. 
-	Units string                                   `json:"units,omitempty"`
-	Statistics *EdgeLoadBalancerMetricSummaryStats `json:"statistics,omitempty"`
+	Units string                                   `json:"units"`
+	Statistics *EdgeLoadBalancerMetricSummaryStats `json:"statistics"`
 	// The metric timeseries of data for this report.
-	Data []EdgeLoadBalancerMetricData `json:"data,omitempty"`
+	Data []EdgeLoadBalancerMetricData `json:"data"`
 }

@@ -13,8 +13,8 @@ package swagger
 // A next hop for a static route
 type EdgeStaticRouteNextHop struct {
 	// The next hop gateway IP Address for the static route. 
-	IpAddress string `json:"ipAddress,omitempty"`
+	IpAddress string `json:"ipAddress"`
 	// The next hop admin distance for the static route.
 	AdminDistance int32                `json:"adminDistance"`
-	Scope *EdgeStaticRouteNextHopScope `json:"scope,omitempty"`
+	Scope *EdgeStaticRouteNextHopScope `json:"scope"`
 }

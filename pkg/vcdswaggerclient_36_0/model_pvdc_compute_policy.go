@@ -17,16 +17,16 @@ package swagger
 
 type PvdcComputePolicy struct {
 	// UUID for pVDC compute policy. This is immutable. 
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// Display name. 
 	Name string `json:"name"`
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// URN for Provider VDC. If not provided, then this policy is considered Global. 
-	PvdcId string `json:"pvdcId,omitempty"`
+	PvdcId string `json:"pvdcId"`
 	// This field cannot be updated and is a read-only field in the client after creation. Deprecated in Api 33.0, this property will be removed in future release. 
-	NamedVmGroupReferences []EntityReference `json:"namedVmGroupReferences,omitempty"`
+	NamedVmGroupReferences []EntityReference `json:"namedVmGroupReferences"`
 	// List of list of vmGroups grouped together in a meaningful manner. A group of vmGroups would consist of one functionally equal vmGroup picked from each cluster of the pvdc. 
-	NamedVmGroups [][]EntityReference `json:"namedVmGroups,omitempty"`
+	NamedVmGroups [][]EntityReference `json:"namedVmGroups"`
 	// This field cannot be updated and is a read-only field after creation. 
-	LogicalVmGroupReferences []EntityReference `json:"logicalVmGroupReferences,omitempty"`
+	LogicalVmGroupReferences []EntityReference `json:"logicalVmGroupReferences"`
 }

@@ -17,9 +17,9 @@ package swagger
 
 // A Kubernetes cluster. 
 type Cluster struct {
-	Kind string `json:"kind,omitempty"`
-	ApiVersion string `json:"apiVersion,omitempty"`
-	Metadata map[string]interface{} `json:"metadata,omitempty"`
-	Spec map[string]interface{} `json:"spec,omitempty"`
-	Status map[string]interface{} `json:"status,omitempty"`
+	Kind string `json:"kind"`
+	ApiVersion string `json:"apiVersion"`
+	Metadata map[string]interface{} `json:"metadata"`
+	Spec map[string]interface{} `json:"spec"`
+	Status map[string]interface{} `json:"status"`
 }

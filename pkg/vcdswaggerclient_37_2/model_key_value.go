@@ -14,7 +14,7 @@ package swagger
 type KeyValue struct {
 	// Only meaningful for providers. Allows them to share entries with their tenants. Currently accepted values are: 'TENANT', 'PROVIDER', where that is the ascending sort order of the enumeration. 
 	Domain string `json:"domain"`
-	Namespace string `json:"namespace,omitempty"`
+	Namespace string `json:"namespace"`
 	Key string        `json:"key"`
 	Value *TypedValue `json:"value"`
 }

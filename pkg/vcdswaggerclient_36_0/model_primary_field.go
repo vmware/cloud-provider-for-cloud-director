@@ -17,15 +17,15 @@ package swagger
 
 type PrimaryField struct {
 	ElementType string `json:"elementType"`
-	Description string `json:"description,omitempty"`
-	DisplayName string `json:"displayName,omitempty"`
-	Hidden bool `json:"hidden,omitempty"`
-	Id string                          `json:"id,omitempty"`
-	Messages []PresentationMessageInfo `json:"messages,omitempty"`
-	Decorators []Decorator             `json:"decorators,omitempty"`
-	Constraints []Constraint           `json:"constraints,omitempty"`
-	Type_ string                       `json:"type,omitempty"`
-	AffectedFieldsIds []string         `json:"affectedFieldsIds,omitempty"`
-	Fields []Field                     `json:"fields,omitempty"`
-	Value *Parameter                   `json:"value,omitempty"`
+	Description string `json:"description"`
+	DisplayName string `json:"displayName"`
+	Hidden bool `json:"hidden"`
+	Id string                          `json:"id"`
+	Messages []PresentationMessageInfo `json:"messages"`
+	Decorators []Decorator             `json:"decorators"`
+	Constraints []Constraint           `json:"constraints"`
+	Type_ string                       `json:"type"`
+	AffectedFieldsIds []string         `json:"affectedFieldsIds"`
+	Fields []Field                     `json:"fields"`
+	Value *Parameter                   `json:"value"`
 }

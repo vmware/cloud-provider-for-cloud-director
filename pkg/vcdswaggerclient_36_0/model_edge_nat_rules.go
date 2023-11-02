@@ -18,7 +18,7 @@ package swagger
 // List of configured NAT Rules.
 type EdgeNatRules struct {
 	// Represents current status of the networking object.
-	Status *NetworkingObjectStatusType `json:"status,omitempty"`
+	Status *NetworkingObjectStatusType `json:"status"`
 	// The list of NAT Rules.
-	Values []EdgeNatRule `json:"values,omitempty"`
+	Values []EdgeNatRule `json:"values"`
 }

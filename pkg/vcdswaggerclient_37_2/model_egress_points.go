@@ -13,5 +13,5 @@ package swagger
 // List of Egress Points. 
 type EgressPoints struct {
 	// The list of Universal Egress Points.
-	Values []EgressPoint `json:"values,omitempty"`
+	Values []EgressPoint `json:"values"`
 }

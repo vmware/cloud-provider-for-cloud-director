@@ -17,9 +17,9 @@ package swagger
 
 // A ComponentHealth object 
 type RouterComponentHealth struct {
-	Component string              `json:"component,omitempty"`
-	Status *RouterComponentStatus `json:"status,omitempty"`
-	Message string                `json:"message,omitempty"`
-	Action string `json:"action,omitempty"`
-	Code int32 `json:"code,omitempty"`
+	Component string              `json:"component"`
+	Status *RouterComponentStatus `json:"status"`
+	Message string                `json:"message"`
+	Action string `json:"action"`
+	Code int32 `json:"code"`
 }

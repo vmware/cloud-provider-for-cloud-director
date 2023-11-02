@@ -13,16 +13,16 @@ package swagger
 // A static route configuration. 
 type EdgeStaticRoute struct {
 	// The unique ID of this static route. On updates, the ID is required for the object, while for create a new ID will be generated. This ID is not a VCD URN. 
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// Name for the static route.
 	Name string `json:"name"`
 	// Description for this static route.
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// The network prefix in CIDR format. Both IPv4 and IPv6 formats are supported. 
 	NetworkCidr string `json:"networkCidr"`
 	// The list of next hops to use within the static route. List must contain at least one valid next hop. 
 	NextHops []EdgeStaticRouteNextHop `json:"nextHops"`
 	// A flag indicating whether this static route is managed by the system. Property is read-only.
-	SystemOwned bool       `json:"systemOwned,omitempty"`
-	Version *ObjectVersion `json:"version,omitempty"`
+	SystemOwned bool       `json:"systemOwned"`
+	Version *ObjectVersion `json:"version"`
 }

@@ -13,5 +13,5 @@ package swagger
 // Describes the most basic tag structure: its value. 
 type SecurityTagValue struct {
 	// The value of the tag. The value is case-agnostic and will be converted to lower-case.
-	Tag string `json:"tag,omitempty"`
+	Tag string `json:"tag"`
 }

@@ -15,33 +15,33 @@ type VcdUser struct {
 	// User name of the user.
 	Username string `json:"username"`
 	// Full name (display name) of the user.
-	FullName string `json:"fullName,omitempty"`
+	FullName string `json:"fullName"`
 	// Description of the user.
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// Unique id for the user.
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// The role(s) of the user. If isGroupRole is true, this user inherits their role(s) from group membership(s)
 	RoleEntityRefs []EntityReference `json:"roleEntityRefs"`
 	// Organization that the user belongs to.
-	OrgEntityRef *EntityReference `json:"orgEntityRef,omitempty"`
+	OrgEntityRef *EntityReference `json:"orgEntityRef"`
 	// Password for the user. Must be null for external users.
-	Password string `json:"password,omitempty"`
+	Password string `json:"password"`
 	// The deployed VM quota for this user. Defaults to 0 which means unlimited. This property is deprecated in 35.0. Use user quotas API.
-	DeployedVmQuota int32 `json:"deployedVmQuota,omitempty"`
+	DeployedVmQuota int32 `json:"deployedVmQuota"`
 	// The stored VM quota for this user. Defaults to 0 which means unlimited. This property is deprecated in 35.0. Use user quotas API.
-	StoredVmQuota int32 `json:"storedVmQuota,omitempty"`
+	StoredVmQuota int32 `json:"storedVmQuota"`
 	// A user's email address. Based on org email preferences, notifications can be sent to the user via email.
-	Email string `json:"email,omitempty"`
+	Email string `json:"email"`
 	// Name of the user in its source.
-	NameInSource string `json:"nameInSource,omitempty"`
+	NameInSource string `json:"nameInSource"`
 	// Enabled state of the user. Defaults to true.
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled bool `json:"enabled"`
 	// Determines if this user's role is inherited from a group. Defaults to false.
-	IsGroupRole bool `json:"isGroupRole,omitempty"`
+	IsGroupRole bool `json:"isGroupRole"`
 	// Provider type of the user. It must be one of: LOCAL, LDAP, SAML, OAUTH.
-	ProviderType string `json:"providerType,omitempty"`
+	ProviderType string `json:"providerType"`
 	// True if the user account has been locked due to too many invalid login attempts. An administrator can unlock a locked user account by setting this flag to false. A user may not be explicitly locked. Instead, disable the user, if user's access must be revoked temporarily.
-	Locked bool `json:"locked,omitempty"`
+	Locked bool `json:"locked"`
 	// True if the user account has been stranded, meaning it is unable to be accessed due to its original identity source being removed.
-	Stranded bool `json:"stranded,omitempty"`
+	Stranded bool `json:"stranded"`
 }

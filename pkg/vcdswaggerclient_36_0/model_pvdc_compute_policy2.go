@@ -18,12 +18,12 @@ package swagger
 // Pvdc compute policy that contains PVDC specific configuration for workloads. (Version 2.0.0) 
 type PvdcComputePolicy2 struct {
 	// UUID for pVDC compute policy. This is immutable. 
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 	// Display name. 
 	Name string `json:"name"`
 	// The discriminator type is used to differentiate among various sub policy types. 
 	PolicyType string `json:"policyType"`
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// URN for Provider vDC. If not provided, then this policy is considered Global. 
-	PvdcId string `json:"pvdcId,omitempty"`
+	PvdcId string `json:"pvdcId"`
 }

@@ -17,6 +17,6 @@ package swagger
 
 type NumberRange struct {
 	ConstraintType string `json:"constraintType"`
-	Min float32 `json:"min,omitempty"`
-	Max float32 `json:"max,omitempty"`
+	Min float32 `json:"min"`
+	Max float32 `json:"max"`
 }

@@ -20,15 +20,15 @@ type ParticipatingVdcReference struct {
 	// The reference to the vDC that is part of this a vDC group.
 	VdcRef *EntityReference `json:"vdcRef"`
 	// Read-only field that specifies what organization this vDC is in.
-	OrgRef *EntityReference `json:"orgRef,omitempty"`
+	OrgRef *EntityReference `json:"orgRef"`
 	// The site ID that this vDC belongs to. Required for universal vDC groups.
-	SiteRef *EntityReference `json:"siteRef,omitempty"`
+	SiteRef *EntityReference `json:"siteRef"`
 	// Read-only field that specifies the network provider scope of the vDC.
-	NetworkProviderScope string `json:"networkProviderScope,omitempty"`
+	NetworkProviderScope string `json:"networkProviderScope"`
 	// Represents the fault domain of a given organization vDC. For NSX_V backed organization vDCs, this is the network provider scope. For NSX_T backed organization vDCs, this can vary (for example name of the provider vDC or compute provider scope). 
-	FaultDomainTag string `json:"faultDomainTag,omitempty"`
+	FaultDomainTag string `json:"faultDomainTag"`
 	// Read-only field that specifies whether the vDC is local to this VCD site.
-	RemoteOrg bool `json:"remoteOrg,omitempty"`
+	RemoteOrg bool `json:"remoteOrg"`
 	// The status that the vDC can be in. An example is if the vDC has been deleted from the system but is still part of the group.
-	Status *VdcGroupEntityStatus `json:"status,omitempty"`
+	Status *VdcGroupEntityStatus `json:"status"`
 }

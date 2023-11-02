@@ -16,17 +16,17 @@
 package swagger
 
 type ServiceItem struct {
-	Id string `json:"id,omitempty"`
-	Name string `json:"name,omitempty"`
+	Id string `json:"id"`
+	Name string `json:"name"`
 	ServiceItemType string `json:"serviceItemType"`
-	Description string `json:"description,omitempty"`
-	CanExecute bool `json:"canExecute,omitempty"`
-	ServiceName string `json:"serviceName,omitempty"`
-	ServiceId string `json:"serviceId,omitempty"`
-	IconMimeType string `json:"iconMimeType,omitempty"`
-	IconData string `json:"iconData,omitempty"`
-	TenantScoped bool `json:"tenantScoped,omitempty"`
-	ProviderScoped bool `json:"providerScoped,omitempty"`
+	Description string `json:"description"`
+	CanExecute bool `json:"canExecute"`
+	ServiceName string `json:"serviceName"`
+	ServiceId string `json:"serviceId"`
+	IconMimeType string `json:"iconMimeType"`
+	IconData string `json:"iconData"`
+	TenantScoped bool `json:"tenantScoped"`
+	ProviderScoped bool `json:"providerScoped"`
 	// Read-only value indicating publishAll state 
-	PublishAll bool `json:"publishAll,omitempty"`
+	PublishAll bool `json:"publishAll"`
 }

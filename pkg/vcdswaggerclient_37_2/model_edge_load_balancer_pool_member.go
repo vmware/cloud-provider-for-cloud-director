@@ -15,15 +15,15 @@ type EdgeLoadBalancerPoolMember struct {
 	// The ip address of the Load Balancer Pool member.
 	IpAddress string `json:"ipAddress"`
 	// The port number of the Load Balancer Pool member. If unset, the port that the client used to connect will be used.
-	Port int32 `json:"port,omitempty"`
+	Port int32 `json:"port"`
 	// The ratio of selecting eligible servers in the pool.
-	Ratio int32 `json:"ratio,omitempty"`
+	Ratio int32 `json:"ratio"`
 	// Whether the Load Balancer Pool member is enabled or not.
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled bool `json:"enabled"`
 	// The current health status of the pool member. Possible values are: <ul> <li> UP - The member is operational. <li> DOWN - The member is down. <li> DISABLED - The member is disabled <li> UNKNOWN - The state is unknown. </ul> 
-	HealthStatus string `json:"healthStatus,omitempty"`
+	HealthStatus string `json:"healthStatus"`
 	// When the member is DOWN, the value gives the names of the health monitors that marked the member as down. If a monitor cannot be determined, the value will be UNKNOWN. 
-	MarkedDownBy []string `json:"markedDownBy,omitempty"`
+	MarkedDownBy []string `json:"markedDownBy"`
 	// The non-localized detailed message on the health of the pool member. 
-	DetailedHealthMessage string `json:"detailedHealthMessage,omitempty"`
+	DetailedHealthMessage string `json:"detailedHealthMessage"`
 }

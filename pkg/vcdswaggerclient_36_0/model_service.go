@@ -16,9 +16,9 @@
 package swagger
 
 type Service struct {
-	Name string `json:"name,omitempty"`
-	Description string `json:"description,omitempty"`
-	IconMimeType string `json:"iconMimeType,omitempty"`
-	IconData string `json:"iconData,omitempty"`
-	Id string `json:"id,omitempty"`
+	Name string `json:"name"`
+	Description string `json:"description"`
+	IconMimeType string `json:"iconMimeType"`
+	IconData string `json:"iconData"`
+	Id string `json:"id"`
 }

@@ -12,5 +12,5 @@ package swagger
 
 type BooleanParam struct {
 	InputType string `json:"inputType"`
-	Value bool `json:"value,omitempty"`
+	Value bool `json:"value"`
 }
