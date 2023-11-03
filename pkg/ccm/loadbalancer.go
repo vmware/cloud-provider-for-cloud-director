@@ -11,6 +11,9 @@ package ccm
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
+
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/cpisdk"
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/util"
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdsdk"
@@ -22,13 +25,12 @@ import (
 	"k8s.io/client-go/kubernetes"
 	cloudProvider "k8s.io/cloud-provider"
 	"k8s.io/klog"
-	"strconv"
-	"strings"
 )
 
 const (
 	sslPortsAnnotation              = `service.beta.kubernetes.io/vcloud-avi-ssl-ports`
 	sslCertAliasAnnotation          = `service.beta.kubernetes.io/vcloud-avi-ssl-cert-alias`
+	applicationProfileAnnotation    = `service.beta.kubernetes.io/vcloud-avi-application-profile`
 	skipAviSSLTerminationAnnotation = `service.beta.kubernetes.io/vcloud-avi-ssl-no-termination`
 	// TODO: Update controlPlaneLabel to use default K8s constants if available
 	controlPlaneLabel = `node-role.kubernetes.io/control-plane`
@@ -504,6 +506,15 @@ func getSSLCertAlias(service *v1.Service) string {
 	return sslCertAlias
 }
 
+func getApplicationProfile(service *v1.Service) string {
+	applicationProfile, ok := service.Annotations[applicationProfileAnnotation]
+	if !ok {
+		return ""
+	}
+
+	return applicationProfile
+}
+
 func shouldSkipAviSSLTermination(service *v1.Service) bool {
 	shouldSkipAviSSLTerminationStr, ok := service.Annotations[skipAviSSLTerminationAnnotation]
 	if !ok {
@@ -643,6 +654,8 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 		certAlias = ""
 	}
 
+	applicationProfile := getApplicationProfile(service)
+
 	// golang doesn't have the set data structure
 	portsMap := make(map[int32]bool)
 	for _, port := range ports {
@@ -676,7 +689,7 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 	// Create using VCD API
 	resourcesAllocated := &util.AllocatedResourcesMap{}
 	lbIP, err := gm.CreateLoadBalancer(ctx, virtualServiceNamePrefix, lbPoolNamePrefix, nodeIPs, portDetailsList,
-		lb.OneArm, lb.EnableVirtualServiceSharedIP, portNameToIPMap, userSpecifiedLBIP, resourcesAllocated)
+		lb.OneArm, lb.EnableVirtualServiceSharedIP, portNameToIPMap, userSpecifiedLBIP, resourcesAllocated, applicationProfile)
 	if rdeErr := lb.addLBResourcesToRDE(ctx, resourcesAllocated, lbIP); rdeErr != nil {
 		return nil, fmt.Errorf("unable to add load balancer pool resources to RDE [%s]: [%v]", lb.clusterID, err)
 	}

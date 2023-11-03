@@ -10,6 +10,11 @@ package vcdsdk
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"net/url"
+	"strconv"
+	"strings"
+
 	"github.com/antihax/optional"
 	"github.com/peterhellberg/link"
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/util"
@@ -17,10 +22,6 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/govcd"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"k8s.io/klog"
-	"net/http"
-	"net/url"
-	"strconv"
-	"strings"
 )
 
 type OneArm struct {
@@ -1187,7 +1188,7 @@ func (gatewayManager *GatewayManager) UpdateVirtualService(ctx context.Context, 
 func (gatewayManager *GatewayManager) CreateVirtualService(ctx context.Context, virtualServiceName string,
 	lbPoolRef *swaggerClient.EntityReference, segRef *swaggerClient.EntityReference,
 	freeIP string, vsType string, externalPort int32,
-	useSSL bool, certificateAlias string) (*swaggerClient.EntityReference, error) {
+	useSSL bool, certificateAlias, applicationProfile string) (*swaggerClient.EntityReference, error) {
 
 	client := gatewayManager.Client
 	if gatewayManager.GatewayRef == nil {
@@ -1257,6 +1258,10 @@ func (gatewayManager *GatewayManager) CreateVirtualService(ctx context.Context, 
 
 	default:
 		return nil, fmt.Errorf("unhandled virtual service type [%s]", vsType)
+	}
+
+	if len(applicationProfile) != 0 {
+		virtualServiceConfig.ApplicationProfile.Name = applicationProfile
 	}
 
 	clusterOrg, err := client.VCDClient.GetOrgByName(client.ClusterOrgName)
@@ -1502,7 +1507,7 @@ func (gatewayManager *GatewayManager) GetLoadBalancerPoolMemberIPs(ctx context.C
 
 func (gm *GatewayManager) CreateLoadBalancer(ctx context.Context, virtualServiceNamePrefix string, lbPoolNamePrefix string,
 	ips []string, portDetailsList []PortDetails, oneArm *OneArm, enableVirtualServiceSharedIP bool,
-	portNameToIP map[string]string, providedIP string, resourcesAllocated *util.AllocatedResourcesMap) (string, error) {
+	portNameToIP map[string]string, providedIP string, resourcesAllocated *util.AllocatedResourcesMap, applicationProfile string) (string, error) {
 	if len(portDetailsList) == 0 {
 		// nothing to do here
 		klog.Infof("There is no port specified. Hence nothing to do.")
@@ -1707,7 +1712,7 @@ func (gm *GatewayManager) CreateLoadBalancer(ctx context.Context, virtualService
 
 		virtualServiceRef, err := gm.CreateVirtualService(ctx, virtualServiceName, lbPoolRef, segRef,
 			virtualServiceIP, portDetails.Protocol, portDetails.ExternalPort,
-			portDetails.UseSSL, portDetails.CertAlias)
+			portDetails.UseSSL, portDetails.CertAlias, applicationProfile)
 		if err != nil {
 			// return  plain error if vcdsdk.VirtualServicePendingError is returned. Helps the caller recognize that the
 			// error is because VirtualService is still in Pending state.
