@@ -10,6 +10,11 @@ package vcdsdk
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"net/url"
+	"strconv"
+	"strings"
+
 	"github.com/antihax/optional"
 	"github.com/peterhellberg/link"
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/util"
@@ -17,10 +22,6 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/govcd"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"k8s.io/klog"
-	"net/http"
-	"net/url"
-	"strconv"
-	"strings"
 )
 
 type OneArm struct {
@@ -1104,7 +1105,7 @@ func (gatewayManager *GatewayManager) checkIfGatewayIsReady(ctx context.Context)
 }
 
 func (gatewayManager *GatewayManager) UpdateVirtualService(ctx context.Context, virtualServiceName string,
-	virtualServiceIP string, externalPort int32, oneArmEnabled bool) (*swaggerClient.EntityReference, error) {
+	virtualServiceIP string, externalPort int32, oneArmEnabled bool, applicationProfile string) (*swaggerClient.EntityReference, error) {
 	client := gatewayManager.Client
 	vsSummary, err := gatewayManager.GetVirtualService(ctx, virtualServiceName)
 	if err != nil {
@@ -1147,6 +1148,11 @@ func (gatewayManager *GatewayManager) UpdateVirtualService(ctx context.Context, 
 		// update the virtual IP address of the virtual service when one arm is nil
 		vs.VirtualIpAddress = virtualServiceIP
 	}
+
+	if applicationProfile != "" && vs.ApplicationProfile.Name != applicationProfile {
+		vs.ApplicationProfile.Name = applicationProfile
+	}
+
 	resp, err := client.APIClient.EdgeGatewayLoadBalancerVirtualServiceApi.UpdateVirtualService(ctx, vs, vsSummary.Id, org.Org.ID)
 	if resp != nil && resp.StatusCode != http.StatusAccepted {
 		var responseMessageBytes []byte
@@ -1187,7 +1193,7 @@ func (gatewayManager *GatewayManager) UpdateVirtualService(ctx context.Context, 
 func (gatewayManager *GatewayManager) CreateVirtualService(ctx context.Context, virtualServiceName string,
 	lbPoolRef *swaggerClient.EntityReference, segRef *swaggerClient.EntityReference,
 	freeIP string, vsType string, externalPort int32,
-	useSSL bool, certificateAlias string) (*swaggerClient.EntityReference, error) {
+	useSSL bool, certificateAlias, applicationProfile string) (*swaggerClient.EntityReference, error) {
 
 	client := gatewayManager.Client
 	if gatewayManager.GatewayRef == nil {
@@ -1231,9 +1237,7 @@ func (gatewayManager *GatewayManager) CreateVirtualService(ctx context.Context, 
 				SslEnabled: useSSL,
 			},
 		},
-		ApplicationProfile: &swaggerClient.EdgeLoadBalancerApplicationProfile{
-			SystemDefined: true,
-		},
+		ApplicationProfile: &swaggerClient.EdgeLoadBalancerApplicationProfile{},
 	}
 	switch vsType {
 	case "TCP":
@@ -1257,6 +1261,10 @@ func (gatewayManager *GatewayManager) CreateVirtualService(ctx context.Context, 
 
 	default:
 		return nil, fmt.Errorf("unhandled virtual service type [%s]", vsType)
+	}
+
+	if applicationProfile != "" {
+		virtualServiceConfig.ApplicationProfile.Name = applicationProfile
 	}
 
 	clusterOrg, err := client.VCDClient.GetOrgByName(client.ClusterOrgName)
@@ -1502,7 +1510,7 @@ func (gatewayManager *GatewayManager) GetLoadBalancerPoolMemberIPs(ctx context.C
 
 func (gm *GatewayManager) CreateLoadBalancer(ctx context.Context, virtualServiceNamePrefix string, lbPoolNamePrefix string,
 	ips []string, portDetailsList []PortDetails, oneArm *OneArm, enableVirtualServiceSharedIP bool,
-	portNameToIP map[string]string, providedIP string, resourcesAllocated *util.AllocatedResourcesMap) (string, error) {
+	portNameToIP map[string]string, providedIP string, resourcesAllocated *util.AllocatedResourcesMap, applicationProfile string) (string, error) {
 	if len(portDetailsList) == 0 {
 		// nothing to do here
 		klog.Infof("There is no port specified. Hence nothing to do.")
@@ -1707,7 +1715,7 @@ func (gm *GatewayManager) CreateLoadBalancer(ctx context.Context, virtualService
 
 		virtualServiceRef, err := gm.CreateVirtualService(ctx, virtualServiceName, lbPoolRef, segRef,
 			virtualServiceIP, portDetails.Protocol, portDetails.ExternalPort,
-			portDetails.UseSSL, portDetails.CertAlias)
+			portDetails.UseSSL, portDetails.CertAlias, applicationProfile)
 		if err != nil {
 			// return  plain error if vcdsdk.VirtualServicePendingError is returned. Helps the caller recognize that the
 			// error is because VirtualService is still in Pending state.
@@ -1833,7 +1841,7 @@ func (gm *GatewayManager) DeleteLoadBalancer(ctx context.Context, virtualService
 
 func (gm *GatewayManager) UpdateLoadBalancer(ctx context.Context, lbPoolName string, virtualServiceName string,
 	ips []string, externalIP string, internalPort int32, externalPort int32, oneArm *OneArm, enableVirtualServiceSharedIP bool, protocol string,
-	resourcesAllocated *util.AllocatedResourcesMap) (string, error) {
+	resourcesAllocated *util.AllocatedResourcesMap, applicationProfile string) (string, error) {
 
 	if gm == nil {
 		return "", fmt.Errorf("GatewayManager cannot be nil")
@@ -1852,7 +1860,7 @@ func (gm *GatewayManager) UpdateLoadBalancer(ctx context.Context, lbPoolName str
 		return "", fmt.Errorf("unable to update load balancer pool [%s]: [%v]", lbPoolName, err)
 	}
 	resourcesAllocated.Insert(VcdResourceLoadBalancerPool, lbPoolRef)
-	vsRef, err := gm.UpdateVirtualService(ctx, virtualServiceName, externalIP, externalPort, oneArm != nil)
+	vsRef, err := gm.UpdateVirtualService(ctx, virtualServiceName, externalIP, externalPort, oneArm != nil, applicationProfile)
 	if vsRef != nil {
 		resourcesAllocated.Insert(VcdResourceVirtualService, vsRef)
 	}

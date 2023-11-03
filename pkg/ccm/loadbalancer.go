@@ -11,6 +11,9 @@ package ccm
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
+
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/cpisdk"
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/util"
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdsdk"
@@ -22,13 +25,12 @@ import (
 	"k8s.io/client-go/kubernetes"
 	cloudProvider "k8s.io/cloud-provider"
 	"k8s.io/klog"
-	"strconv"
-	"strings"
 )
 
 const (
 	sslPortsAnnotation              = `service.beta.kubernetes.io/vcloud-avi-ssl-ports`
 	sslCertAliasAnnotation          = `service.beta.kubernetes.io/vcloud-avi-ssl-cert-alias`
+	applicationProfileAnnotation    = `service.beta.kubernetes.io/vcloud-avi-application-profile`
 	skipAviSSLTerminationAnnotation = `service.beta.kubernetes.io/vcloud-avi-ssl-no-termination`
 	// TODO: Update controlPlaneLabel to use default K8s constants if available
 	controlPlaneLabel = `node-role.kubernetes.io/control-plane`
@@ -228,8 +230,9 @@ func (lb *LBManager) UpdateLoadBalancer(ctx context.Context, clusterName string,
 		klog.Infof("Updating pool [%s] with port [%s:%d]", lbPoolName, portName, internalPort)
 		protocol, _ := nameToProtocol[portName]
 		resourcesAllocated := &util.AllocatedResourcesMap{}
+		applicationProfile := getApplicationProfile(service)
 		vip, err := gm.UpdateLoadBalancer(ctx, lbPoolName, virtualServiceName, nodeIps, userSpecifiedLBIP, internalPort,
-			externalPort, lb.OneArm, lb.EnableVirtualServiceSharedIP, protocol, resourcesAllocated)
+			externalPort, lb.OneArm, lb.EnableVirtualServiceSharedIP, protocol, resourcesAllocated, applicationProfile)
 		// TODO: Should we record this error as well?
 		if rdeErr := lb.addLBResourcesToRDE(ctx, resourcesAllocated, vip); rdeErr != nil {
 			return fmt.Errorf("failed to add load balancer resources to RDE [%s]: [%v]", lb.clusterID, err)
@@ -504,6 +507,15 @@ func getSSLCertAlias(service *v1.Service) string {
 	return sslCertAlias
 }
 
+func getApplicationProfile(service *v1.Service) string {
+	applicationProfile, ok := service.Annotations[applicationProfileAnnotation]
+	if !ok {
+		return ""
+	}
+
+	return applicationProfile
+}
+
 func shouldSkipAviSSLTermination(service *v1.Service) bool {
 	shouldSkipAviSSLTerminationStr, ok := service.Annotations[skipAviSSLTerminationAnnotation]
 	if !ok {
@@ -559,6 +571,8 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 	userSpecifiedLBIP := getUserSpecifiedLoadBalancerIP(service)
 	klog.Infof("createLoadBalancer called with loadBalancerIP [%s] for service [%s]", userSpecifiedLBIP, service.Name)
 
+	applicationProfile := getApplicationProfile(service)
+
 	if lbExists {
 		// Update load balancer if there are changes in service properties
 		typeToInternalPortMap, typeToExternalPortMap, nameToProtocol := lb.getServicePortMap(service)
@@ -570,7 +584,7 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 			klog.Infof("Updating pool [%s] with port [%s:%d:%d]", lbPoolName, portName, internalPort, externalPort)
 			resourcesAllocated := &util.AllocatedResourcesMap{}
 			vip, err := gm.UpdateLoadBalancer(ctx, lbPoolName, virtualServiceName, nodeIPs, userSpecifiedLBIP, internalPort,
-				externalPort, lb.OneArm, lb.EnableVirtualServiceSharedIP, protocol, resourcesAllocated)
+				externalPort, lb.OneArm, lb.EnableVirtualServiceSharedIP, protocol, resourcesAllocated, applicationProfile)
 			if rdeErr := lb.addLBResourcesToRDE(ctx, resourcesAllocated, vip); rdeErr != nil {
 				return nil, fmt.Errorf("failed to update RDE [%s] with load balancer resources: [%v]", lb.clusterID, err)
 			}
@@ -676,7 +690,7 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 	// Create using VCD API
 	resourcesAllocated := &util.AllocatedResourcesMap{}
 	lbIP, err := gm.CreateLoadBalancer(ctx, virtualServiceNamePrefix, lbPoolNamePrefix, nodeIPs, portDetailsList,
-		lb.OneArm, lb.EnableVirtualServiceSharedIP, portNameToIPMap, userSpecifiedLBIP, resourcesAllocated)
+		lb.OneArm, lb.EnableVirtualServiceSharedIP, portNameToIPMap, userSpecifiedLBIP, resourcesAllocated, applicationProfile)
 	if rdeErr := lb.addLBResourcesToRDE(ctx, resourcesAllocated, lbIP); rdeErr != nil {
 		return nil, fmt.Errorf("unable to add load balancer pool resources to RDE [%s]: [%v]", lb.clusterID, err)
 	}
