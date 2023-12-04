@@ -13,10 +13,8 @@ func IsExternalIpInVCDResourceSet(ctx context.Context, tc *testingsdk.TestClient
 		return false, fmt.Errorf("error retrieving virtual ips from VCDResourceSet in [%s] status: [%v]", vcdsdk.ComponentCPI, err)
 	}
 
-	if virtualIps.Contains(externalIp) {
-		return true, nil
-	}
-	return false, fmt.Errorf("external ip [%s] does not exist in VCDResourceSet from [%s]", externalIp, vcdsdk.ComponentCPI)
+	// Instead of returning an error when it doesn't contain the IP, we will let the test assertion decide.
+	return virtualIps.Contains(externalIp), nil
 }
 
 func getVirtualIpsFromRDE(ctx context.Context, client *vcdsdk.Client, clusterId string) (*testingsdk.Set, error) {
