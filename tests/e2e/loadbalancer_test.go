@@ -11,6 +11,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"net/http"
+	"time"
 )
 
 const (
@@ -109,14 +110,19 @@ var _ = Describe("Ensure Loadbalancer", func() {
 			StartIP: "192.168.8.2",
 			EndIP:   "192.168.8.100",
 		}
-		resourcesFound, err := utils.HasVCDResourcesForApplicationLB(ctx, tc, gatewayMgr, &oneArm, virtualServiceNamePrefix, lbPoolNamePrefix, portDetailsList)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(resourcesFound).Should(BeTrue())
+
+		Eventually(func() bool {
+			resourcesFound, err := utils.HasVCDResourcesForApplicationLB(ctx, tc, gatewayMgr, &oneArm, virtualServiceNamePrefix, lbPoolNamePrefix, portDetailsList)
+			Expect(err).ShouldNot(HaveOccurred(), fmt.Sprintf("error occurred while checking if VCD has resources for application LB for cluster [%s(%s)], [%v]", tc.ClusterName, tc.ClusterId, err))
+			return resourcesFound
+		}).WithPolling(15 * time.Second).WithTimeout(10 * time.Minute).Should(Equal(true))
 
 		By("checking virtual IP stored in in CPI vcdResourceSet matches the external IP from the load balancer service")
-		externalIpExists, err := utils.IsExternalIpInVCDResourceSet(ctx, tc, externalIp)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(externalIpExists).To(BeTrue())
+		Eventually(func() bool {
+			externalIpExists, err := utils.IsExternalIpInVCDResourceSet(ctx, tc, externalIp)
+			Expect(err).ShouldNot(HaveOccurred(), fmt.Sprintf("error occurred while checking if external IP is in VCD ResourceSet for cluster [%s(%s)], [%v]", tc.ClusterName, tc.ClusterId, err))
+			return externalIpExists
+		}).WithPolling(15 * time.Second).WithTimeout(10 * time.Minute).Should(Equal(true))
 	})
 
 	// Case 3. Check for valid external IP and connectivity for ip:port via HTTP Get Request.
@@ -257,14 +263,18 @@ var _ = Describe("Ensure load balancer with user specified LB IP", func() {
 			EndIP:   "192.168.8.100",
 		}
 
-		resourcesFound, err := utils.HasVCDResourcesForApplicationLB(ctx, tc, gatewayMgr, oneArm, virtualServiceNamePrefix, lbPoolNamePrefix, portDetailsList)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(resourcesFound).Should(BeTrue())
+		Eventually(func() bool {
+			resourcesFound, err := utils.HasVCDResourcesForApplicationLB(ctx, tc, gatewayMgr, oneArm, virtualServiceNamePrefix, lbPoolNamePrefix, portDetailsList)
+			Expect(err).ShouldNot(HaveOccurred(), fmt.Sprintf("error occurred while checking if VCD has resources for application LB for cluster [%s(%s)], [%v]", tc.ClusterName, tc.ClusterId, err))
+			return resourcesFound
+		}).WithPolling(15 * time.Second).WithTimeout(10 * time.Minute).Should(Equal(true))
 
 		By("checking virtual IP stored in in CPI vcdResourceSet matches the external IP from the load balancer service")
-		externalIpExists, err := utils.IsExternalIpInVCDResourceSet(ctx, tc, expectedIP)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(externalIpExists).To(BeTrue())
+		Eventually(func() bool {
+			externalIpExists, err := utils.IsExternalIpInVCDResourceSet(ctx, tc, expectedIP)
+			Expect(err).ShouldNot(HaveOccurred(), fmt.Sprintf("error occurred while checking if external IP is in VCD ResourceSet for cluster [%s(%s)], [%v]", tc.ClusterName, tc.ClusterId, err))
+			return externalIpExists
+		}).WithPolling(15 * time.Second).WithTimeout(10 * time.Minute).Should(Equal(true))
 	})
 
 	// Case 3. Check for valid external IP and connectivity for ip:port via HTTP Get Request.
