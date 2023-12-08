@@ -239,8 +239,8 @@ github.com/spf13/pflag
 ## explicit; go 1.13
 github.com/stretchr/testify/assert
 github.com/stretchr/testify/require
-# github.com/vmware/go-vcloud-director/v2 v2.14.0-rc.3
-## explicit; go 1.16
+# github.com/vmware/go-vcloud-director/v2 v2.21.0
+## explicit; go 1.19
 github.com/vmware/go-vcloud-director/v2/govcd
 github.com/vmware/go-vcloud-director/v2/types/v56
 github.com/vmware/go-vcloud-director/v2/util
