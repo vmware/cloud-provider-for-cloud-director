@@ -1,13 +1,7 @@
-open_source_licenses.txt
+open_source_license.txt
 
-Cloud Provider for Cloud Director 1.2 GA
+Kubernetes External Cloud Provider for VMware Cloud Director 1.5.0 GA
 ======================================================================
-
-cloud-provider-for-cloud-director version 1.2 includes a number of components with separate 
-copyright notices and license terms.  This product does not necessarily 
-use all the open source components referred to below. Your use of the 
-source code for these components is subject to the terms and conditions 
-of the following licenses.
 
 ==================== TABLE OF CONTENTS ====================
 
@@ -15,8 +9,6 @@ The following is a listing of the open source components detailed in
 this document. This list is provided for your convenience; please read
 further if you wish to review the copyright notice(s) and the full text
 of the license associated with each component.
-
-
 
 SECTION 1: Apache License, V2.0
 
@@ -29,24 +21,25 @@ SECTION 1: Apache License, V2.0
    >>> k8s.io/apiserver-v0.22.1
    >>> k8s.io/client-go-v0.22.1
    >>> k8s.io/cloud-provider-0.22.1
+   >>> gopkg.in/yaml.v3-v3.0.0
    >>> go-openapi-errors-0.20.2
 
 SECTION 2: BSD-STYLE, MIT-STYLE, OR SIMILAR STYLE LICENSES
 
-   >>> golang.org/x/oauth2-v0.0.0-20200107190931-bf48bf16ab8d
-   >>> github.com/google/uuid-v1.1.2
+   >>> github.com/sethvargo/go-password-v0.2.0
    >>> github.com/stretchr/testify-v1.7.0
    >>> github.com/peterhellberg/link-v1.1.0
    >>> github.com/apparentlymart/go-cidr-v1.1.0
    >>> optional -1.0.0
+   >>> github.com/onsi/ginkgo-v1.16.5
+   >>> github.com/onsi/gomega-v1.19.0
+   >>> github.com/google/uuid-1.3.0
+   >>> golang.org/x/oauth2-v0.7.0
 
-   
 
 APPENDIX. Standard License Files
 
    >>> Apache License, V2.0
-
-
 
 -------------------- SECTION 1: Apache License, V2.0 --------------------
 
@@ -176,13 +169,29 @@ APPENDIX. Standard License Files
 
    >>> k8s.io/klog/v2-v2.9.0
 
+       Copyright 2020 The Kubernetes Authors
+
+        * Licensed under the Apache License, Version 2.0 (the "License");
+        * you may not use this file except in compliance with the License.
+        * You may obtain a copy of the License at
+        *
+        *     http://www.apache.org/licenses/LICENSE-2.0
+        *
+        * Unless required by applicable law or agreed to in writing, software
+        * distributed under the License is distributed on an "AS IS" BASIS,
+        * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+        * See the License for the specific language governing permissions and
+        * limitations under the License.
+
+       ADDITIONAL LICENSE INFORMATION
+
        > Apache2.0
 
        hack/verify-apidiff.sh
 
        Copyright 2020 The Kubernetes Authors
 
-       See SECTION 5 in 'LICENSE TEXT REFERENCE TABLE'
+       See SECTION 6 in 'LICENSE TEXT REFERENCE TABLE'
 
        klog_file.go
 
@@ -4334,7 +4343,7 @@ APPENDIX. Standard License Files
 
        Copyright 2017 The Kubernetes Authors
 
-       See SECTION 5 in 'LICENSE TEXT REFERENCE TABLE'
+       See SECTION 6 in 'LICENSE TEXT REFERENCE TABLE'
 
        pkg/admission/plugin/webhook/testing/authentication_info_resolver.go
 
@@ -5090,7 +5099,7 @@ APPENDIX. Standard License Files
 
        Copyright 2016 The Kubernetes Authors
 
-       See SECTION 5 in 'LICENSE TEXT REFERENCE TABLE'
+       See SECTION 6 in 'LICENSE TEXT REFERENCE TABLE'
 
        pkg/authentication/request/x509/verify_options.go
 
@@ -6842,7 +6851,7 @@ APPENDIX. Standard License Files
 
        Copyright 2016 The Kubernetes Authors
 
-       See SECTION 5 in 'LICENSE TEXT REFERENCE TABLE'
+       See SECTION 6 in 'LICENSE TEXT REFERENCE TABLE'
 
        pkg/server/options/tracing.go
 
@@ -7766,7 +7775,7 @@ APPENDIX. Standard License Files
 
        Copyright 2017 The Kubernetes Authors
 
-       See SECTION 5 in 'LICENSE TEXT REFERENCE TABLE'
+       See SECTION 6 in 'LICENSE TEXT REFERENCE TABLE'
 
        pkg/util/webhook/metrics.go
 
@@ -7952,7 +7961,7 @@ APPENDIX. Standard License Files
 
        Copyright 2018 The Kubernetes Authors
 
-       See SECTION 5 in 'LICENSE TEXT REFERENCE TABLE'
+       See SECTION 6 in 'LICENSE TEXT REFERENCE TABLE'
 
        plugin/pkg/authenticator/token/tokentest/tokentest.go
 
@@ -8012,7 +8021,7 @@ APPENDIX. Standard License Files
 
        Copyright 2016 The Kubernetes Authors
 
-       See SECTION 5 in 'LICENSE TEXT REFERENCE TABLE'
+       See SECTION 6 in 'LICENSE TEXT REFERENCE TABLE'
 
        plugin/pkg/authorizer/webhook/metrics.go
 
@@ -8249,7 +8258,7 @@ APPENDIX. Standard License Files
 
        Copyright 2017 The Kubernetes Authors
 
-       See SECTION 5 in 'LICENSE TEXT REFERENCE TABLE'
+       See SECTION 6 in 'LICENSE TEXT REFERENCE TABLE'
 
        examples/in-cluster-client-configuration/main.go
 
@@ -8729,7 +8738,7 @@ APPENDIX. Standard License Files
 
        Copyright 2018 The Kubernetes Authors
 
-       See SECTION 5 in 'LICENSE TEXT REFERENCE TABLE'
+       See SECTION 6 in 'LICENSE TEXT REFERENCE TABLE'
 
        plugin/pkg/client/auth/gcp/gcp.go
 
@@ -10615,6 +10624,143 @@ APPENDIX. Standard License Files
        See SECTION 2 in 'LICENSE TEXT REFERENCE TABLE'
 
 
+   >>> gopkg.in/yaml.v3-v3.0.0
+
+       License : Apache 2.0
+
+       ADDITIONAL LICENSE INFORMATION
+
+       > Apache2.0
+
+       decode.go
+
+       Copyright (c) 2011-2019 Canonical Ltd
+
+       See SECTION 4 in 'LICENSE TEXT REFERENCE TABLE'
+
+       decode_test.go
+
+       Copyright (c) 2011-2019 Canonical Ltd
+
+       See SECTION 4 in 'LICENSE TEXT REFERENCE TABLE'
+
+       encode.go
+
+       Copyright (c) 2011-2019 Canonical Ltd
+
+       See SECTION 4 in 'LICENSE TEXT REFERENCE TABLE'
+
+       encode_test.go
+
+       Copyright (c) 2011-2019 Canonical Ltd
+
+       See SECTION 4 in 'LICENSE TEXT REFERENCE TABLE'
+
+       example_embedded_test.go
+
+       Copyright (c) 2011-2019 Canonical Ltd
+
+       See SECTION 4 in 'LICENSE TEXT REFERENCE TABLE'
+
+       LICENSE
+
+       Copyright (c) 2011-2019 Canonical Ltd
+
+       See SECTION 9 in 'LICENSE TEXT REFERENCE TABLE'
+
+       node_test.go
+
+       Copyright (c) 2011-2019 Canonical Ltd
+
+       See SECTION 4 in 'LICENSE TEXT REFERENCE TABLE'
+
+       NOTICE
+
+       Copyright 2011-2016 Canonical Ltd.
+
+       See SECTION 2 in 'LICENSE TEXT REFERENCE TABLE'
+
+       resolve.go
+
+       Copyright (c) 2011-2019 Canonical Ltd
+
+       See SECTION 4 in 'LICENSE TEXT REFERENCE TABLE'
+
+       sorter.go
+
+       Copyright (c) 2011-2019 Canonical Ltd
+
+       See SECTION 4 in 'LICENSE TEXT REFERENCE TABLE'
+
+       suite_test.go
+
+       Copyright (c) 2011-2019 Canonical Ltd
+
+       See SECTION 4 in 'LICENSE TEXT REFERENCE TABLE'
+
+       yaml.go
+
+       Copyright (c) 2011-2019 Canonical Ltd
+
+       See SECTION 4 in 'LICENSE TEXT REFERENCE TABLE'
+
+       > MIT
+
+       apic.go
+
+       Copyright (c) 2006-2010 Kirill Simonov
+
+       See SECTION 5 in 'LICENSE TEXT REFERENCE TABLE'
+
+       emitterc.go
+
+       Copyright (c) 2006-2010 Kirill Simonov
+
+       See SECTION 7 in 'LICENSE TEXT REFERENCE TABLE'
+
+       LICENSE
+
+       Copyright (c) 2006-2010 Kirill Simonov
+
+       See SECTION 8 in 'LICENSE TEXT REFERENCE TABLE'
+
+       parserc.go
+
+       Copyright (c) 2006-2010 Kirill Simonov
+
+       See SECTION 7 in 'LICENSE TEXT REFERENCE TABLE'
+
+       readerc.go
+
+       Copyright (c) 2006-2010 Kirill Simonov
+
+       See SECTION 5 in 'LICENSE TEXT REFERENCE TABLE'
+
+       scannerc.go
+
+       Copyright (c) 2006-2010 Kirill Simonov
+
+       See SECTION 7 in 'LICENSE TEXT REFERENCE TABLE'
+
+       writerc.go
+
+       Copyright (c) 2006-2010 Kirill Simonov
+
+       See SECTION 5 in 'LICENSE TEXT REFERENCE TABLE'
+
+       yamlh.go
+
+       Copyright (c) 2006-2010 Kirill Simonov
+
+       See SECTION 7 in 'LICENSE TEXT REFERENCE TABLE'
+
+       yamlprivateh.go
+
+       Copyright (c) 2006-2010 Kirill Simonov
+
+       See SECTION 5 in 'LICENSE TEXT REFERENCE TABLE'
+
+
    >>> go-openapi-errors-0.20.2
 
        Found in: errors-0.20.2/middleware_test.go
@@ -10636,402 +10782,8 @@ APPENDIX. Standard License Files
 
 -------------------- SECTION 2: BSD-STYLE, MIT-STYLE, OR SIMILAR STYLE LICENSES --------------------
 
-   >>> golang.org/x/oauth2-v0.0.0-20200107190931-bf48bf16ab8d
+   >>> github.com/sethvargo/go-password-v0.2.0
 
-       Copyright (c) 2009 The Go Authors. All rights reserved.
-
-       Redistribution and use in source and binary forms, with or without
-       modification, are permitted provided that the following conditions are
-       met:
-
-       * Redistributions of source code must retain the above copyright
-       notice, this list of conditions and the following disclaimer.
-       * Redistributions in binary form must reproduce the above
-       copyright notice, this list of conditions and the following disclaimer
-       in the documentation and/or other materials provided with the
-       distribution.
-       * Neither the name of Google Inc. nor the names of its
-       contributors may be used to endorse or promote products derived from
-       this software without specific prior written permission.
-
-       THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-       "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-       LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-       A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-       OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-       SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-       LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-       DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-       THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-       (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-       ADDITIONAL LICENSE INFORMATION
-
-       > BSD-3
-
-       amazon/amazon.go
-
-       Copyright 2017
-
-       bitbucket/bitbucket.go
-
-       Copyright 2015
-
-       cern/cern.go
-
-       Copyright 2018 The Go Authors.
-
-       clientcredentials/clientcredentials.go
-
-       Copyright 2014 The Go Authors.
-
-       clientcredentials/clientcredentials_test.go
-
-       Copyright 2014 The Go Authors.
-
-       endpoints/endpoints.go
-
-       Copyright 2019 The Go Authors.
-
-       endpoints/endpoints_test.go
-
-       Copyright 2019 The Go Authors.
-
-       example_test.go
-
-       Copyright 2014 The Go Authors.
-
-       facebook/facebook.go
-
-       Copyright 2015 The Go Authors.
-
-       fitbit/fitbit.go
-
-       Copyright 2016 The Go Authors.
-
-       foursquare/foursquare.go
-
-       Copyright 2016 The Go Authors.
-
-       github/github.go
-
-       Copyright 2014 The Go Authors.
-
-       gitlab/gitlab.go
-
-       Copyright 2018 The Go Authors.
-
-       google/appengine_gen1.go
-
-       Copyright 2018 The Go Authors.
-
-       google/appengine_gen2_flex.go
-
-       Copyright 2018 The Go Authors.
-
-       google/appengine.go
-
-       Copyright 2014 The Go Authors.
-
-       google/default.go
-
-       Copyright 2015 The Go Authors.
-
-       google/doc.go
-
-       Copyright 2018 The Go Authors.
-
-       google/example_test.go
-
-       Copyright 2014 The Go Authors.
-
-       google/google.go
-
-       Copyright 2014 The Go Authors.
-
-       google/google_test.go
-
-       Copyright 2015 The Go Authors.
-
-       google/jwt.go
-
-       Copyright 2015 The Go Authors.
-
-       google/jwt_test.go
-
-       Copyright 2016 The Go Authors.
-
-       google/sdk.go
-
-       Copyright 2015 The Go Authors.
-
-       google/sdk_test.go
-
-       Copyright 2015 The Go Authors.
-
-       heroku/heroku.go
-
-       Copyright 2016 The Go Authors.
-
-       hipchat/hipchat.go
-
-       Copyright 2016 The Go Authors.
-
-       instagram/instagram.go
-
-       Copyright 2018 The Go Authors.
-
-       internal/client_appengine.go
-
-       Copyright 2018 The Go Authors.
-
-       internal/doc.go
-
-       Copyright 2017 The Go Authors.
-
-       internal/oauth2.go
-
-       Copyright 2014 The Go Authors.
-
-       internal/token.go
-
-       Copyright 2014 The Go Authors.
-
-       internal/token_test.go
-
-       Copyright 2014 The Go Authors.
-
-       internal/transport.go
-
-       Copyright 2014 The Go Authors.
-
-       jira/jira.go
-
-       Copyright 2018 The Go Authors.
-
-       jira/jira_test.go
-
-       Copyright 2018 The Go Authors.
-
-       jws/jws.go
-
-       Copyright 2014 The Go Authors.
-
-       jws/jws_test.go
-
-       Copyright 2016 The Go Authors.
-
-       jwt/example_test.go
-
-       Copyright 2014 The Go Authors.
-
-       jwt/jwt.go
-
-       Copyright 2014 The Go Authors.
-
-       jwt/jwt_test.go
-
-       Copyright 2014 The Go Authors.
-
-       kakao/kakao.go
-
-       Copyright 2018 The Go Authors.
-
-       LICENSE
-
-       Copyright (c) 2009 The Go Authors.
-
-       linkedin/linkedin.go
-
-       Copyright 2015 The Go Authors.
-
-       mailchimp/mailchimp.go
-
-       Copyright 2018 The Go Authors.
-
-       mailru/mailru.go
-
-       Copyright 2017 The Go Authors.
-
-       mediamath/mediamath.go
-
-       Copyright 2016 The Go Authors.
-
-       microsoft/microsoft.go
-
-       Copyright 2016 The Go Authors.
-
-       nokiahealth/nokiahealth.go
-
-       Copyright 2018
-
-       oauth2.go
-
-       Copyright 2014 The Go Authors.
-
-       oauth2_test.go
-
-       Copyright 2014 The Go Authors.
-
-       odnoklassniki/odnoklassniki.go
-
-       Copyright 2015 The Go Authors.
-
-       paypal/paypal.go
-
-       Copyright 2015 The Go Authors.
-
-       slack/slack.go
-
-       Copyright 2016 The Go Authors.
-
-       spotify/spotify.go
-
-       Copyright 2018 The Go Authors.
-
-       stackoverflow/stackoverflow.go
-
-       Copyright 2018 The Go Authors.
-
-       token.go
-
-       Copyright 2014 The Go Authors.
-
-       token_test.go
-
-       Copyright 2014 The Go Authors.
-
-       transport.go
-
-       Copyright 2014 The Go Authors.
-
-       twitch/twitch.go
-
-       Copyright 2017 The Go Authors.
-
-       uber/uber.go
-
-       Copyright 2016 The Go Authors.
-
-       vk/vk.go
-
-       Copyright 2015 The Go Authors.
-
-       yahoo/yahoo.go
-
-       Copyright 2017 The Go Authors.
-
-       yandex/yandex.go
-
-       Copyright 2017 The Go Authors.
-
-
-   >>> github.com/google/uuid-v1.1.2
-
-       Copyright (c) 2009,2014 Google Inc. All rights reserved.
-
-       Redistribution and use in source and binary forms, with or without
-       modification, are permitted provided that the following conditions are
-       met:
-
-       Redistributions of source code must retain the above copyright
-       notice, this list of conditions and the following disclaimer.
-       Redistributions in binary form must reproduce the above
-       copyright notice, this list of conditions and the following disclaimer
-       in the documentation and/or other materials provided with the
-       distribution.
-       Neither the name of Google Inc. nor the names of its
-       contributors may be used to endorse or promote products derived from
-       this software without specific prior written permission.
-
-       THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-       "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-       LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-       A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-       OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-       SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-       LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-       DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-       THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-       (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-       ADDITIONAL LICENSE INFORMATION
-
-       > BSD-3
-
-       uuid-1.1.2/dce.go
-
-       Copyright 2016 Google Inc.
-
-       uuid-1.1.2/doc.go
-
-       Copyright 2016 Google Inc.
-
-       uuid-1.1.2/hash.go
-
-       Copyright 2016 Google Inc.
-
-       uuid-1.1.2/json_test.go
-
-       Copyright 2016 Google Inc.
-
-       uuid-1.1.2/LICENSE
-
-       Copyright (c) 2009,2014 Google Inc.
-
-       uuid-1.1.2/marshal.go
-
-       Copyright 2016 Google Inc.
-
-       uuid-1.1.2/node.go
-
-       Copyright 2016 Google Inc.
-
-       uuid-1.1.2/node_js.go
-
-       Copyright 2017 Google Inc.
-
-       uuid-1.1.2/node_net.go
-
-       Copyright 2017 Google Inc.
-
-       uuid-1.1.2/seq_test.go
-
-       Copyright 2016 Google Inc.
-
-       uuid-1.1.2/sql.go
-
-       Copyright 2016 Google Inc.
-
-       uuid-1.1.2/sql_test.go
-
-       Copyright 2016 Google Inc.
-
-       uuid-1.1.2/time.go
-
-       Copyright 2016 Google Inc.
-
-       uuid-1.1.2/util.go
-
-       Copyright 2016 Google Inc.
-
-       uuid-1.1.2/uuid.go
-
-       Copyright 2018 Google Inc.
-
-       uuid-1.1.2/uuid_test.go
-
-       Copyright 2016 Google Inc.
-
-       uuid-1.1.2/version1.go
-
-       Copyright 2016 Google Inc.
-
-       uuid-1.1.2/version4.go
-
-       Copyright 2016 Google Inc.
 
 
    >>> github.com/stretchr/testify-v1.7.0
@@ -11075,7 +10827,7 @@ APPENDIX. Standard License Files
 
        Copyright (c) 2015-2019 Peter Hellberg (https://c7.se)
 
-       See SECTION 6 in 'LICENSE TEXT REFERENCE TABLE'
+       See SECTION 10 in 'LICENSE TEXT REFERENCE TABLE'
 
 
    >>> github.com/apparentlymart/go-cidr-v1.1.0
@@ -11105,6 +10857,239 @@ APPENDIX. Standard License Files
 
    >>> optional -1.0.0
 
+       License- MIT
+
+
+   >>> github.com/onsi/ginkgo-v1.16.5
+
+       Copyright (c) 2013-2014 Onsi Fakhouri
+
+       Permission is hereby granted, free of charge, to any person obtaining
+       a copy of this software and associated documentation files (the
+       "Software"), to deal in the Software without restriction, including
+       without limitation the rights to use, copy, modify, merge, publish,
+       distribute, sublicense, and/or sell copies of the Software, and to
+       permit persons to whom the Software is furnished to do so, subject to
+       the following conditions:
+
+       The above copyright notice and this permission notice shall be
+       included in all copies or substantial portions of the Software.
+
+       THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+       EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+       MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+       NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+       LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+       OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+       WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+
+
+
+
+   >>> github.com/onsi/gomega-v1.19.0
+
+       Copyright (c) 2013-2014 Onsi Fakhouri
+
+       Permission is hereby granted, free of charge, to any person obtaining
+       a copy of this software and associated documentation files (the
+       "Software"), to deal in the Software without restriction, including
+       without limitation the rights to use, copy, modify, merge, publish,
+       distribute, sublicense, and/or sell copies of the Software, and to
+       permit persons to whom the Software is furnished to do so, subject to
+       the following conditions:
+
+       The above copyright notice and this permission notice shall be
+       included in all copies or substantial portions of the Software.
+
+       THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+       EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+       MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+       NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+       LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+       OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+       WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+
+
+   >>> github.com/google/uuid-1.3.0
+
+       Copyright (c) 2009,2014 Google Inc. All rights reserved.
+
+       Redistribution and use in source and binary forms, with or without
+       modification, are permitted provided that the following conditions are
+       met:
+
+       Redistributions of source code must retain the above copyright
+       notice, this list of conditions and the following disclaimer.
+       Redistributions in binary form must reproduce the above
+       copyright notice, this list of conditions and the following disclaimer
+       in the documentation and/or other materials provided with the
+       distribution.
+       Neither the name of Google Inc. nor the names of its
+       contributors may be used to endorse or promote products derived from
+       this software without specific prior written permission.
+
+       THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+       "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+       LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+       A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+       OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+       SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+       LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+       DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+       THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+       (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+       ADDITIONAL LICENSE INFORMATION
+
+       > BSD-3
+
+       uuid-master/dce.go
+
+       Copyright 2016 Google Inc.
+
+       See SECTION 3 in 'LICENSE TEXT REFERENCE TABLE'
+
+       uuid-master/doc.go
+
+       Copyright 2016 Google Inc.
+
+       See SECTION 3 in 'LICENSE TEXT REFERENCE TABLE'
+
+       uuid-master/hash.go
+
+       Copyright 2016 Google Inc.
+
+       See SECTION 3 in 'LICENSE TEXT REFERENCE TABLE'
+
+       uuid-master/json_test.go
+
+       Copyright 2016 Google Inc.
+
+       See SECTION 3 in 'LICENSE TEXT REFERENCE TABLE'
+
+       uuid-master/marshal.go
+
+       Copyright 2016 Google Inc.
+
+       See SECTION 3 in 'LICENSE TEXT REFERENCE TABLE'
+
+       uuid-master/node.go
+
+       Copyright 2016 Google Inc.
+
+       See SECTION 3 in 'LICENSE TEXT REFERENCE TABLE'
+
+       uuid-master/node_js.go
+
+       Copyright 2017 Google Inc.
+
+       See SECTION 3 in 'LICENSE TEXT REFERENCE TABLE'
+
+       uuid-master/node_net.go
+
+       Copyright 2017 Google Inc.
+
+       See SECTION 3 in 'LICENSE TEXT REFERENCE TABLE'
+
+       uuid-master/null.go
+
+       Copyright 2021 Google Inc.
+
+       See SECTION 3 in 'LICENSE TEXT REFERENCE TABLE'
+
+       uuid-master/null_test.go
+
+       Copyright 2021 Google Inc.
+
+       See SECTION 3 in 'LICENSE TEXT REFERENCE TABLE'
+
+       uuid-master/seq_test.go
+
+       Copyright 2016 Google Inc.
+
+       See SECTION 3 in 'LICENSE TEXT REFERENCE TABLE'
+
+       uuid-master/sql.go
+
+       Copyright 2016 Google Inc.
+
+       See SECTION 3 in 'LICENSE TEXT REFERENCE TABLE'
+
+       uuid-master/sql_test.go
+
+       Copyright 2016 Google Inc.
+
+       See SECTION 3 in 'LICENSE TEXT REFERENCE TABLE'
+
+       uuid-master/time.go
+
+       Copyright 2016 Google Inc.
+
+       See SECTION 3 in 'LICENSE TEXT REFERENCE TABLE'
+
+       uuid-master/util.go
+
+       Copyright 2016 Google Inc.
+
+       See SECTION 3 in 'LICENSE TEXT REFERENCE TABLE'
+
+       uuid-master/uuid.go
+
+       Copyright 2018 Google Inc.
+
+       See SECTION 3 in 'LICENSE TEXT REFERENCE TABLE'
+
+       uuid-master/uuid_test.go
+
+       Copyright 2016 Google Inc.
+
+       See SECTION 3 in 'LICENSE TEXT REFERENCE TABLE'
+
+       uuid-master/version1.go
+
+       Copyright 2016 Google Inc.
+
+       See SECTION 3 in 'LICENSE TEXT REFERENCE TABLE'
+
+       uuid-master/version4.go
+
+       Copyright 2016 Google Inc.
+
+       See SECTION 3 in 'LICENSE TEXT REFERENCE TABLE'
+
+
+   >>> golang.org/x/oauth2-v0.7.0
+
+       Copyright (c) 2009 The Go Authors. All rights reserved.
+
+       Redistribution and use in source and binary forms, with or without
+       modification, are permitted provided that the following conditions are
+       met:
+
+       * Redistributions of source code must retain the above copyright
+       notice, this list of conditions and the following disclaimer.
+       * Redistributions in binary form must reproduce the above
+       copyright notice, this list of conditions and the following disclaimer
+       in the documentation and/or other materials provided with the
+       distribution.
+       * Neither the name of Google Inc. nor the names of its
+       contributors may be used to endorse or promote products derived from
+       this software without specific prior written permission.
+
+       THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+       "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+       LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+       A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+       OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+       SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+       LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+       DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+       THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+       (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 ==================== APPENDIX. Standard License Files ====================
@@ -11352,6 +11337,24 @@ limitations under the License.
  * See the License for the specific language governing permissions and
  * limitations under the License.
 -------------------- SECTION 5 --------------------
+// Permission is hereby granted, free of charge, to any person obtaining a copy of
+// this software and associated documentation files (the "Software"), to deal in
+// the Software without restriction, including without limitation the rights to
+// use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+// of the Software, and to permit persons to whom the Software is furnished to do
+// so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+-------------------- SECTION 6 --------------------
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -11363,21 +11366,29 @@ limitations under the License.
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
--------------------- SECTION 6 --------------------
+-------------------- SECTION 7 --------------------
+// Permission is hereby granted, free of charge, to any person obtaining a copy of
+// this software and associated documentation files (the "Software"), to deal in
+// the Software without restriction, including without limitation the rights to
+// use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+// of the Software, and to permit persons to whom the Software is furnished to do
+// so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+-------------------- SECTION 8 --------------------
+are still covered by their original MIT license, with the additional
+-------------------- SECTION 9 --------------------
+All the remaining project files are covered by the Apache license:
+-------------------- SECTION 10 --------------------
 ## License (MIT)
 
-
-
-======================================================================
-To the extent any open source components are licensed under the GPL
-and/or LGPL, or other similar licenses that require the source code
-and/or modifications to source code to be made available, you may obtain
-a copy of the source code corresponding to the binaries for such open source
-components and modifications thereto, if any, (the "Source Files"), by downloading the
-Source Files from VMware's github site for this product, or by sending a request, with your name
-and address to: VMware, Inc., 3401 Hillview Avenue, Palo Alto, CA 94304, United States of America.
-All such requests should clearly specify: OPEN SOURCE FILES REQUEST, Attention General Counsel. VMware shall
-mail a copy of the Source Files to you on a CD or equivalent physical medium. This offer to obtain a copy of the Source
-Files is valid for three years from the date you acquired this software product.
-
-[CLOUDPROVIDERFORCLOUDDIRECTOR12GAAS100622]
+[CLOUDPROVIDERFORCLOUDDIRECTOR150GAFM122023]
