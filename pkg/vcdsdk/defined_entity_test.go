@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	swaggerClient "github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdswaggerclient_36_0"
+	swaggerClient "github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdswaggerclient_37_2"
 	"github.com/vmware/go-vcloud-director/v2/govcd"
 	"net/http"
 	"testing"
@@ -87,7 +87,7 @@ func TestCRUDOnEventSet(t *testing.T) {
 	assert.NoError(t, err, "failed to add event into the eventset")
 
 	// get the rde and check if the length of errors added is same as expected
-	rde, _, _, err := vcdClient.APIClient.DefinedEntityApi.GetDefinedEntity(ctx, rdeId, org.Org.ID)
+	rde, _, _, err := vcdClient.APIClient.DefinedEntityApi.GetDefinedEntity(ctx, rdeId, org.Org.ID, nil)
 	status, _ := rde.Entity["status"].(map[string]interface{})
 	capvcdComponent, _ := status[CAPVCDComponentRDESectionName].(map[string]interface{})
 	eventSet, _ := capvcdComponent["eventSet"].([]interface{})
@@ -97,7 +97,7 @@ func TestCRUDOnEventSet(t *testing.T) {
 	assert.NoError(t, err, "failed to add event into the eventset")
 
 	// get the rde and check if the length of events is still capped at 3- window size (even though 4 events were added)
-	rde, _, _, err = vcdClient.APIClient.DefinedEntityApi.GetDefinedEntity(ctx, rdeId, org.Org.ID)
+	rde, _, _, err = vcdClient.APIClient.DefinedEntityApi.GetDefinedEntity(ctx, rdeId, org.Org.ID, nil)
 	status, _ = rde.Entity["status"].(map[string]interface{})
 	capvcdComponent, _ = status[CAPVCDComponentRDESectionName].(map[string]interface{})
 	eventSet, _ = capvcdComponent["eventSet"].([]interface{})
@@ -173,7 +173,7 @@ func TestCRUDOnErrorSet(t *testing.T) {
 	assert.NoError(t, err, "failed to add error into the errorset")
 
 	// get the rde and check if the length of errors added is same as expected
-	rde, _, _, err := vcdClient.APIClient.DefinedEntityApi.GetDefinedEntity(ctx, rdeId, org.Org.ID)
+	rde, _, _, err := vcdClient.APIClient.DefinedEntityApi.GetDefinedEntity(ctx, rdeId, org.Org.ID, nil)
 	status, _ := rde.Entity["status"].(map[string]interface{})
 	capvcdComponent, _ := status[CAPVCDComponentRDESectionName].(map[string]interface{})
 	errorSet, _ := capvcdComponent["errorSet"].([]interface{})
@@ -188,7 +188,7 @@ func TestCRUDOnErrorSet(t *testing.T) {
 	assert.NoError(t, err, "failed to remove error from the errorset")
 
 	// get the rde and check if the length of the errorSet after removing errors is same as expected
-	rde, _, _, err = vcdClient.APIClient.DefinedEntityApi.GetDefinedEntity(ctx, rdeId, org.Org.ID)
+	rde, _, _, err = vcdClient.APIClient.DefinedEntityApi.GetDefinedEntity(ctx, rdeId, org.Org.ID, nil)
 	status, _ = rde.Entity["status"].(map[string]interface{})
 	capvcdComponent, _ = status[CAPVCDComponentRDESectionName].(map[string]interface{})
 	errorSet, _ = capvcdComponent["errorSet"].([]interface{})

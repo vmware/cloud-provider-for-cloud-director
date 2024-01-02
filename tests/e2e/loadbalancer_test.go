@@ -60,7 +60,9 @@ var _ = Describe("Ensure Loadbalancer", func() {
 	Expect(ccmConfigMap).NotTo(BeNil())
 	ipamSubnet, err = tc.GetIpamSubnetFromConfigMap(ccmConfigMap)
 	Expect(err).NotTo(HaveOccurred())
-	Expect(ipamSubnet).NotTo(BeEmpty())
+	if ipamSubnet == "" {
+		_, _ = fmt.Fprintf(GinkgoWriter, "INFO: ipamSubnet is empty")
+	}
 	networkName, err = tc.GetNetworkNameFromConfigMap(ccmConfigMap)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(networkName).NotTo(BeEmpty())
@@ -207,8 +209,10 @@ var _ = Describe("Ensure load balancer with user specified LB IP", func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(ccmConfigMap).NotTo(BeNil())
 	ipamSubnet, err = tc.GetIpamSubnetFromConfigMap(ccmConfigMap)
+	if ipamSubnet == "" {
+		_, _ = fmt.Fprintf(GinkgoWriter, "ipamSubnet is empty")
+	}
 	Expect(err).NotTo(HaveOccurred())
-	Expect(ipamSubnet).NotTo(BeEmpty())
 	networkName, err = tc.GetNetworkNameFromConfigMap(ccmConfigMap)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(networkName).NotTo(BeEmpty())

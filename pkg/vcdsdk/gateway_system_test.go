@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/util"
-	swaggerClient "github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdswaggerclient_36_0"
+	swaggerClient "github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdswaggerclient_37_2"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"path/filepath"

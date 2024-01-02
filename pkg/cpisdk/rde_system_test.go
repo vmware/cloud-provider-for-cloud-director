@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdsdk"
-	swaggerClient "github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdswaggerclient_36_0"
+	swaggerClient "github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdswaggerclient_37_2"
 	"github.com/vmware/cloud-provider-for-cloud-director/release"
 	"github.com/vmware/go-vcloud-director/v2/govcd"
 	"io/ioutil"
@@ -358,7 +358,8 @@ func TestAddVIPToVCDResourceSet(t *testing.T) {
 		assert.NoError(t, err, "expected no error adding VIP to VCD resource set", "test", tc.Message)
 
 		// verify information in the RDE
-		definedEntity, resp, _, err := vcdClient.APIClient.DefinedEntityApi.GetDefinedEntity(context.TODO(), rdeID, "")
+		definedEntity, resp, _, err := vcdClient.APIClient.DefinedEntityApi.GetDefinedEntity(context.TODO(), rdeID,
+			"", nil)
 		assert.NoError(t, err, "expected no error fetching defined entity after updating RDE with virtual service", "test", tc.Message)
 		assert.NotNil(t, definedEntity, "expected defined entity to be not nil", "test", tc.Message)
 		assert.NotNil(t, resp, "invalid response - got nil response", "test", tc.Message)
