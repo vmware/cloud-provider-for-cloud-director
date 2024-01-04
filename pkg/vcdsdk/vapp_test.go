@@ -1,16 +1,19 @@
 /*
-   Copyright 2021 VMware, Inc.
-   SPDX-License-Identifier: Apache-2.0
+Copyright 2021 VMware, Inc.
+SPDX-License-Identifier: Apache-2.0
 */
 package vcdsdk
 
 import (
+	b64 "encoding/base64"
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 func TestVApp(t *testing.T) {
@@ -35,10 +38,13 @@ func TestVApp(t *testing.T) {
 
 	// create VM
 	vmNamePrefix := "test-vm"
-	err = vdcManager.AddNewVM(vmNamePrefix, vAppName, 1, "cse",
+	task, err := vdcManager.AddNewTkgVM(vmNamePrefix, vAppName, "cse",
 		"Ubuntu 20.04 and Kubernetes v1.21.11+vmware.1", "", "4core4gb",
-		"", "", true)
+		"")
 	assert.NoError(t, err, "should create vm correctly")
+
+	err = task.WaitTaskCompletion()
+	assert.NoError(t, err, "should wait for task successfully")
 
 	vms, err := vdcManager.FindAllVMsInVapp(vAppName)
 	assert.NoError(t, err, "unable to find VMs in vApp")
@@ -70,7 +76,7 @@ func TestDeleteVapp(t *testing.T) {
 
 func TestVdcManager_CacheVdcDetails(t *testing.T) {
 	authFile := filepath.Join(gitRoot, "testdata/auth_test.yaml")
-	authFileContent, err := ioutil.ReadFile(authFile)
+	authFileContent, err := os.ReadFile(authFile)
 	assert.NoError(t, err, "There should be no error reading the auth file contents.")
 
 	var authDetails authorizationDetails
@@ -110,7 +116,6 @@ func TestVMCreation(t *testing.T) {
 
 	// create vm
 	vmNamePrefix := "test-vm-1"
-	vmNum := 1
 	guestCustScript := `
 #!/usr/bin/env bash -x
 echo "Command called with arguments [$@] at time $(date)" >> /root/output.txt
@@ -134,9 +139,9 @@ exit 0
 	placementPolicyName := "cse----native"
 	computePolicyName := "2core2gb"
 
-	_, err = vdcManager.AddNewMultipleVM(vApp, vmNamePrefix, vmNum, catalog,
-		templateName, placementPolicyName, computePolicyName, "*", guestCustScript, true, true)
-	require.NoError(t, err, "unable to create [%d] VMs", vmNum)
+	_, err = vdcManager.AddNewVM(vmNamePrefix, vAppName, catalog,
+		templateName, placementPolicyName, computePolicyName, "*", guestCustScript)
+	require.NoError(t, err, "unable to create VM [%s]", vmNamePrefix)
 
 	_ = vdcManager.WaitForGuestScriptCompletion(vAppName, vmNamePrefix)
 
@@ -166,48 +171,79 @@ func TestVMExtraConfig(t *testing.T) {
 	require.NotNil(t, vApp, "vApp created should not be nil")
 
 	// create vm
-	vmNamePrefix := "test-vm-1"
-	vmNum := 1
-	guestCustScript := `
-#!/usr/bin/env bash -x
-echo "Command called with arguments [$@] at time $(date)" >> /root/output.txt
-if [ -f "/.guest-customization-post-reboot-pending" ]
-then
-	echo "Reboot pending, hence will do nothing."  >> /root/output.txt
-elif [ "$1" = "postcustomization" ]
-then
-	kubeadm init --ttl=0
-	join_token = $(kubeadm token create --print-join-command)
-	vmtoolsd --cmd "info-set guestinfo.joinToken "${join_token}"
-else
-	echo "Skipping script since postcustomization is not involved." >> /root/output.txt
-fi
-exit 0
-`
+	vmName := "test-vm-1"
 
 	// TODO: allow these vm params to be user passed through a config
-	err = vdcManager.AddNewVM(vAppName, vmNamePrefix, vmNum, "cse",
-		"ubuntu-16.04_k8-1.21_weave-2.8.1_rev1", "cse----native",
-		"2core2gb", "*", guestCustScript, true)
-	assert.NoError(t, err, "unable to create [%d] VMs", vmNum)
+	task, err := vdcManager.AddNewTkgVM(vmName, vAppName, "cse",
+		"Ubuntu 20.04 and Kubernetes v1.23.10+vmware.1", "",
+		"TKG medium", "Development2")
+	assert.NoError(t, err, "unable to create vm [%s]", vmName)
 
-	vms, err := vdcManager.FindAllVMsInVapp(vAppName)
-	assert.NoError(t, err, "unable to find VMs in vApp")
-	assert.NotNil(t, vms, "some VMs should be returned")
-	assert.True(t, len(vms) == vmNum, "vapp should have [%d] vm(s), but has %d vm(s)", vmNum, len(vms))
+	err = task.WaitTaskCompletion()
+	assert.NoError(t, err, "should wait for VM creation task successfully")
 
-	vm, err := vApp.GetVMByName(vms[0].Name, true)
+	vm, err := vApp.GetVMByName(vmName, true)
 	assert.NoError(t, err, "failed to get vm")
 
-	// test extra config
-	key := "extraconfig.test"
-	value := "test123"
-	err = vdcManager.SetVmExtraConfigKeyValue(vm, key, value, false)
-	assert.NoError(t, err, "error setting VM extra config: [%v]", err)
+	// Set cloud-init config, boot the VM and check if the script has succeeded
+	extraConfigMap := map[string]string{
+		"guestinfo.userdata": b64.StdEncoding.EncodeToString([]byte(`
+#cloud-config
+users:
+- name: core
+  groups: [ sudo ]
+  shell: /bin/bash
+  lock_passwd: false
+  chpasswd: { expire: False }
+  passwd: '$6$rounds=4096$JjhnQS5RRn$pAACOIBbau4c1RkioIP/FqVPTpjBpzXnfeBGnmbMwl0ZciubHTiZVy.jc2R2rwG7MriCWyeRsJIFArPhZoNod1'
+write_files:
+- path: /root/test.sh
+  owner: root
+  content: |
+    #!/bin/bash
+    set -eEx
+    ping -c 4 8.8.8.8
+    nslookup www.google.com
+    ping -c 4 www.google.com
+    vmtoolsd --cmd "info-set guestinfo.test test123"
+runcmd:
+- bash /root/test.sh
+`)),
+		"guestinfo.userdata.encoding": "base64",
+	}
 
-	retrievedValue, err := vdcManager.GetExtraConfigValue(vm, key)
-	assert.NoError(t, err, "failed to get hardware section value for key %s", key)
-	assert.Equal(t, value, retrievedValue, "retrieved incorrect value")
+	task, err = vdcManager.SetMultiVmExtraConfigKeyValuePairs(vm, extraConfigMap, false)
+	assert.NoError(t, err, "error setting VM extra config [%s]: [%v]", extraConfigMap, err)
+	err = task.WaitTaskCompletion()
+	assert.NoError(t, err, "should wait for task to set extra config on VM [%s] successfully", vm.VM.Name)
+
+	task, err = vm.PowerOn()
+	assert.NoError(t, err, "Unable to power on VM [%s]: [%v]", vm.VM.Name, err)
+	err = task.WaitTaskCompletion()
+	assert.NoError(t, err, "should wait for task to power on VM [%s] successfully", vm.VM.Name)
+
+	err = vdcManager.WaitForGuestScriptCompletion(vAppName, vmName)
+	assert.NoError(t, err, "should wait for guest script completion on VM [%s] successfully", vm.VM.Name)
+
+	// wait until VM is powered on, run the cloud-init script and sets the keys and values
+	key := "guestinfo.test"
+	value := "test123"
+	retrievedValue := ""
+	success := false
+	endTime := time.Now().Add(10 * time.Minute)
+	for currTime := time.Now(); currTime.Before(endTime); currTime = time.Now() {
+		err = vm.Refresh()
+		assert.NoError(t, err, "unable to refresh vm [%s]", vm.VM.Name)
+		retrievedValue, err = vdcManager.GetExtraConfigValue(vm, key)
+		assert.NoError(t, err, "failed to get hardware section value for key %s", key)
+		fmt.Printf("expected value is [%s], obtained value is [%s]\n", value, retrievedValue)
+		if retrievedValue == value {
+			success = true
+			break
+		}
+		time.Sleep(30 * time.Second)
+	}
+	assert.True(t, success, "Retrieved value [%s], expected value [%s]", retrievedValue, value)
 
 	err = vdcManager.DeleteVApp(vAppName)
 	assert.NoError(t, err, "unable to delete vApp: [%s]", vAppName)
