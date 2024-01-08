@@ -152,7 +152,7 @@ spec:
         runAsUser: 1000
       containers:
         - name: vmware-cloud-director-ccm
-          image: projects.registry.vmware.com/vmware-cloud-director/cloud-provider-for-cloud-director:1.6.0
+          image: projects.registry.vmware.com/vmware-cloud-director/cloud-provider-for-cloud-director:1.7.0
           imagePullPolicy: IfNotPresent
           command:
             - /opt/vcloud/bin/cloud-provider-for-cloud-director
