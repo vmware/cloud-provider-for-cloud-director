@@ -29,7 +29,6 @@ type Vm struct {
 	VmSpecSection                     *VmSpecSection                     `xml:"VmSpecSection,omitempty"`
 	ExtraConfigVirtualHardwareSection *ExtraConfigVirtualHardwareSection `xml:"VirtualHardwareSection,omitempty"`
 	NetworkConnectionSection          *NetworkConnectionSection          `xml:"NetworkConnectionSection,omitempty"`
-	IsVAppConfigRemoved               bool                               `xml:"IsVAppConfigRemoved,omitempty"`
 }
 
 type VmMarshal struct {
