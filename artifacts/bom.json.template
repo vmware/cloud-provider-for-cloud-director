@@ -11,7 +11,7 @@
 		"binaries": [],
 		"dependencies": [
 			{
-				"name":"cloud-provider-for-cloud-director",
+				"name":"vmware-cloud-director/cloud-provider-for-cloud-director",
 				"version":"__VERSION__",
 				"imageRepository":"__REGISTRY__"
 			}
