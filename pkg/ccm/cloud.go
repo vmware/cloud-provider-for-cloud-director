@@ -31,9 +31,11 @@ const (
 
 // VCDCloudProvider - contains all of the interfaces for our cloud provider
 type VCDCloudProvider struct {
-	vcdClient *vcdsdk.Client
-	lb        cloudProvider.LoadBalancer
-	instances cloudProvider.Instances
+	vcdClient   *vcdsdk.Client
+	lb          cloudProvider.LoadBalancer
+	instances   cloudProvider.Instances
+	instancesV2 cloudProvider.InstancesV2
+	zoneMap     *config.ZoneMap
 }
 
 var _ cloudProvider.Interface = &VCDCloudProvider{}
@@ -112,9 +114,6 @@ func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error
 			cloudConfig.LB.VIPSubnet, cloudConfig.ClusterID, cloudConfig.LB.EnableVirtualServiceSharedIP)
 	}
 
-	// cache for VM Info with an refresh of elements needed after 1 minute
-	vmInfoCache := newVmInfoCache(vcdClient, cloudConfig.VAppName, time.Minute)
-
 	// TODO: upgrade all CAPVCD RDEs here
 
 	err = cpiRdeManager.UpgradeCPIStatusOfExistingRDE(context.Background(), cloudConfig.ClusterID)
@@ -141,11 +140,24 @@ func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error
 		}
 	}
 
+	var zm *config.ZoneMap = nil
+	if cloudConfig.VCD.IsZoneEnabledCluster {
+		if zm, err = config.NewZoneMap(config.ZoneMapConfigFilePath); err != nil {
+			return nil, fmt.Errorf("unable to create new zone map from configmap file [%s]: [%v]",
+				config.ZoneMapConfigFilePath, err)
+		}
+	}
+
+	// cache for VM Info with an refresh of elements needed after 1 minute
+	vmInfoCache := newVmInfoCache(vcdClient, cloudConfig.VAppName, time.Minute, zm)
+
 	// TODO: Do we need to record anything from instances from errors/events aspect?
 	return &VCDCloudProvider{
-		vcdClient: vcdClient,
-		lb:        lb,
-		instances: newInstances(vmInfoCache),
+		vcdClient:   vcdClient,
+		lb:          lb,
+		instances:   newInstances(vmInfoCache),
+		instancesV2: newInstancesV2(vmInfoCache, zm),
+		zoneMap:     zm,
 	}, nil
 }
 
@@ -174,11 +186,6 @@ func (vcdCP *VCDCloudProvider) LoadBalancer() (cloudProvider.LoadBalancer, bool)
 		return nil, false
 	}
 	return vcdCP.lb, true
-}
-
-// Instances returns an instances interface. Also returns true if the interface is supported, false otherwise.
-func (vcdCP *VCDCloudProvider) Instances() (cloudProvider.Instances, bool) {
-	return vcdCP.instances, true
 }
 
 // Zones returns a zones interface. Also returns true if the interface is supported, false otherwise.

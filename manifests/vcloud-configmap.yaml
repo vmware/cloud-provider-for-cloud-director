@@ -9,6 +9,7 @@ data:
       host: VCD_HOST
       org: ORG
       vdc: OVDC
+      isZoneEnabledCluster: false # set true if zones are to be used
     loadbalancer:
       oneArm:
         startIP: "192.168.8.2"

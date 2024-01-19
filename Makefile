@@ -32,7 +32,7 @@ SHELLCHECK ?= bin/shellcheck
 all: vendor lint dev
 
 .PHONY: cpi
-capvcd: vendor lint docker-build-cpi ## Run checks, and build cpi docker image.
+cpi: vendor lint docker-build-cpi ## Run checks, and build cpi docker image.
 
 ##@ General
 
