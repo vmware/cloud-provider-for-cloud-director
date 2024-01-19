@@ -18,8 +18,6 @@ CPI_IMG := cloud-provider-for-cloud-director
 ARTIFACT_IMG := cpi-crs-airgapped
 VERSION ?= $(shell cat $(GITROOT)/release/version)
 
-REGISTRY ?= projects-stg.registry.vmware.com/vmware-cloud-director
-
 PLATFORM ?= linux/amd64
 OS ?= linux
 ARCH ?= amd64
@@ -113,7 +111,7 @@ docker-build-cpi: manifests build
 	docker build  \
 		--platform $(PLATFORM) \
 		--file Dockerfile \
-		--tag $(REGISTRY)/$(CPI_IMG):$(VERSION) \
+		--tag $(CPI_IMG):$(VERSION) \
 		--build-arg CPI_BUILD_DIR=bin \
 		.
 
@@ -122,7 +120,7 @@ docker-build-artifacts: release-prep
 	docker build  \
 		--platform $(PLATFORM) \
 		--file artifacts/Dockerfile \
-		--tag $(REGISTRY)/$(ARTIFACT_IMG):$(VERSION) \
+		--tag $(ARTIFACT_IMG):$(VERSION) \
 		.
 
 .PHONY: docker-build
@@ -140,8 +138,8 @@ release: docker-build docker-push ## Build release images and push to registry.
 .PHONY: release-prep
 release-prep: ## Generate BOM and dependencies files.
 	sed -e "s/__VERSION__/$(VERSION)/g" artifacts/default-cloud-director-ccm-crs-airgap.yaml.template > artifacts/cloud-director-ccm-crs-airgap.yaml.template
-	sed -e "s/__VERSION__/$(VERSION)/g" -e "s~__REGISTRY__~$(REGISTRY)~g" artifacts/dependencies.txt.template > artifacts/dependencies.txt
-	sed -e "s/__VERSION__/$(VERSION)/g" -e "s~__REGISTRY__~$(REGISTRY)~g" artifacts/bom.json.template > artifacts/bom.json
+	sed -e "s/__VERSION__/$(VERSION)/g" artifacts/dependencies.txt.template > artifacts/dependencies.txt
+	sed -e "s/__VERSION__/$(VERSION)/g" artifacts/bom.json.template > artifacts/bom.json
 
 .PHONY: manifests
 manifests: ## Generate CPI manifests
@@ -150,11 +148,13 @@ manifests: ## Generate CPI manifests
 
 .PHONY: docker-push-cpi
 docker-push-cpi: # Push CPI image to registry.
-	docker push $(REGISTRY)/$(CPI_IMG):$(VERSION)
+	docker tag $(CPI_IMG):$(VERSION) projects-stg.registry.vmware.com/vmware-cloud-director/$(CPI_IMG):$(VERSION)
+	docker push projects-stg.registry.vmware.com/vmware-cloud-director/$(CPI_IMG):$(VERSION)
 
 .PHONY: docker-push-artifacts
 docker-push-artifacts: # Push artifacts image to registry
-	docker push $(REGISTRY)/$(ARTIFACT_IMG):$(VERSION)
+	docker tag $(ARTIFACT_IMG):$(VERSION) projects-stg.registry.vmware.com/vmware-cloud-director/$(ARTIFACT_IMG):$(VERSION)
+	docker push projects-stg.registry.vmware.com/vmware-cloud-director/$(ARTIFACT_IMG):$(VERSION)
 
 .PHONY: docker-push
 docker-push: docker-push-cpi docker-push-artifacts ## Push images to container registry.
