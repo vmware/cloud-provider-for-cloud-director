@@ -98,7 +98,34 @@ test:
 integration-test: test
 	go test -tags="testing integration" -v github.com/vmware/cloud-provider-for-cloud-director/vcdclient -cover -count=1
 
+##@ Gobuild
 
+.PHONY: gobuild
+gobuild: vendor manifests release-prep build docker-build docker-archive publish
+
+.PHONY: sandbox
+sandbox: VERSION := $(VERSION)-${BUILD_TAG}-$(GITCOMMIT)
+sandbox: gobuild
+
+.PHONY: official
+official: gobuild
+
+# docker-archive target saves the artifacts as tar.gz as part of the deliverables
+.PHONY: docker-archive
+docker-archive: build/docker
+	docker save -o build/docker/$(CPI_IMG)_$(VERSION).tar projects-stg.registry.vmware.com/vmware-cloud-director/$(CPI_IMG):$(VERSION)
+	docker save -o build/docker/$(ARTIFACT_IMG)_$(VERSION).tar projects-stg.registry.vmware.com/vmware-cloud-director/$(ARTIFACT_IMG):$(VERSION)
+	gzip build/docker/$(CPI_IMG)_$(VERSION).tar
+	gzip build/docker/$(ARTIFACT_IMG)_$(VERSION).tar
+
+# publish target publishes all the contents inside of build/docker
+.PHONY: publish
+publish:
+	cp -R build/docker ${PUBLISH_DIR}
+
+# build/docker is used as part of the gobuild process. In the end, we publish everything inside this folder. See target publish.
+build/docker:
+	mkdir -p build/docker
 
 ##@ Build
 
