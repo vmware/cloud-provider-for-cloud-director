@@ -111,7 +111,7 @@ sandbox: gobuild
 .PHONY: official
 official: gobuild
 
-# docker-archive target saves the artifacts as .tar.gz as part of the deliverables
+# docker-archive target saves the artifacts as .tar.gz to build/docker path which gets published as deliverables.
 .PHONY: docker-archive
 docker-archive: build/docker
 	docker save -o build/docker/$(CPI_IMG)_$(VERSION).tar projects-stg.registry.vmware.com/vmware-cloud-director/$(CPI_IMG):$(VERSION)
