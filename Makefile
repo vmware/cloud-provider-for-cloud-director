@@ -104,13 +104,14 @@ integration-test: test
 gobuild: vendor manifests release-prep build docker-build docker-archive publish
 
 .PHONY: sandbox
+# BUILD_TAG will be set during the build so it is not defined as it's not expected to be used by anything else here.
 sandbox: VERSION := $(VERSION)-${BUILD_TAG}-$(GITCOMMIT)
 sandbox: gobuild
 
 .PHONY: official
 official: gobuild
 
-# docker-archive target saves the artifacts as tar.gz as part of the deliverables
+# docker-archive target saves the artifacts as .tar.gz as part of the deliverables
 .PHONY: docker-archive
 docker-archive: build/docker
 	docker save -o build/docker/$(CPI_IMG)_$(VERSION).tar projects-stg.registry.vmware.com/vmware-cloud-director/$(CPI_IMG):$(VERSION)
@@ -118,7 +119,7 @@ docker-archive: build/docker
 	gzip build/docker/$(CPI_IMG)_$(VERSION).tar
 	gzip build/docker/$(ARTIFACT_IMG)_$(VERSION).tar
 
-# publish target publishes all the contents inside of build/docker
+# publish target publishes all the contents inside of build/docker. PUBLISH_DIR will be set during the build so it is not defined.
 .PHONY: publish
 publish:
 	cp -R build/docker ${PUBLISH_DIR}
