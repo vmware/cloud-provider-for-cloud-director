@@ -139,14 +139,32 @@ exit 0
 	placementPolicyName := "cse----native"
 	computePolicyName := "2core2gb"
 
-	_, err = vdcManager.AddNewVM(vmNamePrefix, vAppName, catalog,
+	task, err := vdcManager.AddNewVM(vmNamePrefix, vAppName, catalog,
 		templateName, placementPolicyName, computePolicyName, "*", guestCustScript)
 	require.NoError(t, err, "unable to create VM [%s]", vmNamePrefix)
 
+	err = task.WaitTaskCompletion()
+	assert.NoError(t, err, "create VM task failed")
+
+	assert.NoError(t, vApp.Refresh(), "failed to refresh vApp")
+
+	vm, err := vApp.GetVMByName(vmNamePrefix, false)
+	assert.NoError(t, err, "failed to get VM by name")
+
+	task, err = vm.PowerOn()
+	assert.NoError(t, err, "error occurred while powering on the VM")
+
+	err = task.WaitTaskCompletion()
+	assert.NoError(t, err, "error occurred while waiting for the power on task to complete")
+
 	_ = vdcManager.WaitForGuestScriptCompletion(vAppName, vmNamePrefix)
 
-	//err = VcdClient.DeleteVM(vAppName, vmName)
-	//assert.NoError(t, err, "unable to delete VM")
+	task, err = vdcManager.DeleteVM(vAppName, vmNamePrefix)
+	assert.NoError(t, err, "unable to delete VM")
+	assert.NotEmpty(t, task, "obtained an empty task")
+
+	err = task.WaitTaskCompletion()
+	assert.NoError(t, err, "task for delete VM failed")
 
 	return
 }
