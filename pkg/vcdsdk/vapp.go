@@ -750,22 +750,23 @@ func (vdc *VdcManager) AddNewVM(vmName string, VAppName string, catalogName stri
 	return task, nil
 }
 
-func (vdc *VdcManager) DeleteVM(VAppName, vmName string) error {
+func (vdc *VdcManager) DeleteVM(VAppName, vmName string) (govcd.Task, error) {
 	vApp, err := vdc.Vdc.GetVAppByName(VAppName, true)
 	if err != nil {
-		return fmt.Errorf("unable to find vApp from name [%s]: [%v]", VAppName, err)
+		return govcd.Task{}, fmt.Errorf("unable to find vApp from name [%s]: [%v]", VAppName, err)
 	}
 
 	vm, err := vApp.GetVMByName(vmName, true)
 	if err != nil {
-		return fmt.Errorf("unable to get vm [%s] in vApp [%s]: [%v]", vmName, VAppName, err)
+		return govcd.Task{}, fmt.Errorf("unable to get vm [%s] in vApp [%s]: [%v]", vmName, VAppName, err)
 	}
 
-	if err = vm.Delete(); err != nil {
-		return fmt.Errorf("unable to delete vm [%s] in vApp [%s]: [%v]", vmName, VAppName, err)
+	task, err := vm.DeleteAsync()
+	if err != nil {
+		return govcd.Task{}, fmt.Errorf("unable to delete vm [%s] in vApp [%s]: [%v]", vmName, VAppName, err)
 	}
 
-	return nil
+	return task, nil
 }
 
 func (vdc *VdcManager) GetVAppNameFromVMName(VAppName string, vmName string) (string, error) {
