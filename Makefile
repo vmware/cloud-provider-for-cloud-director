@@ -113,7 +113,8 @@ rc-build: gobuild
 
 # docker-archive target saves the artifacts as .tar.gz to build/docker path which gets published as deliverables.
 .PHONY: docker-archive
-docker-archive: build/docker
+docker-archive:
+	mkdir -p build/docker
 	docker save -o build/docker/$(CPI_IMG)_$(VERSION).tar projects-stg.registry.vmware.com/vmware-cloud-director/$(CPI_IMG):$(VERSION)
 	docker save -o build/docker/$(ARTIFACT_IMG)_$(VERSION).tar projects-stg.registry.vmware.com/vmware-cloud-director/$(ARTIFACT_IMG):$(VERSION)
 	gzip build/docker/$(CPI_IMG)_$(VERSION).tar
@@ -123,10 +124,6 @@ docker-archive: build/docker
 .PHONY: publish
 publish:
 	cp -R build/docker ${PUBLISH_DIR}
-
-# build/docker is used as part of the gobuild process. In the end, we publish everything inside this folder. See target publish.
-build/docker:
-	mkdir -p build/docker
 
 ##@ Build
 
