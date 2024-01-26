@@ -103,13 +103,13 @@ integration-test: test
 .PHONY: gobuild
 gobuild: vendor manifests release-prep build docker-build docker-archive publish
 
-.PHONY: sandbox
+.PHONY: dev-build
 # BUILD_TAG will be set during the build so it is not defined as it's not expected to be used by anything else here.
-sandbox: VERSION := $(VERSION)-${BUILD_TAG}-$(GITCOMMIT)
-sandbox: gobuild
+dev-build: VERSION := $(VERSION)-${BUILD_TAG}-$(GITCOMMIT)
+dev-build: gobuild
 
-.PHONY: official
-official: gobuild
+.PHONY: rc-build
+rc-build: gobuild
 
 # docker-archive target saves the artifacts as .tar.gz to build/docker path which gets published as deliverables.
 .PHONY: docker-archive
