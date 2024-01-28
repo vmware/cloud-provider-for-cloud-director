@@ -9,7 +9,7 @@ import (
 	"bytes"
 	"encoding/xml"
 	"fmt"
-	"github.com/sethvargo/go-password/password"
+	"github.com/vmware/cloud-provider-for-cloud-director/pkg/util"
 	"github.com/vmware/go-vcloud-director/v2/govcd"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"io/ioutil"
@@ -676,7 +676,8 @@ func (vdc *VdcManager) AddNewVM(vmName string, VAppName string, catalogName stri
 			vdc.VdcName, err)
 	}
 
-	passwd, err := password.Generate(15, 5, 3, false, false)
+	// these are the settings used in VMware Cloud Director
+	passwd, err := util.GeneratePassword(15, 5, 3, false, false)
 	if err != nil {
 		return govcd.Task{}, fmt.Errorf("failed to generate a password to create a VM in the VApp [%s]", vApp.VApp.Name)
 	}
