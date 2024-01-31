@@ -115,8 +115,8 @@ rc-build: gobuild
 .PHONY: docker-archive
 docker-archive:
 	mkdir -p build/docker
-	docker save -o build/docker/$(CPI_IMG)_$(VERSION).tar projects-stg.registry.vmware.com/vmware-cloud-director/$(CPI_IMG):$(VERSION)
-	docker save -o build/docker/$(ARTIFACT_IMG)_$(VERSION).tar projects-stg.registry.vmware.com/vmware-cloud-director/$(ARTIFACT_IMG):$(VERSION)
+	docker save -o build/docker/$(CPI_IMG)_$(VERSION).tar $(CPI_IMG):$(VERSION)
+	docker save -o build/docker/$(ARTIFACT_IMG)_$(VERSION).tar $(ARTIFACT_IMG):$(VERSION)
 	gzip build/docker/$(CPI_IMG)_$(VERSION).tar
 	gzip build/docker/$(ARTIFACT_IMG)_$(VERSION).tar
 
