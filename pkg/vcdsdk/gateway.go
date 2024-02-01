@@ -1465,6 +1465,9 @@ func (gm *GatewayManager) IsNSXTBackedGateway() bool {
 
 func (gm *GatewayManager) IsUsingIpSpaces() (bool, error) {
 	vdc := gm.Client.VDC
+	if vdc == nil {
+		return false, fmt.Errorf("nil VDC object in client")
+	}
 	edgeGatewayName, err := vdc.FindEdgeGatewayNameByNetwork(gm.NetworkName)
 	if err != nil {
 		return false, err
@@ -1475,11 +1478,19 @@ func (gm *GatewayManager) IsUsingIpSpaces() (bool, error) {
 	}
 
 	edgeGatewayUplinks := edgeGateway.EdgeGateway.EdgeGatewayUplinks
-	if len(edgeGatewayUplinks) != 1 {
-		return false, fmt.Errorf("found Multiple uplinks for gateway `%s`, expecting 1", edgeGatewayName)
+	if edgeGatewayUplinks != nil {
+		if len(edgeGatewayUplinks) != 1 {
+			return false, fmt.Errorf("found invalid number of uplinks for gateway `%s`, expecting 1", edgeGatewayName)
+		}
+	} else {
+		return false, fmt.Errorf("no uplinks were found for gateway `%s`, expecting 1", edgeGatewayName)
 	}
 
-	return *edgeGatewayUplinks[0].UsingIpSpace, nil
+	result := edgeGatewayUplinks[0].UsingIpSpace
+	if result == nil {
+		return false, fmt.Errorf("unable to determine if gateway is using IP spaces or not")
+	}
+	return *result, nil
 }
 
 func (gm *GatewayManager) GetLoadBalancerPool(ctx context.Context, lbPoolName string) (*swaggerClient.EntityReference, error) {
