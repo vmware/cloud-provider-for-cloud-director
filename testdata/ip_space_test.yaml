@@ -1,0 +1,7 @@
+# This file contains the information required for running IP space related tests
+username:               "tenant_user"
+userOrg:                "tenant-org"
+refreshToken:           "secret"
+orgvdc:                 "tenant-vdc"
+orgvdcNetworkIpSpace:   "tenant-orgvdc-network-uses-ip-space"  # must be backed by IP spaces
+orgvdcNetowrkNoIpSpace: "tenant-orgvdc-network-uses-ip-block" # must be backed by IP blocks
