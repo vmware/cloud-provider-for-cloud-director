@@ -19,16 +19,16 @@ var (
 )
 
 type VcdConfig struct {
-	Host             string `yaml:"host"`
-	TenantOrg        string `yaml:"tenantOrg"`
-	TenantVdc        string `yaml:"tenantVdc"`
-	OvdcNetwork      string `yaml:"ovdcNetwork"`
-	User             string `yaml:"user"`
-	UserOrg          string `yaml:"userOrg"`
-	Password         string `yaml:"password"`
-	RefreshToken     string `yaml:"refreshToken"`
-	VIPSubnet        string `yaml:"vipSubnet"`
-	CertificateAlias string `yaml:"certificateAlias"`
+	Host               string `yaml:"host"`
+	TenantOrg          string `yaml:"tenantOrg"`
+	TenantVdc          string `yaml:"tenantVdc"`
+	OvdcNetwork        string `yaml:"ovdcNetwork"`
+	User               string `yaml:"user"`
+	UserOrg            string `yaml:"userOrg"`
+	Password           string `yaml:"password"`
+	RefreshToken       string `yaml:"refreshToken"`
+	VIPSubnet          string `yaml:"vipSubnet"`
+	CertificateAlias   string `yaml:"certificateAlias"`
 	ClusterID          string `yaml:"clusterID"`
 	FreeLoadBalancerIP string `yaml:"freeLoadBalancerIP"`
 }
@@ -41,6 +41,15 @@ type authorizationDetails struct {
 	SystemUser             string `yaml:"systemUser"`
 	SystemUserPassword     string `yaml:"systemUserPassword"`
 	SystemUserRefreshToken string `yaml:"systemUserRefreshToken"`
+}
+
+type ipSpaceDetails struct {
+	Username               string `yaml:"username"`
+	UserOrg                string `yaml:"userOrg"`
+	RefreshToken           string `yaml:"refreshToken"`
+	Orgvdc                 string `yaml:"orgvdc"`
+	OrgvdcNetworkIpSpace   string `yaml:"orgvdcNetworkIpSpace"`
+	OrgvdcNetworkNoIpSpace string `yaml:"orgvdcNetowrkNoIpSpace"`
 }
 
 func init() {
