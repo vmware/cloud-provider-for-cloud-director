@@ -17,6 +17,7 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/govcd"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"k8s.io/klog"
+	"math"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -1948,4 +1949,41 @@ func (gm *GatewayManager) UpdateLoadBalancer(ctx context.Context, lbPoolName str
 		return "", fmt.Errorf("failed to get virtual service summary for the virtual service with name [%s]", virtualServiceName)
 	}
 	return vsSummary.VirtualIpAddress, nil
+}
+
+func (gm *GatewayManager) FetchIpSpacesBackingGateway(ctx context.Context) ([]string, error) {
+	ipSpaceService := gm.Client.APIClient.IpSpacesApi
+
+	filterString := fmt.Sprintf("gatewayId==%s", gm.GatewayRef.Id)
+	options := swaggerClient.IpSpacesApiGetFloatingIpSuggestionsOpts{Filter: optional.NewString(filterString), SortAsc: optional.NewString("ipSpaceRef.name"), SortDesc: optional.EmptyString()}
+	var pageSize int32 = 10
+	var pageNum int32 = 1
+	var resultTotal int32 = math.MaxInt32
+
+	var ipSpaceIds []string
+	for int32(math.Ceil(float64(resultTotal)/float64(pageSize))) >= pageNum {
+		suggestions, _, err := ipSpaceService.GetFloatingIpSuggestions(ctx, pageNum, pageSize, &options)
+		if err != nil {
+			return nil, err
+		}
+		resultTotal = suggestions.ResultTotal
+
+		if suggestions.Values != nil {
+			if len(suggestions.Values) == 0 {
+				break
+			}
+			for _, element := range suggestions.Values {
+				ipSpaceRef := element.IpSpaceRef
+				if ipSpaceRef != nil {
+					ipSpaceIds = append(ipSpaceIds, ipSpaceRef.Id)
+				}
+			}
+		} else {
+			return nil, fmt.Errorf("invalid values in page %d (pageSize %d) of GetFloatingIpSuggestions call for gateway %s", pageNum, pageSize, gm.NetworkName)
+		}
+
+		pageNum += 1
+	}
+
+	return ipSpaceIds, nil
 }
