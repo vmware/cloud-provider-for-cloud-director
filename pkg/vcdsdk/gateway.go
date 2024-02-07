@@ -1951,6 +1951,8 @@ func (gm *GatewayManager) UpdateLoadBalancer(ctx context.Context, lbPoolName str
 	return vsSummary.VirtualIpAddress, nil
 }
 
+// FetchIpSpacesBackingGateway Fetch list of Ip Spaces (via Id) accessible to the gateway
+// If gateway is not using Ip Spaces, error would be generated that will contain the underlying VCD 403 error.
 func (gm *GatewayManager) FetchIpSpacesBackingGateway(ctx context.Context) ([]string, error) {
 	ipSpaceService := gm.Client.APIClient.IpSpacesApi
 
@@ -1960,11 +1962,11 @@ func (gm *GatewayManager) FetchIpSpacesBackingGateway(ctx context.Context) ([]st
 	var pageNum int32 = 1
 	var resultTotal int32 = math.MaxInt32
 
-	var ipSpaceIds []string
+	ipSpaceIds := make([]string, 0)
 	for int32(math.Ceil(float64(resultTotal)/float64(pageSize))) >= pageNum {
 		suggestions, _, err := ipSpaceService.GetFloatingIpSuggestions(ctx, pageNum, pageSize, &options)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("unable to get floating IP suggestion for gateway [%s] : [%v]", gm.GatewayRef.Name, err)
 		}
 		resultTotal = suggestions.ResultTotal
 

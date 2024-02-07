@@ -13,6 +13,7 @@ import (
 	"gopkg.in/yaml.v2"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -30,8 +31,10 @@ func TestGatewayUsingIpSpaces(t *testing.T) {
 
 	vcdClient, err := getTestVCDClient(vcdConfig, map[string]interface{}{
 		"user":         testData.Username,
-		"refreshToken": testData.RefreshToken,
 		"userOrg":      testData.UserOrg,
+		"refreshToken": testData.RefreshToken,
+		"org":          testData.UserOrg,
+		"vdc":          testData.Orgvdc,
 		"getVdcClient": true,
 	})
 	assert.NoError(t, err, "Unable to get VCD client")
@@ -68,8 +71,10 @@ func TestFetchIpSpacesBackingGateway(t *testing.T) {
 
 	vcdClient, err := getTestVCDClient(vcdConfig, map[string]interface{}{
 		"user":         testData.Username,
-		"refreshToken": testData.RefreshToken,
 		"userOrg":      testData.UserOrg,
+		"refreshToken": testData.RefreshToken,
+		"org":          testData.UserOrg,
+		"vdc":          testData.Orgvdc,
 		"getVdcClient": true,
 	})
 	assert.NoError(t, err, "Unable to get VCD client")
@@ -91,5 +96,5 @@ func TestFetchIpSpacesBackingGateway(t *testing.T) {
 	fmt.Println("Calling FetchIpSpacesBackingGateway for gateway using Ip blocks")
 	result, err = gm2.FetchIpSpacesBackingGateway(ctx)
 	assert.Error(t, err, "Expected error calling method IsUsingIpSpaces for network %s", testData.OrgvdcNetworkNoIpSpace)
-	assert.Equalf(t, "403 Forbidden", err.Error(), "Expected '403 forbidden' error found %s", err.Error())
+	assert.True(t, strings.Contains(err.Error(), "403 Forbidden"), "Expected '403 forbidden' message in error found %s", err.Error())
 }
