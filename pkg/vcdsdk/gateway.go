@@ -17,6 +17,7 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/govcd"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"k8s.io/klog"
+	"math"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -1948,4 +1949,41 @@ func (gm *GatewayManager) UpdateLoadBalancer(ctx context.Context, lbPoolName str
 		return "", fmt.Errorf("failed to get virtual service summary for the virtual service with name [%s]", virtualServiceName)
 	}
 	return vsSummary.VirtualIpAddress, nil
+}
+
+// FetchIpSpacesBackingGateway Fetch list of Ip Spaces (via Id) accessible to the gateway
+// If gateway is not using Ip Spaces, error would be generated that will contain the underlying VCD 403 error.
+func (gm *GatewayManager) FetchIpSpacesBackingGateway(ctx context.Context) ([]string, error) {
+	ipSpaceService := gm.Client.APIClient.IpSpacesApi
+
+	filterString := fmt.Sprintf("gatewayId==%s", gm.GatewayRef.Id)
+	options := swaggerClient.IpSpacesApiGetFloatingIpSuggestionsOpts{Filter: optional.NewString(filterString), SortAsc: optional.NewString("ipSpaceRef.name"), SortDesc: optional.EmptyString()}
+	var pageSize int32 = 10
+	var pageNum int32 = 1
+	var resultTotal int32 = math.MaxInt32
+
+	ipSpaceIds := make([]string, 0)
+	for int32(math.Ceil(float64(resultTotal)/float64(pageSize))) >= pageNum {
+		suggestions, _, err := ipSpaceService.GetFloatingIpSuggestions(ctx, pageNum, pageSize, &options)
+		if err != nil {
+			return nil, fmt.Errorf("unable to get floating IP suggestion for gateway [%s] : [%v]", gm.GatewayRef.Name, err)
+		}
+		resultTotal = suggestions.ResultTotal
+
+		// The way swagger client works, it is guaranteed that suggestions.Values will never be nil,
+		// at worst it will be [], in which case we should bail out and not try to fetch more pages.
+		if len(suggestions.Values) == 0 {
+			break
+		}
+		for _, element := range suggestions.Values {
+			ipSpaceRef := element.IpSpaceRef
+			if ipSpaceRef != nil {
+				ipSpaceIds = append(ipSpaceIds, ipSpaceRef.Id)
+			}
+		}
+
+		pageNum += 1
+	}
+
+	return ipSpaceIds, nil
 }
