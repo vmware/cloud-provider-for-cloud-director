@@ -103,6 +103,8 @@ func getTestVCDClient(vcdConfig *VcdConfig, inputMap map[string]interface{}) (*C
 				vcdConfigCopy.Host = getStrValStrict(val, vcdConfigCopy.Host)
 			case "org":
 				vcdConfigCopy.TenantOrg = getStrValStrict(val, vcdConfigCopy.TenantOrg)
+			case "vdc":
+				vcdConfigCopy.TenantVdc = getStrValStrict(val, vcdConfigCopy.TenantVdc)
 			case "user":
 				vcdConfigCopy.User = getStrValStrict(val, vcdConfigCopy.User)
 			case "secret":
