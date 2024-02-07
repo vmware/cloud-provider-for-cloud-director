@@ -1968,18 +1968,16 @@ func (gm *GatewayManager) FetchIpSpacesBackingGateway(ctx context.Context) ([]st
 		}
 		resultTotal = suggestions.ResultTotal
 
-		if suggestions.Values != nil {
-			if len(suggestions.Values) == 0 {
-				break
+		// The way swagger client works, it is guaranteed that suggestions.Values will never be nil,
+		// at worst it will be [], in which case we should bail out and not try to fetch more pages.
+		if len(suggestions.Values) == 0 {
+			break
+		}
+		for _, element := range suggestions.Values {
+			ipSpaceRef := element.IpSpaceRef
+			if ipSpaceRef != nil {
+				ipSpaceIds = append(ipSpaceIds, ipSpaceRef.Id)
 			}
-			for _, element := range suggestions.Values {
-				ipSpaceRef := element.IpSpaceRef
-				if ipSpaceRef != nil {
-					ipSpaceIds = append(ipSpaceIds, ipSpaceRef.Id)
-				}
-			}
-		} else {
-			return nil, fmt.Errorf("invalid values in page %d (pageSize %d) of GetFloatingIpSuggestions call for gateway %s", pageNum, pageSize, gm.NetworkName)
 		}
 
 		pageNum += 1
