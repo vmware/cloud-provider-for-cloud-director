@@ -1464,32 +1464,31 @@ func (gm *GatewayManager) IsNSXTBackedGateway() bool {
 	return isNSXTBackedGateway
 }
 
+// IsUsingIpSpaces Returns true if the gateway is using Ip Spaces, returns false if the gateway is using Ip blocks
+// in case the code is unable to determine the required info, it will return false with an error.
 func (gm *GatewayManager) IsUsingIpSpaces() (bool, error) {
+	edgeGatewayName := gm.GatewayRef.Name
 	vdc := gm.Client.VDC
 	if vdc == nil {
-		return false, fmt.Errorf("nil VDC object in client")
-	}
-	edgeGatewayName, err := vdc.FindEdgeGatewayNameByNetwork(gm.NetworkName)
-	if err != nil {
-		return false, err
+		return false, fmt.Errorf("unable to determine if gateway [%s] is using Ip Spaces or not. nil VDC object in client", edgeGatewayName)
 	}
 	edgeGateway, err := vdc.GetNsxtEdgeGatewayByName(edgeGatewayName)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("unable to determine if gateway [%s] is using Ip Spaces or not. error [%v]", edgeGatewayName, err)
 	}
 
 	edgeGatewayUplinks := edgeGateway.EdgeGateway.EdgeGatewayUplinks
 	if edgeGatewayUplinks != nil {
 		if len(edgeGatewayUplinks) != 1 {
-			return false, fmt.Errorf("found invalid number of uplinks for gateway `%s`, expecting 1", edgeGatewayName)
+			return false, fmt.Errorf("found invalid number of uplinks for gateway [%s], expecting 1", edgeGatewayName)
 		}
 	} else {
-		return false, fmt.Errorf("no uplinks were found for gateway `%s`, expecting 1", edgeGatewayName)
+		return false, fmt.Errorf("no uplinks were found for gateway [%s], expecting 1", edgeGatewayName)
 	}
 
 	result := edgeGatewayUplinks[0].UsingIpSpace
 	if result == nil {
-		return false, fmt.Errorf("unable to determine if gateway is using IP spaces or not")
+		return false, fmt.Errorf("unable to determine if gateway [%s] is using IP spaces or not", edgeGatewayName)
 	}
 	return *result, nil
 }
@@ -1951,7 +1950,7 @@ func (gm *GatewayManager) UpdateLoadBalancer(ctx context.Context, lbPoolName str
 	return vsSummary.VirtualIpAddress, nil
 }
 
-// FetchIpSpacesBackingGateway Fetch list of Ip Spaces (via Id) accessible to the gateway
+// FetchIpSpacesBackingGateway Fetch list of Ip Spaces (Id) accessible to the gateway
 // If gateway is not using Ip Spaces, error would be generated that will contain the underlying VCD 403 error.
 func (gm *GatewayManager) FetchIpSpacesBackingGateway(ctx context.Context) ([]string, error) {
 	ipSpaceService := gm.Client.APIClient.IpSpacesApi
@@ -1986,4 +1985,132 @@ func (gm *GatewayManager) FetchIpSpacesBackingGateway(ctx context.Context) ([]st
 	}
 
 	return ipSpaceIds, nil
+}
+
+// FilterIpSpacesByType Takes in a list of Ip Space Ids and returns a list of govcd.IpSpace pointers that match the
+// filter value of "type". Valid value for "type" = ["PUBLIC" (types.IpSpacePublic), "PRIVATE" (types.IpSpacePrivate)]
+func (gm *GatewayManager) FilterIpSpacesByType(ipSpaceIds []string, ipSpaceType string) ([]*govcd.IpSpace, error) {
+	if (ipSpaceType != types.IpSpacePublic) && (ipSpaceType != types.IpSpacePrivate) {
+		return nil, fmt.Errorf("invalid type [%s] specified, expecting value from [PUBLIC, PRIVATE]", ipSpaceType)
+	}
+	if ipSpaceIds == nil {
+		ipSpaceIds = make([]string, 0)
+	}
+
+	filteredIpSpaces := make([]*govcd.IpSpace, 0)
+	for _, ipSpaceId := range ipSpaceIds {
+		ipSpace, err := gm.Client.VCDClient.GetIpSpaceById(ipSpaceId)
+		if err != nil {
+			return nil, fmt.Errorf("unable to fetch details of Ip Space with id [%s], error [%v]", ipSpaceId, err)
+		}
+		if ipSpace.IpSpace.Type == ipSpaceType {
+			filteredIpSpaces = append(filteredIpSpaces, ipSpace)
+		}
+	}
+
+	return filteredIpSpaces, nil
+}
+
+// AllocateIpFromIpSpace Allocates a floating IP from a given Ip Space
+// returns the allocation Id, and allocated Ip on success
+// Note : the return types are string because there is no way to convert
+// IpSpaceIpAllocationRequestResult (output of org.IpSpaceAllocateIp) into an IpSpaceIpAllocation object
+func (gm *GatewayManager) AllocateIpFromIpSpace(ipSpace *govcd.IpSpace) (string, string, error) {
+	org, err := gm.Client.VCDClient.GetOrgByName(gm.Client.ClusterOrgName)
+	if err != nil {
+		return "", "", fmt.Errorf("unable to allocate floating Ip from Ip Space [%s]. error [%v]", ipSpace.IpSpace.Name, err)
+	}
+
+	val := 1
+	request := types.IpSpaceIpAllocationRequest{
+		Type:     types.IpSpaceIpAllocationTypeFloatingIp,
+		Quantity: &val,
+	}
+	result, err := org.IpSpaceAllocateIp(ipSpace.IpSpace.ID, &request)
+
+	if err != nil {
+		return "", "", fmt.Errorf("unable to allocate floating IP from Ip Space [%s]. error [%v]", ipSpace.IpSpace.Name, err)
+	}
+
+	if result == nil || len(result) != 1 {
+		return "", "", fmt.Errorf("unable to allocate exactly 1 floating Ip from Ip Space [%s]", ipSpace.IpSpace.Name)
+	}
+
+	return result[0].ID, result[0].Value, nil
+}
+
+func (gm *GatewayManager) FindIpAllocationByIp(ipSpace *govcd.IpSpace, allocatedIp string) (*govcd.IpSpaceIpAllocation, error) {
+	queryParams := url.Values{}
+	queryParams.Set("filter", fmt.Sprintf("value==%s", allocatedIp))
+
+	allocations, err := ipSpace.GetAllIpSpaceAllocations(types.IpSpaceIpAllocationTypeFloatingIp, queryParams)
+	if err != nil {
+		return nil, fmt.Errorf("unable to find allocation in Ip Space [%s], correspnding to Ip [%s]. error [%v]", ipSpace.IpSpace.Name, allocatedIp, err)
+	}
+
+	// If no allocations were made on the Ip Space with the specified Ip, it is valid to return no result with no error
+	// This use case is important for us, hence skipping using GetIpSpaceAllocationByTypeAndValue
+	if allocations == nil || len(allocations) == 0 {
+		return nil, nil
+	}
+
+	if len(allocations) == 1 {
+		return allocations[0], nil
+	}
+
+	// Ideally we should never reach here, since VCD shouldn't make multiple allocations for the same IP
+	return nil, fmt.Errorf("found multiple allocations in Ip Space [%s] for Ip [%s]", ipSpace.IpSpace.Name, allocatedIp)
+}
+
+// FindIpAllocationByMarker We are adding info in the description of IpAllocation
+// to record that particular allocation was made by a CSE cluster. This method finds an
+// allocation corresponding to the previously stored description
+func (gm *GatewayManager) FindIpAllocationByMarker(ipSpace *govcd.IpSpace, marker string) (*govcd.IpSpaceIpAllocation, error) {
+	queryParams := url.Values{}
+	queryParams.Set("filter", fmt.Sprintf("usageState==%s", types.IpSpaceIpAllocationUsedManual))
+
+	allocations, err := ipSpace.GetAllIpSpaceAllocations(types.IpSpaceIpAllocationTypeFloatingIp, queryParams)
+	if err != nil {
+		return nil, fmt.Errorf("unable to find allocation in Ip Space [%s], correspnding to marker [%s]. error [%v]", ipSpace.IpSpace.Name, marker, err)
+	}
+
+	// If no allocations were made on the Ip Space, it is valid to return no result without error
+	if allocations == nil || len(allocations) == 0 {
+		return nil, nil
+	}
+
+	for _, allocation := range allocations {
+		if allocation.IpSpaceIpAllocation.Description == marker {
+			return allocation, nil
+		}
+	}
+
+	// If no allocation with the marker is found it is ok to return back with no result and no error
+	return nil, nil
+}
+
+// MarkIpAsUsed We are adding info in the description  of IpAllocation
+// to track that particular allocation was made by CSE cluster. This method updates
+// the state and description of an allocation to mark the cluster which owns the allocation.
+func (gm *GatewayManager) MarkIpAsUsed(ipAllocation *govcd.IpSpaceIpAllocation, marker string) (*govcd.IpSpaceIpAllocation, error) {
+	updateConfig := ipAllocation.IpSpaceIpAllocation
+	updateConfig.UsageState = types.IpSpaceIpAllocationUsedManual
+	updateConfig.Description = marker
+
+	return ipAllocation.Update(updateConfig)
+}
+
+// MarkIpAsUnused We are adding info in the description  of IpAllocation
+// to track that particular allocation was made by CSE cluster. This method updates
+// the state and description of an allocation to mark that the cluster no longer owns the allocation.
+func (gm *GatewayManager) MarkIpAsUnused(ipAllocation *govcd.IpSpaceIpAllocation) (*govcd.IpSpaceIpAllocation, error) {
+	updateConfig := ipAllocation.IpSpaceIpAllocation
+	updateConfig.UsageState = types.IpSpaceIpAllocationUnused
+	updateConfig.Description = ""
+
+	return ipAllocation.Update(updateConfig)
+}
+
+func (gm *GatewayManager) ReleaseIp(ipSpaceAllocation *govcd.IpSpaceIpAllocation) error {
+	return ipSpaceAllocation.Delete()
 }
