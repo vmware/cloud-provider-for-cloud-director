@@ -407,7 +407,7 @@ func (lb *LBManager) getVirtualServicePrefix(_ context.Context, service *v1.Serv
 // cluster Id, which allows CPI to uniquely mark an IP Allocation (from an Ip Space) being owned
 // by a particular service running on a specific cluster under a specific namespace
 func (lb *LBManager) getLoadBalancerIpClaimMarker(_ context.Context, service *v1.Service) string {
-	return fmt.Sprintf("cluster-%s-namespace-%s-service-%s", lb.clusterID, service.Namespace, service.Name)
+	return fmt.Sprintf("cluster-%s-namespace-%s-service-%s", lb.getTrimmedClusterID(), service.Namespace, service.Name)
 }
 
 // GetLoadBalancerName returns the name of the load balancer. Implementations must treat the

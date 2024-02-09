@@ -2189,11 +2189,13 @@ func (gm *GatewayManager) reserveIpForLoadBalancer(ctx context.Context, claimMar
 
 		ipSpaceAllocation, err := gm.FindIpAllocationByIp(ipSpace, allocatedIp)
 		if err != nil || ipSpaceAllocation == nil {
+			klog.Infof("leaked IP [%s] from Ip Space [%s]", allocatedIp, ipSpace.IpSpace.Name)
 			return "", fmt.Errorf("unable to resrve IP from Ip Space [%s]. error [%v]", ipSpace.IpSpace.Name, err)
 		}
 
 		_, err = gm.MarkIpAsUsed(ipSpaceAllocation, claimMarker)
 		if err != nil {
+			klog.Infof("leaked IP [%s] from Ip Space [%s]", allocatedIp, ipSpace.IpSpace.Name)
 			return "", fmt.Errorf("unable to resrve IP from Ip Space [%s]. error [%v]", ipSpace.IpSpace.Name, err)
 		}
 		return ipSpaceAllocation.IpSpaceIpAllocation.Value, nil
