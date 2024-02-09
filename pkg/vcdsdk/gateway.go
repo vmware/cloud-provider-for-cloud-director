@@ -1530,7 +1530,8 @@ func (gm *GatewayManager) GetLoadBalancerPoolMemberIPs(ctx context.Context, lbPo
 	return memberIPs, nil
 }
 
-func (gm *GatewayManager) CreateLoadBalancer(ctx context.Context, virtualServiceNamePrefix string, lbPoolNamePrefix string,
+func (gm *GatewayManager) CreateLoadBalancer(
+	ctx context.Context, virtualServiceNamePrefix string, lbPoolNamePrefix string, lbIpClaimMarker string,
 	ips []string, portDetailsList []PortDetails, oneArm *OneArm, enableVirtualServiceSharedIP bool,
 	portNameToIP map[string]string, providedIP string, resourcesAllocated *util.AllocatedResourcesMap) (string, error) {
 	if len(portDetailsList) == 0 {
@@ -1614,10 +1615,21 @@ func (gm *GatewayManager) CreateLoadBalancer(ctx context.Context, virtualService
 	}
 
 	if externalIP == "" {
-		externalIP, err = gm.GetUnusedExternalIPAddress(ctx, gm.IPAMSubnet)
+		isGatewayUsingIpSpaces, err := gm.IsUsingIpSpaces()
 		if err != nil {
-			return "", fmt.Errorf("unable to get unused IP address from subnet [%s]: [%v]",
-				gm.IPAMSubnet, err)
+			return "", fmt.Errorf("unable to create load balancer. err [%v]", err)
+		}
+		if isGatewayUsingIpSpaces {
+			externalIP, err = gm.reserveIpForLoadBalancer(ctx, lbIpClaimMarker)
+			if err != nil {
+				return "", fmt.Errorf("unable to reservce IP address for load balancer. error [%v]", err)
+			}
+		} else {
+			externalIP, err = gm.GetUnusedExternalIPAddress(ctx, gm.IPAMSubnet)
+			if err != nil {
+				return "", fmt.Errorf("unable to get unused IP address from subnet [%s]: [%v]",
+					gm.IPAMSubnet, err)
+			}
 		}
 	}
 	klog.Infof("Using VIP [%s] for virtual service\n", externalIP)
@@ -2134,4 +2146,59 @@ func (gm *GatewayManager) ReleaseIp(ipSpaceAllocation *govcd.IpSpaceIpAllocation
 		return fmt.Errorf("unable to release Ip Allocation [nil]")
 	}
 	return ipSpaceAllocation.Delete()
+}
+
+// reserveIpForLoadBalancer will scan through all Ip Spaces available to the gateway for an existing allocation
+// (description of allocation will contain cluster id, service name and namespace). If such an allocation can't be
+// retrieved, a new Ip Allocation will be attempted against all Ip Spaces, sequentially. The first Ip Space that allows
+// the reservation to go through, will conclude the process. The allocation will be moved to USED_MANUAL state and its
+// description will be updated to mark a claim. The allocated Ip will be returned. If all Ip Spaces reject the
+// allocation request, this method will return an error
+func (gm *GatewayManager) reserveIpForLoadBalancer(ctx context.Context, claimMarker string) (string, error) {
+	ipSpaceIds, err := gm.FetchIpSpacesBackingGateway(ctx)
+	if err != nil {
+		return "", fmt.Errorf("unable to resrve IP from Ip Space. error [%v]", err)
+	}
+
+	publicIpSpaces, err := gm.FilterIpSpacesByType(ipSpaceIds, types.IpSpacePublic)
+	if err != nil {
+		return "", fmt.Errorf("unable to resrve IP from Ip Space. error [%v]", err)
+	}
+
+	for _, ipSpace := range publicIpSpaces {
+		ipSpaceAllocation, err := gm.FindIpAllocationByMarker(ipSpace, claimMarker)
+		if err != nil {
+			return "", fmt.Errorf("unable to resrve IP from Ip Space [%s]. error [%v]", ipSpace.IpSpace.Name, err)
+		}
+		// Found an existing allocation for this particular service
+		if ipSpaceAllocation != nil {
+			return ipSpaceAllocation.IpSpaceIpAllocation.Value, nil
+		}
+	}
+
+	// if we haven't found any allocation yet on all accessible Ip Spaces, we need to create a new allocation
+	// NOTE: The allocation mechanism needs two calls to VCD and should be treated like a critical section
+	// Under most circumstances two instances of CPI will not try to create a lb for a service, so we should be good.
+	for _, ipSpace := range publicIpSpaces {
+		_, allocatedIp, err := gm.AllocateIpFromIpSpace(ipSpace)
+		if err != nil {
+			// don't give up yet, allocation can fail because Ip Space has no free Ip, try the next Ip Space
+			klog.Infof("unable to resrve IP from Ip Space [%s]. error [%v]. will try next ip Space.", ipSpace.IpSpace.Name, err)
+			continue
+		}
+
+		ipSpaceAllocation, err := gm.FindIpAllocationByIp(ipSpace, allocatedIp)
+		if err != nil || ipSpaceAllocation == nil {
+			return "", fmt.Errorf("unable to resrve IP from Ip Space [%s]. error [%v]", ipSpace.IpSpace.Name, err)
+		}
+
+		_, err = gm.MarkIpAsUsed(ipSpaceAllocation, claimMarker)
+		if err != nil {
+			return "", fmt.Errorf("unable to resrve IP from Ip Space [%s]. error [%v]", ipSpace.IpSpace.Name, err)
+		}
+		return ipSpaceAllocation.IpSpaceIpAllocation.Value, nil
+	}
+
+	// Was unable to reserve an Ip on any of the available Ip Spaces
+	return "", fmt.Errorf("unable to reserve Ip from any available Ip spaces")
 }

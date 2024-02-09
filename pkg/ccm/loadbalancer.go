@@ -403,6 +403,13 @@ func (lb *LBManager) getVirtualServicePrefix(_ context.Context, service *v1.Serv
 	return fmt.Sprintf("ingress-vs-%s-%s", service.Name, lb.getTrimmedClusterID())
 }
 
+// getLoadBalancerIpClaimMarker returns a string comprising the service namespace, service name and
+// cluster Id, which allows CPI to uniquely mark an IP Allocation (from an Ip Space) being owned
+// by a particular service running on a specific cluster under a specific namespace
+func (lb *LBManager) getLoadBalancerIpClaimMarker(_ context.Context, service *v1.Service) string {
+	return fmt.Sprintf("cluster-%s-namespace-%s-service-%s", lb.clusterID, service.Namespace, service.Name)
+}
+
 // GetLoadBalancerName returns the name of the load balancer. Implementations must treat the
 // *v1.Service parameter as read-only and not modify it.
 func (lb *LBManager) GetLoadBalancerName(ctx context.Context, clusterName string, service *v1.Service) string {
@@ -521,9 +528,11 @@ func getUserSpecifiedLoadBalancerIP(service *v1.Service) string {
 func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service,
 	nodeIPs []string) (*v1.LoadBalancerStatus, error) {
 
+	lbIpClaimMarker := lb.getLoadBalancerIpClaimMarker(ctx, service)
 	lbPoolNamePrefix := lb.getLBPoolNamePrefix(ctx, service)
 	virtualServiceNamePrefix := lb.getVirtualServicePrefix(ctx, service)
 	lbStatus, portNameToIPMap, err := lb.getLoadBalancer(ctx, service)
+
 	rdeManager := vcdsdk.NewRDEManager(lb.vcdClient, lb.clusterID, release.CloudControllerManagerName, release.Version)
 	cpiRdeManager := cpisdk.NewCPIRDEManager(rdeManager)
 	if err != nil {
@@ -675,7 +684,7 @@ func (lb *LBManager) createLoadBalancer(ctx context.Context, service *v1.Service
 	klog.Infof("Creating loadbalancer for ports [%#v]\n", portDetailsList)
 	// Create using VCD API
 	resourcesAllocated := &util.AllocatedResourcesMap{}
-	lbIP, err := gm.CreateLoadBalancer(ctx, virtualServiceNamePrefix, lbPoolNamePrefix, nodeIPs, portDetailsList,
+	lbIP, err := gm.CreateLoadBalancer(ctx, virtualServiceNamePrefix, lbPoolNamePrefix, lbIpClaimMarker, nodeIPs, portDetailsList,
 		lb.OneArm, lb.EnableVirtualServiceSharedIP, portNameToIPMap, userSpecifiedLBIP, resourcesAllocated)
 	if rdeErr := lb.addLBResourcesToRDE(ctx, resourcesAllocated, lbIP); rdeErr != nil {
 		return nil, fmt.Errorf("unable to add load balancer pool resources to RDE [%s]: [%v]", lb.clusterID, err)
