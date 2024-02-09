@@ -2016,6 +2016,10 @@ func (gm *GatewayManager) FilterIpSpacesByType(ipSpaceIds []string, ipSpaceType 
 // Note : the return types are string because there is no way to convert
 // IpSpaceIpAllocationRequestResult (output of org.IpSpaceAllocateIp) into an IpSpaceIpAllocation object
 func (gm *GatewayManager) AllocateIpFromIpSpace(ipSpace *govcd.IpSpace) (string, string, error) {
+	if ipSpace == nil {
+		return "", "", fmt.Errorf("unable to allocate floating Ip from Ip Space [nil]")
+	}
+
 	org, err := gm.Client.VCDClient.GetOrgByName(gm.Client.ClusterOrgName)
 	if err != nil {
 		return "", "", fmt.Errorf("unable to allocate floating Ip from Ip Space [%s]. error [%v]", ipSpace.IpSpace.Name, err)
@@ -2039,7 +2043,12 @@ func (gm *GatewayManager) AllocateIpFromIpSpace(ipSpace *govcd.IpSpace) (string,
 	return result[0].ID, result[0].Value, nil
 }
 
+// FindIpAllocationByIp Finds an IP allocation in the given Ip Space that matches the provided IP address
+// returns no error if no such allocation is found
 func (gm *GatewayManager) FindIpAllocationByIp(ipSpace *govcd.IpSpace, allocatedIp string) (*govcd.IpSpaceIpAllocation, error) {
+	if ipSpace == nil {
+		return nil, fmt.Errorf("unable to find allocation for floating Ip [%s] in Ip Space [%s]", allocatedIp, ipSpace.IpSpace.Name)
+	}
 	queryParams := url.Values{}
 	queryParams.Set("filter", fmt.Sprintf("value==%s", allocatedIp))
 
@@ -2049,7 +2058,7 @@ func (gm *GatewayManager) FindIpAllocationByIp(ipSpace *govcd.IpSpace, allocated
 	}
 
 	// If no allocations were made on the Ip Space with the specified Ip, it is valid to return no result with no error
-	// This use case is important for us, hence skipping using GetIpSpaceAllocationByTypeAndValue
+	// This use case is important for us, hence skipping GetIpSpaceAllocationByTypeAndValue
 	if allocations == nil || len(allocations) == 0 {
 		return nil, nil
 	}
@@ -2066,6 +2075,9 @@ func (gm *GatewayManager) FindIpAllocationByIp(ipSpace *govcd.IpSpace, allocated
 // to record that particular allocation was made by a CSE cluster. This method finds an
 // allocation corresponding to the previously stored description
 func (gm *GatewayManager) FindIpAllocationByMarker(ipSpace *govcd.IpSpace, marker string) (*govcd.IpSpaceIpAllocation, error) {
+	if ipSpace == nil {
+		return nil, fmt.Errorf("unable to find allocation for marker [%s] in Ip Space [%s]", marker, ipSpace.IpSpace.Name)
+	}
 	queryParams := url.Values{}
 	queryParams.Set("filter", fmt.Sprintf("usageState==%s", types.IpSpaceIpAllocationUsedManual))
 
@@ -2092,25 +2104,34 @@ func (gm *GatewayManager) FindIpAllocationByMarker(ipSpace *govcd.IpSpace, marke
 // MarkIpAsUsed We are adding info in the description  of IpAllocation
 // to track that particular allocation was made by CSE cluster. This method updates
 // the state and description of an allocation to mark the cluster which owns the allocation.
-func (gm *GatewayManager) MarkIpAsUsed(ipAllocation *govcd.IpSpaceIpAllocation, marker string) (*govcd.IpSpaceIpAllocation, error) {
-	updateConfig := ipAllocation.IpSpaceIpAllocation
+func (gm *GatewayManager) MarkIpAsUsed(ipSpaceAllocation *govcd.IpSpaceIpAllocation, marker string) (*govcd.IpSpaceIpAllocation, error) {
+	if ipSpaceAllocation == nil {
+		return nil, fmt.Errorf("unable to mark Ip Allocation [%s] as used, via marker [%s]", ipSpaceAllocation.IpSpaceIpAllocation.ID, marker)
+	}
+	updateConfig := ipSpaceAllocation.IpSpaceIpAllocation
 	updateConfig.UsageState = types.IpSpaceIpAllocationUsedManual
 	updateConfig.Description = marker
 
-	return ipAllocation.Update(updateConfig)
+	return ipSpaceAllocation.Update(updateConfig)
 }
 
 // MarkIpAsUnused We are adding info in the description  of IpAllocation
 // to track that particular allocation was made by CSE cluster. This method updates
 // the state and description of an allocation to mark that the cluster no longer owns the allocation.
-func (gm *GatewayManager) MarkIpAsUnused(ipAllocation *govcd.IpSpaceIpAllocation) (*govcd.IpSpaceIpAllocation, error) {
-	updateConfig := ipAllocation.IpSpaceIpAllocation
+func (gm *GatewayManager) MarkIpAsUnused(ipSpaceAllocation *govcd.IpSpaceIpAllocation) (*govcd.IpSpaceIpAllocation, error) {
+	if ipSpaceAllocation == nil {
+		return nil, fmt.Errorf("unable to mark IP allocation [%s] as unused", ipSpaceAllocation.IpSpaceIpAllocation.ID)
+	}
+	updateConfig := ipSpaceAllocation.IpSpaceIpAllocation
 	updateConfig.UsageState = types.IpSpaceIpAllocationUnused
 	updateConfig.Description = ""
 
-	return ipAllocation.Update(updateConfig)
+	return ipSpaceAllocation.Update(updateConfig)
 }
 
 func (gm *GatewayManager) ReleaseIp(ipSpaceAllocation *govcd.IpSpaceIpAllocation) error {
+	if ipSpaceAllocation == nil {
+		return fmt.Errorf("unable to release Ip Allocation [%s]", ipSpaceAllocation.IpSpaceIpAllocation.ID)
+	}
 	return ipSpaceAllocation.Delete()
 }

@@ -158,6 +158,12 @@ func TestIpSpaceOperations(t *testing.T) {
 	assert.Equal(t, allocationId, retrievedIpSpaceAllocation.IpSpaceIpAllocation.ID, "")
 	assert.Equal(t, allocatedIp, retrievedIpSpaceAllocation.IpSpaceIpAllocation.Value, "")
 
+	fmt.Println("Calling FindIpAllocationByIp with invalid IP for gateway using Ip Spaces")
+	invalidIp := "0.0.0.0"
+	retrievedIpSpaceAllocation2, err := gm.FindIpAllocationByIp(ipSpace, invalidIp)
+	assert.NoError(t, err, "Error calling method FindIpAllocationByIp for IpSpace [%s], Ip [%s]", ipSpace.IpSpace.Name, invalidIp)
+	assert.Nil(t, retrievedIpSpaceAllocation2)
+
 	dummyMarker := "Dummy Marker"
 	fmt.Println("Calling MarkIpAsUsed for gateway using Ip Spaces")
 	updatedIpSpaceAllocation, err := gm.MarkIpAsUsed(retrievedIpSpaceAllocation, dummyMarker)
@@ -167,15 +173,21 @@ func TestIpSpaceOperations(t *testing.T) {
 	assert.Equal(t, dummyMarker, updatedIpSpaceAllocation.IpSpaceIpAllocation.Description)
 
 	fmt.Println("Calling FindIpAllocationByMarker for gateway using Ip Spaces")
-	retrievedIpSpaceAllocation2, err := gm.FindIpAllocationByMarker(ipSpace, dummyMarker)
-	assert.NoError(t, err, "Error calling method MarkIpAsUsed for Allocation [%s]", retrievedIpSpaceAllocation.IpSpaceIpAllocation.ID)
-	assert.NotNil(t, retrievedIpSpaceAllocation2)
-	assert.Equal(t, retrievedIpSpaceAllocation.IpSpaceIpAllocation.ID, retrievedIpSpaceAllocation2.IpSpaceIpAllocation.ID, "")
-	assert.Equal(t, retrievedIpSpaceAllocation.IpSpaceIpAllocation.Value, retrievedIpSpaceAllocation2.IpSpaceIpAllocation.Value, "")
+	retrievedIpSpaceAllocation3, err := gm.FindIpAllocationByMarker(ipSpace, dummyMarker)
+	assert.NoError(t, err, "Error calling method FindIpAllocationByMarker for Ip Space [%s] with marker [%s]", ipSpace.IpSpace.Name, dummyMarker)
+	assert.NotNil(t, retrievedIpSpaceAllocation3)
+	assert.Equal(t, retrievedIpSpaceAllocation.IpSpaceIpAllocation.ID, retrievedIpSpaceAllocation3.IpSpaceIpAllocation.ID, "")
+	assert.Equal(t, retrievedIpSpaceAllocation.IpSpaceIpAllocation.Value, retrievedIpSpaceAllocation3.IpSpaceIpAllocation.Value, "")
+
+	fmt.Println("Calling FindIpAllocationByMarker with invalid marker for gateway using Ip Spaces")
+	invalidMarker := "invalid"
+	retrievedIpSpaceAllocation4, err := gm.FindIpAllocationByMarker(ipSpace, invalidMarker)
+	assert.NoError(t, err, "Error calling method FindIpAllocationByMarker for Ip Space [%s] with marker [%s]", retrievedIpSpaceAllocation.IpSpaceIpAllocation.ID, invalidMarker)
+	assert.Nil(t, retrievedIpSpaceAllocation4)
 
 	fmt.Println("Calling MarkIpAsUnused for gateway using Ip Spaces")
-	updatedIpSpaceAllocation, err = gm.MarkIpAsUnused(retrievedIpSpaceAllocation2)
-	assert.NoError(t, err, "Error calling method MarkIpAsUnused for Allocation [%s]", retrievedIpSpaceAllocation2.IpSpaceIpAllocation.ID)
+	updatedIpSpaceAllocation, err = gm.MarkIpAsUnused(retrievedIpSpaceAllocation3)
+	assert.NoError(t, err, "Error calling method MarkIpAsUnused for Allocation [%s]", retrievedIpSpaceAllocation3.IpSpaceIpAllocation.ID)
 	assert.NotNil(t, updatedIpSpaceAllocation)
 	assert.Equal(t, types.IpSpaceIpAllocationUnused, updatedIpSpaceAllocation.IpSpaceIpAllocation.UsageState)
 	assert.Equal(t, "", updatedIpSpaceAllocation.IpSpaceIpAllocation.Description)
