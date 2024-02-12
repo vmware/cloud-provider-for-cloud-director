@@ -1620,11 +1620,13 @@ func (gm *GatewayManager) CreateLoadBalancer(
 			return "", fmt.Errorf("unable to create load balancer. err [%v]", err)
 		}
 		if isGatewayUsingIpSpaces {
+			klog.Infof("Determined gateway [%s] is using IP spaces, using IP space specific logic to reserve an IP", gm.GatewayRef.Name)
 			externalIP, err = gm.reserveIpForLoadBalancer(ctx, lbIpClaimMarker)
 			if err != nil {
 				return "", fmt.Errorf("unable to reservce IP address for load balancer. error [%v]", err)
 			}
 		} else {
+			klog.Infof("Determined gateway [%s] is not using IP spaces, using legacy IPAM solution to find a free IP", gm.GatewayRef.Name)
 			externalIP, err = gm.GetUnusedExternalIPAddress(ctx, gm.IPAMSubnet)
 			if err != nil {
 				return "", fmt.Errorf("unable to get unused IP address from subnet [%s]: [%v]",
@@ -2157,18 +2159,18 @@ func (gm *GatewayManager) ReleaseIp(ipSpaceAllocation *govcd.IpSpaceIpAllocation
 func (gm *GatewayManager) reserveIpForLoadBalancer(ctx context.Context, claimMarker string) (string, error) {
 	ipSpaceIds, err := gm.FetchIpSpacesBackingGateway(ctx)
 	if err != nil {
-		return "", fmt.Errorf("unable to resrve IP from Ip Space. error [%v]", err)
+		return "", fmt.Errorf("unable to reserve IP from Ip Space. error [%v]", err)
 	}
 
 	publicIpSpaces, err := gm.FilterIpSpacesByType(ipSpaceIds, types.IpSpacePublic)
 	if err != nil {
-		return "", fmt.Errorf("unable to resrve IP from Ip Space. error [%v]", err)
+		return "", fmt.Errorf("unable to reserve IP from Ip Space. error [%v]", err)
 	}
 
 	for _, ipSpace := range publicIpSpaces {
 		ipSpaceAllocation, err := gm.FindIpAllocationByMarker(ipSpace, claimMarker)
 		if err != nil {
-			return "", fmt.Errorf("unable to resrve IP from Ip Space [%s]. error [%v]", ipSpace.IpSpace.Name, err)
+			return "", fmt.Errorf("unable to reserve IP from Ip Space [%s]. error [%v]", ipSpace.IpSpace.Name, err)
 		}
 		// Found an existing allocation for this particular service
 		if ipSpaceAllocation != nil {
@@ -2178,25 +2180,28 @@ func (gm *GatewayManager) reserveIpForLoadBalancer(ctx context.Context, claimMar
 
 	// if we haven't found any allocation yet on all accessible Ip Spaces, we need to create a new allocation
 	// NOTE: The allocation mechanism needs two calls to VCD and should be treated like a critical section
-	// Under most circumstances two instances of CPI will not try to create a lb for a service, so we should be good.
+	// Under all circumstances, two instances of CPI will never try to create a lb for a service simultaneously, so we should be good.
 	for _, ipSpace := range publicIpSpaces {
 		_, allocatedIp, err := gm.AllocateIpFromIpSpace(ipSpace)
 		if err != nil {
 			// don't give up yet, allocation can fail because Ip Space has no free Ip, try the next Ip Space
-			klog.Infof("unable to resrve IP from Ip Space [%s]. error [%v]. will try next ip Space.", ipSpace.IpSpace.Name, err)
+			klog.Infof("unable to reserve IP from Ip Space [%s]. error [%v]. will try next ip Space.", ipSpace.IpSpace.Name, err)
 			continue
 		}
 
+		// We were able to make an allocation, so we should be able to retrieve it
+		// if retrieval fails, we should fail and not try to allocate another IP from the next
+		// IP space
 		ipSpaceAllocation, err := gm.FindIpAllocationByIp(ipSpace, allocatedIp)
 		if err != nil || ipSpaceAllocation == nil {
-			klog.Infof("leaked IP [%s] from Ip Space [%s]", allocatedIp, ipSpace.IpSpace.Name)
-			return "", fmt.Errorf("unable to resrve IP from Ip Space [%s]. error [%v]", ipSpace.IpSpace.Name, err)
+			klog.Infof("leaked IP [%s] from Ip Space [%s]. Unable to retrieve allocated IP.", allocatedIp, ipSpace.IpSpace.Name)
+			return "", fmt.Errorf("unable to reserve IP from Ip Space [%s]. error [%v]", ipSpace.IpSpace.Name, err)
 		}
 
 		_, err = gm.MarkIpAsUsed(ipSpaceAllocation, claimMarker)
 		if err != nil {
-			klog.Infof("leaked IP [%s] from Ip Space [%s]", allocatedIp, ipSpace.IpSpace.Name)
-			return "", fmt.Errorf("unable to resrve IP from Ip Space [%s]. error [%v]", ipSpace.IpSpace.Name, err)
+			klog.Infof("leaked IP [%s] from Ip Space [%s]. Unable to mark allocated IP as used.", allocatedIp, ipSpace.IpSpace.Name)
+			return "", fmt.Errorf("unable to reserve IP from Ip Space [%s]. error [%v]", ipSpace.IpSpace.Name, err)
 		}
 		return ipSpaceAllocation.IpSpaceIpAllocation.Value, nil
 	}
