@@ -1879,10 +1879,10 @@ func (gm *GatewayManager) DeleteLoadBalancer(
 		return "", fmt.Errorf("unable to release IP [%s] used by load balancer. err [%v]", rdeVIP, err)
 	}
 	if isGatewayUsingIpSpaces {
-		klog.Infof("Determined gateway [%s] is using IP spaces, using IP space specific logic to release IP", gm.GatewayRef.Name)
+		klog.Infof("Determined gateway [%s] is using IP spaces, using IP space specific logic to release IP [%s]", gm.GatewayRef.Name, rdeVIP)
 		err = gm.ReleaseIpFromLoadBalancer(ctx, rdeVIP, lbIpClaimMarker)
 		if err != nil {
-			return "", fmt.Errorf("unable to release IP address for load balancer. error [%v]", err)
+			return "", fmt.Errorf("unable to release IP address [%s] from load balancer. error [%v]", rdeVIP, err)
 		}
 	}
 	// if gateway is using IP blocks, no need to explicitly release the IP
@@ -2247,8 +2247,9 @@ func (gm *GatewayManager) ReleaseIpFromLoadBalancer(ctx context.Context, rdeVIP 
 		if err != nil {
 			return fmt.Errorf("unable to release IP [%s] from Ip Space [%s]. error [%v]", rdeVIP, ipSpace.IpSpace.Name, err)
 		}
-		// Found an existing allocation for this particular service
+		// In case an allocation is not found on this Ip Space, we will have ipSpaceAllocation = nil, err = nil
 		if ipSpaceAllocation != nil {
+			// Found an existing allocation for this particular service
 			allocatedIp := ipSpaceAllocation.IpSpaceIpAllocation.Value
 			if allocatedIp != rdeVIP {
 				return fmt.Errorf("RDE VIP [%s] doesn't match allocated IP [%s] in IP Space [%s] for marker [%s]", rdeVIP, allocatedIp, ipSpace.IpSpace.Name, claimMarker)
@@ -2267,7 +2268,7 @@ func (gm *GatewayManager) ReleaseIpFromLoadBalancer(ctx context.Context, rdeVIP 
 	}
 
 	// If we reach here, it means, we couldn't locate an allocation corresponding to the marker
-	// Either the marker was deleted in a previous attempt, or the external IP was assigned manually by
+	// Either the IP was released in a previous attempt, or the external IP was assigned manually by
 	// the user. In either case, we have nothing to do here and we should safely return.
 	return nil
 }
