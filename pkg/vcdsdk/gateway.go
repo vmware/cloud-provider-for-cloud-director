@@ -1621,7 +1621,7 @@ func (gm *GatewayManager) CreateLoadBalancer(
 		}
 		if isGatewayUsingIpSpaces {
 			klog.Infof("Determined gateway [%s] is using IP spaces, using IP space specific logic to reserve an IP", gm.GatewayRef.Name)
-			externalIP, err = gm.reserveIpForLoadBalancer(ctx, lbIpClaimMarker)
+			externalIP, err = gm.ReserveIpForLoadBalancer(ctx, lbIpClaimMarker)
 			if err != nil {
 				return "", fmt.Errorf("unable to reservce IP address for load balancer. error [%v]", err)
 			}
@@ -1776,8 +1776,9 @@ func (gm *GatewayManager) CreateLoadBalancer(
 	return externalIP, nil
 }
 
-func (gm *GatewayManager) DeleteLoadBalancer(ctx context.Context, virtualServiceNamePrefix string,
-	lbPoolNamePrefix string, portDetailsList []PortDetails, oneArm *OneArm, resourcesDeallocated *util.AllocatedResourcesMap) (string, error) {
+func (gm *GatewayManager) DeleteLoadBalancer(
+	ctx context.Context, virtualServiceNamePrefix string, lbPoolNamePrefix string, lbIpClaimMarker string,
+	portDetailsList []PortDetails, oneArm *OneArm, resourcesDeallocated *util.AllocatedResourcesMap) (string, error) {
 
 	if gm == nil {
 		return "", fmt.Errorf("GatewayManager cannot be nil")
@@ -1805,6 +1806,7 @@ func (gm *GatewayManager) DeleteLoadBalancer(ctx context.Context, virtualService
 		lbPoolName := fmt.Sprintf("%s-%s", lbPoolNamePrefix, portDetails.PortSuffix)
 
 		// get external IP
+		// it is weird that we are computing the same external Id multiple times in the loop
 		dnatRuleName := ""
 		if oneArm != nil {
 			dnatRuleName = GetDNATRuleName(virtualServiceName)
@@ -1871,6 +1873,19 @@ func (gm *GatewayManager) DeleteLoadBalancer(ctx context.Context, virtualService
 			})
 		}
 	}
+
+	isGatewayUsingIpSpaces, err := gm.IsUsingIpSpaces()
+	if err != nil {
+		return "", fmt.Errorf("unable to release IP [%s] used by load balancer. err [%v]", rdeVIP, err)
+	}
+	if isGatewayUsingIpSpaces {
+		klog.Infof("Determined gateway [%s] is using IP spaces, using IP space specific logic to release IP", gm.GatewayRef.Name)
+		err = gm.ReleaseIpFromLoadBalancer(ctx, rdeVIP, lbIpClaimMarker)
+		if err != nil {
+			return "", fmt.Errorf("unable to release IP address for load balancer. error [%v]", err)
+		}
+	}
+	// if gateway is using IP blocks, no need to explicitly release the IP
 
 	return rdeVIP, nil
 }
@@ -2156,7 +2171,7 @@ func (gm *GatewayManager) ReleaseIp(ipSpaceAllocation *govcd.IpSpaceIpAllocation
 // the reservation to go through, will conclude the process. The allocation will be moved to USED_MANUAL state and its
 // description will be updated to mark a claim. The allocated Ip will be returned. If all Ip Spaces reject the
 // allocation request, this method will return an error
-func (gm *GatewayManager) reserveIpForLoadBalancer(ctx context.Context, claimMarker string) (string, error) {
+func (gm *GatewayManager) ReserveIpForLoadBalancer(ctx context.Context, claimMarker string) (string, error) {
 	ipSpaceIds, err := gm.FetchIpSpacesBackingGateway(ctx)
 	if err != nil {
 		return "", fmt.Errorf("unable to reserve IP from Ip Space. error [%v]", err)
@@ -2208,4 +2223,51 @@ func (gm *GatewayManager) reserveIpForLoadBalancer(ctx context.Context, claimMar
 
 	// Was unable to reserve an Ip on any of the available Ip Spaces
 	return "", fmt.Errorf("unable to reserve Ip from any available Ip spaces")
+}
+
+// releaseIpFromLoadBalancer will scan through all Ip Spaces available to the gateway for an existing allocation
+// (description of allocation will contain cluster id, service name and namespace). If such an allocation can't be
+// retrieved, the method will return without raising any error. It should be assumed that the allocation was removed in
+// a previous attempt. If an allocation is found, it be deleted, thereby releasing the IP from the load balancer as well
+// as tenant context. It should be noted that if the cluster was created with user provider external IP, then the allocation
+// will not be present on any of the IP Spaces, and hence we will not try to release the IP.
+func (gm *GatewayManager) ReleaseIpFromLoadBalancer(ctx context.Context, rdeVIP string, claimMarker string) error {
+	ipSpaceIds, err := gm.FetchIpSpacesBackingGateway(ctx)
+	if err != nil {
+		return fmt.Errorf("unable to release IP [%s] from load balancer. error [%v]", rdeVIP, err)
+	}
+
+	publicIpSpaces, err := gm.FilterIpSpacesByType(ipSpaceIds, types.IpSpacePublic)
+	if err != nil {
+		return fmt.Errorf("unable to release IP [%s] from load balancer. error [%v]", rdeVIP, err)
+	}
+
+	for _, ipSpace := range publicIpSpaces {
+		ipSpaceAllocation, err := gm.FindIpAllocationByMarker(ipSpace, claimMarker)
+		if err != nil {
+			return fmt.Errorf("unable to release IP [%s] from Ip Space [%s]. error [%v]", rdeVIP, ipSpace.IpSpace.Name, err)
+		}
+		// Found an existing allocation for this particular service
+		if ipSpaceAllocation != nil {
+			allocatedIp := ipSpaceAllocation.IpSpaceIpAllocation.Value
+			if allocatedIp != rdeVIP {
+				return fmt.Errorf("RDE VIP [%s] doesn't match allocated IP [%s] in IP Space [%s] for marker [%s]", rdeVIP, allocatedIp, ipSpace.IpSpace.Name, claimMarker)
+			}
+			updatedIpSpaceAllocation, err := gm.MarkIpAsUnused(ipSpaceAllocation)
+			if err != nil {
+				return fmt.Errorf("unable to mark IP [%s] from IP Space [%s] as unused. error [%v]", allocatedIp, ipSpace.IpSpace.Name, err)
+			}
+			err = gm.ReleaseIp(updatedIpSpaceAllocation)
+			if err != nil {
+				return fmt.Errorf("unable to release IP [%s] from IP Space [%s]. error [%v]", allocatedIp, ipSpace.IpSpace.Name, err)
+			}
+			// No need to process any more IP spaces, it is safe to return from this function
+			break
+		}
+	}
+
+	// If we reach here, it means, we couldn't locate an allocation corresponding to the marker
+	// Either the marker was deleted in a previous attempt, or the external IP was assigned manually by
+	// the user. In either case, we have nothing to do here and we should safely return.
+	return nil
 }
