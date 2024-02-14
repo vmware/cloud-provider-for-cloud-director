@@ -2165,7 +2165,7 @@ func (gm *GatewayManager) ReleaseIp(ipSpaceAllocation *govcd.IpSpaceIpAllocation
 	return ipSpaceAllocation.Delete()
 }
 
-// reserveIpForLoadBalancer will scan through all Ip Spaces available to the gateway for an existing allocation
+// ReserveIpForLoadBalancer will scan through all Ip Spaces available to the gateway for an existing allocation
 // (description of allocation will contain cluster id, service name and namespace). If such an allocation can't be
 // retrieved, a new Ip Allocation will be attempted against all Ip Spaces, sequentially. The first Ip Space that allows
 // the reservation to go through, will conclude the process. The allocation will be moved to USED_MANUAL state and its
@@ -2225,10 +2225,10 @@ func (gm *GatewayManager) ReserveIpForLoadBalancer(ctx context.Context, claimMar
 	return "", fmt.Errorf("unable to reserve Ip from any available Ip spaces")
 }
 
-// releaseIpFromLoadBalancer will scan through all Ip Spaces available to the gateway for an existing allocation
+// ReleaseIpFromLoadBalancer will scan through all Ip Spaces available to the gateway for an existing allocation
 // (description of allocation will contain cluster id, service name and namespace). If such an allocation can't be
 // retrieved, the method will return without raising any error. It should be assumed that the allocation was removed in
-// a previous attempt. If an allocation is found, it be deleted, thereby releasing the IP from the load balancer as well
+// a previous attempt. If an allocation is found, it will be deleted, thereby releasing the IP from the load balancer as well
 // as tenant context. It should be noted that if the cluster was created with user provider external IP, then the allocation
 // will not be present on any of the IP Spaces, and hence we will not try to release the IP.
 func (gm *GatewayManager) ReleaseIpFromLoadBalancer(ctx context.Context, rdeVIP string, claimMarker string) error {
@@ -2263,11 +2263,11 @@ func (gm *GatewayManager) ReleaseIpFromLoadBalancer(ctx context.Context, rdeVIP 
 				return fmt.Errorf("unable to release IP [%s] from IP Space [%s]. error [%v]", allocatedIp, ipSpace.IpSpace.Name, err)
 			}
 			// No need to process any more IP spaces, it is safe to return from this function
-			break
+			return nil
 		}
 	}
 
-	// If we reach here, it means, we couldn't locate an allocation corresponding to the marker
+	// If we have reached here, it means, we couldn't locate an allocation corresponding to the marker
 	// Either the IP was released in a previous attempt, or the external IP was assigned manually by
 	// the user. In either case, we have nothing to do here and we should safely return.
 	return nil
