@@ -196,3 +196,56 @@ func TestIpSpaceOperations(t *testing.T) {
 	err = gm.ReleaseIp(updatedIpSpaceAllocation)
 	assert.NoError(t, err, "Error calling method ReleaseIp for Allocation [%s]", updatedIpSpaceAllocation.IpSpaceIpAllocation.ID)
 }
+
+func TestIpAllocationAndReleaseToLoadBalancer(t *testing.T) {
+	vcdConfig, err := getTestVCDConfig()
+	assert.NoError(t, err, "There should be no error opening and parsing vcd info file contents.")
+
+	testDataFile := filepath.Join(gitRoot, "testdata/ip_space_test.yaml")
+	testDataFileContent, err := os.ReadFile(testDataFile)
+	assert.NoError(t, err, "There should be no error reading the ip space test data file contents.")
+
+	var testData ipSpaceDetails
+	err = yaml.Unmarshal(testDataFileContent, &testData)
+	assert.NoError(t, err, "There should be no error parsing ip space test data file content.")
+
+	vcdClient, err := getTestVCDClient(vcdConfig, map[string]interface{}{
+		"user":         testData.Username,
+		"userOrg":      testData.UserOrg,
+		"refreshToken": testData.RefreshToken,
+		"org":          testData.UserOrg,
+		"vdc":          testData.Orgvdc,
+		"getVdcClient": true,
+	})
+	assert.NoError(t, err, "Unable to get VCD client")
+	require.NotNil(t, vcdClient, "VCD Client should not be nil")
+
+	ctx := context.Background()
+
+	gm, err := NewGatewayManager(ctx, vcdClient, testData.OrgvdcNetworkIpSpace, "", testData.Orgvdc)
+	assert.NoErrorf(t, err, "Unable to create Gateway Manager for network %s", testData.OrgvdcNetworkIpSpace)
+
+	customMarker := "Custom Marker"
+	fmt.Println("Calling ReserveIpForLoadBalancer to reserve an IP")
+	allocatedIp, err := gm.ReserveIpForLoadBalancer(ctx, customMarker)
+	assert.NoError(t, err, "Error calling method ReserveIpForLoadBalancer")
+	assert.NotNil(t, allocatedIp, "Expected non nil Allocated Ip")
+
+	// passing invalid marker - should result in no op
+	invalidIp := "0.0.0.0"
+	invalidMarker := "invalid marker"
+	fmt.Println("Calling ReleaseIpFromLoadBalancer with invalid marker")
+	err = gm.ReleaseIpFromLoadBalancer(ctx, invalidIp, invalidMarker)
+	assert.NoError(t, err, "Error calling method ReleaseIpFromLoadBalancer")
+
+	// passing invalid IP with valid marker, we should get an error back
+	fmt.Println("Calling ReleaseIpFromLoadBalancer with invalid IP")
+	err = gm.ReleaseIpFromLoadBalancer(ctx, invalidIp, customMarker)
+	assert.Errorf(t, err, "Expected error, found none")
+	assert.True(t, strings.Contains(err.Error(), "doesn't match allocated IP"))
+
+	// check for valid release
+	fmt.Println("Calling ReleaseIpFromLoadBalancer with valid IP and marker")
+	err = gm.ReleaseIpFromLoadBalancer(ctx, allocatedIp, customMarker)
+	assert.NoError(t, err, "Error calling method ReleaseIpFromLoadBalancer")
+}
