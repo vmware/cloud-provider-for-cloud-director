@@ -418,6 +418,7 @@ func (lb *LBManager) GetLoadBalancerName(ctx context.Context, clusterName string
 
 func (lb *LBManager) deleteLoadBalancer(ctx context.Context, service *v1.Service) error {
 
+	lbIpClaimMarker := lb.getLoadBalancerIpClaimMarker(ctx, service)
 	virtualServiceName := lb.getVirtualServicePrefix(ctx, service)
 	lbPoolNamePrefix := lb.getLBPoolNamePrefix(ctx, service)
 	klog.Infof("Deleting virtual service [%s] and lb pool [%s]", virtualServiceName, lbPoolNamePrefix)
@@ -439,7 +440,7 @@ func (lb *LBManager) deleteLoadBalancer(ctx context.Context, service *v1.Service
 		return fmt.Errorf("error while creating GatewayManager: [%v]", err)
 	}
 	resourcesDeallocated := &util.AllocatedResourcesMap{}
-	vip, err := gm.DeleteLoadBalancer(ctx, virtualServiceName, lbPoolNamePrefix, portDetailsList, lb.OneArm, resourcesDeallocated)
+	vip, err := gm.DeleteLoadBalancer(ctx, virtualServiceName, lbPoolNamePrefix, lbIpClaimMarker, portDetailsList, lb.OneArm, resourcesDeallocated)
 	if rdeErr := lb.removeLBResourcesFromRDE(ctx, resourcesDeallocated); rdeErr != nil {
 		klog.Errorf("failed to remove loadbalancer resources from RDE [%s]: [%v]", lb.clusterID, rdeErr)
 		return fmt.Errorf("failed to remove loadbalancer resources from RDE [%s]: [%v]", lb.clusterID, rdeErr)
