@@ -35,7 +35,7 @@ type VCDCloudProvider struct {
 	lb          cloudProvider.LoadBalancer
 	instances   cloudProvider.Instances
 	instancesV2 cloudProvider.InstancesV2
-	zoneMap     *config.ZoneMap
+	zoneMap     *vcdsdk.ZoneMap
 }
 
 var _ cloudProvider.Interface = &VCDCloudProvider{}
@@ -140,11 +140,11 @@ func newVCDCloudProvider(configReader io.Reader) (cloudProvider.Interface, error
 		}
 	}
 
-	var zm *config.ZoneMap = nil
+	var zm *vcdsdk.ZoneMap = nil
 	if cloudConfig.VCD.IsZoneEnabledCluster {
-		if zm, err = config.NewZoneMap(config.ZoneMapConfigFilePath); err != nil {
+		if zm, err = vcdsdk.NewZoneMap(vcdsdk.ZoneMapConfigFilePath); err != nil {
 			return nil, fmt.Errorf("unable to create new zone map from configmap file [%s]: [%v]",
-				config.ZoneMapConfigFilePath, err)
+				vcdsdk.ZoneMapConfigFilePath, err)
 		}
 	}
 

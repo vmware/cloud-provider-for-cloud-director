@@ -3,7 +3,6 @@ package ccm
 import (
 	"context"
 	"fmt"
-	"github.com/vmware/cloud-provider-for-cloud-director/pkg/config"
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdsdk"
 	"github.com/vmware/go-vcloud-director/v2/govcd"
 	v1 "k8s.io/api/core/v1"
@@ -13,14 +12,14 @@ import (
 
 type instancesV2 struct {
 	vmInfoCache *VmInfoCache
-	zoneMap     *config.ZoneMap
+	zoneMap     *vcdsdk.ZoneMap
 }
 
 func (vcdCP *VCDCloudProvider) InstancesV2() (cloudprovider.InstancesV2, bool) {
 	return vcdCP.instancesV2, true
 }
 
-func newInstancesV2(vmInfoCache *VmInfoCache, zoneMap *config.ZoneMap) cloudprovider.InstancesV2 {
+func newInstancesV2(vmInfoCache *VmInfoCache, zoneMap *vcdsdk.ZoneMap) cloudprovider.InstancesV2 {
 	return instancesV2{
 		vmInfoCache: vmInfoCache,
 		zoneMap:     zoneMap,

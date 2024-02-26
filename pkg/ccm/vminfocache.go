@@ -7,10 +7,8 @@ package ccm
 
 import (
 	"fmt"
-	"github.com/vmware/cloud-provider-for-cloud-director/pkg/config"
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdsdk"
 	"k8s.io/klog"
-	"strings"
 	"sync"
 	"time"
 
@@ -39,10 +37,10 @@ type VmInfoCache struct {
 	uuidMap         map[string]*VmInfo
 	client          *vcdsdk.Client
 	clusterVAppName string
-	zm              *config.ZoneMap
+	zm              *vcdsdk.ZoneMap
 }
 
-func newVmInfoCache(client *vcdsdk.Client, clusterVAppName string, expiry time.Duration, zm *config.ZoneMap) *VmInfoCache {
+func newVmInfoCache(client *vcdsdk.Client, clusterVAppName string, expiry time.Duration, zm *vcdsdk.ZoneMap) *VmInfoCache {
 	return &VmInfoCache{
 		expiry:          expiry,
 		nameMap:         make(map[string]*VmInfo),
@@ -97,24 +95,9 @@ func (vmic *VmInfoCache) vmToVMInfo(vm *govcd.VM, ovdc string, captureTime time.
 	return vmInfo, nil
 }
 
-func CreateVAppNamePrefix(clusterName string, ovdcID string) (string, error) {
-	parts := strings.Split(ovdcID, ":")
-	if len(parts) != 4 {
-		// urn:vcloud:org:<uuid>
-		return "", fmt.Errorf("invalid URN format for OVDC: [%s]", ovdcID)
-	}
-
-	return fmt.Sprintf("%s_%s", clusterName, parts[3]), nil
-}
-
 func (vmic *VmInfoCache) SearchVMAcrossVDCs(vmName string, vmId string) (*govcd.VM, string, error) {
 	if err := vmic.client.RefreshBearerToken(); err != nil {
 		return nil, "", fmt.Errorf("error while obtaining access token: [%v]", err)
-	}
-
-	org, err := vmic.client.VCDClient.GetOrgByName(vmic.client.ClusterOrgName)
-	if err != nil {
-		return nil, "", fmt.Errorf("unable to get org by name [%s]: [%v]", vmic.client.ClusterOrgName, err)
 	}
 
 	var ovdcNameList []string = nil
@@ -128,64 +111,12 @@ func (vmic *VmInfoCache) SearchVMAcrossVDCs(vmName string, vmId string) (*govcd.
 		}
 	}
 
-	for _, ovdcName := range ovdcNameList {
-		klog.Infof("Looking for VM [name:%s],[id:%s] of cluster [%s] in OVDC [%s]",
-			vmName, vmId, vmic.clusterVAppName, ovdcName)
-
-		vdc, err := org.GetVDCByName(ovdcName, true)
-		if err != nil {
-			klog.Infof("unable to query VDC [%s] in Org [%s] by name: [%v]",
-				ovdcName, vmic.client.ClusterOrgName, err)
-			continue
-		}
-
-		vAppNamePrefix, err := CreateVAppNamePrefix(vmic.clusterVAppName, vdc.Vdc.ID)
-		if err != nil {
-			klog.Infof("Unable to create a vApp name prefix for cluster [%s] in OVDC [%s] with OVDC ID [%s]: [%v]",
-				vmic.clusterVAppName, vdc.Vdc.Name, vdc.Vdc.ID, err)
-			continue
-		}
-
-		klog.Infof("Looking for vApps with a prefix of [%s]", vAppNamePrefix)
-		vAppList := vdc.GetVappList()
-		// check if the VM exists in any cluster-vApps in this OVDC
-		for _, vApp := range vAppList {
-			if strings.HasPrefix(vApp.Name, vAppNamePrefix) {
-				// check if VM exists
-				klog.Infof("Looking for VM [name:%s],[id:%s] in vApp [%s] in OVDC [%s] is a vApp in cluster [%s]",
-					vmName, vmId, vApp.Name, vdc.Vdc.Name, vmic.clusterVAppName)
-				vdcManager, err := vcdsdk.NewVDCManager(vmic.client, vmic.client.ClusterOrgName, vdc.Vdc.Name)
-				if err != nil {
-					return nil, "", fmt.Errorf("error creating VDCManager object for VDC [%s]: [%v]",
-						vdc.Vdc.Name, err)
-				}
-
-				var vm *govcd.VM = nil
-				if vmName != "" {
-					vm, err = vdcManager.FindVMByName(vApp.Name, vmName)
-				} else if vmId != "" {
-					vm, err = vdcManager.FindVMByUUID(vApp.Name, vmId)
-				} else {
-					return nil, "", fmt.Errorf("either vm name [%s] or ID [%s] should be passed", vmName, vmId)
-				}
-				if err != nil {
-					klog.Infof("Could not find VM [name:%s],[id:%s] in vApp [%s] of Cluster [%s] in OVDC [%s]: [%v]",
-						vmName, vmId, vApp.Name, vmic.clusterVAppName, vdc.Vdc.Name, err)
-					continue
-				}
-
-				// If we reach here, we found the VM
-				klog.Infof("Found VM [name:%s],[id:%s] in vApp [%s] of Cluster [%s] in OVDC [%s]: [%v]",
-					vmName, vmId, vApp.Name, vmic.clusterVAppName, vdc.Vdc.Name, err)
-				return vm, vdc.Vdc.Name, nil
-			}
-		}
-
-		klog.Infof("Could not find VM [name:%s],[id:%s] of cluster [%s] in OVDC [%s]",
-			vmName, vmId, vmic.clusterVAppName, ovdcName)
+	orgManager := vcdsdk.OrgManager{
+		Client:  vmic.client,
+		OrgName: vmic.client.ClusterOrgName,
 	}
 
-	return nil, "", govcd.ErrorEntityNotFound
+	return orgManager.SearchVMAcrossVDCs(vmName, vmic.clusterVAppName, vmId, ovdcNameList)
 }
 
 func (vmic *VmInfoCache) GetByName(vmName string) (*VmInfo, error) {
