@@ -11,6 +11,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -25,7 +26,11 @@ const (
 
 var testHttpName = "http"
 
-var _ = Describe("Ensure Loadbalancer", func() {
+var _ = Describe("Ensure load balancer (Ip Block)", func() {
+	if strings.ToLower(useIpSpaces) == "true" {
+		return
+	}
+
 	var (
 		ns          *v1.Namespace
 		svc         *v1.Service
@@ -175,7 +180,11 @@ var _ = Describe("Ensure Loadbalancer", func() {
 	})
 })
 
-var _ = Describe("Ensure load balancer with user specified LB IP", func() {
+var _ = Describe("Ensure load balancer (IP Block) with user specified LB IP", func() {
+	if strings.ToLower(useIpSpaces) == "true" {
+		return
+	}
+
 	var (
 		ns          *v1.Namespace
 		svc         *v1.Service
@@ -230,7 +239,7 @@ var _ = Describe("Ensure load balancer with user specified LB IP", func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(explicitIP).NotTo(BeEmpty())
 
-	// Case 1. We should be able to create a LB http service on port 80, using a user specifie load balancer IP with no errors
+	// Case 1. We should be able to create a LB http service on port 80, using a user specified load balancer IP with no errors
 	It("should create a load balancer service", func() {
 		// Similar to Ingress setup, we will use: name=http, port=80, protocol=tcp, appProtocol=http
 		By("creating a http load balancer service")
@@ -326,6 +335,307 @@ var _ = Describe("Ensure load balancer with user specified LB IP", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		err = tc.DeleteNameSpace(ctx, ns.Name)
+		Expect(err).NotTo(HaveOccurred())
+	})
+})
+
+var _ = Describe("Ensure load balancer (Ip Spaces)", func() {
+	if strings.ToLower(useIpSpaces) != "true" {
+		return
+	}
+
+	var (
+		ns          *v1.Namespace
+		svc         *v1.Service
+		err         error
+		networkName string
+		tc          *testingsdk.TestClient
+	)
+
+	tc, err = utils.NewTestClient(host, org, userOrg, ovdcName, username, token, clusterId, false)
+	Expect(err).ShouldNot(HaveOccurred())
+	Expect(tc).NotTo(BeNil())
+	Expect(&tc.Cs).NotTo(BeNil())
+
+	labels := map[string]string{
+		"app": testDeploymentName,
+	}
+
+	httpServicePort := []v1.ServicePort{{
+		Name:        testHttpName,
+		Port:        httpPort,
+		TargetPort:  intstr.FromInt(httpPort),
+		Protocol:    v1.ProtocolTCP,
+		AppProtocol: &testHttpName, // We want our virtual service to be HTTP
+	}}
+
+	ctx := context.TODO()
+
+	// GetConfigMap to retrieve ipamSubnet, network name for gateway manager in order to check if VCD resources are present
+	ccmConfigMap, err := tc.GetConfigMap("kube-system", ccmConfigMapName)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(ccmConfigMap).NotTo(BeNil())
+	Expect(err).NotTo(HaveOccurred())
+
+	networkName, err = tc.GetNetworkNameFromConfigMap(ccmConfigMap)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(networkName).NotTo(BeEmpty())
+
+	// Gateway Manager is used to validate VCD networking resources
+	gatewayMgr, err := vcdsdk.NewGatewayManager(context.TODO(), tc.VcdClient, networkName, "", ovdcName)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(gatewayMgr).NotTo(BeNil())
+
+	// Case 1. We should be able to create a LB http service on port 80 with no errors
+	It("should create a load balancer service", func() {
+		// Similar to Ingress setup, we will use: name=http, port=80, protocol=tcp, appProtocol=http
+		By("creating a http load balancer service")
+		ns, err = tc.CreateNameSpace(ctx, testBaseName)
+		Expect(err).NotTo(HaveOccurred())
+
+		// We will have a sample deployment so the server will return some sort of data back to us using an official e2e test image
+		_, err = utils.CreateDeployment(ctx, tc, testDeploymentName, ns.Name, ContainerImage, labels)
+		Expect(err).NotTo(HaveOccurred())
+		err = tc.WaitForDeploymentReady(ctx, ns.Name, testDeploymentName)
+		Expect(err).NotTo(HaveOccurred())
+
+		svc, err = tc.CreateLoadBalancerService(ctx, ns.Name, testServiceName, nil, labels, httpServicePort, "")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(svc).NotTo(BeNil())
+	})
+
+	// Case 2. We should have an external IP and VCD resources after creating a Loadbalancer Service
+	It("should have an external IP and VCD resources", func() {
+		By("fetching the external IP from the service")
+		externalIp, err := tc.WaitForExtIP(ns.Name, testServiceName)
+		Expect(err).NotTo(HaveOccurred())
+
+		By("checking if resources is present in VCD Resource Set")
+		virtualServiceNamePrefix := utils.GetVirtualServicePrefix(svc, tc.ClusterId)
+		lbPoolNamePrefix := utils.GetLBPoolNamePrefix(svc, tc.ClusterId)
+		portDetailsList := utils.GetPortDetailsList(svc)
+		Expect(portDetailsList).NotTo(BeNil())
+
+		oneArm := vcdsdk.OneArm{
+			StartIP: "192.168.8.2",
+			EndIP:   "192.168.8.100",
+		}
+
+		Eventually(func() bool {
+			resourcesFound, err := utils.HasVCDResourcesForApplicationLB(ctx, tc, gatewayMgr, &oneArm, virtualServiceNamePrefix, lbPoolNamePrefix, portDetailsList)
+			Expect(err).ShouldNot(HaveOccurred(), fmt.Sprintf("error occurred while checking if VCD has resources for application LB for cluster [%s(%s)], [%v]", tc.ClusterName, tc.ClusterId, err))
+			return resourcesFound
+		}).WithPolling(15 * time.Second).WithTimeout(10 * time.Minute).Should(Equal(true))
+
+		By("checking virtual IP stored in in CPI vcdResourceSet matches the external IP from the load balancer service")
+		Eventually(func() bool {
+			externalIpExists, err := utils.IsExternalIpInVCDResourceSet(ctx, tc, externalIp)
+			Expect(err).ShouldNot(HaveOccurred(), fmt.Sprintf("error occurred while checking if external IP is in VCD ResourceSet for cluster [%s(%s)], [%v]", tc.ClusterName, tc.ClusterId, err))
+			return externalIpExists
+		}).WithPolling(15 * time.Second).WithTimeout(10 * time.Minute).Should(Equal(true))
+	})
+
+	// Case 3. Check for valid external IP and connectivity for ip:port via HTTP Get Request.
+	It("should have connectivity from external ip", func() {
+		By("fetching the external ip of the service")
+		externalIp, err := tc.WaitForExtIP(ns.Name, testServiceName)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(externalIp).NotTo(BeEmpty())
+
+		By("checking connectivity of external ip")
+		resp, err := http.Get(fmt.Sprintf("http://%s:%d", externalIp, httpPort))
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp.StatusCode).Should(BeNumerically("==", 200))
+	})
+
+	// Case 4. We should be able to perform clean up after validation by deleting the service
+	It("should ensure load balancer deleted", func() {
+		By("deleting the service")
+		err = tc.DeleteService(ctx, ns.Name, testServiceName)
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	// Case 5. We should not have any VCD resources after the deletion of loadbalancer service
+	It("should not have VCD resources after service has been deleted", func() {
+		// After service is deleted, check empty resources
+		By("checking VCD resources")
+		virtualServiceNamePrefix := utils.GetVirtualServicePrefix(svc, clusterId)
+		lbPoolNamePrefix := utils.GetLBPoolNamePrefix(svc, clusterId)
+		portDetailsList := utils.GetPortDetailsList(svc)
+		Expect(portDetailsList).NotTo(BeNil())
+
+		// These will be our defaults, so it's ok to hardcode this. We can also retrieve this from ccm configmap
+		oneArm := vcdsdk.OneArm{
+			StartIP: "192.168.8.2",
+			EndIP:   "192.168.8.100",
+		}
+
+		resourcesFound, err := utils.HasVCDResourcesForApplicationLB(context.TODO(), tc, gatewayMgr, &oneArm, virtualServiceNamePrefix, lbPoolNamePrefix, portDetailsList)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resourcesFound).Should(BeFalse())
+
+		By("cleaning up the remainder of deployment and namespaces")
+		err = tc.DeleteDeployment(ctx, ns.Name, testDeploymentName)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = tc.DeleteNameSpace(ctx, ns.Name)
+		Expect(err).NotTo(HaveOccurred())
+	})
+})
+
+var _ = Describe("Ensure load balancer (IP Spaces) with user specified LB IP", func() {
+	if strings.ToLower(useIpSpaces) != "true" {
+		return
+	}
+
+	var (
+		ns          *v1.Namespace
+		svc         *v1.Service
+		err         error
+		networkName string
+		tc          *testingsdk.TestClient
+	)
+
+	tc, err = utils.NewTestClient(host, org, userOrg, ovdcName, username, token, clusterId, false)
+	Expect(err).ShouldNot(HaveOccurred())
+	Expect(tc).NotTo(BeNil())
+	Expect(&tc.Cs).NotTo(BeNil())
+
+	labels := map[string]string{
+		"app": testDeploymentName,
+	}
+
+	httpServicePort := []v1.ServicePort{{
+		Name:        testHttpName,
+		Port:        httpPort,
+		TargetPort:  intstr.FromInt(httpPort),
+		Protocol:    v1.ProtocolTCP,
+		AppProtocol: &testHttpName, // We want our virtual service to be HTTP
+	}}
+
+	ctx := context.TODO()
+
+	// GetConfigMap to retrieve ipamSubnet, network name for gateway manager in order to check if VCD resources are present
+	ccmConfigMap, err := tc.GetConfigMap("kube-system", ccmConfigMapName)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(ccmConfigMap).NotTo(BeNil())
+
+	networkName, err = tc.GetNetworkNameFromConfigMap(ccmConfigMap)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(networkName).NotTo(BeEmpty())
+
+	// Gateway Manager is used to validate VCD networking resources
+	gatewayMgr, err := vcdsdk.NewGatewayManager(context.TODO(), tc.VcdClient, networkName, "", ovdcName)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(gatewayMgr).NotTo(BeNil())
+
+	claimMarker := "CPI test : Ensure load balancer (IP Spaces) with user specified LB IP"
+	explicitIP, err := gatewayMgr.ReserveIpForLoadBalancer(ctx, claimMarker)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(explicitIP).NotTo(BeEmpty())
+
+	// Case 1. We should be able to create a LB http service on port 80, using a user specified load balancer IP with no errors
+	It("should create a load balancer service", func() {
+		// Similar to Ingress setup, we will use: name=http, port=80, protocol=tcp, appProtocol=http
+		By("creating a http load balancer service")
+		ns, err = tc.CreateNameSpace(ctx, testBaseName)
+		Expect(err).NotTo(HaveOccurred())
+
+		// We will have a sample deployment so the server will return some sort of data back to us using an official e2e test image
+		_, err = utils.CreateDeployment(ctx, tc, testDeploymentName, ns.Name, ContainerImage, labels)
+		Expect(err).NotTo(HaveOccurred())
+		err = tc.WaitForDeploymentReady(ctx, ns.Name, testDeploymentName)
+		Expect(err).NotTo(HaveOccurred())
+
+		svc, err = tc.CreateLoadBalancerService(ctx, ns.Name, testServiceName, nil, labels, httpServicePort, explicitIP)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(svc).NotTo(BeNil())
+	})
+
+	// Case 2. We should have an external IP and VCD resources after creating a Loadbalancer Service
+	It("should have load balancer IP and VCD resources", func() {
+		By("fetching the external IP from the service")
+		expectedIP, err := tc.WaitForExtIP(ns.Name, testServiceName)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(expectedIP).Should(Equal(explicitIP))
+
+		By("checking if resources is present in VCD Resource Set")
+		virtualServiceNamePrefix := utils.GetVirtualServicePrefix(svc, tc.ClusterId)
+		lbPoolNamePrefix := utils.GetLBPoolNamePrefix(svc, tc.ClusterId)
+		portDetailsList := utils.GetPortDetailsList(svc)
+		Expect(portDetailsList).NotTo(BeNil())
+
+		// These will be our defaults, so it's ok to hardcode this. We can also retrieve this from ccm configmap
+		oneArm := &vcdsdk.OneArm{
+			StartIP: "192.168.8.2",
+			EndIP:   "192.168.8.100",
+		}
+
+		Eventually(func() bool {
+			resourcesFound, err := utils.HasVCDResourcesForApplicationLB(ctx, tc, gatewayMgr, oneArm, virtualServiceNamePrefix, lbPoolNamePrefix, portDetailsList)
+			Expect(err).ShouldNot(HaveOccurred(), fmt.Sprintf("error occurred while checking if VCD has resources for application LB for cluster [%s(%s)], [%v]", tc.ClusterName, tc.ClusterId, err))
+			return resourcesFound
+		}).WithPolling(15 * time.Second).WithTimeout(10 * time.Minute).Should(Equal(true))
+
+		By("checking virtual IP stored in in CPI vcdResourceSet matches the external IP from the load balancer service")
+		Eventually(func() bool {
+			externalIpExists, err := utils.IsExternalIpInVCDResourceSet(ctx, tc, expectedIP)
+			Expect(err).ShouldNot(HaveOccurred(), fmt.Sprintf("error occurred while checking if external IP is in VCD ResourceSet for cluster [%s(%s)], [%v]", tc.ClusterName, tc.ClusterId, err))
+			return externalIpExists
+		}).WithPolling(15 * time.Second).WithTimeout(10 * time.Minute).Should(Equal(true))
+	})
+
+	// Case 3. Check for valid external IP and connectivity for ip:port via HTTP Get Request.
+	It("should have connectivity from user specified load balancer ip", func() {
+		By("fetching the ip of the service")
+		userSpecifiedLBIP, err := tc.WaitForExtIP(ns.Name, testServiceName)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(userSpecifiedLBIP).NotTo(BeEmpty())
+
+		By("checking connectivity of external ip")
+		// TODO: how to do this when internal IP is specified?
+		resp, err := http.Get(fmt.Sprintf("http://%s:%d", userSpecifiedLBIP, httpPort))
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp.StatusCode).Should(BeNumerically("==", 200))
+	})
+
+	// Case 4. We should be able to perform clean up after validation by deleting the service
+	It("should ensure load balancer deleted", func() {
+		By("deleting the service")
+		err = tc.DeleteService(ctx, ns.Name, testServiceName)
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	// Case 5. We should not have any VCD resources after the deletion of loadbalancer service
+	It("should not have VCD resources after service has been deleted", func() {
+		// After service is deleted, check empty resources
+		By("checking VCD resources")
+		virtualServiceNamePrefix := utils.GetVirtualServicePrefix(svc, clusterId)
+		lbPoolNamePrefix := utils.GetLBPoolNamePrefix(svc, clusterId)
+		portDetailsList := utils.GetPortDetailsList(svc)
+		Expect(portDetailsList).NotTo(BeNil())
+
+		// These will be our defaults, so it's ok to hardcode this. We can also retrieve this from ccm configmap
+		oneArm := vcdsdk.OneArm{
+			StartIP: "192.168.8.2",
+			EndIP:   "192.168.8.100",
+		}
+
+		resourcesFound, err := utils.HasVCDResourcesForApplicationLB(context.TODO(), tc, gatewayMgr, &oneArm, virtualServiceNamePrefix, lbPoolNamePrefix, portDetailsList)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resourcesFound).Should(BeFalse())
+
+		By("cleaning up the remainder of deployment and namespaces")
+		err = tc.DeleteDeployment(ctx, ns.Name, testDeploymentName)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = tc.DeleteNameSpace(ctx, ns.Name)
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	// Case 6: Release the reserved IP
+	It("should be able to release IP", func() {
+		err = gatewayMgr.ReleaseIpFromLoadBalancer(ctx, explicitIP, claimMarker)
 		Expect(err).NotTo(HaveOccurred())
 	})
 })
