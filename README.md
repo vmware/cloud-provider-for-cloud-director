@@ -43,13 +43,18 @@ In this section, we assume that the Kubernetes cluster is created using the Cont
 The `ClusterAdminUser` should have view access to the vApp containing the Kubernetes cluster. Since the `ClusterAdminUser` itself creates the cluster, it will have this access by default.
 This `ClusterAdminUser` needs to be created from a `ClusterAdminRole` with the following additional rights:
 
-1. Gateway =>
-   1. View Gateway
-2. Gateway Services =>
+1. NETWORKING => Edge Gateway
+   1.  View Gateway
+2. NETWORKING => Edge Gateway Services =>
    1. NAT Configure (adds NAT View)
-   2. LoadBalancer Configure (adds LoadBalancer View)
-3. Access Control =>
-   1. User => Manage user's own API TOKEN
+   2. Load Balancer Configure (adds LoadBalancer View)
+3. Access Control => User => 
+   1. Manage user's own API TOKEN
+For CPI 1.6.0+, if Ip Spaces support is desired
+4. NETWORKING => IP Spaces =>
+  1. Allocate Ip Spaces
+  2. Manage Ip Spaces
+  3. View Ip Spaces
 
 The `Access Control` right is needed in order to generate refresh tokens for the `ClusterAdminUser`.
 
@@ -64,6 +69,8 @@ The LoadBalancers using the CPI of VCD need a preconfigured Avi Controller, NSX-
 Please follow best practices of configuring NSX ALB with VCD for multi-tenant environment.
 
 The LoadBalancer section of the Edge Gateway for a Tenant should be enabled, and the appropriate Service Engine Group(s) should be configured into the Edge Gateway. This will be used to create Virtual Services when a LoadBalancer request is made from Kubernetes.
+
+Provider can choose to use either Ip Blocks / Ip Spaces while creating the edge gateway(s). Quota management for Ip Spaces are also Provider's responsibility.
 
 #### Tenant Setup
 A ServiceEngineGroup needs to be added to the gateway of the OVDC within which the Kubernetes cluster is to be created. The overall steps to achieve that are documented at [Enable Load Balancer on an NSX-T Data Center Edge Gateway](https://docs.vmware.com/en/VMware-Cloud-Director/10.3/VMware-Cloud-Director-Service-Provider-Admin-Portal-Guide/GUID-1784B96B-20F8-4E4D-BF33-86D2264EDBCF.html)
@@ -144,19 +151,19 @@ kubectl set env -n kube-system deployment/vmware-cloud-director-ccm GOVCD_LOG_ON
 **NOTE: Please make sure to collect the logs before and after enabling the wire log. The above commands update the CPI deployment, which creates a new CPI pod. The logs present in the old pod will be lost.**
 
 ## Upgrade CPI
-To upgrade CPI from v1.2.0 and v1.3.0 to v1.5.0, please do the following. `kubectl patch` will not work to upgrade CPI.
+To upgrade CPI from v1.2.0 and v1.3.0 to v1.6.0, please do the following. `kubectl patch` will not work to upgrade CPI.
 1. Delete the Kubernetes External Cloud Provider deployment using `kubectl delete deployment`
 2. Apply the manifest at: https://raw.githubusercontent.com/vmware/cloud-provider-for-cloud-director/1.5.0/manifests/cloud-director-ccm.yaml using `kubectl apply`
 
-To upgrade from CPI v1.4.z to v1.5.0, please execute the following command for each cluster
+To upgrade from CPI v1.4.z, v1.5.0 to v1.6.0, please execute the following command for each cluster
 ```shell
 kubectl patch deployment -n kube-system vmware-cloud-director-ccm -p '{"spec": {"template": {"spec": {"containers": [{"name": "vmware-cloud-director-ccm", "image": "projects.registry.vmware.com/vmware-cloud-director/cloud-provider-for-cloud-director:1.5.0"}]}}}}'
 ```
 ## Known Issues
-1. IP is not obtained for LoadBalancer Service if Edge Gateway has IP Spaces.
+1. IP is not obtained for LoadBalancer Service if Edge Gateway has IP Spaces. (Fixed in CPI 1.6.0)
    * While IP spaces are not supported in CPI 1.4.0, this is an issue because having IP spaces doesn't allow CPI to get a free IP for a LoadBalancer Service.
    * Workaround: Users can specify an IP to be used in `spec.loadBalancerIP` for the LoadBalancer Service.
-2. LoadBalancer Services with the same name in different namespaces can be bound to the same IP.
+2. LoadBalancer Services with the same name in different namespaces can be bound to the same IP. (Fixed in CPI 1.6.0, if Ip Spaces are used)
    * This issue is occurring LoadBalancer service names are not unique (e.g., by including the namespace in the name).
    * Workaround: Users should create a unique name or add the namespace to the LoadBalancer Service name.
 3. Updating service from `LoadBalancer` to `ClusterIP` does not clean up all LoadBalancer service CCM resources.
