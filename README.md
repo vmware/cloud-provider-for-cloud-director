@@ -48,15 +48,14 @@ This `ClusterAdminUser` needs to be created from a `ClusterAdminRole` with the f
 2. NETWORKING => Edge Gateway Services =>
       1. NAT Configure (adds NAT View)
       2. Load Balancer Configure (adds LoadBalancer View)
-3. Access Control => User => 
+3. Access Control => User => [^1]
       1. Manage user's own API TOKEN
-4.  NETWORKING => IP Spaces => [^1]
+4.  NETWORKING => IP Spaces => [^2]
       1. Allocate Ip Spaces
       2. Manage Ip Spaces
       3. View Ip Spaces
-[^1]:  Right required only for CPI 1.6.0+, if Ip Spaces support is desired
-
-The `Access Control` right is needed in order to generate refresh tokens for the `ClusterAdminUser`.
+[^1]: The `Access Control` right is needed in order to generate refresh tokens for the `ClusterAdminUser`.
+[^2]: Right required only for CPI 1.6.0+, if Ip Spaces support is desired
 
 ### Instances Interface: Node Lifecycle Management (LCM)
 There is no particular configuration needed in order to use the Node LCM.
