@@ -171,6 +171,8 @@ release-prep: ## Generate BOM and dependencies files.
 manifests: ## Generate CPI manifests
 	sed -e "s/__VERSION__/$(VERSION)/g" manifests/cloud-director-ccm.yaml.template > manifests/cloud-director-ccm.yaml
 	sed -e "s/__VERSION__/$(VERSION)/g" manifests/cloud-director-ccm-crs.yaml.template > manifests/cloud-director-ccm-crs.yaml
+	sed -e "s/__VERSION__/$(VERSION)/g" manifests/cloud-director-multiaz-ccm.yaml.template > manifests/cloud-director-multiaz-ccm.yaml
+	sed -e "s/__VERSION__/$(VERSION)/g" manifests/cloud-director-multiaz-ccm-crs.yaml.template > manifests/cloud-director-multiaz-ccm-crs.yaml
 
 .PHONY: docker-push-cpi
 docker-push-cpi: # Push CPI image to registry.
