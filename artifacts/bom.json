@@ -1,6 +1,6 @@
 {
 	"name":"cpi-crs-airgapped",
-	"version":"__VERSION__",
+	"version":"1.7.0-shamasundara",
 	"components": {
 		"manifests":[
 			{
@@ -16,7 +16,7 @@
 		"dependencies": [
 			{
 				"name":"vmware-cloud-director/cloud-provider-for-cloud-director",
-				"version":"__VERSION__",
+				"version":"1.7.0-shamasundara",
 				"imageRepository":"__REGISTRY__"
 			}
 		]

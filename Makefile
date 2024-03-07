@@ -163,6 +163,7 @@ release: docker-build docker-push ## Build release images and push to registry.
 .PHONY: release-prep
 release-prep: ## Generate BOM and dependencies files.
 	sed -e "s/__VERSION__/$(VERSION)/g" artifacts/default-cloud-director-ccm-crs-airgap.yaml.template > artifacts/cloud-director-ccm-crs-airgap.yaml.template
+	sed -e "s/__VERSION__/$(VERSION)/g" artifacts/default-cloud-director-multiaz-ccm-crs-airgap.yaml.template > artifacts/cloud-director-multiaz-ccm-crs-airgap.yaml.template
 	sed -e "s/__VERSION__/$(VERSION)/g" artifacts/dependencies.txt.template > artifacts/dependencies.txt
 	sed -e "s/__VERSION__/$(VERSION)/g" artifacts/bom.json.template > artifacts/bom.json
 
