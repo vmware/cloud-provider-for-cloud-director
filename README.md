@@ -153,11 +153,11 @@ kubectl set env -n kube-system deployment/vmware-cloud-director-ccm GOVCD_LOG_ON
 ## Upgrade CPI
 To upgrade CPI from v1.2.0 and v1.3.0 to v1.6.0, please do the following. `kubectl patch` will not work to upgrade CPI.
 1. Delete the Kubernetes External Cloud Provider deployment using `kubectl delete deployment`
-2. Apply the manifest at: https://raw.githubusercontent.com/vmware/cloud-provider-for-cloud-director/1.5.0/manifests/cloud-director-ccm.yaml using `kubectl apply`
+2. Apply the manifest at: https://raw.githubusercontent.com/vmware/cloud-provider-for-cloud-director/1.6.0/manifests/cloud-director-ccm.yaml using `kubectl apply`
 
 To upgrade from CPI v1.4.z, v1.5.0 to v1.6.0, please execute the following command for each cluster
 ```shell
-kubectl patch deployment -n kube-system vmware-cloud-director-ccm -p '{"spec": {"template": {"spec": {"containers": [{"name": "vmware-cloud-director-ccm", "image": "projects.registry.vmware.com/vmware-cloud-director/cloud-provider-for-cloud-director:1.5.0"}]}}}}'
+kubectl patch deployment -n kube-system vmware-cloud-director-ccm -p '{"spec": {"template": {"spec": {"containers": [{"name": "vmware-cloud-director-ccm", "image": "projects.registry.vmware.com/vmware-cloud-director/cloud-provider-for-cloud-director:1.6.0"}]}}}}'
 ```
 ## Known Issues
 1. LoadBalancer Services with the same name in different namespaces can be bound to the same IP.
