@@ -4,7 +4,7 @@ This repository contains the [Kubernetes cloud-controller-manager](https://kuber
 The version of the VMware Cloud Director API and Installation that are compatible for a given cloud-provider container image are described in the following compatibility matrix:
 | CPI Version | CSE Version | VMware Cloud Director API | VMware Cloud Director Installation | Notes  | Kubernetes Versions | Docs |
 |:-----------:|:-----------:|:-------------------------:|:----------------------------------:|:------:|:-------------------:|:----:|
-|    1.6.0    | 4.2.0+ | 37.2 | 10.4.3+ | <ul><li>Added support for Gateways using IP spaces</li><li>Upgraded VCD API version used by CPI from 36.0 to 37.2</li><li>Bump golang.org/x/crypto from 0.14.0 to 0.17.0</li></ul> | <ul><li>1.28</li><li>1.27</li><li>1.26</li><li>1.25</li><li>1.24</li><li>1.23</li><li>1.22</li></ul> | [CPI 1.6.z docs](https://github.com/vmware/cloud-provider-for-cloud-director/tree/1.6.z) |
+|    1.6.0    | 4.2.0+ | 37.2 | 10.4.3+ | <ul><li>Added support for Gateways that use IP spaces</li><li>Upgraded VCD API version used by CPI from 36.0 to 37.2</li><li>Bump golang.org/x/crypto from 0.14.0 to 0.17.0</li></ul> | <ul><li>1.28</li><li>1.27</li><li>1.26</li><li>1.25</li><li>1.24</li><li>1.23</li><li>1.22</li></ul> | [CPI 1.6.z docs](https://github.com/vmware/cloud-provider-for-cloud-director/tree/1.6.z) |
 |    1.5.0    | 4.2.0+ | 36.0 | 10.3.1+ <br/>(10.3.1 needs hot-patch to prevent VCD cell crashes in multi-cell environments) | <ul><li>Upgraded golang version to 1.20 (#285)</li><li>Bump golang.org/x/net from 0.7.0 to 0.17.0 (#302)</li><li>Upgraded google.golang.org/grpc from 1.53.0 to 1.56.3 (#308)</li><li>Removal of `omitempty` from graceful disable timeout in vcd swagger client (#311)</li><li>Common core change to make RDE.state type a custom string type (#297)</li><li>Common core change to update virtual service key reference to use `VcdResourceVirtualService` in gateway logic (#318)</li><li>Updates in testing framework for RDE updates (#314 and #316)</li></ul> | <ul><li>1.27</li><li>1.26</li><li>1.25</li><li>1.24</li><li>1.23</li><li>1.22</li></ul> | [CPI 1.5.z docs](https://github.com/vmware/cloud-provider-for-cloud-director/tree/1.5.z) |                                                                                                        |<ul><li>1.25</li><li>1.24</li><li>1.23</li><li>1.22</li><li>1.21</li></ul>|[CPI 1.4.z docs](https://github.com/vmware/cloud-provider-for-cloud-director/tree/1.4.z)|
 |    1.4.1    | 4.1.0+ | 36.0 | 10.3.1+ <br/>(10.3.1 needs hot-patch to prevent VCD cell crashes in multi-cell environments) | <ul><li>Bump gopkg.in/yaml.v3 version (#286)</li><li>Changes in common core to create VMs having 15 character password (#212)</li><li>Remove options from CPI deployment spec which are not covered by Pod Security Standards (#280)</li><li>Changes for testing framework (multiple PR's)</li></ul>                                                                                                           |<ul><li>1.25</li><li>1.24</li><li>1.23</li><li>1.22</li><li>1.21</li></ul>|[CPI 1.4.z docs](https://github.com/vmware/cloud-provider-for-cloud-director/tree/1.4.z) |
 |    1.4.0    | 4.1.0+ | 36.0 | 10.3.1+ <br/>(10.3.1 needs hot-patch to prevent VCD cell crashes in multi-cell environments) | <ul><li>Support for packaging CPI CRS in a container for CSE airgap workflow. (#234)</li><li>Setting computer name as vm name in case naming policies require this. (#219)</li><li>update tolerations for "control-plane" node (#240)<li>move to scratch image and static binary (#255)<li>Set InternalIP for only primary network (#225)</li><li>Upgraded golang version to 1.19</li><li>Bug fixes: safe access for OVDC and safe access for OVDC network (#235)</li><li>Added Testing Framework (multiple PR's)</li></ul> |<ul><li>1.25</li><li>1.24</li><li>1.23</li><li>1.22</li><li>1.21</li></ul>|[CPI 1.4.z docs](https://github.com/vmware/cloud-provider-for-cloud-director/tree/1.4.z) |
@@ -44,17 +44,17 @@ The `ClusterAdminUser` should have view access to the vApp containing the Kubern
 This `ClusterAdminUser` needs to be created from a `ClusterAdminRole` with the following additional rights:
 
 1. NETWORKING => Edge Gateway
-   1.  View Gateway
+      1.  View Gateway
 2. NETWORKING => Edge Gateway Services =>
-   1. NAT Configure (adds NAT View)
-   2. Load Balancer Configure (adds LoadBalancer View)
+      1. NAT Configure (adds NAT View)
+      2. Load Balancer Configure (adds LoadBalancer View)
 3. Access Control => User => 
-   1. Manage user's own API TOKEN
-For CPI 1.6.0+, if Ip Spaces support is desired
-4. NETWORKING => IP Spaces =>
-  1. Allocate Ip Spaces
-  2. Manage Ip Spaces
-  3. View Ip Spaces
+      1. Manage user's own API TOKEN
+4.  NETWORKING => IP Spaces => [^1]
+      1. Allocate Ip Spaces
+      2. Manage Ip Spaces
+      3. View Ip Spaces
+[^1]:  Right required only for CPI 1.6.0+, if Ip Spaces support is desired
 
 The `Access Control` right is needed in order to generate refresh tokens for the `ClusterAdminUser`.
 
@@ -160,13 +160,10 @@ To upgrade from CPI v1.4.z, v1.5.0 to v1.6.0, please execute the following comma
 kubectl patch deployment -n kube-system vmware-cloud-director-ccm -p '{"spec": {"template": {"spec": {"containers": [{"name": "vmware-cloud-director-ccm", "image": "projects.registry.vmware.com/vmware-cloud-director/cloud-provider-for-cloud-director:1.5.0"}]}}}}'
 ```
 ## Known Issues
-1. IP is not obtained for LoadBalancer Service if Edge Gateway has IP Spaces. (Fixed in CPI 1.6.0)
-   * While IP spaces are not supported in CPI 1.4.0, this is an issue because having IP spaces doesn't allow CPI to get a free IP for a LoadBalancer Service.
-   * Workaround: Users can specify an IP to be used in `spec.loadBalancerIP` for the LoadBalancer Service.
-2. LoadBalancer Services with the same name in different namespaces can be bound to the same IP. (Fixed in CPI 1.6.0, if Ip Spaces are used)
+1. LoadBalancer Services with the same name in different namespaces can be bound to the same IP.
    * This issue is occurring LoadBalancer service names are not unique (e.g., by including the namespace in the name).
    * Workaround: Users should create a unique name or add the namespace to the LoadBalancer Service name.
-3. Updating service from `LoadBalancer` to `ClusterIP` does not clean up all LoadBalancer service CCM resources.
+2. Updating service from `LoadBalancer` to `ClusterIP` does not clean up all LoadBalancer service CCM resources.
    * If a DNAT is used, this may get cleaned up, but the virtual service and pools may still remain.
    * Workaround: Delete the LoadBalancer service and recreate the service.
 
