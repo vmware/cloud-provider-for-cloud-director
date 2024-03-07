@@ -165,11 +165,11 @@ spec:
             - name: vcloud-ccm-vcloud-basic-auth-volume
               mountPath: /etc/kubernetes/vcloud/basic-auth
           env:
-            - name: CLUSTER_ID
-              valueFrom:
-                secretKeyRef:
-                  name: vcloud-clusterid-secret
-                  key: clusterid
+          - name: CLUSTER_ID
+            valueFrom:
+              secretKeyRef:
+                name: vcloud-clusterid-secret
+                key: clusterid
       tolerations:
         - key: node.cloudprovider.kubernetes.io/uninitialized
           value: "true"
@@ -185,8 +185,8 @@ spec:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
               - matchExpressions:
-                  - key: node-role.kubernetes.io/control-plane
-                    operator: "Exists"
+                - key: node-role.kubernetes.io/control-plane
+                  operator: "Exists"
       volumes:
         - name: vcloud-ccm-config-volume
           configMap:
