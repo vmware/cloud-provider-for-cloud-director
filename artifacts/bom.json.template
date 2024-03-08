@@ -6,10 +6,6 @@
 			{
 				"name": "cloud-director-ccm-crs-airgap.yaml.template",
 				"url": ""
-			},
-			{
-                "name": "cloud-director-multiaz-ccm-crs-airgap.yaml.template",
-                "url": ""
 			}
 		],
 		"binaries": [],
