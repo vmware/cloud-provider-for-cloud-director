@@ -185,6 +185,9 @@ spec:
         - name: vcloud-ccm-config-volume
           configMap:
             name: vcloud-ccm-configmap
+        - name: vcloud-capvcd-zones
+          configMap:
+            name: vcloud-capvcd-zones
         - name: vcloud-ccm-vcloud-basic-auth-volume
           secret:
             secretName: vcloud-basic-auth
