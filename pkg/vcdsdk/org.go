@@ -76,7 +76,7 @@ func (orgManager *OrgManager) GetComputePolicyDetailsFromName(computePolicyName 
 }
 
 func (orgManager *OrgManager) SearchVMAcrossVDCs(vmName string, clusterName string, vmId string,
-	ovdcNameList []string) (*govcd.VM, string, error) {
+	ovdcNameList []string, isMultiZoneCluster bool) (*govcd.VM, string, error) {
 
 	org, err := orgManager.Client.VCDClient.GetOrgByName(orgManager.OrgName)
 	if err != nil {
@@ -93,12 +93,14 @@ func (orgManager *OrgManager) SearchVMAcrossVDCs(vmName string, clusterName stri
 				ovdcName, orgManager.OrgName, err)
 			continue
 		}
-
-		vAppNamePrefix, err := CreateVAppNamePrefix(clusterName, vdc.Vdc.ID)
-		if err != nil {
-			klog.Infof("Unable to create a vApp name prefix for cluster [%s] in OVDC [%s] with OVDC ID [%s]: [%v]",
-				clusterName, vdc.Vdc.Name, vdc.Vdc.ID, err)
-			continue
+		vAppNamePrefix := clusterName
+		if isMultiZoneCluster {
+			vAppNamePrefix, err = CreateVAppNamePrefix(clusterName, vdc.Vdc.ID)
+			if err != nil {
+				klog.Infof("Unable to create a vApp name prefix for cluster [%s] in OVDC [%s] with OVDC ID [%s]: [%v]",
+					clusterName, vdc.Vdc.Name, vdc.Vdc.ID, err)
+				continue
+			}
 		}
 
 		klog.Infof("Looking for vApps with a prefix of [%s]", vAppNamePrefix)

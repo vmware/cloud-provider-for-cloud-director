@@ -101,14 +101,17 @@ func (vmic *VmInfoCache) SearchVMAcrossVDCs(vmName string, vmId string) (*govcd.
 	}
 
 	var ovdcNameList []string = nil
+	var isMultiZoneCluster bool
 	if vmic.zm != nil {
 		for key, _ := range vmic.zm.VdcToZoneMap {
 			ovdcNameList = append(ovdcNameList, key)
 		}
+		isMultiZoneCluster = true
 	} else {
 		ovdcNameList = []string{
 			vmic.client.ClusterOVDCName,
 		}
+		isMultiZoneCluster = false
 	}
 
 	orgManager := vcdsdk.OrgManager{
@@ -116,7 +119,7 @@ func (vmic *VmInfoCache) SearchVMAcrossVDCs(vmName string, vmId string) (*govcd.
 		OrgName: vmic.client.ClusterOrgName,
 	}
 
-	return orgManager.SearchVMAcrossVDCs(vmName, vmic.clusterVAppName, vmId, ovdcNameList)
+	return orgManager.SearchVMAcrossVDCs(vmName, vmic.clusterVAppName, vmId, ovdcNameList, isMultiZoneCluster)
 }
 
 func (vmic *VmInfoCache) GetByName(vmName string) (*VmInfo, error) {
