@@ -100,16 +100,16 @@ func (vmic *VmInfoCache) SearchVMAcrossVDCs(vmName string, vmId string) (*govcd.
 		return nil, "", fmt.Errorf("error while obtaining access token: [%v]", err)
 	}
 
-	var ovdcNameList []string = nil
+	var ovdcIdentifierList []string = nil
 	var isMultiZoneCluster bool
 	if vmic.zm != nil {
 		for key, _ := range vmic.zm.VdcToZoneMap {
-			ovdcNameList = append(ovdcNameList, key)
+			ovdcIdentifierList = append(ovdcIdentifierList, key)
 		}
 		isMultiZoneCluster = true
 	} else {
-		ovdcNameList = []string{
-			vmic.client.ClusterOVDCName,
+		ovdcIdentifierList = []string{
+			vmic.client.ClusterOVDCIdentifier,
 		}
 		isMultiZoneCluster = false
 	}
@@ -119,7 +119,7 @@ func (vmic *VmInfoCache) SearchVMAcrossVDCs(vmName string, vmId string) (*govcd.
 		OrgName: vmic.client.ClusterOrgName,
 	}
 
-	return orgManager.SearchVMAcrossVDCs(vmName, vmic.clusterVAppName, vmId, ovdcNameList, isMultiZoneCluster)
+	return orgManager.SearchVMAcrossVDCs(vmName, vmic.clusterVAppName, vmId, ovdcIdentifierList, isMultiZoneCluster)
 }
 
 func (vmic *VmInfoCache) GetByName(vmName string) (*VmInfo, error) {
