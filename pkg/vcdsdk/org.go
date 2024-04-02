@@ -76,21 +76,21 @@ func (orgManager *OrgManager) GetComputePolicyDetailsFromName(computePolicyName 
 }
 
 func (orgManager *OrgManager) SearchVMAcrossVDCs(vmName string, clusterName string, vmId string,
-	ovdcNameList []string, isMultiZoneCluster bool) (*govcd.VM, string, error) {
+	ovdcIdentifierList []string, isMultiZoneCluster bool) (*govcd.VM, string, error) {
 
 	org, err := orgManager.Client.VCDClient.GetOrgByName(orgManager.OrgName)
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to get org by name [%s]: [%v]", orgManager.OrgName, err)
 	}
 
-	for _, ovdcName := range ovdcNameList {
+	for _, ovdcIdentifier := range ovdcIdentifierList {
 		klog.Infof("Looking for VM [name:%s],[id:%s] of cluster [%s] in OVDC [%s]",
-			vmName, vmId, clusterName, ovdcName)
+			vmName, vmId, clusterName, ovdcIdentifier)
 
-		vdc, err := org.GetVDCByName(ovdcName, true)
+		vdc, err := org.GetVDCByNameOrId(ovdcIdentifier, true)
 		if err != nil {
-			klog.Infof("unable to query VDC [%s] in Org [%s] by name: [%v]",
-				ovdcName, orgManager.OrgName, err)
+			klog.Infof("unable to query VDC [%s] in Org [%s] by identifier: [%v]",
+				ovdcIdentifier, orgManager.OrgName, err)
 			continue
 		}
 		vAppNamePrefix := clusterName
@@ -139,7 +139,7 @@ func (orgManager *OrgManager) SearchVMAcrossVDCs(vmName string, clusterName stri
 		}
 
 		klog.Infof("Could not find VM [name:%s],[id:%s] of cluster [%s] in OVDC [%s]",
-			vmName, vmId, clusterName, ovdcName)
+			vmName, vmId, clusterName, ovdcIdentifier)
 	}
 
 	return nil, "", govcd.ErrorEntityNotFound

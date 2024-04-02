@@ -28,7 +28,7 @@ func TestVApp(t *testing.T) {
 
 	// create vApp
 	vAppName := "test-vapp"
-	vdcManager, err := NewVDCManager(vcdClient, vcdClient.ClusterOrgName, vcdClient.ClusterOVDCName)
+	vdcManager, err := NewVDCManager(vcdClient, vcdClient.ClusterOrgName, vcdClient.ClusterOVDCIdentifier)
 	assert.NoError(t, err, "error creating VDCManager")
 
 	// create VApp
@@ -63,7 +63,7 @@ func TestDeleteVapp(t *testing.T) {
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
 
 	vappName := "vapp1"
-	vdcManager, err := NewVDCManager(vcdClient, vcdClient.ClusterOrgName, vcdClient.ClusterOVDCName)
+	vdcManager, err := NewVDCManager(vcdClient, vcdClient.ClusterOrgName, vcdClient.ClusterOVDCIdentifier)
 	assert.NoError(t, err, "there should be no error in creating VDCManager object")
 	vapp, err := vdcManager.GetOrCreateVApp(vappName, vcdConfig.OvdcNetwork)
 	assert.NoError(t, err, "unable to find vApp")
@@ -90,7 +90,7 @@ func TestVdcManager_CacheVdcDetails(t *testing.T) {
 	assert.NoError(t, err, "Unable to get VCD client")
 	require.NotNil(t, vcdClient, "VCD Client should not be nil")
 
-	vdcManager, err := NewVDCManager(vcdClient, vcdClient.ClusterOrgName, vcdClient.ClusterOVDCName)
+	vdcManager, err := NewVDCManager(vcdClient, vcdClient.ClusterOrgName, vcdClient.ClusterOVDCIdentifier)
 	err = vdcManager.cacheVdcDetails()
 	assert.NoError(t, err, "There should no error while caching VDC details")
 }
@@ -107,7 +107,7 @@ func TestVMCreation(t *testing.T) {
 
 	// create vApp
 	vAppName := "test-vapp"
-	vdcManager, err := NewVDCManager(vcdClient, vcdClient.ClusterOrgName, vcdClient.ClusterOVDCName)
+	vdcManager, err := NewVDCManager(vcdClient, vcdClient.ClusterOrgName, vcdClient.ClusterOVDCIdentifier)
 	assert.NoError(t, err, "there should be no error when creating VDCManager object")
 
 	vApp, err := vdcManager.GetOrCreateVApp(vAppName, vcdConfig.OvdcNetwork)
@@ -181,7 +181,7 @@ func TestVMExtraConfig(t *testing.T) {
 
 	// create vApp
 	vAppName := "test-vapp"
-	vdcManager, err := NewVDCManager(vcdClient, vcdClient.ClusterOrgName, vcdClient.ClusterOVDCName)
+	vdcManager, err := NewVDCManager(vcdClient, vcdClient.ClusterOrgName, vcdClient.ClusterOVDCIdentifier)
 	assert.NoError(t, err, "there should be no error when creating VDCManager object")
 
 	vApp, err := vdcManager.GetOrCreateVApp(vAppName, vcdConfig.OvdcNetwork)

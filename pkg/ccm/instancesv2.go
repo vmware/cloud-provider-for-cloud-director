@@ -81,7 +81,7 @@ func (i instancesV2) InstanceShutdown(ctx context.Context, node *v1.Node) (bool,
 	status, err := vmInfo.vm.GetStatus()
 	if err != nil {
 		vdcManager, vdcManagerErr := vcdsdk.NewVDCManager(i.vmInfoCache.client, i.vmInfoCache.client.ClusterOrgName,
-			i.vmInfoCache.client.ClusterOVDCName)
+			i.vmInfoCache.client.ClusterOVDCIdentifier)
 		if vdcManagerErr != nil {
 			return false, fmt.Errorf("error creating VDC manager object: [%v]", err)
 		}
