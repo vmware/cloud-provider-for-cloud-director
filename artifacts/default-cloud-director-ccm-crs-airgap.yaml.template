@@ -166,6 +166,8 @@ spec:
               mountPath: /etc/kubernetes/vcloud
             - name: vcloud-ccm-vcloud-basic-auth-volume
               mountPath: /etc/kubernetes/vcloud/basic-auth
+            - name: vcloud-capvcd-zones-volume
+              mountPath: /opt/vmware-cloud-director/ccm
           env:
             - name: CLUSTER_ID
               valueFrom:
@@ -193,7 +195,7 @@ spec:
         - name: vcloud-ccm-config-volume
           configMap:
             name: vcloud-ccm-configmap
-        - name: vcloud-capvcd-zones
+        - name: vcloud-capvcd-zones-volume
           configMap:
             name: vcloud-capvcd-zones
         - name: vcloud-ccm-vcloud-basic-auth-volume
