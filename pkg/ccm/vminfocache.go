@@ -51,7 +51,7 @@ func newVmInfoCache(client *vcdsdk.Client, clusterVAppName string, expiry time.D
 	}
 }
 
-func (vmic *VmInfoCache) vmToVMInfo(vm *govcd.VM, ovdc string, captureTime time.Time) (*VmInfo, error) {
+func (vmic *VmInfoCache) vmToVMInfo(vm *govcd.VM, ovdcIdentifier string, captureTime time.Time) (*VmInfo, error) {
 
 	if vm == nil {
 		return nil, fmt.Errorf("vm parameter should not be nil")
@@ -62,7 +62,7 @@ func (vmic *VmInfoCache) vmToVMInfo(vm *govcd.VM, ovdc string, captureTime time.
 
 	vmInfo := &VmInfo{
 		vm:        vm,
-		OVDC:      ovdc,
+		OVDC:      ovdcIdentifier,
 		UUID:      vm.VM.ID,
 		Name:      vm.VM.Name,
 		Type:      "",
@@ -137,13 +137,13 @@ func (vmic *VmInfoCache) GetByName(vmName string) (*VmInfo, error) {
 		delete(vmic.nameMap, vmName)
 	}
 
-	vm, ovdcName, err := vmic.SearchVMAcrossVDCs(vmName, "")
+	vm, ovdcIdentifier, err := vmic.SearchVMAcrossVDCs(vmName, "")
 	if err != nil {
 		return nil, fmt.Errorf("unable to find VM [%s] in org [%s] for cluster [%s]: [%v]",
 			vmName, vmic.client.ClusterOrgName, vmic.clusterVAppName, err)
 	}
 
-	vmInfo, err := vmic.vmToVMInfo(vm, ovdcName, time.Now())
+	vmInfo, err := vmic.vmToVMInfo(vm, ovdcIdentifier, time.Now())
 	if err != nil {
 		return nil, fmt.Errorf("unable to convert vm struct [%v] to vmInfo: [%v]", vm, err)
 	}
@@ -168,13 +168,13 @@ func (vmic *VmInfoCache) GetByUUID(vmUUID string) (*VmInfo, error) {
 		// don't use old values
 		delete(vmic.nameMap, vmUUID)
 	}
-	vm, ovdcName, err := vmic.SearchVMAcrossVDCs("", vmUUID)
+	vm, ovdcIdentifier, err := vmic.SearchVMAcrossVDCs("", vmUUID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to find VM [%s] in org [%s] for cluster [%s]: [%v]",
 			vmUUID, vmic.client.ClusterOrgName, vmic.clusterVAppName, err)
 	}
 
-	vmInfo, err := vmic.vmToVMInfo(vm, ovdcName, time.Now())
+	vmInfo, err := vmic.vmToVMInfo(vm, ovdcIdentifier, time.Now())
 	if err != nil {
 		return nil, fmt.Errorf("unable to convert vm struct [%v] to vmInfo: [%v]", vm, err)
 	}
