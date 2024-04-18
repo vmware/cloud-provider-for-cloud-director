@@ -18,6 +18,7 @@ var (
 	username    string
 	token       string
 	useIpSpaces string
+	isMultiAZ   string
 
 	ContainerImage string
 )
@@ -38,6 +39,8 @@ func init() {
 	flag.StringVar(&clusterId, "clusterId", "", "Cluster ID to fetch cluster RDE")
 	// jenkins boolean param gets auto converted to string when passed in as params
 	flag.StringVar(&useIpSpaces, "useIpSpaces", "false", "Set to 'true' if the gateway supports Ip Spaces")
+	// isMultiAz cluster boolean param is assigned to true to run tests for a multi AZ cluster
+	flag.StringVar(&isMultiAZ, "isMultiAZ", "false", "Set to 'true' for a multi AZ cluster")
 }
 
 var _ = BeforeSuite(func() {
@@ -50,6 +53,7 @@ var _ = BeforeSuite(func() {
 	Expect(token).NotTo(BeEmpty(), "Please make sure --token is set correctly.")
 	Expect(clusterId).NotTo(BeEmpty(), "Please make sure --clusterId is set correctly.")
 	// useIpSpaces will default to "false"
+	// isMultiAZ will default to "false"
 
 	// AIRGAP environment variable is expected to be set in jenkins or by user via `export AIRGAP="true"`
 	useAirgap := os.Getenv("AIRGAP")

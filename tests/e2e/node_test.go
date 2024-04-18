@@ -8,6 +8,7 @@ import (
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/testingsdk"
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdsdk"
 	"github.com/vmware/cloud-provider-for-cloud-director/tests/e2e/utils"
+	"github.com/vmware/go-vcloud-director/v2/govcd"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -20,7 +21,9 @@ var _ = Describe("Node LCM", func() {
 		deleteTestSpecExecuted bool
 	)
 
-	tc, err = utils.NewTestClient(host, org, userOrg, ovdcName, username, token, clusterId, true)
+	// ovdcName: ovdc name for a no-zone cluster
+	// VDC client for the test client is initialized in the BeforeEach() block
+	tc, err = utils.NewTestClient(host, org, userOrg, ovdcName, username, token, clusterId, false)
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(tc).NotTo(BeNil())
 	Expect(&tc.Cs).NotTo(BeNil())
@@ -39,16 +42,37 @@ var _ = Describe("Node LCM", func() {
 	Expect(vdcManager).NotTo(BeNil())
 
 	It("should stop a worker VM in VCD", func() {
+		By("getting at least 1 worker node from our cluster")
+		workerNode, err = utils.GetWorkerNode(ctx, tc)
+		Expect(err).ShouldNot(HaveOccurred())
+		Expect(workerNode).NotTo(BeNil())
+
+		var ovdc *govcd.Vdc
+		if isMultiAZ == "true" {
+			By("setting up VDC client for a multi AZ cluster")
+			zoneName, ok := workerNode.Labels[v1.LabelFailureDomainBetaZone]
+			Expect(ok).NotTo(BeFalse())
+			Expect(zoneName).NotTo(BeEmpty())
+
+			ovdc, err = utils.GetVDCForZone(tc, zoneName)
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(ovdc).NotTo(BeNil())
+
+		} else {
+			By("setting up VDC client for a no-zone cluster")
+			// use ovdcName to get the VDC client
+
+			ovdc, err = utils.GetOvdcByName(tc, ovdcName)
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(ovdc).NotTo(BeNil())
+		}
+		tc.VcdClient.VDC = ovdc
+
 		By("ensuring that vApp exists")
 		clusterVApp, err := tc.VcdClient.VDC.GetVAppByName(tc.ClusterName, true)
 		Expect(err).ShouldNot(HaveOccurred())
 		Expect(clusterVApp).NotTo(BeNil())
 		Expect(clusterVApp.VApp).NotTo(BeNil())
-
-		By("getting at least 1 worker node from our cluster")
-		workerNode, err = utils.GetWorkerNode(ctx, tc)
-		Expect(err).ShouldNot(HaveOccurred())
-		Expect(workerNode).NotTo(BeNil())
 
 		By("verifying that there exists a VM found worker node's name")
 		workerVm, err := vdcManager.FindVMByName(clusterVApp.VApp.Name, workerNode.Name)

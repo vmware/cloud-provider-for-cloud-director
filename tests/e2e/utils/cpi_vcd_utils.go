@@ -11,6 +11,11 @@ import (
 	"strings"
 )
 
+const (
+	VCloudZoneConfigMapName      = "vcloud-capvcd-zones"
+	VCloudZoneConfigMapNamespace = "kube-system"
+)
+
 func NewTestClient(host, org, userOrg, ovdcIdentifier, username, token, clusterId string, getVdcClient bool) (*testingsdk.TestClient, error) {
 	vcdAuthParams := &testingsdk.VCDAuthParams{
 		Host:           host,
@@ -117,6 +122,46 @@ func HasVCDResourcesForApplicationLB(ctx context.Context, testClient *testingsdk
 		vsFound, lbPoolFound, dnatRuleFound, appPortProfileFound, oneArm)
 }
 
+func GetOvdcByName(tc *testingsdk.TestClient, vdcName string) (*govcd.Vdc, error) {
+	if tc == nil || tc.VcdClient == nil {
+		return nil, fmt.Errorf("testing client not initialized")
+	}
+	org, err := tc.VcdClient.VCDClient.GetOrgByName(tc.VcdClient.ClusterOrgName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get org [%s] by name", tc.VcdClient.ClusterOrgName)
+	}
+	vdc, err := org.GetVDCByName(vdcName, true)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get VDC [%s] by name from org [%s]", vdcName, tc.VcdClient.ClusterOrgName)
+	}
+	return vdc, nil
+}
+
 func getTrimmedClusterID(clusterId string) string {
 	return strings.TrimPrefix(clusterId, clusterUrnPrefix)
+}
+
+func GetVDCForZone(tc *testingsdk.TestClient, zoneName string) (*govcd.Vdc, error) {
+	zoneConfigMap, err := tc.GetConfigMap(VCloudZoneConfigMapName, VCloudZoneConfigMapNamespace)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the zone config map: [%v]", err)
+	}
+	if zoneConfigMap == nil {
+		return nil, fmt.Errorf("zone config map is nil")
+	}
+	zoneToOVDC, err := tc.GetZoneMapFromZoneConfigMap(zoneConfigMap)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get zone name to ovdc name mapping: [%v]", err)
+	}
+
+	ovdcName, ok := zoneToOVDC[zoneName]
+	if !ok {
+		return nil, fmt.Errorf("zone config map doesn't have an entry for the zone name")
+	}
+
+	vdc, err := GetOvdcByName(tc, ovdcName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find OVDC by name [%s]: [%v]", ovdcName, err)
+	}
+	return vdc, nil
 }
