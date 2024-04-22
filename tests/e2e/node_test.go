@@ -8,8 +8,11 @@ import (
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/testingsdk"
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdsdk"
 	"github.com/vmware/cloud-provider-for-cloud-director/tests/e2e/utils"
-	"github.com/vmware/go-vcloud-director/v2/govcd"
 	v1 "k8s.io/api/core/v1"
+)
+
+const (
+	OwnerNameAnnotation = "cluster.x-k8s.io/owner-name"
 )
 
 // Note: This test requires at least 2 worker nodes as we will be deleting one of them.
@@ -19,6 +22,8 @@ var _ = Describe("Node LCM", func() {
 		workerNode             *v1.Node
 		tc                     *testingsdk.TestClient
 		deleteTestSpecExecuted bool
+		workerNodeVAppName     string
+		vdcManager             *vcdsdk.VdcManager
 	)
 
 	// ovdcName: ovdc name for a no-zone cluster
@@ -37,39 +42,43 @@ var _ = Describe("Node LCM", func() {
 		}
 	})
 
-	vdcManager, err := vcdsdk.NewVDCManager(tc.VcdClient, org, ovdcName)
-	Expect(err).ShouldNot(HaveOccurred())
-	Expect(vdcManager).NotTo(BeNil())
-
 	It("should stop a worker VM in VCD", func() {
 		By("getting at least 1 worker node from our cluster")
 		workerNode, err = utils.GetWorkerNode(ctx, tc)
 		Expect(err).ShouldNot(HaveOccurred())
 		Expect(workerNode).NotTo(BeNil())
 
-		var ovdc *govcd.Vdc
 		if isMultiAZ == "true" {
-			By("setting up VDC client for a multi AZ cluster")
+			By("setting up VDC client and VDC manager for a multi AZ cluster")
 			zoneName, ok := workerNode.Labels[v1.LabelFailureDomainBetaZone]
 			Expect(ok).NotTo(BeFalse())
 			Expect(zoneName).NotTo(BeEmpty())
 
-			ovdc, err = utils.GetVDCForZone(tc, zoneName)
+			vdcName, err := utils.GetVDCForZone(tc, zoneName)
 			Expect(err).ShouldNot(HaveOccurred())
-			Expect(ovdc).NotTo(BeNil())
+			Expect(vdcName).NotTo(BeEmpty())
+			vdcManager, err = vcdsdk.NewVDCManager(tc.VcdClient, org, vdcName)
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(vdcManager).NotTo(BeNil())
+			tc.VcdClient.VDC = vdcManager.Vdc
+
+			machineSetName, ok := workerNode.Annotations[OwnerNameAnnotation]
+			Expect(ok).NotTo(BeFalse())
+			workerNodeVAppName, err = utils.GetVAppNameFromNode(tc.ClusterName, machineSetName, vdcManager.Vdc.Vdc.ID)
+			Expect(err).ShouldNot(HaveOccurred())
 
 		} else {
-			By("setting up VDC client for a no-zone cluster")
+			By("setting up VDC client and VDC manager for a no-zone cluster")
 			// use ovdcName to get the VDC client
-
-			ovdc, err = utils.GetOvdcByName(tc, ovdcName)
+			vdcManager, err = vcdsdk.NewVDCManager(tc.VcdClient, org, ovdcName)
 			Expect(err).ShouldNot(HaveOccurred())
-			Expect(ovdc).NotTo(BeNil())
+			Expect(vdcManager).NotTo(BeNil())
+			tc.VcdClient.VDC = vdcManager.Vdc
+			workerNodeVAppName = tc.ClusterName
 		}
-		tc.VcdClient.VDC = ovdc
 
 		By("ensuring that vApp exists")
-		clusterVApp, err := tc.VcdClient.VDC.GetVAppByName(tc.ClusterName, true)
+		clusterVApp, err := tc.VcdClient.VDC.GetVAppByName(workerNodeVAppName, true)
 		Expect(err).ShouldNot(HaveOccurred())
 		Expect(clusterVApp).NotTo(BeNil())
 		Expect(clusterVApp.VApp).NotTo(BeNil())
@@ -93,14 +102,14 @@ var _ = Describe("Node LCM", func() {
 	})
 
 	It("should start the worker VM that was powered off in VCD", func() {
-		clusterVApp, err := tc.VcdClient.VDC.GetVAppByName(tc.ClusterName, true)
+		clusterVApp, err := tc.VcdClient.VDC.GetVAppByName(workerNodeVAppName, true)
 		By("ensuring cluster vApp is present")
 		Expect(err).ShouldNot(HaveOccurred())
 		Expect(clusterVApp).NotTo(BeNil())
 		Expect(clusterVApp.VApp).NotTo(BeNil())
 
 		By("finding the worker VM corresponding to our worker node")
-		workerVm, err := vdcManager.FindVMByName(clusterVApp.VApp.Name, workerNode.Name)
+		workerVm, err := vdcManager.FindVMByName(workerNodeVAppName, workerNode.Name)
 		Expect(err).ShouldNot(HaveOccurred())
 		Expect(workerVm).NotTo(BeNil())
 
@@ -118,7 +127,7 @@ var _ = Describe("Node LCM", func() {
 
 	It("should stop and delete the the worker VM in VCD", func() {
 		By("ensuring cluster vApp is present")
-		clusterVApp, err := tc.VcdClient.VDC.GetVAppByName(tc.ClusterName, true)
+		clusterVApp, err := tc.VcdClient.VDC.GetVAppByName(workerNodeVAppName, true)
 		Expect(err).ShouldNot(HaveOccurred())
 		Expect(clusterVApp).NotTo(BeNil())
 		Expect(clusterVApp.VApp).NotTo(BeNil())

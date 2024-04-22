@@ -218,7 +218,7 @@ func (tc *TestClient) GetZoneMapFromZoneConfigMap(zoneCM *apiv1.ConfigMap) (map[
 
 	zoneMap := make(map[string]string)
 	for _, zoneInfoIf := range zoneInfoList {
-		zoneInfo, ok := zoneInfoIf.(map[string]string)
+		zoneInfo, ok := zoneInfoIf.(map[string]interface{})
 		if !ok {
 			return nil, fmt.Errorf("failed to convert zone entry in zone config map [%v] to map[string]string", zoneInfoIf)
 		}
@@ -230,7 +230,9 @@ func (tc *TestClient) GetZoneMapFromZoneConfigMap(zoneCM *apiv1.ConfigMap) (map[
 		if !ok {
 			return nil, fmt.Errorf("zone entry in zone map doesn't have OVDC name")
 		}
-		zoneMap[name] = ovdcName
+		nameStr := name.(string)
+		ovdcNameStr := ovdcName.(string)
+		zoneMap[nameStr] = ovdcNameStr
 	}
 	return zoneMap, nil
 }

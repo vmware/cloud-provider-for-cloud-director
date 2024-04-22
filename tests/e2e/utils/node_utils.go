@@ -8,6 +8,7 @@ import (
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"strings"
 	"time"
 )
 
@@ -42,4 +43,20 @@ func WaitForWorkerNodeNotFound(ctx context.Context, tc *testingsdk.TestClient, w
 		}
 		return false, nil
 	})
+}
+
+func GetVAppNameFromNode(clusterName string, machineSet string, ovdcID string) (string, error) {
+	parts := strings.Split(ovdcID, ":")
+	if len(parts) != 4 {
+		// urn:vcloud:ovdc:<uuid>
+		return "", fmt.Errorf("invalid URN format for OVDC: [%s]", ovdcID)
+	}
+	// machine set name will be mdName-abcd
+	endIndex := strings.LastIndex(machineSet, "-")
+	if endIndex == -1 {
+		return "", fmt.Errorf("machine set name [%s] is not in an expected format", machineSet)
+	}
+	mdName := machineSet[:endIndex]
+	// <cluster_name>_<ovdc_id>_<machine_deployment_name>
+	return fmt.Sprintf("%s_%s_%s", clusterName, parts[3], mdName), nil
 }
