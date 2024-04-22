@@ -139,6 +139,9 @@ func (vmic *VmInfoCache) GetByName(vmName string) (*VmInfo, error) {
 
 	vm, ovdcIdentifier, err := vmic.SearchVMAcrossVDCs(vmName, "")
 	if err != nil {
+		if err == govcd.ErrorEntityNotFound {
+			return nil, err
+		}
 		return nil, fmt.Errorf("unable to find VM [%s] in org [%s] for cluster [%s]: [%v]",
 			vmName, vmic.client.ClusterOrgName, vmic.clusterVAppName, err)
 	}
