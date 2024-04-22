@@ -170,6 +170,9 @@ func (vmic *VmInfoCache) GetByUUID(vmUUID string) (*VmInfo, error) {
 	}
 	vm, ovdcIdentifier, err := vmic.SearchVMAcrossVDCs("", vmUUID)
 	if err != nil {
+		if err == govcd.ErrorEntityNotFound {
+			return nil, err
+		}
 		return nil, fmt.Errorf("unable to find VM [%s] in org [%s] for cluster [%s]: [%v]",
 			vmUUID, vmic.client.ClusterOrgName, vmic.clusterVAppName, err)
 	}
