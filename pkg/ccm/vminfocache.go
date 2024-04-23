@@ -119,7 +119,7 @@ func (vmic *VmInfoCache) SearchVMAcrossVDCs(vmName string, vmId string) (*govcd.
 		OrgName: vmic.client.ClusterOrgName,
 	}
 
-	return orgManager.SearchVMAcrossVDCs(vmName, vmic.clusterVAppName, vmId, ovdcIdentifierList, isMultiZoneCluster)
+	return orgManager.SearchVMAcrossVDCs(vmName, vmic.clusterVAppName, vmId, isMultiZoneCluster)
 }
 
 func (vmic *VmInfoCache) GetByName(vmName string) (*VmInfo, error) {
