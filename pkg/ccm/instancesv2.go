@@ -37,7 +37,8 @@ func (i instancesV2) InstanceExists(ctx context.Context, node *v1.Node) (bool, e
 		_, err := i.vmInfoCache.GetByName(vmName)
 		if err != nil {
 			if err == govcd.ErrorEntityNotFound {
-				return false, cloudprovider.InstanceNotFound
+				// Returning nil as error will tell cloud controller to remove this VM from list of nodes.
+				return false, nil
 			}
 			return false, fmt.Errorf("unable to find instance ID from vm name [%s]: [%v]", vmName, err)
 		}
@@ -47,7 +48,8 @@ func (i instancesV2) InstanceExists(ctx context.Context, node *v1.Node) (bool, e
 		_, err := i.vmInfoCache.GetByUUID(vmId)
 		if err != nil {
 			if err == govcd.ErrorEntityNotFound {
-				return false, cloudprovider.InstanceNotFound
+				// Returning nil as error will tell cloud controller to remove this VM from list of nodes.
+				return false, nil
 			}
 			return false, fmt.Errorf("unable to find instance ID from vm Id [%s]: [%v]", vmId, err)
 		}
