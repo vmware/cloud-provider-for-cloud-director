@@ -12,6 +12,7 @@ import (
 	"gopkg.in/yaml.v2"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -169,6 +170,103 @@ exit 0
 	return
 }
 
+func TestSearchVMAcrossVDCs(t *testing.T) {
+
+	vcdConfig, err := getTestVCDConfig()
+	require.NoError(t, err, "There should be no error opening and parsing cloud config file contents.")
+
+	vdcName1 := "tenant1_ovdc"
+	vdcName2 := "tenant1_ovdc2"
+
+	// get client
+	vcdClient, err := getTestVCDClient(vcdConfig, nil)
+	require.NoError(t, err, "Unable to get VCD client")
+	require.NotNil(t, vcdClient, "VCD Client should not be nil")
+
+	vdcManager1, err := NewVDCManager(vcdClient, vcdClient.ClusterOrgName, vdcName1)
+	require.NoError(t, err, "there should be no error when creating VDCManager object")
+	vdcManager2, err := NewVDCManager(vcdClient, vcdClient.ClusterOrgName, vdcName2)
+	require.NoError(t, err, "there should be no error when creating VDCManager object")
+
+	// create vApps
+	vAppNamePrefix := "arun-vapp"
+	catalogName := "cse"
+	templateName := "Ubuntu 20.04 and Kubernetes v1.25.7+vmware.2"
+
+	vAppName_vdc1 := vAppNamePrefix + "_" + strings.Split(vdcManager1.Vdc.Vdc.ID, ":")[3] + "_nodepool1"
+	vApp1, err := vdcManager1.GetOrCreateVApp(vAppName_vdc1, vcdConfig.OvdcNetwork)
+	require.NoError(t, err, "unable to create vApp")
+	require.NotNil(t, vApp1, "vApp created should not be nil")
+	defer func() {
+		_ = vdcManager1.DeleteVApp(vAppName_vdc1)
+	}()
+
+	vAppName_vdc2 := vAppNamePrefix + "_" + strings.Split(vdcManager2.Vdc.Vdc.ID, ":")[3] + "_nodepool2"
+	vApp2, err := vdcManager2.GetOrCreateVApp(vAppName_vdc2, vcdConfig.OvdcNetwork)
+	require.NoError(t, err, "unable to create vApp")
+	require.NotNil(t, vApp2, "vApp created should not be nil")
+	defer func() {
+		_ = vdcManager2.DeleteVApp(vAppName_vdc2)
+	}()
+
+	// create vm
+	vmName_vdc1 := "arun-vm-1"
+	// TODO: allow these vm params to be user passed through a config
+	task, err := vdcManager1.AddNewTkgVM(vmName_vdc1, vAppName_vdc1, catalogName,
+		templateName, "", "", "Development2")
+	require.NoError(t, err, "unable to create vm [%s]", vmName_vdc1)
+	defer func() {
+		_, _ = vdcManager1.DeleteVM(vAppName_vdc1, vmName_vdc1)
+	}()
+
+	err = task.WaitTaskCompletion()
+	require.NoError(t, err, "should wait for VM creation task successfully")
+
+	vmName_vdc2 := "arun-vm-2"
+	// TODO: allow these vm params to be user passed through a config
+	task, err = vdcManager2.AddNewTkgVM(vmName_vdc2, vAppName_vdc2, catalogName,
+		templateName, "", "", "Development2")
+	require.NoError(t, err, "unable to create vm [%s]", vmName_vdc2)
+	defer func() {
+		_, _ = vdcManager2.DeleteVM(vAppName_vdc2, vmName_vdc2)
+	}()
+
+	err = task.WaitTaskCompletion()
+	require.NoError(t, err, "should wait for VM creation task successfully")
+
+	orgManager, err := NewOrgManager(vcdClient, vcdClient.ClusterOrgName)
+	require.NoError(t, err, "there should be no error when creating OrgManager object")
+
+	vm1, vdcNameReceived, err := orgManager.SearchVMAcrossVDCs(vmName_vdc1, vAppNamePrefix, "", true)
+	require.NoError(t, err, "vm named [%s] should be found", vmName_vdc1)
+	require.Equal(t, vdcName1, vdcNameReceived)
+	require.Equal(t, vm1.VM.Name, vmName_vdc1)
+
+	vAppFound1, err := vm1.GetParentVApp()
+	require.NoError(t, err, "parent of vm should be found", "vm", vm1.VM.Name)
+	require.Equal(t, vAppFound1.VApp.Name, vAppName_vdc1)
+
+	vmUsingId1, _, err := orgManager.SearchVMAcrossVDCs("", vAppNamePrefix, vm1.VM.ID, true)
+	require.NoError(t, err, "vm named [%s] should be found", vmName_vdc1)
+	require.Equal(t, vmUsingId1.VM.ID, vm1.VM.ID)
+
+	vm2, vdcNameReceived, err := orgManager.SearchVMAcrossVDCs(vmName_vdc2, vAppNamePrefix, "", true)
+	require.NoError(t, err, "vm named [%s] should be found", vmName_vdc2)
+	require.Equal(t, vdcName2, vdcNameReceived)
+	require.Equal(t, vm2.VM.Name, vmName_vdc2)
+
+	vAppFound2, err := vm2.GetParentVApp()
+	require.NoError(t, err, "parent of vm [%s] should be found", vm1.VM.Name)
+	require.Equal(t, vAppFound2.VApp.Name, vAppName_vdc2)
+
+	vmNonMultiAZ, vdcNonMultiAZ, err := orgManager.SearchVMAcrossVDCs(vmName_vdc1, vAppName_vdc1, "", false)
+	require.NoError(t, err, "vm named [%s] should be found", vmName_vdc1)
+	require.Equal(t, vmNonMultiAZ.VM.Name, vmName_vdc1)
+	require.Equal(t, vdcNonMultiAZ, vdcName1)
+
+	return
+}
+
 func TestVMExtraConfig(t *testing.T) {
 
 	vcdConfig, err := getTestVCDConfig()
@@ -194,7 +292,7 @@ func TestVMExtraConfig(t *testing.T) {
 	// TODO: allow these vm params to be user passed through a config
 	task, err := vdcManager.AddNewTkgVM(vmName, vAppName, "cse",
 		"Ubuntu 20.04 and Kubernetes v1.23.10+vmware.1", "",
-		"TKG medium", "Development2")
+		"", "Development2")
 	assert.NoError(t, err, "unable to create vm [%s]", vmName)
 
 	err = task.WaitTaskCompletion()
@@ -205,6 +303,7 @@ func TestVMExtraConfig(t *testing.T) {
 
 	// Set cloud-init config, boot the VM and check if the script has succeeded
 	extraConfigMap := map[string]string{
+		"guestinfo.sometest": strings.Repeat("aaaaa", 65536),
 		"guestinfo.userdata": b64.StdEncoding.EncodeToString([]byte(`
 #cloud-config
 users:
