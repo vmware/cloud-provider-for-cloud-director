@@ -1478,15 +1478,14 @@ func (gm *GatewayManager) IsUsingIpSpaces() (bool, error) {
 	}
 
 	edgeGatewayUplinks := edgeGateway.EdgeGateway.EdgeGatewayUplinks
-	if edgeGatewayUplinks != nil && len(edgeGatewayUplinks) > 0 {
-		for _, edgeGatewayUplink := range edgeGatewayUplinks {
-			if edgeGatewayUplink.UsingIpSpace != nil && *edgeGatewayUplink.UsingIpSpace {
-				return true, nil
-			}
-			// If uplink doesn't support IP Spaces, or we are unable to determine it, check the next uplink
-		}
-	} else {
+	if edgeGatewayUplinks == nil || len(edgeGatewayUplinks) == 0 {
 		return false, fmt.Errorf("no uplinks were found for gateway [%s], expecting atleast 1 uplink", edgeGatewayName)
+	}
+	for _, edgeGatewayUplink := range edgeGatewayUplinks {
+		if edgeGatewayUplink.UsingIpSpace != nil && *edgeGatewayUplink.UsingIpSpace {
+			return true, nil
+		}
+		// If uplink doesn't support IP Spaces, or we are unable to determine it, check the next uplink
 	}
 	// if we reach here, edge gateway doesn't support IP Spaces
 	return false, nil
