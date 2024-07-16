@@ -1478,19 +1478,18 @@ func (gm *GatewayManager) IsUsingIpSpaces() (bool, error) {
 	}
 
 	edgeGatewayUplinks := edgeGateway.EdgeGateway.EdgeGatewayUplinks
-	if edgeGatewayUplinks != nil {
-		if len(edgeGatewayUplinks) != 1 {
-			return false, fmt.Errorf("found invalid number of uplinks for gateway [%s], expecting 1", edgeGatewayName)
+	if edgeGatewayUplinks != nil && len(edgeGatewayUplinks) > 0 {
+		for _, edgeGatewayUplink := range edgeGatewayUplinks {
+			if edgeGatewayUplink.UsingIpSpace != nil && *edgeGatewayUplink.UsingIpSpace {
+				return true, nil
+			}
+			// If uplink doesn't support IP Spaces, or we are unable to determine it, check the next uplink
 		}
 	} else {
-		return false, fmt.Errorf("no uplinks were found for gateway [%s], expecting 1", edgeGatewayName)
+		return false, fmt.Errorf("no uplinks were found for gateway [%s], expecting atleast 1 uplink", edgeGatewayName)
 	}
-
-	result := edgeGatewayUplinks[0].UsingIpSpace
-	if result == nil {
-		return false, fmt.Errorf("unable to determine if gateway [%s] is using IP spaces or not", edgeGatewayName)
-	}
-	return *result, nil
+	// if we reach here, edge gateway doesn't support IP Spaces
+	return false, nil
 }
 
 func (gm *GatewayManager) GetLoadBalancerPool(ctx context.Context, lbPoolName string) (*swaggerClient.EntityReference, error) {
