@@ -11,6 +11,9 @@ package ccm
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
+
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/cpisdk"
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/util"
 	"github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdsdk"
@@ -22,8 +25,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	cloudProvider "k8s.io/cloud-provider"
 	"k8s.io/klog"
-	"strconv"
-	"strings"
 )
 
 const (
@@ -163,9 +164,7 @@ func (lb *LBManager) getServicePortMap(service *v1.Service) (map[string]int32, m
 	for _, port := range service.Spec.Ports {
 		typeToInternalPort[strings.ToLower(port.Name)] = port.NodePort
 		typeToExternalPort[strings.ToLower(port.Name)] = port.Port
-		if port.AppProtocol != nil {
-			nameToProtocol[strings.ToLower(port.Name)] = strings.ToUpper(*port.AppProtocol)
-		}
+		nameToProtocol[strings.ToLower(port.Name)] = strings.ToUpper(string(port.Protocol))
 	}
 	return typeToInternalPort, typeToExternalPort, nameToProtocol
 }
