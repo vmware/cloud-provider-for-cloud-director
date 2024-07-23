@@ -18,6 +18,10 @@ import (
 	"testing"
 )
 
+/*
+To run TestGatewayUsingIpSpaces:
+Two org vdc network must exist in VCD, one of them should support IP spaces, and the other shouldn't
+*/
 func TestGatewayUsingIpSpaces(t *testing.T) {
 	vcdConfig, err := getTestVCDConfig()
 	assert.NoError(t, err, "There should be no error opening and parsing vcd info file contents.")
@@ -45,6 +49,7 @@ func TestGatewayUsingIpSpaces(t *testing.T) {
 
 	gm, err := NewGatewayManager(ctx, vcdClient, testData.OrgvdcNetworkIpSpace, "", testData.Orgvdc)
 	assert.NoErrorf(t, err, "Unable to create Gateway Manager for network %s", testData.OrgvdcNetworkIpSpace)
+	require.NotNil(t, gm, "Unable to create Gateway Manager for network %s", testData.OrgvdcNetworkIpSpace)
 
 	result, err := gm.IsUsingIpSpaces()
 	assert.NoErrorf(t, err, "Error calling method IsUsingIpSpaces for netowrk %s", testData.OrgvdcNetworkIpSpace)
@@ -52,6 +57,7 @@ func TestGatewayUsingIpSpaces(t *testing.T) {
 
 	gm2, err := NewGatewayManager(ctx, vcdClient, testData.OrgvdcNetworkNoIpSpace, "", testData.Orgvdc)
 	assert.NoErrorf(t, err, "Unable to create Gateway Manager for network %s", testData.OrgvdcNetworkNoIpSpace)
+	require.NotNil(t, gm2, "Unable to create Gateway Manager for network %s", testData.OrgvdcNetworkNoIpSpace)
 
 	result, err = gm2.IsUsingIpSpaces()
 	assert.NoErrorf(t, err, "Error calling method IsUsingIpSpaces for network %s", testData.OrgvdcNetworkNoIpSpace)
