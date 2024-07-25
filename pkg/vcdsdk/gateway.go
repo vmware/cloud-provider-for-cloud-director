@@ -1474,11 +1474,11 @@ func (gm *GatewayManager) IsUsingIpSpaces() (bool, error) {
 		return false, fmt.Errorf("error retrieving org [%s]: [%v]", gm.Client.ClusterOrgName, err)
 	}
 	if clusterOrg == nil || clusterOrg.Org == nil {
-		return false, fmt.Errorf("unable to determine if gateway [%s] is using Ip Spaces or not; obtained nil org", edgeGatewayName)
+		return false, fmt.Errorf("unable to determine if gateway [%s] of org [%s] is using Ip Spaces or not; obtained nil org", edgeGatewayName, gm.Client.ClusterOrgName)
 	}
 	edgeGateway, err := clusterOrg.GetNsxtEdgeGatewayById(edgeGatewayID)
 	if err != nil {
-		return false, fmt.Errorf("unable to determine if gateway [%s] is using Ip Spaces or not. error [%v]", edgeGatewayName, err)
+		return false, fmt.Errorf("unable to determine if gateway [%s] of org [%s]  is using Ip Spaces or not. error [%v]", edgeGatewayName, gm.Client.ClusterOrgName, err)
 	}
 
 	edgeGatewayUplinks := edgeGateway.EdgeGateway.EdgeGatewayUplinks
