@@ -1,6 +1,8 @@
 module github.com/vmware/cloud-provider-for-cloud-director
 
-go 1.21
+go 1.22
+
+toolchain go1.22.6
 
 require (
 	github.com/antihax/optional v1.0.0
@@ -12,11 +14,11 @@ require (
 	github.com/onsi/gomega v1.19.0
 	github.com/peterhellberg/link v1.1.0
 	github.com/sethvargo/go-password v0.2.0
-	github.com/stretchr/testify v1.7.0
-	github.com/vmware/go-vcloud-director/v2 v2.24.0
+	github.com/stretchr/testify v1.9.0
+	github.com/vmware/go-vcloud-director/v2 v2.26.0-alpha.6
 	golang.org/x/oauth2 v0.7.0
 	gopkg.in/yaml.v2 v2.4.0
-	gopkg.in/yaml.v3 v3.0.0
+	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.22.1
 	k8s.io/apimachinery v0.22.1
 	k8s.io/apiserver v0.22.1
@@ -94,6 +96,7 @@ require (
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.17.0 // indirect
 	golang.org/x/crypto v0.21.0 // indirect
+	golang.org/x/exp v0.0.0-20240119083558-1b970713d09a // indirect
 	golang.org/x/net v0.23.0 // indirect
 	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4 // indirect
 	golang.org/x/sys v0.18.0 // indirect
