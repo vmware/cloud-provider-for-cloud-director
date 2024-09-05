@@ -164,7 +164,11 @@ func (lb *LBManager) getServicePortMap(service *v1.Service) (map[string]int32, m
 	for _, port := range service.Spec.Ports {
 		typeToInternalPort[strings.ToLower(port.Name)] = port.NodePort
 		typeToExternalPort[strings.ToLower(port.Name)] = port.Port
-		nameToProtocol[strings.ToLower(port.Name)] = strings.ToUpper(string(port.Protocol))
+		if port.AppProtocol != nil {
+			nameToProtocol[strings.ToLower(port.Name)] = strings.ToUpper(*port.AppProtocol)
+		} else {
+			nameToProtocol[strings.ToLower(port.Name)] = strings.ToUpper(string(port.Protocol))
+		}
 	}
 	return typeToInternalPort, typeToExternalPort, nameToProtocol
 }
