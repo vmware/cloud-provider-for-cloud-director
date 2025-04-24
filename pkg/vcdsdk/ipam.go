@@ -10,7 +10,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/apparentlymart/go-cidr/cidr"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 	"net"
 )
 

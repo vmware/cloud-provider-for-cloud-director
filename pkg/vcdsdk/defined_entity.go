@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	swaggerClient "github.com/vmware/cloud-provider-for-cloud-director/pkg/vcdswaggerclient_37_2"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 	"net/http"
 	"net/url"
 	"reflect"
