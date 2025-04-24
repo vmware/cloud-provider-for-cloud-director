@@ -20,7 +20,7 @@ import (
 	"k8s.io/client-go/informers"
 	_ "k8s.io/client-go/tools/clientcmd"
 	cloudProvider "k8s.io/cloud-provider"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 	"time"
 )
 
