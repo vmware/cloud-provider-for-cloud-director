@@ -375,8 +375,8 @@ golang.org/x/net/idna
 golang.org/x/net/internal/timeseries
 golang.org/x/net/trace
 golang.org/x/net/websocket
-# golang.org/x/oauth2 v0.7.0
-## explicit; go 1.17
+# golang.org/x/oauth2 v0.27.0
+## explicit; go 1.23.0
 golang.org/x/oauth2
 golang.org/x/oauth2/internal
 # golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4
@@ -417,15 +417,6 @@ golang.org/x/text/width
 # golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac
 ## explicit
 golang.org/x/time/rate
-# google.golang.org/appengine v1.6.7
-## explicit; go 1.11
-google.golang.org/appengine/internal
-google.golang.org/appengine/internal/base
-google.golang.org/appengine/internal/datastore
-google.golang.org/appengine/internal/log
-google.golang.org/appengine/internal/remote_api
-google.golang.org/appengine/internal/urlfetch
-google.golang.org/appengine/urlfetch
 # google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1
 ## explicit; go 1.19
 google.golang.org/genproto/googleapis/api
